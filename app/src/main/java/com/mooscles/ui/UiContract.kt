@@ -33,7 +33,9 @@ data class WorkoutUi(
     val id: String, val name: String, val startedAt: Long, val endedAt: Long? = null,
     val exercises: List<WorkoutExerciseUi> = emptyList(), val records: List<RecordUi> = emptyList(),
 ) {
-    val prExerciseCount get() = records.filterNot { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
+    /** First records and records beaten both qualify; multiple badges still count once. */
+    val prExerciseCount get() = records.map { it.exercise.id to it.exercise.convention }.distinct().size
+    val beatenPrExerciseCount get() = records.filterNot { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
     val firstRecordExerciseCount get() = records.filter { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
     val completedSets get() = exercises.sumOf { e -> e.sets.count { it.completed } }
     val completedExercises get() = exercises.count { e -> e.sets.any { it.completed } }

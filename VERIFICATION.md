@@ -1,12 +1,12 @@
 # Verification — 2026-10-21
 
-Current local build: **Mooscles 1.1.0**, Android version code **5**, application ID `com.mooscles`. The existing Android Debug signing identity and Room schema v1 are retained. No destructive migration or data reset was introduced.
+Current local build: **Mooscles 1.1.1**, Android version code **6**, application ID `com.mooscles`. The existing Android Debug signing identity and Room schema v1 are retained. No destructive migration or data reset was introduced.
 
 Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 
 | Check | Result |
 | --- | --- |
-| Host unit, persistence and Compose tests | **PASS — 158 tests; zero failures, errors or skips** |
+| Host unit, persistence and Compose tests | **PASS — 163 tests; zero failures, errors or skips** |
 | Android lint | **PASS — 0 errors; 19 dependency-version advisories** |
 | Debug APK | **PASS** |
 | Instrumented test APK | **PASS — compiled and packaged** |
@@ -15,6 +15,14 @@ Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 | APK freshness | **PASS — no production source/build inputs newer than final APK** |
 | Public GitHub Releases API | **PASS — unauthenticated request succeeded** |
 | Device upgrade / real installation | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+## v1.1.1 PR-counter correction
+
+“Exercises with PRs” includes every distinct exercise variation with either first records or records beaten. Multiple Weight PR/Reps PR badges and multiple load-specific records for one exercise still count once. The first-record labels and separate beaten-record categories remain intact.
+
+The screenshot regression reproduces three first-record badges (bench Weight PR, bench Reps PR, bodyweight wide-grip pull-up Reps PR), five completed sets and 560 kg total volume. The domain summary, displayed Material 3 metric and real Room-to-ViewModel saved/reopened result all show **2 exercises with PRs**. Empty records show zero; mixed first/beaten records and duplicate badges preserve distinct exercise counts.
+
+Existing saved workouts recalculate their corrected totals when reopened. No Room migration, history rewrite or reset is needed. Five new focused tests cover this correction; all earlier updater and workout tests still pass.
 
 ## Updater behavior
 
@@ -29,7 +37,7 @@ Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 
 ## Focused tests
 
-The existing 92 workout, timer, Room, preferences and UI tests still pass. The updater adds 66 tests:
+The existing 97 workout, timer, Room, preferences and UI tests still pass. The updater adds 66 tests:
 
 | Suite | Tests |
 | --- | ---: |
@@ -43,7 +51,7 @@ The existing 92 workout, timer, Room, preferences and UI tests still pass. The u
 | Material 3 update interface actions and retry states | 4 |
 | Running, paused and expired rest installation guards | 2 |
 | **New updater tests** | **66** |
-| **Total including existing tests** | **158** |
+| **Total including existing tests** | **163** |
 
 Upgrade preservation tests use real on-disk Room databases and DataStore files: saved routines with explicit set counts, completed history and derived PRs, active workouts, exercise settings, preferences and timer deadlines survive simulated installed-version changes and update cleanup. These tests do not substitute for an actual Android package replacement.
 
@@ -55,17 +63,17 @@ Reports:
 
 ## Verified delivery assets
 
-**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.1.0-debug.apk`
+**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.1.1-debug.apk`
 
 **Metadata:** `D:\Programing\Mooscles\app\build\outputs\release\update.json`
 
-- Package: `com.mooscles`; version `1.1.0`; version code `5`
+- Package: `com.mooscles`; version `1.1.1`; version code `6`
 - Size: **19344097 bytes**
-- APK SHA-256: `25ee56ae9bbcf5fa15cc8923378bdef4febdd59c580196c7c3574b036fbee261`
+- APK SHA-256: `addc83eabf063e216748d4b91a768a881dac72a9b2a726144265e26b3df3e66c`
 - Existing debug certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`
 - Android 8.0 / API 26 or newer; compile/target API 35
 - The normal `app/build/outputs/apk/debug/app-debug.apk` has identical bytes.
-- Adjacent `Mooscles-v1.1.0-debug.apk.sha256` supports manual verification.
+- Adjacent `Mooscles-v1.1.1-debug.apk.sha256` supports manual verification.
 
 APKs, generated metadata, build outputs, SDK paths, keystores, passwords and credentials remain excluded from source control.
 
@@ -73,7 +81,7 @@ APKs, generated metadata, build outputs, SDK paths, keystores, passwords and cre
 
 `build.ps1` generates the versioned APK, update.json and checksum after successful debug assembly. `tools/prepare-release.ps1` verifies the actual APK, existing signer and increasing version code; negative checks reject a wrong package, signer or reused version code. `tools/publish-release.ps1` requires a clean tested source commit and exact local/remote tag, reruns checks, prepares and verifies all uploaded assets, and defaults to a draft prerelease. Publishing requires its explicit `-Publish` option. The release workflow also independently downloads and verifies uploaded assets before publication.
 
-The older v1.0.0 prerelease has an APK and checksum but no update.json; the updater safely skips such older releases. The v1.1.0 distribution includes the APK, generated update.json and checksum. Future releases also need both the exact versioned APK and its generated update.json. Debug distributions must remain prereleases, so users receiving them must enable Include prereleases. See [UPDATES.md](UPDATES.md).
+The older v1.0.0 prerelease has an APK and checksum but no update.json; the updater safely skips such older releases. The v1.1.1 distribution includes the APK, generated update.json and checksum. Future releases also need both the exact versioned APK and its generated update.json. Debug distributions must remain prereleases, so users receiving them must enable Include prereleases. See [UPDATES.md](UPDATES.md).
 
 An installed version without the updater must install this updater-enabled APK once. Future updates then use the selected channel and preferences. Android may require Allow from this source and installation confirmation. Six-hour scheduling is approximate, not immediate release delivery.
 

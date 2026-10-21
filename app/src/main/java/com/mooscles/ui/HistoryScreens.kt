@@ -53,9 +53,9 @@ private fun WorkoutHistoryCard(workout: WorkoutUi, pounds: Boolean, onClick: () 
                 Text(durationText(((workout.endedAt ?: workout.startedAt) - workout.startedAt) / 1000), style = MaterialTheme.typography.bodySmall)
             }
             Text(workout.exercises.filter { entry -> entry.sets.any { it.completed } }.take(3).joinToString(" · ") { it.exercise.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val beaten = workout.prExerciseCount
+            val prExercises = workout.prExerciseCount
             val first = workout.firstRecordExerciseCount
-            if (beaten + first > 0) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.tertiary); Text("$beaten exercise${if (beaten != 1) "s" else ""} with PRs${if (first > 0) " · $first first record${if (first > 1) "s" else ""}" else ""}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary) }
+            if (prExercises > 0) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.tertiary); Text("$prExercises exercise${if (prExercises != 1) "s" else ""} with PRs${if (first > 0) " · $first with first records" else ""}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary) }
         }
     }
 }
@@ -81,7 +81,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Metric(workout.completedExercises.toString(), "Exercises")
                         Metric(workout.completedSets.toString(), "Sets")
-                        Metric(workout.prExerciseCount.toString(), "Exercises with PRs")
+                        Metric(workout.prExerciseCount.toString(), "Exercises with PRs", Modifier.testTag("workout-pr-exercise-count"))
                     }
                     Metric(weight(workout.volumeKg, state.preferences.pounds), "Total weight moved · logged load × reps")
                 }

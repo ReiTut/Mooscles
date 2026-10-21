@@ -4,11 +4,11 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Download
 
-The current release is **1.1.0**, version code **5**, with the same application ID and existing debug certificate.
+The current release is **1.1.1**, version code **6**, with the same application ID and existing debug certificate.
 
-[v1.1.0 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.1.0) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.1.0/Mooscles-v1.1.0-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.1.0/update.json)
+[v1.1.1 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.1.1) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/Mooscles-v1.1.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/update.json)
 
-This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.1.0` and version code `5`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Install this APK once to enable future in-app updates, then enable **Settings → App updates → Include prereleases** to receive debug releases. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
+This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.1.1` and version code `6`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Install this APK once to enable future in-app updates, then enable **Settings → App updates → Include prereleases** to receive debug releases. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
 
 ## Use
 
@@ -67,7 +67,7 @@ A weight PR is the highest **positive external weight in a valid completed worki
 
 Incomplete sets, discarded sessions, warm-ups, assistance-only values, and zero load are excluded from external-weight PRs. Active PR badges are provisional until the workout is saved. Unit changes use canonical kg. Comparisons ignore only machine-precision conversion noise (four double-precision units in the last place); unedited displayed weights keep their canonical precision.
 
-Repetition PRs compare completed working sets at the same canonical external load. Blank weight is zero added load and qualifies for bodyweight repetition records. Assisted sets compare only with the same variation, assistance mode, and assistance amount. The first record at a load is labeled separately from a record beaten. Every exercise can display both Weight PR and Reps PR badges; a workout counts each variation with records beaten once, even if it earns both types or improves several load-specific repetition records. Editing earlier history recalculates all affected records.
+Repetition PRs compare completed working sets at the same canonical external load. Blank weight is zero added load and qualifies for bodyweight repetition records. Assisted sets compare only with the same variation, assistance mode, and assistance amount. The first record at a load is labeled separately from a record beaten. Every exercise can display both Weight PR and Reps PR badges; “Exercises with PRs” counts each variation once across all first records and records beaten, even if it earns both types or improves several load-specific repetition records. Three first-record badges for bench press and pull-up therefore count as two exercises. Editing earlier history recalculates all affected records.
 
 ## Set entry and rest
 

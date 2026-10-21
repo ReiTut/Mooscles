@@ -79,8 +79,14 @@ data class WorkoutSummary(
     val repsPrs: List<RepsPr> = emptyList(),
     val firstRepsRecords: List<RepsPr> = emptyList()
 ) {
-    /** One exercise can beat multiple load-specific repetition records and a weight record. */
+    /** Count each exercise/convention once across first records and records beaten, of either type. */
     val prExerciseCount: Int get() = (prs.map { it.exerciseId to it.convention } +
+        repsPrs.map { it.exerciseId to it.convention } +
+        firstRecords.map { it.exerciseId to it.convention } +
+        firstRepsRecords.map { it.exerciseId to it.convention }).distinct().size
+
+    /** Records beaten exclude initial records, while still counting an exercise only once. */
+    val beatenPrExerciseCount: Int get() = (prs.map { it.exerciseId to it.convention } +
         repsPrs.map { it.exerciseId to it.convention }).distinct().size
 
     val firstRecordExerciseCount: Int get() = (firstRecords.map { it.exerciseId to it.convention } +

@@ -34,7 +34,7 @@ class HistoryRecordsHostTest {
         assertEquals(0, workout.firstRecordExerciseCount)
         showSummary(workout)
 
-        compose.onNodeWithText("Exercises with PRs").performScrollTo().assertIsDisplayed()
+        assertDisplayedPrExerciseCount(2)
         scrollToMilestones()
         assertMilestoneText("Bench press")
         assertMilestoneText("Weight PR")
@@ -52,6 +52,7 @@ class HistoryRecordsHostTest {
         ))
         assertEquals(1, workout.prExerciseCount)
         showSummary(workout)
+        assertDisplayedPrExerciseCount(1)
         scrollToMilestones()
 
         assertMilestoneText("Weight PR")
@@ -66,9 +67,11 @@ class HistoryRecordsHostTest {
             RecordUi(pullup, 10.0, 5),
             RecordUi(pullup, 10.0, 5, kind = RecordKind.REPS),
         ))
-        assertEquals(1, workout.prExerciseCount)
+        assertEquals(2, workout.prExerciseCount)
+        assertEquals(1, workout.beatenPrExerciseCount)
         assertEquals(1, workout.firstRecordExerciseCount)
         showSummary(workout)
+        assertDisplayedPrExerciseCount(2)
         scrollToMilestones()
 
         assertMilestoneText("Weight PR")
@@ -77,6 +80,40 @@ class HistoryRecordsHostTest {
         assertMilestoneText("Reps PR · First record")
         assertMilestoneText("10 kg × 5")
         assertMilestoneText("5 reps · 10 kg")
+    }
+
+    @Test fun firstBenchWeightAndRepsRecordsAndFirstBodyweightPullupRecordCountTwoExercises() {
+        val barbellBench = bench.copy(name = "Barbell bench press")
+        val wideGripPullup = pullup.copy(name = "Wide-grip pull-up")
+        val workout = workout(listOf(
+            RecordUi(barbellBench, 20.0, 10),
+            RecordUi(barbellBench, 20.0, 10, kind = RecordKind.REPS),
+            RecordUi(wideGripPullup, 0.0, 10, kind = RecordKind.REPS),
+        ))
+        assertEquals(2, workout.prExerciseCount)
+        assertEquals(0, workout.beatenPrExerciseCount)
+        assertEquals(2, workout.firstRecordExerciseCount)
+        showSummary(workout)
+
+        assertDisplayedPrExerciseCount(2)
+        scrollToMilestones()
+        assertMilestoneText("3 first records · separate from records beaten")
+        assertMilestoneText("Weight PR · First record")
+        compose.onAllNodesWithText("Reps PR · First record").assertCountEquals(2)
+        assertMilestoneText("20 kg × 10")
+        assertMilestoneText("10 reps · 20 kg")
+        assertMilestoneText("10 reps · Bodyweight")
+    }
+
+    @Test fun workoutWithoutRecordsDisplaysZeroExercisesWithPrs() {
+        val workout = workout(emptyList())
+        assertEquals(0, workout.prExerciseCount)
+        assertEquals(0, workout.beatenPrExerciseCount)
+        assertEquals(0, workout.firstRecordExerciseCount)
+        showSummary(workout)
+
+        assertDisplayedPrExerciseCount(0)
+        compose.onNodeWithText("New milestones").assertDoesNotExist()
     }
 
     private fun workout(records: List<RecordUi>): WorkoutUi {
@@ -103,6 +140,12 @@ class HistoryRecordsHostTest {
 
     private fun scrollToMilestones() {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("New milestones"))
+    }
+
+    private fun assertDisplayedPrExerciseCount(expected: Int) {
+        compose.onNodeWithTag("workout-pr-exercise-count").performScrollTo()
+            .assert(hasAnyDescendant(hasText(expected.toString())))
+            .assert(hasAnyDescendant(hasText("Exercises with PRs")))
     }
 
     private fun assertMilestoneText(text: String) {
