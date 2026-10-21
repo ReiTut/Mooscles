@@ -1,0 +1,44 @@
+# Gradle / Kotlin state and downloaded local toolchains
+.gradle/
+.kotlin/
+.tooling/
+
+# Android build outputs (publish APKs as release assets)
+**/build/
+.externalNativeBuild/
+.cxx/
+captures/
+*.apk
+*.aab
+*.ap_
+*.hprof
+
+# Machine-specific SDK, JDK, and IDE configuration
+local.properties
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Signing material and local credentials / passwords
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+key.properties
+keystore.properties
+signing.properties
+credentials.properties
+secrets.properties
+gradle-local.properties
+.env
+.env.*
+.credentials/
+credentials.json
+service-account*.json
+service_account*.json
+
+# Keep source, Room schemas, and the Gradle wrapper (including its JAR).

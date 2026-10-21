@@ -1,0 +1,125 @@
+package com.mooscles.data
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import java.util.UUID
+
+fun newId(): String = UUID.randomUUID().toString()
+
+enum class MuscleGroup(val label: String) {
+    CHEST("Chest"), BACK("Back"), SHOULDERS("Shoulders"), BICEPS("Biceps"),
+    TRICEPS("Triceps"), QUADRICEPS("Quadriceps"), HAMSTRINGS("Hamstrings"),
+    GLUTES("Glutes"), CALVES("Calves"), CORE("Core"), FOREARMS("Forearms"), FULL_BODY("Full body")
+}
+
+enum class Equipment(val label: String) {
+    BARBELL("Barbell"), DUMBBELL("Dumbbell"), KETTLEBELL("Kettlebell"), CABLE("Cable"),
+    BODYWEIGHT("Bodyweight"), SMITH_MACHINE("Smith machine"),
+    SELECTORIZED_MACHINE("Selectorized machine"), PLATE_LOADED_MACHINE("Plate-loaded machine"), OTHER("Other")
+}
+
+/** Repetitions and load are always the numbers explicitly logged; no hidden multiplier. */
+enum class LoadConvention(val label: String, val explanation: String) {
+    TOTAL_LOAD("Total load", "Log the total external load; volume = logged load × reps."),
+    PER_HAND("Per hand", "Log one dumbbell's load and reps. Volume is per hand; it is never doubled."),
+    ONE_SIDE("One side", "Log total external load used while working one side and reps for that side. Volume is per side; it is never doubled."),
+    BODYWEIGHT("Added weight", "Log added external weight only. Zero is valid; unknown bodyweight is excluded."),
+    ASSISTANCE("Assistance", "Log assistance separately. Assistance does not earn external-weight PRs or contribute to weight moved.")
+}
+
+enum class WorkoutStatus { ACTIVE, FINISHED }
+
+@Entity(tableName = "exercises")
+data class Exercise(
+    @PrimaryKey val id: String = newId(),
+    val name: String,
+    val muscle: MuscleGroup,
+    val equipment: Equipment,
+    val convention: LoadConvention = LoadConvention.TOTAL_LOAD,
+    val custom: Boolean = false
+)
+
+@Entity(tableName = "routines")
+data class Routine(
+    @PrimaryKey val id: String = newId(),
+    val name: String,
+    val position: Int = 0
+)
+
+@Entity(
+    tableName = "routine_exercises",
+    foreignKeys = [
+        ForeignKey(entity = Routine::class, parentColumns = ["id"], childColumns = ["routineId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = Exercise::class, parentColumns = ["id"], childColumns = ["exerciseId"], onDelete = ForeignKey.RESTRICT)
+    ],
+    indices = [Index("routineId"), Index("exerciseId")]
+)
+data class RoutineExercise(
+    @PrimaryKey val id: String = newId(),
+    val routineId: String,
+    val exerciseId: String,
+    val position: Int = 0,
+    val plannedSets: Int = 3,
+    val targetReps: Int = 0,
+    val targetWeightKg: Double? = null,
+    val restSeconds: Int? = null
+)
+
+@Entity(tableName = "workouts")
+data class Workout(
+    @PrimaryKey val id: String = newId(),
+    val name: String,
+    val startedAt: Long = System.currentTimeMillis(),
+    val endedAt: Long? = null,
+    val status: WorkoutStatus = WorkoutStatus.ACTIVE
+)
+
+/** Immutable exercise metadata is copied here when a workout starts. */
+@Entity(
+    tableName = "workout_exercises",
+    foreignKeys = [ForeignKey(entity = Workout::class, parentColumns = ["id"], childColumns = ["workoutId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("workoutId"), Index("exerciseId")]
+)
+data class WorkoutExercise(
+    @PrimaryKey val id: String = newId(),
+    val workoutId: String,
+    val exerciseId: String,
+    val name: String,
+    val muscle: MuscleGroup,
+    val equipment: Equipment,
+    val convention: LoadConvention,
+    val position: Int = 0,
+    val restSeconds: Int = 90
+)
+
+@Entity(
+    tableName = "workout_sets",
+    foreignKeys = [ForeignKey(entity = WorkoutExercise::class, parentColumns = ["id"], childColumns = ["workoutExerciseId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("workoutExerciseId")]
+)
+data class WorkoutSet(
+    @PrimaryKey val id: String = newId(),
+    val workoutExerciseId: String,
+    val position: Int = 0,
+    val reps: Int = 0,
+    val weightKg: Double = 0.0,
+    val completed: Boolean = false,
+    val warmup: Boolean = false,
+    val assistance: Boolean = false
+)
+
+data class AppData(
+    val exercises: List<Exercise> = emptyList(),
+    val routines: List<Routine> = emptyList(),
+    val routineExercises: List<RoutineExercise> = emptyList(),
+    val workouts: List<Workout> = emptyList(),
+    val workoutExercises: List<WorkoutExercise> = emptyList(),
+    val sets: List<WorkoutSet> = emptyList()
+) {
+    val activeWorkout: Workout? get() = workouts.firstOrNull { it.status == WorkoutStatus.ACTIVE }
+    fun routineItems(routineId: String) = routineExercises.filter { it.routineId == routineId }.sortedBy { it.position }
+    fun workoutItems(workoutId: String) = workoutExercises.filter { it.workoutId == workoutId }.sortedBy { it.position }
+    fun exerciseSets(workoutExerciseId: String) = sets.filter { it.workoutExerciseId == workoutExerciseId }.sortedBy { it.position }
+}

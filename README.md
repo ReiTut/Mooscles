@@ -1,2 +1,82 @@
 # Mooscles
-My own workout tracker Android App
+
+A native, local-only Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. No account, backend, Internet permission, subscriptions, analytics, or runtime network calls.
+
+## Download
+
+[v1.0.0 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.0.0) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.0.0/Mooscles-v1.0.0-debug.apk)
+
+This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.0.0` and version code `3`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
+
+## Use
+
+Create routines in **Train** and add movements from the searchable muscle/equipment-filtered library. Valid set-count, rep and load edits save automatically. Reps are optional in routines and start blank in every new workout set, even when a routine has rep targets. Previously logged reps stay saved. Each exercise has an independent rest duration entered as minutes:seconds, such as **2:00 min**. You can edit it during a workout for subsequent rests; the timer's **−0:15 / +0:15** controls adjust rest already in progress. The default rest duration in Settings also saves automatically.
+
+Start a routine or an empty session. Log decimal loads and reps, mark working/warm-up/assistance sets, complete or undo sets, and finish to view the full breakdown. Rounded, filled numeric fields retain their original sizes. Active sessions save every valid edit automatically and can be resumed after app/process restart. History supports search, set corrections, exercise changes, renaming and confirmed deletion. Custom exercises retain stable identities when renamed.
+
+The offline catalog contains **277** established exercise variations across barbell, dumbbell, kettlebell, cable, bodyweight, Smith, selectorized and plate-loaded machines. Equipment, movement variation, and logging convention keep distinct records.
+
+## Build
+
+Toolchain: AGP 8.7.3, Gradle wrapper 8.14.5, Kotlin/Compose compiler 2.1.20, KSP 2.1.20-1.0.32, Compose BOM 2025.04.01, Room 2.7.2; Java bytecode 17, JDK 21 used for builds. Compile/target API 35, build-tools 35.0.0.
+
+On the development workspace, the local JDK and SDK are installed under ignored `.tooling/`; ignored `local.properties` points to the SDK. After configuring your own JDK and SDK as described below, run:
+
+```powershell
+.\build.ps1
+```
+
+After Android Studio's daemon-toolchain migration, `gradle/gradle-daemon-jvm.properties` declares **Adoptium Java 21** for Gradle. Android Studio and command-line builds use these criteria; `build.ps1` also selects the bundled JDK 21 to launch the wrapper. Gradle 8.x cannot run with Java 25.
+
+On a fresh checkout, install Adoptium JDK 21, Android SDK platform 35 and build-tools 35.0.0. Set `JAVA_HOME` and set `sdk.dir` in untracked `local.properties` to your SDK folder. The checked-in wrapper downloads Gradle. Build dependencies require network only during initial resolution.
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+.\gradlew.bat :app:connectedDebugAndroidTest
+```
+
+The latter requires a booted emulator or authorized USB device. Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Android Studio can open the project root directly. Test/lint reports are under `app/build/reports/`.
+
+To create an installable APK in Android Studio, select the `debug` build variant, then **Build → Generate Bundle(s) / APK(s) → Generate APK(s)**. When it finishes, click **locate** in the notification. You can copy/share `app-debug.apk` and install it directly on an Android 8+ device. The debug APK is signed automatically. For a public release, use **Build → Generate Signed App Bundle or APK → APK** with your own release signing key.
+
+Version compatibility references: [AGP 8.7](https://developer.android.com/build/releases/agp-8-7-0-release-notes), [Kotlin Gradle compatibility](https://kotlinlang.org/docs/gradle-configure-project.html), [Compose compiler plugin](https://developer.android.com/jetpack/androidx/releases/compose-kotlin), [Room releases](https://developer.android.com/jetpack/androidx/releases/room).
+
+## Architecture and persistence
+
+`ui/` contains Compose screens, navigation, presentation models and the UI action contract. `AppViewModel` maps repository snapshots to screen state, serializes commands, and catches save failures. `data/` contains Room entities, foreign-key relationships/cascade rules, a transactional repository, and the offline catalog. A single transaction reads each observable database snapshot. Workout finalization checks the existing status and saves once atomically; concurrent starts reuse the single active workout. `domain/` contains pure record, volume and unit calculations.
+
+Workouts copy exercise metadata and planned sets into independent snapshots. Renaming exercises or editing/deleting routines never rewrites past workouts. Records are derived from completed history instead of cached, so corrections and deletions recalculate both current records and each session's PR total. Room schema v1 is exported to `app/schemas/`; future changes require explicit migrations. No destructive migration fallback is enabled.
+
+Preferences and rest deadlines use DataStore. Timer state includes exercise, duration, deadline, paused remainder and a unique token. A new completed set restarts rest with that exercise's duration; editing an already completed set does not restart rest. Pause freezes the remainder; resume continues it; reset returns to the configured duration in a paused state. Rest includes background time and survives process restart. Completion is claimed once to avoid duplicate alerts. The in-app clock stays accurate when notification permission is denied. Android background notifications are used when permitted. On Android 12+, without special exact-alarm access the permission-free system alarm can arrive late under power saving; the in-app countdown and restored deadline remain correct. Wall-clock changes affect deadlines; reboot/force-stop cancels OS alarms and reopening the app restores the persisted timer.
+
+Automatic cloud backups and device-transfer extraction are disabled, including databases and preferences. Uninstalling the app removes local data. There is currently no import/export feature.
+
+## Weight-first PR policy
+
+A weight PR is the highest **positive external weight in a valid completed working set**, compared against the historical maximum from **all earlier completed workouts** for the same stable variation ID and load convention. Repetitions and volume never override weight:
+
+- Previous 100 kg × 10, new 105 kg × 3: weight PR.
+- Equal 100 kg with more reps: no weight PR.
+- Lower weight with higher volume: no weight PR.
+- Several improving sets of one variation in one session: counted once, using the highest weight.
+- An initial positive load is labeled **First record**, separate from records beaten.
+
+Incomplete sets, discarded sessions, warm-ups, assistance-only values, and zero load are excluded from external-weight PRs. Active PR badges are provisional until the workout is saved. Unit changes use canonical kg. Comparisons ignore only machine-precision conversion noise (four double-precision units in the last place); unedited displayed weights keep their canonical precision.
+
+## Load and volume conventions
+
+Volume is **logged load × logged reps** for valid completed sets, including completed warm-ups, excluding assistance. No hidden multipliers are used. Total session weight moved is the sum of these logged external-load volumes; mixed conventions are labeled per exercise and are not a biomechanical estimate.
+
+- **Total load:** total external resistance entered.
+- **Per hand:** one dumbbell's load and reps; per-hand volume, never silently doubled.
+- **One side:** total external load used on the working side and reps for that side; never silently doubled.
+- **Added weight:** external load added to bodyweight. Zero is valid; unknown bodyweight contributes no invented volume.
+- **Assistance:** resistance offset supplied by a machine; excluded from external-weight PRs and weight moved.
+
+Weights must be finite and nonnegative. Completed sets require positive whole reps. kg/lb preferences change display and entry units while persistent loads stay in kg. Elapsed workout duration spans start to finish, including rests and time outside the app.
+
+## Verification
+
+Unit tests cover strict weight priority, ties and lower-weight volume, historical rather than recent maxima, duplicate variation counting, first records, warm-up/assistance exclusion, unit conversion, per-hand/one-side/bodyweight volume and timer restoration. Robolectric tests exercise actual Room persistence, snapshots, concurrent start/finalization, corrections/deletions and reopening a database file. Instrumented tests cover database persistence, durable DataStore timer transitions and the main Compose flow; their execution requires a suitable device.
+
+See [VERIFICATION.md](VERIFICATION.md) for v1.0.0 results: 52 host tests passed, lint passed with no errors, and both debug APKs were built. No device was connected for instrumented execution; the earlier emulator attempt lacked its acceleration driver and software emulation remained offline.
