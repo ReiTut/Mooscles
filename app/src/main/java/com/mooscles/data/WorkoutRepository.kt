@@ -1,6 +1,7 @@
 package com.mooscles.data
 
 import androidx.room.withTransaction
+import com.mooscles.domain.RestDuration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -12,7 +13,17 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         "exercises", "routines", "routine_exercises", "workouts", "workout_exercises", "workout_sets"
     ).map { snapshot() }
 
-    suspend fun initialize() = db.withTransaction { dao.seedExercises(ExerciseCatalog.exercises) }
+    suspend fun initialize() = db.withTransaction {
+        dao.seedExercises(ExerciseCatalog.exercises)
+        // Update configurable values only; completed workout snapshots stay unchanged.
+        dao.routineExercises().filter { (it.restSeconds ?: 0) > RestDuration.MAX_SECONDS }.forEach {
+            dao.updateRoutineExercise(it.copy(restSeconds = RestDuration.MAX_SECONDS))
+        }
+        val activeIds = dao.workouts().filter { it.status == WorkoutStatus.ACTIVE }.map { it.id }.toSet()
+        dao.workoutExercises().filter { it.workoutId in activeIds && it.restSeconds > RestDuration.MAX_SECONDS }.forEach {
+            dao.updateWorkoutExercise(it.copy(restSeconds = RestDuration.MAX_SECONDS))
+        }
+    }
 
     suspend fun snapshot(): AppData = db.withTransaction {
         AppData(dao.exercises(), dao.routines(), dao.routineExercises(), dao.workouts(), dao.workoutExercises(), dao.sets())
@@ -74,7 +85,7 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         require(item.plannedSets in 1..50) { "Planned sets must be between 1 and 50." }
         require(item.targetReps in 0..999) { "Target reps must be blank or between 1 and 999." }
         require(item.targetWeightKg == null || (item.targetWeightKg.isFinite() && item.targetWeightKg >= 0)) { "Enter a valid non-negative target weight." }
-        require(item.restSeconds == null || item.restSeconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(item.restSeconds == null || item.restSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         dao.updateRoutineExercise(item)
     }
 
@@ -118,19 +129,19 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
 
     /** Returning the existing active id makes double taps and process recreation idempotent. */
     suspend fun startEmpty(name: String = "Workout", defaultRestSeconds: Int = 90, now: Long = System.currentTimeMillis()): String = db.withTransaction {
-        require(defaultRestSeconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         dao.activeWorkout()?.id ?: Workout(name = checkedName(name), startedAt = now).also { dao.insertWorkout(it) }.id
     }
 
     suspend fun startRoutine(routineId: String, defaultRestSeconds: Int = 90, now: Long = System.currentTimeMillis()): String = db.withTransaction {
         dao.activeWorkout()?.let { return@withTransaction it.id }
-        require(defaultRestSeconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val routine = requireNotNull(dao.routine(routineId)) { "Routine not found." }
         val workout = Workout(name = routine.name, startedAt = now)
         dao.insertWorkout(workout)
         dao.routineItems(routineId).forEach { plan ->
             val exercise = requireNotNull(dao.exercise(plan.exerciseId)) { "Exercise not found." }
-            val entry = snapshotExercise(exercise, workout.id, plan.position, plan.restSeconds ?: defaultRestSeconds)
+            val entry = snapshotExercise(exercise, workout.id, plan.position, (plan.restSeconds ?: defaultRestSeconds).coerceAtMost(RestDuration.MAX_SECONDS))
             dao.insertWorkoutExercise(entry)
             repeat(plan.plannedSets) { position ->
                 dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = position,
@@ -148,11 +159,11 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
 
     suspend fun addWorkoutExercise(workoutId: String, exerciseId: String, defaultRestSeconds: Int = 90): String = db.withTransaction {
         requireNotNull(dao.workout(workoutId)) { "Workout not found." }
-        require(defaultRestSeconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val exercise = requireNotNull(dao.exercise(exerciseId)) { "Exercise not found." }
         val entry = snapshotExercise(exercise, workoutId, dao.workoutItems(workoutId).size, defaultRestSeconds)
         dao.insertWorkoutExercise(entry)
-        repeat(3) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = position,
+        repeat(2) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = position,
             assistance = exercise.convention == LoadConvention.ASSISTANCE)) }
         entry.id
     }
@@ -162,19 +173,19 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         val exercise = requireNotNull(dao.exercise(exerciseId)) { "Exercise not found." }
         dao.updateWorkoutExercise(snapshotExercise(exercise, old.workoutId, old.position, old.restSeconds).copy(id = old.id))
         dao.deleteExerciseSets(id)
-        repeat(3) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = id, position = position,
+        repeat(2) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = id, position = position,
             assistance = exercise.convention == LoadConvention.ASSISTANCE)) }
     }
 
     suspend fun updateWorkoutExercise(item: WorkoutExercise) = db.withTransaction {
         val existing = requireNotNull(dao.workoutExercise(item.id)) { "Workout exercise not found." }
         require(existing.workoutId == item.workoutId && existing.exerciseId == item.exerciseId) { "Exercise identity cannot change." }
-        require(item.restSeconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(item.restSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         dao.updateWorkoutExercise(item.copy(name = checkedName(item.name)))
     }
 
     suspend fun updateWorkoutExerciseRest(id: String, seconds: Int) = db.withTransaction {
-        require(seconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(seconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val item = requireNotNull(dao.workoutExercise(id)) { "Workout exercise not found." }
         dao.updateWorkoutExercise(item.copy(restSeconds = seconds))
     }
@@ -257,7 +268,8 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
 
     private fun snapshotExercise(exercise: Exercise, workoutId: String, position: Int, restSeconds: Int) = WorkoutExercise(
         workoutId = workoutId, exerciseId = exercise.id, name = exercise.name, muscle = exercise.muscle,
-        equipment = exercise.equipment, convention = exercise.convention, position = position, restSeconds = restSeconds
+        equipment = exercise.equipment, convention = exercise.convention, position = position,
+        restSeconds = restSeconds.coerceIn(0, RestDuration.MAX_SECONDS)
     )
 
     private fun <T> move(items: MutableList<T>, id: String, direction: Int, identity: (T) -> String) {

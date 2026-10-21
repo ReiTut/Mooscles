@@ -1,5 +1,7 @@
 package com.mooscles.timer
 
+import com.mooscles.domain.RestDuration
+
 /** Wall-clock deadline survives process death and includes time spent outside the app. */
 data class RestTimerState(
     val token: Long = 0, val exerciseName: String = "Rest timer", val durationMillis: Long = 90_000,
@@ -12,9 +14,19 @@ data class RestTimerState(
     fun pause(now: Long) = if (running && remaining(now) > 0)
         copy(deadline = 0, pausedMillis = remaining(now)) else this
     fun resume(now: Long) = if (paused) copy(deadline = now + pausedMillis, pausedMillis = 0) else this
+    /** Preserve elapsed/background time when normalizing timers saved by an earlier version. */
+    fun bounded(now: Long): RestTimerState = copy(
+        durationMillis = durationMillis.coerceIn(0, MAX_MILLIS),
+        pausedMillis = pausedMillis.coerceIn(0, MAX_MILLIS),
+        deadline = if (running && remaining(now) > MAX_MILLIS) now + MAX_MILLIS else deadline,
+    )
     fun adjust(deltaMillis: Long, now: Long): RestTimerState {
-        val remaining = (remaining(now) + deltaMillis).coerceAtLeast(0)
-        return if (running) copy(deadline = now + remaining)
-        else copy(pausedMillis = remaining, finished = if (remaining > 0) false else finished)
+        val safe = bounded(now)
+        val remaining = (safe.remaining(now).coerceIn(0, MAX_MILLIS) +
+            deltaMillis.coerceIn(-MAX_MILLIS, MAX_MILLIS)).coerceIn(0, MAX_MILLIS)
+        return if (safe.running) safe.copy(deadline = now + remaining)
+        else safe.copy(pausedMillis = remaining, finished = if (remaining > 0) false else safe.finished)
     }
+
+    companion object { const val MAX_MILLIS = RestDuration.MAX_SECONDS * 1000L }
 }

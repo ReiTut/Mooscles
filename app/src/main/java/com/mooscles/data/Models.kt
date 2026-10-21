@@ -25,7 +25,7 @@ enum class LoadConvention(val label: String, val explanation: String) {
     TOTAL_LOAD("Total load", "Log the total external load; volume = logged load × reps."),
     PER_HAND("Per hand", "Log one dumbbell's load and reps. Volume is per hand; it is never doubled."),
     ONE_SIDE("One side", "Log total external load used while working one side and reps for that side. Volume is per side; it is never doubled."),
-    BODYWEIGHT("Added weight", "Log added external weight only. Zero is valid; unknown bodyweight is excluded."),
+    BODYWEIGHT("Added weight", "Leave weight blank for bodyweight, or log added external weight. Bodyweight is excluded from weight moved."),
     ASSISTANCE("Assistance", "Log assistance separately. Assistance does not earn external-weight PRs or contribute to weight moved.")
 }
 
@@ -61,7 +61,7 @@ data class RoutineExercise(
     val routineId: String,
     val exerciseId: String,
     val position: Int = 0,
-    val plannedSets: Int = 3,
+    val plannedSets: Int = 2,
     val targetReps: Int = 0,
     val targetWeightKg: Double? = null,
     val restSeconds: Int? = null

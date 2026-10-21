@@ -7,6 +7,10 @@ import com.mooscles.timer.RestTimerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.sync.Mutex
+import com.mooscles.timer.RestTimerPersistence
+import com.mooscles.updates.UpdateManager
+import com.mooscles.updates.UpdatePolicy
 
 class MoosclesApplication : Application() {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -14,4 +18,9 @@ class MoosclesApplication : Application() {
     val repository by lazy { WorkoutRepository(database) }
     val preferences by lazy { AppPreferences(this) }
     val timer by lazy { RestTimerController(this, appScope) }
+    val trainingGate = Mutex()
+    val updates by lazy { UpdateManager(this, trainingGate, trainingBusy = {
+        repository.snapshot().activeWorkout != null || UpdatePolicy.restTimerBusy(
+            RestTimerPersistence(moosclesStore).snapshot(), System.currentTimeMillis())
+    }) }
 }

@@ -6,7 +6,7 @@ data class ExerciseUi(
     val convention: String = "External load as entered", val custom: Boolean = false,
 )
 data class PlannedExerciseUi(
-    val id: String, val exercise: ExerciseUi, val sets: Int = 3, val reps: Int = 0,
+    val id: String, val exercise: ExerciseUi, val sets: Int = 2, val reps: Int = 0,
     val weightKg: Double? = null, val restSeconds: Int = 90,
 )
 data class RoutineUi(val id: String, val name: String, val exercises: List<PlannedExerciseUi> = emptyList())
@@ -18,15 +18,23 @@ data class WorkoutExerciseUi(
     val id: String, val exercise: ExerciseUi, val sets: List<SetUi> = emptyList(),
     val restSeconds: Int = 90, val previous: String? = null,
     val provisionalRecordKg: Double? = null, val firstRecord: Boolean = false,
+    val records: List<RecordUi> = emptyList(),
 )
+enum class RecordKind { WEIGHT, REPS }
 data class RecordUi(
     val exercise: ExerciseUi, val weightKg: Double, val reps: Int,
     val previousKg: Double? = null, val workoutId: String = "", val date: Long = 0,
-)
+    val kind: RecordKind = RecordKind.WEIGHT, val previousReps: Int? = null, val assistance: Boolean = false,
+) {
+    val firstRecord get() = if (kind == RecordKind.WEIGHT) previousKg == null else previousReps == null
+    val label get() = if (kind == RecordKind.WEIGHT) "Weight PR" else "Reps PR"
+}
 data class WorkoutUi(
     val id: String, val name: String, val startedAt: Long, val endedAt: Long? = null,
     val exercises: List<WorkoutExerciseUi> = emptyList(), val records: List<RecordUi> = emptyList(),
 ) {
+    val prExerciseCount get() = records.filterNot { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
+    val firstRecordExerciseCount get() = records.filter { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
     val completedSets get() = exercises.sumOf { e -> e.sets.count { it.completed } }
     val completedExercises get() = exercises.count { e -> e.sets.any { it.completed } }
     val volumeKg get() = exercises.filter { it.exercise.convention != "Assistance" }.sumOf { e -> e.sets.filter { it.completed && !it.assistance }.sumOf { it.weightKg * it.reps } }
@@ -46,10 +54,11 @@ data class UiState(
     val active: WorkoutUi? = null, val records: List<RecordUi> = emptyList(),
     val timer: TimerUi = TimerUi(), val preferences: PreferencesUi = PreferencesUi(),
     val error: String? = null,
+    val updates: UpdateUi = UpdateUi(), val updateSettingsRequest: Long = 0,
 )
 
 /** All changes are persisted by the implementation. move* takes -1 or +1. */
-interface MoosclesActions {
+interface MoosclesActions : UpdateActions {
     fun clearError()
     fun createRoutine(name: String)
     fun renameRoutine(id: String, name: String)

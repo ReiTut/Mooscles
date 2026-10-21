@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.CoroutineScope
@@ -187,5 +188,63 @@ class RestTimerPersistenceTest {
         recreateStore()
         assertEquals(0L, persistence.snapshot().durationMillis)
         assertFalse(persistence.snapshot().running)
+    }
+
+    @Test
+    fun increasesAreCappedAtFiveMinutesAndSurviveProcessRecreation() = runBlocking {
+        persistence.start("Pull-up", 295)
+        assertEquals(300_000L, persistence.adjust(15).remaining(now))
+        repeat(5) { persistence.adjust(15) }
+        recreateStore()
+        assertEquals(300_000L, persistence.snapshot().remaining(now))
+        persistence.pause()
+        assertEquals(300_000L, persistence.adjust(Int.MAX_VALUE).remaining(now))
+        assertEquals(300_000L, persistence.resume().remaining(now))
+    }
+
+    @Test
+    fun invalidStartCannotReplaceSavedValidTimer() = runBlocking {
+        val original = persistence.start("Bench press", 120)
+        for (seconds in listOf(-1, 301, 360, Int.MAX_VALUE)) {
+            try {
+                persistence.start("Invalid", seconds)
+                fail("Accepted $seconds")
+            } catch (_: IllegalArgumentException) {
+                assertEquals(original, persistence.snapshot())
+            }
+        }
+    }
+
+    @Test
+    fun olderOversizedTimerIsDurablyNormalizedAndKeepsAlreadyElapsedTime() = runBlocking {
+        store.edit {
+            it[longPreferencesKey("timer_token")] = 17L
+            it[longPreferencesKey("timer_duration")] = 600_000L
+            it[longPreferencesKey("timer_deadline")] = now + 600_000L
+        }
+        val normalized = persistence.snapshot()
+        assertEquals(17L, normalized.token)
+        assertEquals(300_000L, normalized.durationMillis)
+        assertEquals(now + 300_000L, normalized.deadline)
+        now += 45_000
+        recreateStore()
+        assertEquals(255_000L, persistence.snapshot().remaining(now))
+        assertEquals(300_000L, store.data.first()[longPreferencesKey("timer_duration")])
+        val reset = persistence.reset()
+        assertEquals(300_000L, reset.remaining(now))
+    }
+
+    @Test
+    fun olderExpiredTimerCanStillCompleteAfterNormalization() = runBlocking {
+        store.edit {
+            it[longPreferencesKey("timer_token")] = 19L
+            it[longPreferencesKey("timer_duration")] = 600_000L
+            it[longPreferencesKey("timer_deadline")] = now - 10_000L
+        }
+        val restored = persistence.snapshot()
+        assertEquals(0L, restored.remaining(now))
+        assertEquals(300_000L, restored.durationMillis)
+        assertNotNull(persistence.claimCompletion(19L))
+        assertTrue(persistence.snapshot().finished)
     }
 }

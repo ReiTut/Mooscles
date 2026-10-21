@@ -27,7 +27,7 @@ fun HistoryScreen(state: UiState, actions: MoosclesActions, onDetail: (String) -
                 Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Metric(state.history.size.toString(), "Workouts")
                     Metric(state.history.sumOf { it.completedSets }.toString(), "Completed sets")
-                    Metric(state.history.sumOf { it.records.count { record -> record.previousKg != null } }.toString(), "Records beaten")
+                    Metric(state.history.sumOf { it.prExerciseCount }.toString(), "Exercise PRs")
                 }
             }
         }
@@ -53,9 +53,9 @@ private fun WorkoutHistoryCard(workout: WorkoutUi, pounds: Boolean, onClick: () 
                 Text(durationText(((workout.endedAt ?: workout.startedAt) - workout.startedAt) / 1000), style = MaterialTheme.typography.bodySmall)
             }
             Text(workout.exercises.filter { entry -> entry.sets.any { it.completed } }.take(3).joinToString(" · ") { it.exercise.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val beaten = workout.records.count { it.previousKg != null }
-            val first = workout.records.count { it.previousKg == null }
-            if (beaten + first > 0) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.tertiary); Text("$beaten weight PR${if (beaten != 1) "s" else ""} beaten${if (first > 0) " · $first first record${if (first > 1) "s" else ""}" else ""}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary) }
+            val beaten = workout.prExerciseCount
+            val first = workout.firstRecordExerciseCount
+            if (beaten + first > 0) Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.tertiary); Text("$beaten exercise${if (beaten != 1) "s" else ""} with PRs${if (first > 0) " · $first first record${if (first > 1) "s" else ""}" else ""}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary) }
         }
     }
 }
@@ -68,8 +68,8 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
     var rename by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
-    val beaten = workout.records.filter { it.previousKg != null }
-    val first = workout.records.filter { it.previousKg == null }
+    val beaten = workout.records.filterNot { it.firstRecord }
+    val first = workout.records.filter { it.firstRecord }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { PageHeading(if (editing) "Editing saved session" else if (summary) "Workout complete" else "Session breakdown", if (summary && !editing) "Strong work." else workout.name, if (summary && !editing) workout.name else null) }
         item {
@@ -81,7 +81,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Metric(workout.completedExercises.toString(), "Exercises")
                         Metric(workout.completedSets.toString(), "Sets")
-                        Metric(beaten.size.toString(), "Weight PRs beaten")
+                        Metric(workout.prExerciseCount.toString(), "Exercises with PRs")
                     }
                     Metric(weight(workout.volumeKg, state.preferences.pounds), "Total weight moved · logged load × reps")
                 }
@@ -91,7 +91,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionTitle("New milestones")
                 beaten.forEach { record -> RecordMilestone(record, state.preferences.pounds, false) }
-                if (first.isNotEmpty()) Text("${first.size} first positive-weight record${if (first.size != 1) "s" else ""} · separate from records beaten", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (first.isNotEmpty()) Text("${first.size} first record${if (first.size != 1) "s" else ""} · separate from records beaten", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 first.forEach { record -> RecordMilestone(record, state.preferences.pounds, true) }
             }
         }
@@ -111,7 +111,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
             }
         }
         if (editing) item { TextButton(onClick = { delete = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete this workout", color = MaterialTheme.colorScheme.error) } }
-        item { Text("Weight records compare completed working sets against all earlier completed sessions. Warm-ups and assistance are excluded. Higher reps or volume never override a heavier load.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text("Weight PRs reward a heavier working set. Reps PRs compare repetitions at the same external load, including bodyweight. Warm-ups and incomplete sets are excluded; assisted sets are tracked separately.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
     if (confirmEdit) AlertDialog(onDismissRequest = { confirmEdit = false }, title = { Text("Edit saved workout?") }, text = { Text("Changes save immediately and recalculate this exercise’s records across your history. Finish with Done editing when you’re ready.") }, confirmButton = { TextButton(onClick = { confirmEdit = false; editing = true }) { Text("Edit workout") } }, dismissButton = { TextButton(onClick = { confirmEdit = false }) { Text("Cancel") } })
     if (delete) ConfirmDialog("Delete this workout?", "This permanently removes this session and recalculates affected personal records.", onDismiss = { delete = false }, onConfirm = { actions.deleteWorkout(workout.id); onDeleted() })
@@ -126,9 +126,24 @@ private fun RecordMilestone(record: RecordUi, pounds: Boolean, first: Boolean) {
             Icon(if (first) Icons.Outlined.AutoAwesome else Icons.Outlined.EmojiEvents, null)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(record.exercise.name, style = MaterialTheme.typography.titleSmall)
-                Text(if (first) "First record · ${weight(record.weightKg, pounds)} × ${record.reps}" else "${weight(record.previousKg!!, pounds)} → ${weight(record.weightKg, pounds)} × ${record.reps}", style = MaterialTheme.typography.bodyMedium)
+                Text("${record.label}${if (first) " · First record" else ""}", style = MaterialTheme.typography.labelLarge)
+                Text(recordAchievementText(record, pounds), style = MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+}
+
+/** One description is shared by the session milestones and the per-exercise badges. */
+fun recordAchievementText(record: RecordUi, pounds: Boolean): String {
+    val load = when {
+        record.assistance -> "${weight(record.weightKg, pounds)} assistance"
+        record.weightKg == 0.0 -> "Bodyweight"
+        else -> weight(record.weightKg, pounds)
+    }
+    return if (record.kind == RecordKind.REPS) {
+        "${record.previousReps?.let { "$it → " } ?: ""}${record.reps} reps · $load"
+    } else {
+        "${record.previousKg?.let { "${weight(it, pounds)} → " } ?: ""}$load × ${record.reps}"
     }
 }
 
@@ -137,24 +152,25 @@ fun RecordsScreen(state: UiState, onExercise: (String) -> Unit) {
     var search by remember { mutableStateOf("") }
     val records = state.records.filter { search.isBlank() || it.exercise.name.contains(search.trim(), true) }.sortedBy { it.exercise.name }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { PageHeading("Proof of your progress", "Personal records", "The heaviest working set for each unique movement.") }
+        item { PageHeading("Proof of your progress", "Personal records", "Weight and repetition records for each unique movement and load.") }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.EmojiEvents, null)
-                    Text("Weight comes first.", style = MaterialTheme.typography.titleLarge)
-                    Text("105 kg × 3 beats 100 kg × 10. Equal weight with more reps is progress, but it doesn’t break a weight PR.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Every kind of progress.", style = MaterialTheme.typography.titleLarge)
+                    Text("105 kg × 3 beats 100 kg × 10 for a Weight PR. More reps at the same load earns a Reps PR, including bodyweight.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
         item { SearchField(search, { search = it }, "Find a movement’s record") }
-        if (records.isEmpty()) item { EmptyState(Icons.Outlined.EmojiEvents, if (search.isBlank()) "Your next milestone awaits" else "No matching records", "Complete positive-weight working sets to build your record book.") }
-        items(records, key = { it.exercise.id + it.exercise.convention }) { record ->
+        if (records.isEmpty()) item { EmptyState(Icons.Outlined.EmojiEvents, if (search.isBlank()) "Your next milestone awaits" else "No matching records", "Complete working sets to build your weight and repetition records.") }
+        items(records, key = { it.exercise.id + it.exercise.convention + it.kind.name + it.weightKg + it.assistance }) { record ->
             Card(onClick = { onExercise(record.exercise.id) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = RoundedCornerShape(22.dp)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) { Text(record.exercise.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f)); Icon(Icons.Outlined.ChevronRight, null) }
-                    Text("${weight(record.weightKg, state.preferences.pounds)}", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-                    Text("${record.reps} reps · ${record.exercise.convention} · ${dateText(record.date)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(record.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+                    Text(recordAchievementText(record, state.preferences.pounds), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                    Text("${record.exercise.convention} · ${dateText(record.date)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -173,7 +189,10 @@ fun ExerciseHistoryScreen(exercise: ExerciseUi, state: UiState, actions: Mooscle
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("PERSONAL BEST", style = MaterialTheme.typography.labelSmall)
-                    record.forEach { pr -> Text("${weight(pr.weightKg, state.preferences.pounds)} × ${pr.reps}", style = MaterialTheme.typography.headlineMedium) }
+                    record.forEach { pr ->
+                        Text(pr.label, style = MaterialTheme.typography.labelLarge)
+                        Text(recordAchievementText(pr, state.preferences.pounds), style = MaterialTheme.typography.titleLarge)
+                    }
                     Text("${sessions.size} recorded sessions", style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -187,7 +206,7 @@ fun ExerciseHistoryScreen(exercise: ExerciseUi, state: UiState, actions: Mooscle
                     Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(dateText(workout.startedAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary); Text(workout.name, style = MaterialTheme.typography.titleMedium) }; Icon(Icons.Outlined.ChevronRight, null) }
                     entries.forEach { entry ->
                         Text("Logged as ${entry.exercise.name} · ${entry.exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        entry.sets.filter { it.completed }.forEachIndexed { index, set -> CompletedSetRow(set, index, state.preferences.pounds) }
+                        entry.sets.filter { it.completed }.forEachIndexed { index, set -> CompletedSetRow(set, index, state.preferences.pounds, entry.exercise.convention == "Assistance") }
                     }
                     val volume = entries.filter { it.exercise.convention != "Assistance" }.sumOf { entry -> entry.sets.filter { it.completed && !it.assistance }.sumOf { it.weightKg * it.reps } }
                     Text("${weight(volume, state.preferences.pounds)} moved", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

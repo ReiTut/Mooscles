@@ -177,4 +177,187 @@ class WorkoutCalculationsTest {
         assertEquals(listOf("new", "old"), history.map { it.workout.id })
         assertTrue(WorkoutCalculations.performanceHistory(expanded, "other").isEmpty())
     }
+
+    @Test fun `bench weight and bodyweight pullup reps both earn records in one workout`() {
+        val oldBench = exercise("old")
+        val newBench = exercise("new")
+        val oldPullup = exercise("old", "pullup", LoadConvention.BODYWEIGHT)
+        val newPullup = exercise("new", "pullup", LoadConvention.BODYWEIGHT)
+        val data = AppData(workouts = listOf(workout("old", 100), workout("new", 200)),
+            workoutExercises = listOf(oldBench, newBench, oldPullup, newPullup),
+            sets = listOf(set(oldBench, 100.0, 10), set(newBench, 105.0, 3),
+                set(oldPullup, 0.0, 8), set(newPullup, 0.0, 12)))
+
+        val summary = WorkoutCalculations.summary(data, "new")!!
+        assertEquals(2, summary.prExerciseCount)
+        assertEquals("bench", summary.prs.single().exerciseId)
+        assertEquals(100.0, summary.prs.single().previousWeightKg!!, 0.0)
+        assertEquals(105.0, summary.prs.single().newWeightKg, 0.0)
+        val pullupPr = summary.repsPrs.single()
+        assertEquals("pullup", pullupPr.exerciseId)
+        assertEquals(8, pullupPr.previousReps)
+        assertEquals(12, pullupPr.newReps)
+        assertEquals(0.0, pullupPr.weightKg, 0.0)
+        assertEquals(315.0, summary.volumeKg, 0.0)
+        assertEquals(2, WorkoutCalculations.summary(data.copy(), "new")!!.prExerciseCount)
+        assertEquals("new", WorkoutCalculations.repsRecords(data).first { it.exerciseId == "pullup" }.workoutId)
+    }
+
+    @Test fun `one exercise can beat both types and multiple repetition loads while counting once`() {
+        val data = history(current = 105.0)
+        val old = data.workoutItems("old").single()
+        val new = data.workoutItems("new").single()
+        val expanded = data.copy(sets = data.sets + set(old, 80.0, 15) +
+            set(new, 100.0, 11) + set(new, 80.0, 16))
+        val summary = WorkoutCalculations.summary(expanded, "new")!!
+        assertEquals(1, summary.prs.size)
+        assertEquals(2, summary.repsPrs.size)
+        assertEquals(1, summary.prExerciseCount)
+        assertNotNull(summary.exercises.single().pr)
+        assertEquals(3, summary.exercises.single().repsPrs.size)
+    }
+
+    @Test fun `first bodyweight repetition record stays separate from records beaten`() {
+        val entry = exercise("first", "pullup", LoadConvention.BODYWEIGHT)
+        val data = AppData(workouts = listOf(workout("first", 100)), workoutExercises = listOf(entry),
+            sets = listOf(set(entry, 0.0, 12)))
+        val summary = WorkoutCalculations.summary(data, "first")!!
+        assertEquals(0, summary.prExerciseCount)
+        assertTrue(summary.prs.isEmpty())
+        assertTrue(summary.repsPrs.isEmpty())
+        assertTrue(summary.firstRecords.isEmpty())
+        assertEquals(1, summary.firstRecordExerciseCount)
+        assertNull(summary.firstRepsRecords.single().previousReps)
+        assertEquals(12, summary.firstRepsRecords.single().newReps)
+    }
+
+    @Test fun `weighted repetitions compare at the same external load only`() {
+        val comparable = WorkoutCalculations.repsPrsForWorkout(history(current = 100.0, currentReps = 11), "new").single()
+        assertFalse(comparable.firstRecord)
+        assertEquals(10, comparable.previousReps)
+        assertEquals(11, comparable.newReps)
+        assertTrue(WorkoutCalculations.repsPrsForWorkout(history(current = 100.0, currentReps = 10), "new").isEmpty())
+        val differentLoad = WorkoutCalculations.repsPrsForWorkout(history(current = 95.0, currentReps = 30), "new").single()
+        assertTrue(differentLoad.firstRecord)
+        assertNull(differentLoad.previousReps)
+        assertEquals(0, WorkoutCalculations.summary(history(current = 95.0, currentReps = 30), "new")!!.prExerciseCount)
+    }
+
+    @Test fun `assisted and unassisted repetition records stay separate at equal displayed load`() {
+        val old = exercise("old", "pullup", LoadConvention.BODYWEIGHT)
+        val new = exercise("new", "pullup", LoadConvention.BODYWEIGHT)
+        val data = AppData(workouts = listOf(workout("old", 100), workout("new", 200)),
+            workoutExercises = listOf(old, new), sets = listOf(set(old, 0.0, 8),
+                set(old, 0.0, 20, assistance = true), set(new, 0.0, 9), set(new, 0.0, 21, assistance = true)))
+        val summary = WorkoutCalculations.summary(data, "new")!!
+        assertEquals(2, summary.repsPrs.size)
+        assertEquals(8, summary.repsPrs.first { !it.assistance }.previousReps)
+        assertEquals(20, summary.repsPrs.first { it.assistance }.previousReps)
+        assertEquals(1, summary.prExerciseCount)
+        assertTrue(summary.prs.isEmpty())
+        assertEquals(2, WorkoutCalculations.repsRecords(data).size)
+
+        val withoutAssistedBaseline = data.copy(sets = data.sets.filterNot { it.workoutExerciseId == old.id && it.assistance })
+        assertTrue(WorkoutCalculations.repsPrsForWorkout(withoutAssistedBaseline, "new")
+            .first { it.assistance }.firstRecord)
+    }
+
+    @Test fun `assistance convention repetition records compare the same assistance setting`() {
+        val old = exercise("old", "assisted pullup", LoadConvention.ASSISTANCE)
+        val new = exercise("new", "assisted pullup", LoadConvention.ASSISTANCE)
+        val data = AppData(workouts = listOf(workout("old", 100), workout("new", 200)),
+            workoutExercises = listOf(old, new), sets = listOf(set(old, 30.0, 10),
+                set(new, 30.0, 12), set(new, 40.0, 20)))
+        val summary = WorkoutCalculations.summary(data, "new")!!
+        assertTrue(summary.repsPrs.single().assistance)
+        assertEquals(10, summary.repsPrs.single().previousReps)
+        assertEquals(30.0, summary.repsPrs.single().weightKg, 0.0)
+        assertTrue(summary.firstRepsRecords.single().assistance)
+        assertEquals(40.0, summary.firstRepsRecords.single().weightKg, 0.0)
+        assertTrue(WorkoutCalculations.records(data).isEmpty())
+        assertEquals(0.0, summary.volumeKg, 0.0)
+    }
+
+    @Test fun `incomplete warmup and invalid sets cannot establish or beat repetition records`() {
+        val data = history(current = 100.0, currentReps = 9)
+        val old = data.workoutItems("old").single()
+        val new = data.workoutItems("new").single()
+        val expanded = data.copy(sets = data.sets + set(old, 100.0, 90, warmup = true) +
+            set(new, 100.0, 20, warmup = true) + set(new, 100.0, 30, completed = false) +
+            set(new, Double.NaN, 40) + set(new, 100.0, 0))
+        assertTrue(WorkoutCalculations.repsPrsForWorkout(expanded, "new").isEmpty())
+        assertEquals(10, WorkoutCalculations.repsRecords(expanded).single().reps)
+    }
+
+    @Test fun `repetition load comparison tolerates unit round trips without merging genuine load differences`() {
+        val roundTrip = Math.nextUp(WeightUnits.lbToKg(WeightUnits.kgToLb(100.0)))
+        val equivalent = WorkoutCalculations.repsPrsForWorkout(history(current = roundTrip, currentReps = 11), "new").single()
+        assertFalse(equivalent.firstRecord)
+        assertEquals(10, equivalent.previousReps)
+        val distinct = WorkoutCalculations.repsPrsForWorkout(history(current = 100.0000001, currentReps = 11), "new").single()
+        assertTrue(distinct.firstRecord)
+    }
+
+    @Test fun `rep improvements from duplicate entries collapse to one load record`() {
+        val data = history(current = 100.0, currentReps = 11)
+        val duplicate = exercise("new", suffix = "again")
+        val expanded = data.copy(workoutExercises = data.workoutExercises + duplicate,
+            sets = data.sets + set(duplicate, 100.0, 14))
+        val summary = WorkoutCalculations.summary(expanded, "new")!!
+        assertEquals(14, summary.repsPrs.single().newReps)
+        assertEquals(1, summary.prExerciseCount)
+        assertEquals(14, WorkoutCalculations.repsRecords(expanded).single().reps)
+    }
+
+    @Test fun `repetition records remain independent between variations and load conventions`() {
+        val data = history(current = 100.0, currentReps = 11)
+        val variation = exercise("new", "incline bench")
+        val convention = exercise("new", "bench", LoadConvention.PER_HAND, "per hand")
+        val expanded = data.copy(workoutExercises = data.workoutExercises + variation + convention,
+            sets = data.sets + set(variation, 100.0, 30) + set(convention, 100.0, 40))
+        val summary = WorkoutCalculations.summary(expanded, "new")!!
+        assertEquals(1, summary.repsPrs.size)
+        assertEquals(2, summary.firstRepsRecords.size)
+        assertEquals(3, WorkoutCalculations.repsRecords(expanded).size)
+    }
+
+    @Test fun `historical repetition edits and deletions recompute later achievements`() {
+        val data = history(current = 100.0, currentReps = 11)
+        val oldSet = data.exerciseSets(data.workoutItems("old").single().id).single()
+        val edited = data.copy(sets = data.sets.map { if (it.id == oldSet.id) it.copy(reps = 12) else it })
+        assertTrue(WorkoutCalculations.summary(edited, "new")!!.repsPrs.isEmpty())
+        assertEquals("old", WorkoutCalculations.repsRecords(edited).single().workoutId)
+        val deleted = data.copy(workouts = data.workouts.filterNot { it.id == "old" })
+        assertTrue(WorkoutCalculations.repsPrsForWorkout(deleted, "new").single().firstRecord)
+        assertEquals(0, WorkoutCalculations.summary(deleted, "new")!!.prExerciseCount)
+    }
+
+    @Test fun `active repetition achievements stay provisional until finished`() {
+        val data = history(current = 100.0, currentReps = 11).let { original ->
+            original.copy(workouts = original.workouts.map {
+                if (it.id == "new") it.copy(status = WorkoutStatus.ACTIVE, endedAt = null) else it
+            })
+        }
+        assertEquals(11, WorkoutCalculations.repsPrsForWorkout(data, "new").single().newReps)
+        assertEquals(10, WorkoutCalculations.repsRecords(data).single().reps)
+    }
+
+    @Test fun `blank weight canonical zero supports rep records for any unassisted exercise`() {
+        val summary = WorkoutCalculations.summary(history(previous = 0.0, current = 0.0, currentReps = 11), "new")!!
+        assertEquals(11, summary.repsPrs.single().newReps)
+        assertEquals(10, summary.repsPrs.single().previousReps)
+        assertEquals(1, summary.prExerciseCount)
+        assertTrue(summary.prs.isEmpty())
+        assertTrue(summary.firstRecords.isEmpty())
+        assertEquals(0.0, summary.volumeKg, 0.0)
+    }
+
+    @Test fun `rep baseline uses the historical maximum rather than the most recent workout`() {
+        val data = history(current = 100.0, currentReps = 9)
+        val recent = exercise("recent")
+        val expanded = data.copy(workouts = data.workouts + workout("recent", 150),
+            workoutExercises = data.workoutExercises + recent, sets = data.sets + set(recent, 100.0, 5))
+        assertTrue(WorkoutCalculations.summary(expanded, "new")!!.repsPrs.isEmpty())
+        assertEquals(10, WorkoutCalculations.repsRecords(expanded).single().reps)
+    }
 }

@@ -24,7 +24,7 @@ class RoutineEditorHostTest {
 
     @Test
     fun editsSaveImmediatelyWhileBlankRepsAndInvalidSiblingRemainEditable() {
-        val plan = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "CHEST", "BARBELL"), reps = 0)
+        val plan = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "CHEST", "BARBELL"), sets = 3, reps = 0)
         val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(plan)))
         val saves = mutableListOf<SavedPlan>()
         val events = mutableListOf<String>()

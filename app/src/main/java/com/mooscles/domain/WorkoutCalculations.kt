@@ -25,6 +25,18 @@ data class WeightPr(
     val firstRecord: Boolean
 )
 
+data class RepsPr(
+    val exerciseId: String,
+    val exerciseName: String,
+    val convention: LoadConvention,
+    /** External load, or the assistance setting when [assistance] is true. */
+    val weightKg: Double,
+    val assistance: Boolean,
+    val previousReps: Int?,
+    val newReps: Int,
+    val firstRecord: Boolean
+)
+
 data class ExerciseRecord(
     val exerciseId: String,
     val exerciseName: String,
@@ -35,11 +47,23 @@ data class ExerciseRecord(
     val achievedAt: Long
 )
 
+data class ExerciseRepsRecord(
+    val exerciseId: String,
+    val exerciseName: String,
+    val convention: LoadConvention,
+    val weightKg: Double,
+    val assistance: Boolean,
+    val reps: Int,
+    val workoutId: String,
+    val achievedAt: Long
+)
+
 data class ExerciseSummary(
     val exercise: WorkoutExercise,
     val completedSets: List<WorkoutSet>,
     val volumeKg: Double,
-    val pr: WeightPr?
+    val pr: WeightPr?,
+    val repsPrs: List<RepsPr> = emptyList()
 )
 
 data class WorkoutSummary(
@@ -51,8 +75,17 @@ data class WorkoutSummary(
     /** Records beaten; initial positive records are deliberately separate. */
     val prs: List<WeightPr>,
     val firstRecords: List<WeightPr>,
-    val durationMillis: Long
-)
+    val durationMillis: Long,
+    val repsPrs: List<RepsPr> = emptyList(),
+    val firstRepsRecords: List<RepsPr> = emptyList()
+) {
+    /** One exercise can beat multiple load-specific repetition records and a weight record. */
+    val prExerciseCount: Int get() = (prs.map { it.exerciseId to it.convention } +
+        repsPrs.map { it.exerciseId to it.convention }).distinct().size
+
+    val firstRecordExerciseCount: Int get() = (firstRecords.map { it.exerciseId to it.convention } +
+        firstRepsRecords.map { it.exerciseId to it.convention }).distinct().size
+}
 
 data class ExercisePerformance(
     val workout: Workout,
@@ -76,16 +109,46 @@ object WorkoutCalculations {
         validCompleted(set) && !set.warmup && !set.assistance &&
             convention != LoadConvention.ASSISTANCE && set.weightKg > 0.0
 
+    private fun repetitionSet(set: WorkoutSet): Boolean = validCompleted(set) && !set.warmup
+
     // Ignore only binary floating-point round-trip noise, not a fixed decimal load increment.
     private fun heavier(value: Double, baseline: Double): Boolean = value > baseline &&
         value - baseline > maxOf(Math.ulp(value), Math.ulp(baseline)) * 4
 
+    private fun sameLoad(first: Double, second: Double): Boolean =
+        kotlin.math.abs(first - second) <= maxOf(Math.ulp(first), Math.ulp(second)) * 4
+
     private data class Key(val exerciseId: String, val convention: LoadConvention)
+
+    private data class RepsCandidate(val exercise: WorkoutExercise, val set: WorkoutSet) {
+        val assistance get() = set.assistance || exercise.convention == LoadConvention.ASSISTANCE
+        val key get() = Key(exercise.exerciseId, exercise.convention)
+    }
+
+    private fun comparable(first: RepsCandidate, second: RepsCandidate): Boolean =
+        first.key == second.key && first.assistance == second.assistance &&
+            sameLoad(first.set.weightKg, second.set.weightKg)
+
+    private fun bestRepetitionSets(data: AppData, entries: List<WorkoutExercise>): List<RepsCandidate> {
+        val best = mutableListOf<RepsCandidate>()
+        entries.forEach { exercise ->
+            data.exerciseSets(exercise.id).filter(::repetitionSet).forEach { set ->
+                val candidate = RepsCandidate(exercise, set)
+                val index = best.indexOfFirst { comparable(it, candidate) }
+                if (index < 0) best += candidate
+                else if (set.reps > best[index].set.reps) best[index] = candidate
+            }
+        }
+        return best
+    }
+
+    private fun earlierWorkoutIds(data: AppData, target: Workout): Set<String> = data.workouts.filter {
+        it.status == WorkoutStatus.FINISHED && it.id != target.id && chronology.compare(it, target) < 0
+    }.map { it.id }.toSet()
 
     fun prsForWorkout(data: AppData, workoutId: String): List<WeightPr> {
         val target = data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
-        val earlier = data.workouts.filter { it.status == WorkoutStatus.FINISHED &&
-            it.id != target.id && chronology.compare(it, target) < 0 }.map { it.id }.toSet()
+        val earlier = earlierWorkoutIds(data, target)
         val baseline = mutableMapOf<Key, Double>()
         data.workoutExercises.filter { it.workoutId in earlier }.forEach { exercise ->
             val best = data.exerciseSets(exercise.id).filter { workingSet(it, exercise.convention) }.maxOfOrNull { it.weightKg }
@@ -103,18 +166,34 @@ object WorkoutCalculations {
         }
     }
 
+    /** Repetition records are independent for each variation, assistance mode, and external load. */
+    fun repsPrsForWorkout(data: AppData, workoutId: String): List<RepsPr> {
+        val target = data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
+        val earlier = earlierWorkoutIds(data, target)
+        val baseline = bestRepetitionSets(data, data.workoutExercises.filter { it.workoutId in earlier })
+        return bestRepetitionSets(data, data.workoutItems(workoutId)).mapNotNull { candidate ->
+            val previous = baseline.firstOrNull { comparable(it, candidate) }?.set?.reps
+            if (previous != null && candidate.set.reps <= previous) return@mapNotNull null
+            RepsPr(candidate.exercise.exerciseId, candidate.exercise.name, candidate.exercise.convention,
+                candidate.set.weightKg, candidate.assistance, previous, candidate.set.reps, previous == null)
+        }
+    }
+
     fun summary(data: AppData, workoutId: String, now: Long = System.currentTimeMillis()): WorkoutSummary? {
         val workout = data.workouts.firstOrNull { it.id == workoutId } ?: return null
         val records = prsForWorkout(data, workoutId)
+        val repetitions = repsPrsForWorkout(data, workoutId)
         val exercises = data.workoutItems(workoutId).map { exercise ->
             val completed = data.exerciseSets(exercise.id).filter(::validCompleted)
             ExerciseSummary(exercise, completed, completed.sumOf { volume(it, exercise.convention) },
-                records.firstOrNull { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention })
+                records.firstOrNull { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention },
+                repetitions.filter { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention })
         }
         return WorkoutSummary(
             workout, exercises, exercises.count { it.completedSets.isNotEmpty() }, exercises.sumOf { it.completedSets.size },
             exercises.sumOf { it.volumeKg }, records.filterNot { it.firstRecord }, records.filter { it.firstRecord },
-            ((workout.endedAt ?: now) - workout.startedAt).coerceAtLeast(0L)
+            ((workout.endedAt ?: now) - workout.startedAt).coerceAtLeast(0L),
+            repetitions.filterNot { it.firstRecord }, repetitions.filter { it.firstRecord }
         )
     }
 
@@ -135,6 +214,25 @@ object WorkoutCalculations {
             }
         }
         return result.values.sortedWith(compareBy<ExerciseRecord> { it.exerciseName }.thenBy { it.convention.name })
+    }
+
+    fun repsRecords(data: AppData): List<ExerciseRepsRecord> {
+        val result = mutableListOf<ExerciseRepsRecord>()
+        data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology).forEach { workout ->
+            bestRepetitionSets(data, data.workoutItems(workout.id)).forEach { candidate ->
+                val index = result.indexOfFirst { it.exerciseId == candidate.exercise.exerciseId &&
+                    it.convention == candidate.exercise.convention && it.assistance == candidate.assistance &&
+                    sameLoad(it.weightKg, candidate.set.weightKg) }
+                if (index < 0 || candidate.set.reps > result[index].reps) {
+                    val record = ExerciseRepsRecord(candidate.exercise.exerciseId, candidate.exercise.name,
+                        candidate.exercise.convention, candidate.set.weightKg, candidate.assistance,
+                        candidate.set.reps, workout.id, workout.endedAt ?: workout.startedAt)
+                    if (index < 0) result += record else result[index] = record
+                }
+            }
+        }
+        return result.sortedWith(compareBy<ExerciseRepsRecord> { it.exerciseName }.thenBy { it.convention.name }
+            .thenBy { it.assistance }.thenBy { it.weightKg })
     }
 
     fun performanceHistory(data: AppData, exerciseId: String, convention: LoadConvention? = null): List<ExercisePerformance> {

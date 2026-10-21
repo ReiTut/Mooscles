@@ -1,12 +1,14 @@
 # Mooscles
 
-A native, local-only Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. No account, backend, Internet permission, subscriptions, analytics, or runtime network calls.
+A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. Network requests only discover and download public GitHub app updates; no workout data is uploaded. No account, subscriptions or analytics.
 
 ## Download
 
-[v1.0.0 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.0.0) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.0.0/Mooscles-v1.0.0-debug.apk)
+The current release is **1.1.0**, version code **5**, with the same application ID and existing debug certificate.
 
-This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.0.0` and version code `3`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
+[v1.1.0 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.1.0) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.1.0/Mooscles-v1.1.0-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.1.0/update.json)
+
+This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.1.0` and version code `5`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Install this APK once to enable future in-app updates, then enable **Settings → App updates → Include prereleases** to receive debug releases. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
 
 ## Use
 
@@ -17,6 +19,8 @@ Start a routine or an empty session. Log decimal loads and reps, mark working/wa
 The offline catalog contains **277** established exercise variations across barbell, dumbbell, kettlebell, cable, bodyweight, Smith, selectorized and plate-loaded machines. Equipment, movement variation, and logging convention keep distinct records.
 
 ## Build
+
+Version 1.1.0 adds **Settings → App updates** with foreground checks, approximately six-hour background checks, stable/prerelease channels, Wi-Fi download preferences, progress, retries, and Android installation approval. Installation waits for saved workouts and stopped rest timers. Install this updater-enabled APK once on older versions to enable future updates. See [UPDATES.md](UPDATES.md) for the required APK + `update.json` release assets and publishing procedure.
 
 Toolchain: AGP 8.7.3, Gradle wrapper 8.14.5, Kotlin/Compose compiler 2.1.20, KSP 2.1.20-1.0.32, Compose BOM 2025.04.01, Room 2.7.2; Java bytecode 17, JDK 21 used for builds. Compile/target API 35, build-tools 35.0.0.
 
@@ -63,6 +67,14 @@ A weight PR is the highest **positive external weight in a valid completed worki
 
 Incomplete sets, discarded sessions, warm-ups, assistance-only values, and zero load are excluded from external-weight PRs. Active PR badges are provisional until the workout is saved. Unit changes use canonical kg. Comparisons ignore only machine-precision conversion noise (four double-precision units in the last place); unedited displayed weights keep their canonical precision.
 
+Repetition PRs compare completed working sets at the same canonical external load. Blank weight is zero added load and qualifies for bodyweight repetition records. Assisted sets compare only with the same variation, assistance mode, and assistance amount. The first record at a load is labeled separately from a record beaten. Every exercise can display both Weight PR and Reps PR badges; a workout counts each variation with records beaten once, even if it earns both types or improves several load-specific repetition records. Editing earlier history recalculates all affected records.
+
+## Set entry and rest
+
+New routine exercises and newly added or replaced workout exercises start with two sets. Explicit saved set counts and completed history are preserved. Repetition fields start blank and require positive whole reps before completion. Blank workout weight stays blank and saves as zero external load; history describes it as Bodyweight without estimating body mass or adding it to volume.
+
+All rest editors use a numeric `M:SS` mask with a permanent colon and a maximum of `5:00`. Typing `2`, `3`, `0` produces `2:30`; `2`, `0`, `3` produces `2:03`. Invalid seconds and over-limit input are rejected without replacing the last valid saved value. Timer adjustment buttons and persistence apply the same five-minute bound. Existing routine, preference, and active-workout rest settings above the maximum normalize to `5:00`; completed workout snapshots retain their original rest durations. The workout timer sits in a compact bottom dock outside the exercise list and above the app navigation, with separate keyboard inset handling.
+
 ## Load and volume conventions
 
 Volume is **logged load × logged reps** for valid completed sets, including completed warm-ups, excluding assistance. No hidden multipliers are used. Total session weight moved is the sum of these logged external-load volumes; mixed conventions are labeled per exercise and are not a biomechanical estimate.
@@ -70,7 +82,7 @@ Volume is **logged load × logged reps** for valid completed sets, including com
 - **Total load:** total external resistance entered.
 - **Per hand:** one dumbbell's load and reps; per-hand volume, never silently doubled.
 - **One side:** total external load used on the working side and reps for that side; never silently doubled.
-- **Added weight:** external load added to bodyweight. Zero is valid; unknown bodyweight contributes no invented volume.
+- **Added weight:** external load added to bodyweight. Leave weight blank for bodyweight; unknown bodyweight contributes no invented volume.
 - **Assistance:** resistance offset supplied by a machine; excluded from external-weight PRs and weight moved.
 
 Weights must be finite and nonnegative. Completed sets require positive whole reps. kg/lb preferences change display and entry units while persistent loads stay in kg. Elapsed workout duration spans start to finish, including rests and time outside the app.
@@ -79,4 +91,4 @@ Weights must be finite and nonnegative. Completed sets require positive whole re
 
 Unit tests cover strict weight priority, ties and lower-weight volume, historical rather than recent maxima, duplicate variation counting, first records, warm-up/assistance exclusion, unit conversion, per-hand/one-side/bodyweight volume and timer restoration. Robolectric tests exercise actual Room persistence, snapshots, concurrent start/finalization, corrections/deletions and reopening a database file. Instrumented tests cover database persistence, durable DataStore timer transitions and the main Compose flow; their execution requires a suitable device.
 
-See [VERIFICATION.md](VERIFICATION.md) for v1.0.0 results: 52 host tests passed, lint passed with no errors, and both debug APKs were built. No device was connected for instrumented execution; the earlier emulator attempt lacked its acceleration driver and software emulation remained offline.
+See [VERIFICATION.md](VERIFICATION.md) for the current build results and APK details. Device instrumentation requires a connected Android device or usable emulator; host tests cover persistence, input behavior, PR summaries, and the pinned timer layout.

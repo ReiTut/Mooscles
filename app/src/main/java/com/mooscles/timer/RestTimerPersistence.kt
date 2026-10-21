@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.mooscles.domain.RestDuration
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -27,13 +28,16 @@ class RestTimerPersistence(
         p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false
     )
 
-    val states = store.data.map(::decode).distinctUntilChanged()
+    val states = store.data.map { preferences ->
+        val saved = decode(preferences)
+        if (saved.bounded(now()) != saved) update { it } else saved
+    }.distinctUntilChanged()
     suspend fun snapshot(): RestTimerState = states.first()
 
     private suspend fun update(transform: (RestTimerState) -> RestTimerState): RestTimerState {
         var updated = RestTimerState()
         store.edit { preferences ->
-            updated = transform(decode(preferences))
+            updated = transform(decode(preferences).bounded(now())).bounded(now())
             preferences[tokenKey] = updated.token
             preferences[nameKey] = updated.exerciseName
             preferences[durationKey] = updated.durationMillis
@@ -46,7 +50,7 @@ class RestTimerPersistence(
 
     /** Completing another set replaces the timer and invalidates every previous completion token. */
     suspend fun start(name: String, seconds: Int): RestTimerState {
-        require(seconds in 0..3600) { "Rest must be between 0 and 3600 seconds." }
+        require(seconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         return update { previous ->
             val currentTime = now()
             RestTimerState(

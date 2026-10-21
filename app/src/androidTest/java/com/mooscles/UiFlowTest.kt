@@ -66,9 +66,9 @@ class UiFlowTest {
             app.timer.state.value.let { it.running && it.durationMillis == 105_000L }
         }
         assertEquals(105_000L, app.timer.state.value.durationMillis)
-        compose.onNodeWithTag("active-workout-list").performScrollToIndex(2)
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Breathe. Your next set is coming.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Breathe. Your next set is coming.").assertIsDisplayed()
+        compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Pause rest timer").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("finish-workout"))
         compose.onNodeWithTag("finish-workout").performClick()
         compose.onNodeWithText("Finish & save").performClick()

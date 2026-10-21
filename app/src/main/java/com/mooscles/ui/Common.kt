@@ -15,7 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,30 +62,37 @@ private fun trainingFieldColors() = TextFieldDefaults.colors(
 fun RestDurationField(
     seconds: Int, onSecondsChange: (Int) -> Unit, modifier: Modifier = Modifier,
     label: String = "Rest duration", testTag: String = "rest-duration",
-    help: String = "Minutes:seconds · e.g. 2:00",
+    help: String = "Minutes, then seconds · maximum 5:00",
 ) {
-    var text by rememberSaveable(testTag) { mutableStateOf(RestDuration.format(seconds)) }
-    var lastEmitted by rememberSaveable(testTag) { mutableIntStateOf(seconds) }
+    val initial = RestDuration.editor(seconds)
+    var value by rememberSaveable(testTag, stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initial.text, TextRange(0, 4)))
+    }
+    var lastEmitted by rememberSaveable(testTag) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
     var focused by remember(testTag) { mutableStateOf(false) }
+    var rejected by remember(testTag) { mutableStateOf(false) }
     LaunchedEffect(seconds) {
-        if (!focused && RestDuration.parse(text) != seconds) {
-            text = RestDuration.format(seconds)
-            lastEmitted = seconds
+        if (!focused && RestDuration.parse(value.text) != seconds.coerceIn(0, RestDuration.MAX_SECONDS)) {
+            value = TextFieldValue(RestDuration.editor(seconds).text, TextRange(0, 4))
+            lastEmitted = seconds.coerceIn(0, RestDuration.MAX_SECONDS)
         }
     }
-    val parsed = RestDuration.parse(text)
-    TextField(text, { next ->
-        text = next
-        RestDuration.parse(next)?.let { duration ->
+    TextField(value, { next ->
+        val previous = RestDuration.EditorValue(value.text, value.selection.start, value.selection.end)
+        val edited = RestDuration.edit(previous,
+            RestDuration.EditorValue(next.text, next.selection.start, next.selection.end))
+        rejected = next.text != value.text && edited == previous
+        value = TextFieldValue(edited.text, TextRange(edited.selectionStart, edited.selectionEnd))
+        RestDuration.parse(edited.text)?.let { duration ->
             if (duration != lastEmitted) { lastEmitted = duration; onSecondsChange(duration) }
         }
     }, label = { Text(label) }, suffix = { Text("min") }, singleLine = true,
         modifier = modifier.testTag(testTag).onFocusChanged {
+            if (it.isFocused && !focused) value = value.copy(selection = TextRange(0, 4))
             focused = it.isFocused
-            if (!it.isFocused) RestDuration.parse(text)?.let { duration -> text = RestDuration.format(duration) }
-        }, shape = RoundedCornerShape(14.dp), isError = parsed == null,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-        supportingText = { Text(if (parsed == null) "Enter minutes:seconds, from 0:00 to 60:00." else help) },
+        }, shape = RoundedCornerShape(14.dp), isError = rejected,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        supportingText = { Text(if (rejected) "Use 0:00 to 5:00, with seconds from 00 to 59." else help) },
         colors = trainingFieldColors())
 }
 
@@ -158,24 +168,40 @@ fun OrderButtons(upEnabled: Boolean, downEnabled: Boolean, onMove: (Int) -> Unit
 @Composable
 fun TimerPanel(timer: TimerUi, actions: MoosclesActions, defaultSeconds: Int, compact: Boolean = false) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), shape = RoundedCornerShape(22.dp)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = if (compact) 10.dp else 16.dp,
+            vertical = if (compact) 6.dp else 16.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 9.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Timer, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(if (timer.finished) "Rest complete" else timer.exerciseName, style = MaterialTheme.typography.titleSmall)
-                    Text(if (timer.running) "Breathe. Your next set is coming." else if (timer.paused) "Timer paused" else "Ready when you are", style = MaterialTheme.typography.labelSmall)
+                    Text(if (timer.finished) "Rest complete" else timer.exerciseName, style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!compact) Text(if (timer.running) "Breathe. Your next set is coming." else if (timer.paused) "Timer paused" else "Ready when you are", style = MaterialTheme.typography.labelSmall)
                 }
                 Text("${restClock(timer.remainingSeconds)} min", style = MaterialTheme.typography.headlineSmall)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { actions.adjustTimer(-15) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(4.dp)) { Text("−0:15") }
-                if (timer.running) FilledTonalButton(onClick = actions::pauseTimer, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.Pause, null, Modifier.size(18.dp)); Text("Pause") }
+                TextButton(onClick = { actions.adjustTimer(-15) }, enabled = timer.remainingSeconds > 0,
+                    modifier = Modifier.weight(1f), contentPadding = PaddingValues(2.dp)) { Text("−0:15", maxLines = 1) }
+                if (compact) {
+                    val toggle = if (timer.running) actions::pauseTimer else if (timer.paused) actions::resumeTimer
+                        else { { actions.startTimer(timer.exerciseName, (if (timer.exerciseName == "Rest timer") defaultSeconds else timer.durationSeconds).coerceIn(0, RestDuration.MAX_SECONDS)) } }
+                    FilledTonalIconButton(onClick = toggle, modifier = Modifier.weight(1f)) {
+                        Icon(if (timer.running) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                            if (timer.running) "Pause rest timer" else if (timer.paused) "Resume rest timer" else "Start rest timer")
+                    }
+                }
+                else if (timer.running) FilledTonalButton(onClick = actions::pauseTimer, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.Pause, "Pause rest timer", Modifier.size(18.dp)); Text("Pause") }
                 else if (timer.paused) FilledTonalButton(onClick = actions::resumeTimer, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.PlayArrow, null, Modifier.size(18.dp)); Text("Resume") }
-                else FilledTonalButton(onClick = { actions.startTimer(timer.exerciseName, if (timer.exerciseName == "Rest timer") defaultSeconds else timer.durationSeconds) }, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.PlayArrow, null, Modifier.size(18.dp)); Text("Start") }
-                TextButton(onClick = { actions.adjustTimer(15) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(4.dp)) { Text("+0:15") }
+                else FilledTonalButton(onClick = { actions.startTimer(timer.exerciseName, (if (timer.exerciseName == "Rest timer") defaultSeconds else timer.durationSeconds).coerceIn(0, RestDuration.MAX_SECONDS)) }, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.PlayArrow, null, Modifier.size(18.dp)); Text("Start") }
+                TextButton(onClick = { actions.adjustTimer(15) }, enabled = timer.remainingSeconds < RestDuration.MAX_SECONDS,
+                    modifier = Modifier.weight(1f), contentPadding = PaddingValues(2.dp)) { Text("+0:15", maxLines = 1) }
+                if (compact) {
+                    IconButton(onClick = actions::resetTimer, modifier = Modifier.weight(1f)) { Icon(Icons.Outlined.RestartAlt, "Reset rest timer") }
+                    IconButton(onClick = actions::skipTimer, modifier = Modifier.weight(1f)) { Icon(Icons.Outlined.SkipNext, "Skip rest timer") }
+                }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            if (!compact) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = actions::resetTimer) { Icon(Icons.Outlined.RestartAlt, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Reset") }
                 TextButton(onClick = actions::skipTimer) { Text("Skip rest"); Spacer(Modifier.width(4.dp)); Icon(Icons.Outlined.SkipNext, null, Modifier.size(18.dp)) }
             }

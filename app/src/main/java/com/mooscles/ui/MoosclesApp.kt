@@ -28,6 +28,9 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route ?: "routines"
+        LaunchedEffect(state.updateSettingsRequest) {
+            if (state.updateSettingsRequest > 0) nav.navigate("settings") { launchSingleTop = true }
+        }
         val snack = remember { SnackbarHostState() }
         LaunchedEffect(state.error) { state.error?.let { snack.showSnackbar(it); actions.clearError() } }
         Scaffold(
@@ -47,7 +50,7 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
             }, snackbarHost = { SnackbarHost(snack) },
         ) { padding ->
             if (state.loading) Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            else NavHost(nav, startDestination = "routines", modifier = Modifier.padding(padding).fillMaxSize()) {
+            else NavHost(nav, startDestination = "routines", modifier = Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
                 composable("routines") { RoutinesScreen(state, actions, onEdit = { nav.navigate("routine/$it") }, onWorkout = { nav.navigate("workout") }) }
                 composable("routine/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { page ->
                     val routine = state.routines.find { it.id == page.arguments?.getString("id") }
@@ -82,6 +85,7 @@ fun SettingsScreen(state: UiState, actions: MoosclesActions) {
     val prefs = state.preferences
     androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item { PageHeading("Make it yours", "Settings", "Your training, your preferences. Stored on this device.") }
+        item { UpdateSection(state.updates, actions) }
         item {
             Card {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -122,7 +126,7 @@ fun SettingsScreen(state: UiState, actions: MoosclesActions) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.Lock, null, tint = MaterialTheme.colorScheme.primary)
                 Text("Just you and your progress", style = MaterialTheme.typography.titleMedium)
-                Text("Your routines, workout history, and records stay on this device. No account or connection required. Workout data is excluded from automatic cloud backups.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Your routines, workout history, and records stay on this device. Training works offline. Connections are used only to check and download app updates from GitHub; workout data is never uploaded. Workout data is excluded from automatic cloud backups.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item { TimerPanel(state.timer, actions, prefs.defaultRestSeconds) }

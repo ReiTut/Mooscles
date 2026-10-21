@@ -100,7 +100,7 @@ class RoomPersistenceTest {
         assertEquals(persisted.copy(restSeconds = 150), repo.snapshot().workoutItems(workout).single())
         assertEquals(120, repo.snapshot().routineItems(routine).single().restSeconds)
 
-        for (invalid in listOf(-1, 3601)) {
+        for (invalid in listOf(-1, 301, 3601)) {
             try {
                 repo.updateWorkoutExerciseRest(entry.id, invalid)
                 fail("Out-of-range rest duration should be rejected")
@@ -192,5 +192,103 @@ class RoomPersistenceTest {
             disk.close()
             context.deleteDatabase(filename)
         }
+    }
+
+    @Test fun everyCreationPathDefaultsToTwoSetsWithoutChangingExplicitPlans() = runBlocking {
+        val movements = repo.snapshot().exercises.take(2)
+        val routine = repo.createRoutine("Two by default")
+        val planId = repo.addRoutineExercise(routine, movements[0].id)
+        assertEquals(2, repo.snapshot().routineItems(routine).single().plannedSets)
+        val workout = repo.startRoutine(routine, now = 1000)
+        val routineEntry = repo.snapshot().workoutItems(workout).single()
+        assertEquals(2, repo.snapshot().exerciseSets(routineEntry.id).size)
+        val added = repo.addWorkoutExercise(workout, movements[1].id)
+        assertEquals(2, repo.snapshot().exerciseSets(added).size)
+        repo.addSet(added)
+        assertEquals(3, repo.snapshot().exerciseSets(added).size)
+        repo.removeSet(repo.snapshot().exerciseSets(added).last().id)
+        assertEquals(2, repo.snapshot().exerciseSets(added).size)
+        repo.replaceWorkoutExercise(added, movements[0].id)
+        assertEquals(2, repo.snapshot().exerciseSets(added).size)
+        repo.updateSet(repo.snapshot().exerciseSets(routineEntry.id).first().copy(reps = 8, completed = true))
+        repo.finishWorkout(workout, now = 2000)
+        val plan = repo.snapshot().routineExercises.first { it.id == planId }
+        repo.updateRoutineExercise(plan.copy(plannedSets = 5))
+        repo.replaceRoutineExercise(planId, movements[1].id)
+        val duplicate = repo.duplicateRoutine(routine)
+        repo.initialize()
+        assertEquals(5, repo.snapshot().routineItems(routine).single().plannedSets)
+        assertEquals(5, repo.snapshot().routineItems(duplicate).single().plannedSets)
+        val next = repo.startRoutine(duplicate, now = 3000)
+        assertEquals(5, repo.snapshot().exerciseSets(repo.snapshot().workoutItems(next).single().id).size)
+        assertEquals(2, repo.snapshot().exerciseSets(routineEntry.id).size)
+    }
+
+    @Test fun legacyRestNormalizationPreservesCompletedHistoryAndCustomSetCounts() = runBlocking {
+        val exerciseId = repo.snapshot().exercises.first().id
+        val routine = repo.createRoutine("Legacy plan")
+        repo.addRoutineExercise(routine, exerciseId)
+        val plan = repo.snapshot().routineItems(routine).single()
+        database.dao().updateRoutineExercise(plan.copy(restSeconds = 600, plannedSets = 4))
+        val finished = Workout(id = "legacy-finished", name = "History", startedAt = 1000,
+            endedAt = 2000, status = WorkoutStatus.FINISHED)
+        val active = Workout(id = "legacy-active", name = "Active", startedAt = 3000)
+        database.dao().insertWorkout(finished)
+        database.dao().insertWorkout(active)
+        val movement = repo.snapshot().exercises.first { it.id == exerciseId }
+        val historical = WorkoutExercise(id = "old-history", workoutId = finished.id, exerciseId = exerciseId,
+            name = movement.name, muscle = movement.muscle, equipment = movement.equipment,
+            convention = movement.convention, position = 0, restSeconds = 600)
+        val current = historical.copy(id = "old-active", workoutId = active.id, restSeconds = 900)
+        database.dao().insertWorkoutExercise(historical)
+        database.dao().insertWorkoutExercise(current)
+        val bodyweight = WorkoutSet(workoutExerciseId = historical.id, position = 0, reps = 12,
+            weightKg = 0.0, completed = true)
+        database.dao().insertSet(bodyweight)
+        repo.initialize()
+        repo.initialize()
+        val data = repo.snapshot()
+        assertEquals(300, data.routineItems(routine).single().restSeconds)
+        assertEquals(4, data.routineItems(routine).single().plannedSets)
+        assertEquals(300, data.workoutItems(active.id).single().restSeconds)
+        assertEquals(historical, data.workoutItems(finished.id).single())
+        assertEquals(bodyweight, data.exerciseSets(historical.id).single())
+        assertEquals(0.0, WorkoutCalculations.summary(data, finished.id)!!.volumeKg, 0.0)
+        for (invalid in listOf(301, 360)) {
+            try { repo.updateRoutineExercise(data.routineItems(routine).single().copy(restSeconds = invalid)); fail() }
+            catch (_: IllegalArgumentException) { }
+            try { repo.updateWorkoutExerciseRest(current.id, invalid); fail() }
+            catch (_: IllegalArgumentException) { }
+            try { repo.addWorkoutExercise(active.id, exerciseId, invalid); fail() }
+            catch (_: IllegalArgumentException) { }
+        }
+        assertEquals(300, repo.snapshot().workoutItems(active.id).single().restSeconds)
+    }
+
+    @Test fun bodyweightZeroLoadCompletesAndSurvivesDiskReopenAndHistory() = runBlocking {
+        val filename = "bodyweight-${newId()}.db"
+        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+        try {
+            var saved = WorkoutRepository(disk)
+            saved.initialize()
+            val movement = saved.snapshot().exercises.first { it.convention == LoadConvention.BODYWEIGHT }
+            val workout = saved.startEmpty(now = 1000)
+            val entry = saved.addWorkoutExercise(workout, movement.id)
+            val set = saved.snapshot().exerciseSets(entry).first()
+            saved.updateSet(set.copy(reps = 12, weightKg = 0.0, completed = true))
+            disk.close()
+            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+            saved = WorkoutRepository(disk)
+            saved.initialize()
+            val restored = saved.snapshot().sets.first { it.id == set.id }
+            assertEquals(0.0, restored.weightKg, 0.0)
+            assertEquals(12, restored.reps)
+            assertTrue(restored.completed)
+            saved.finishWorkout(workout, now = 2000)
+            val summary = WorkoutCalculations.summary(saved.snapshot(), workout)!!
+            assertEquals(0.0, summary.volumeKg, 0.0)
+            assertEquals(1, summary.firstRepsRecords.size)
+            assertTrue(summary.firstRecords.isEmpty())
+        } finally { disk.close(); context.deleteDatabase(filename) }
     }
 }

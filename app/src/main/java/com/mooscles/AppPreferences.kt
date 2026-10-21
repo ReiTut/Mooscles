@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mooscles.ui.PreferencesUi
+import com.mooscles.domain.RestDuration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,11 @@ class AppPreferences(context: Context) {
         var backoff = 1000L
         while (true) {
             try {
+                store.edit { saved ->
+                    saved[defaultRest]?.let { seconds ->
+                        if (seconds > RestDuration.MAX_SECONDS) saved[defaultRest] = RestDuration.MAX_SECONDS
+                    }
+                }
                 store.data.collect {
                     emit(PreferencesUi(it[pounds] ?: false, it[theme] ?: "system", it[autoRest] ?: true, it[defaultRest] ?: 90))
                     emitted = true
@@ -43,5 +49,5 @@ class AppPreferences(context: Context) {
     suspend fun pounds(value: Boolean) { store.edit { it[pounds] = value } }
     suspend fun theme(value: String) { require(value in listOf("light", "dark", "system")); store.edit { it[theme] = value } }
     suspend fun autoRest(value: Boolean) { store.edit { it[autoRest] = value } }
-    suspend fun defaultRest(value: Int) { require(value in 0..3600); store.edit { it[defaultRest] = value } }
+    suspend fun defaultRest(value: Int) { require(value in 0..RestDuration.MAX_SECONDS); store.edit { it[defaultRest] = value } }
 }

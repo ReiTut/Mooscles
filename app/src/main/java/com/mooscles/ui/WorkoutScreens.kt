@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -13,7 +12,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -33,17 +31,20 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
     }
     LaunchedEffect(state.error) { if (state.error != null) finishingId = null }
     if (workout == null) {
-        LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            item { PageHeading("Your training space", "Ready to move?", "Every rep is a step forward.") }
-            item { EmptyState(Icons.Outlined.FitnessCenter, "A fresh start", "Start with a routine or build today’s session as you go.", "Choose a routine", onRoutines) }
-            item { Button(onClick = { actions.startWorkout(null) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Start empty workout") } }
-            item { TimerPanel(state.timer, actions, state.preferences.defaultRestSeconds) }
+        Column(Modifier.fillMaxSize().imePadding()) {
+            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                item { PageHeading("Your training space", "Ready to move?", "Every rep is a step forward.") }
+                item { EmptyState(Icons.Outlined.FitnessCenter, "A fresh start", "Start with a routine or build today’s session as you go.", "Choose a routine", onRoutines) }
+                item { Button(onClick = { actions.startWorkout(null) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Start empty workout") } }
+            }
+            WorkoutTimerDock(state, actions)
         }
         return
     }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(workout.id) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
-    LazyColumn(modifier = Modifier.testTag("active-workout-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().imePadding()) {
+    LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -52,7 +53,6 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
                 Metric(weight(workout.volumeKg, state.preferences.pounds), "Weight moved")
             }
         }
-        item { TimerPanel(state.timer, actions, state.preferences.defaultRestSeconds) }
         item { SectionTitle("Today’s movements", "Add", { picker = true }) }
         if (workout.exercises.isEmpty()) item { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) }
         itemsIndexed(workout.exercises, key = { _, it -> it.id }) { index, entry ->
@@ -69,12 +69,24 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         }
         item { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
     }
+    WorkoutTimerDock(state, actions)
+    }
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
     if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = actions::discardWorkout)
     if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
         text = { Text("Save ${workout.completedSets} completed sets across ${workout.completedExercises} exercises. Your records and session breakdown will be ready next.") },
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
+}
+
+/** Measured beside the scrolling list, so rest controls never obscure its final rows. */
+@Composable
+private fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
+    Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth().testTag("active-rest-timer")) {
+        Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            TimerPanel(state.timer, actions, state.preferences.defaultRestSeconds, compact = true)
+        }
+    }
 }
 
 @Composable
@@ -107,9 +119,9 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
                     Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) { Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text("Previous: $previous", style = MaterialTheme.typography.bodySmall) }
                 }
             }
-            entry.provisionalRecordKg?.let { pr ->
+            entry.records.forEach { record ->
                 Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp)); Text("${if (entry.firstRecord) "First record" else "New weight PR"} · ${weight(pr, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium) }
+                    Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp)); Text("${record.label}${if (record.firstRecord) " · first record" else ""} · ${recordAchievementText(record, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium) }
                 }
             }
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
@@ -120,11 +132,12 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
                 if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
-                else CompletedSetRow(set, setIndex, pounds)
+                else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
             }
             if (editable) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = { actions.addSet(entry.id) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
-                TextButton(onClick = { actions.startTimer(entry.exercise.name, entry.restSeconds) }) { Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(entry.restSeconds)} min") }
+                val rest = entry.restSeconds.coerceIn(0, RestDuration.MAX_SECONDS)
+                TextButton(onClick = { actions.startTimer(entry.exercise.name, rest) }) { Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(rest)} min") }
             }
         }
     }
@@ -134,21 +147,21 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
 fun conventionExplanation(convention: String): String = when (convention) {
     "Per hand" -> "Log one dumbbell’s load and reps. Volume is per hand; never doubled."
     "One side" -> "Log the total load used on one side and reps on that side. Volume is never doubled."
-    "Added weight" -> "Log added external weight only. Use 0 for bodyweight; unknown body mass is excluded."
+    "Added weight" -> "Log added external weight only. Leave weight blank for bodyweight; body mass is excluded."
     "Assistance" -> "Log assistance supplied by the machine. Assistance is excluded from weight PRs and weight moved."
-    else -> "Log the total external load. Volume = load × reps as entered."
+    else -> "Log the external load, or leave weight blank for bodyweight. Volume = external load × reps."
 }
 
 @Composable
 private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions) {
     var reps by remember(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
-    val originalLoad = remember(set.id, pounds) { number(kgToDisplay(set.weightKg, pounds)) }
+    val originalLoad = remember(set.id, pounds) { if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds)) }
     val originalWeightKg = remember(set.id, pounds) { set.weightKg }
     var load by remember(set.id, pounds) { mutableStateOf(originalLoad) }
     var touched by remember(set.id) { mutableStateOf(false) }
     var flags by remember { mutableStateOf(false) }
     val repsValue = if (reps.isBlank()) 0 else reps.toIntOrNull()
-    val loadValue = load.replace(',', '.').toDoubleOrNull()
+    val loadValue = if (load.isBlank()) 0.0 else load.replace(',', '.').toDoubleOrNull()
     fun exactKg(text: String, parsed: Double) = if (text == originalLoad) originalWeightKg else displayToKg(parsed, pounds)
     val validReps = repsValue != null && repsValue in 1..9999
     val showRepsError = !validReps && (touched || reps.isNotBlank() || set.completed)
@@ -162,7 +175,7 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
             Surface(shape = RoundedCornerShape(8.dp), color = if (set.completed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest) { Text("${index + 1}", Modifier.padding(horizontal = 10.dp, vertical = 12.dp), style = MaterialTheme.typography.labelLarge) }
             TrainingNumberField(load, { next ->
                 load = next
-                val parsed = next.replace(',', '.').toDoubleOrNull()
+                val parsed = if (next.isBlank()) 0.0 else next.replace(',', '.').toDoubleOrNull()
                 if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!set.completed || validReps)) actions.updateSet(set.id, repsValue?.takeIf { it in 0..9999 } ?: set.reps, exactKg(next, parsed), set.completed, set.warmup, set.assistance || assistanceConvention)
             }, label = if (pounds) "lb" else "kg", isError = !validLoad, decimal = true, modifier = Modifier.weight(1f).testTag("set-load-$index"))
             TrainingNumberField(reps, { next ->
@@ -173,6 +186,7 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
             IconToggleButton(checked = set.completed, onCheckedChange = { touched = true; save(completed = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (set.completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (set.completed) "Undo set completion" else "Complete set") }
         }
         if (!validLoad) Text("Enter a valid weight of 0 or more.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (validLoad && loadValue == 0.0 && !set.assistance && !assistanceConvention) Text("Bodyweight · no added load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (showRepsError) Text("Enter reps between 1 and 9999 to complete this set.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
@@ -180,7 +194,7 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
                 DropdownMenu(flags, { flags = false }) {
                     DropdownMenuItem(text = { Text("Working set") }, onClick = { flags = false; save(warmup = false, assistance = assistanceConvention) })
                     DropdownMenuItem(text = { Text("Warm-up · excluded from PRs") }, onClick = { flags = false; save(warmup = true) })
-                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · excluded from PRs") }, onClick = { flags = false; save(warmup = false, assistance = true) })
+                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · separate reps records") }, onClick = { flags = false; save(warmup = false, assistance = true) })
                 }
             }
             IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, "Remove set ${index + 1}", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -189,11 +203,11 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
 }
 
 @Composable
-fun CompletedSetRow(set: SetUi, index: Int, pounds: Boolean) {
+fun CompletedSetRow(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("SET ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(62.dp))
-        Text("${weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        if (set.warmup || set.assistance) Text(if (set.warmup) "Warm-up" else "Assistance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${if (set.weightKg == 0.0 && !set.assistance && !assistanceConvention) "Bodyweight" else weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (set.warmup || set.assistance || assistanceConvention) Text(if (set.warmup) "Warm-up" else "Assistance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         else Icon(Icons.Outlined.Check, "Completed", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
     }
 }

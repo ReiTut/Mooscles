@@ -28,6 +28,8 @@ class UiFlowHostTest {
         override fun before() {
             val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
             app.deleteDatabase("mooscles.db")
+            // Other persistence tests intentionally change preferences; establish this flow's baseline.
+            runBlocking { app.preferences.autoRest(true); app.preferences.pounds(false); app.preferences.defaultRest(90) }
             shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         }
         override fun after() {
@@ -85,9 +87,9 @@ class UiFlowHostTest {
             app.timer.state.value.let { it.running && it.durationMillis == 105_000L }
         }
         assertEquals(105_000L, app.timer.state.value.durationMillis)
-        compose.onNodeWithTag("active-workout-list").performScrollToIndex(2)
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Breathe. Your next set is coming.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Breathe. Your next set is coming.").assertIsDisplayed()
+        compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Pause rest timer").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("finish-workout"))
         compose.onNodeWithTag("finish-workout").performClick()
         compose.onNodeWithText("Finish & save").performClick()
