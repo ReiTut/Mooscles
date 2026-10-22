@@ -153,8 +153,10 @@ class AppViewModelRecordsHostTest {
             repo.finishWorkout(prior, now = 2_000)
             val routine = repo.createRoutine("PR target routine")
             val entry = repo.addRoutineExercise(routine, bench)
-            val plan = repo.snapshot().routineExercises.single { it.id == entry }
-            repo.updateRoutineExercise(plan.copy(plannedSets = 3, targetWeightKg = 20.0, targetReps = 7, restSeconds = 105))
+            repo.addRoutineSet(entry)
+            val rows = repo.snapshot().plannedSets(entry)
+            repo.updateRoutineSet(rows[1].id, reps = 10, weightKg = 18.5)
+            repo.updateRoutineExerciseRest(entry, 105)
             repo.startRoutine(routine)
             routine
         }
@@ -168,6 +170,8 @@ class AppViewModelRecordsHostTest {
         val duringSession = model.ui.value.routines.single { it.id == routineId }.exercises.single()
         assertEquals(20.0, duringSession.weightKg!!, 0.0)
         assertEquals(7, duringSession.reps)
+        assertEquals(listOf(20.0, 18.5, 20.0), duringSession.setTargets.map { it.weightKg })
+        assertEquals(listOf(true, false, true), duringSession.setTargets.map { it.inherited })
 
         model.finishWorkout()
         awaitUi(model) {
@@ -177,6 +181,9 @@ class AppViewModelRecordsHostTest {
         val savedPlan = model.ui.value.routines.single { it.id == routineId }.exercises.single()
         assertEquals(3, savedPlan.sets)
         assertEquals(105, savedPlan.restSeconds)
+        assertEquals(listOf(22.0, 18.5, 22.0), savedPlan.setTargets.map { it.weightKg })
+        assertEquals(listOf(6, 10, 6), savedPlan.setTargets.map { it.reps })
+        assertEquals(listOf(true, false, true), savedPlan.setTargets.map { it.inherited })
         val savedHistory = model.ui.value.history.single { it.id == active.id }
         assertEquals(22.0, savedHistory.exercises.single().sets.first().weightKg, 0.0)
         assertEquals(6, savedHistory.exercises.single().sets.first().reps)
@@ -193,8 +200,41 @@ class AppViewModelRecordsHostTest {
         val future = restored.ui.value.active!!.exercises.single()
         assertEquals(105, future.restSeconds)
         assertEquals(3, future.sets.size)
-        assertTrue(future.sets.all { it.weightKg == 22.0 && it.reps == 6 && !it.completed })
+        assertEquals(listOf(22.0, 18.5, 22.0), future.sets.map { it.weightKg })
+        assertEquals(listOf(6, 10, 6), future.sets.map { it.reps })
+        assertTrue(future.sets.none { it.completed })
         assertEquals(savedHistory, restored.ui.value.history.single { it.id == active.id })
+    }
+
+    @Test fun manualRowActionsPersistAcrossModelsWithoutMutatingAnActiveSnapshot() {
+        val entry = runBlocking(Dispatchers.IO) {
+            val repo = app.repository
+            repo.initialize()
+            val routine = repo.createRoutine("Independent rows")
+            val exercise = repo.createCustomExercise("Cable row", MuscleGroup.BACK, Equipment.CABLE, LoadConvention.TOTAL_LOAD)
+            repo.addRoutineExercise(routine, exercise).also { repo.startRoutine(routine) }
+        }
+        val model = newModel()
+        awaitUi(model) { !it.loading && it.active != null && it.routines.any { routine -> routine.exercises.any { e -> e.id == entry } } }
+        val before = model.ui.value.active!!
+        val plan = model.ui.value.routines.single().exercises.single()
+        assertEquals(2, plan.setTargets.size)
+        val first = plan.setTargets.first().id
+        model.updateRoutineSet(first, 8, 17.25)
+        model.addRoutineSet(entry)
+        model.updateRoutineExerciseRest(entry, 150)
+        awaitUi(model) { state -> state.routines.single().exercises.single().let {
+            it.setTargets.size == 3 && it.setTargets.first().weightKg == 17.25 && it.restSeconds == 150
+        } }
+        val saved = model.ui.value.routines.single().exercises.single()
+        assertFalse(saved.setTargets.first().inherited)
+        assertTrue(saved.setTargets.drop(1).all { it.inherited })
+        assertEquals(before, model.ui.value.active)
+        model.viewModelScope.cancel()
+        val reopened = newModel()
+        awaitUi(reopened) { !it.loading && it.routines.singleOrNull()?.exercises?.singleOrNull()?.setTargets?.size == 3 }
+        assertEquals(saved, reopened.ui.value.routines.single().exercises.single())
+        assertEquals(before, reopened.ui.value.active)
     }
 
     private fun newModel() = AppViewModel(app).also { models += it }

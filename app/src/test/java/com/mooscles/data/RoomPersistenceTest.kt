@@ -227,9 +227,10 @@ class RoomPersistenceTest {
     @Test fun legacyRestNormalizationPreservesCompletedHistoryAndCustomSetCounts() = runBlocking {
         val exerciseId = repo.snapshot().exercises.first().id
         val routine = repo.createRoutine("Legacy plan")
-        repo.addRoutineExercise(routine, exerciseId)
+        val planId = repo.addRoutineExercise(routine, exerciseId)
+        repeat(2) { repo.addRoutineSet(planId) }
         val plan = repo.snapshot().routineItems(routine).single()
-        database.dao().updateRoutineExercise(plan.copy(restSeconds = 600, plannedSets = 4))
+        database.dao().updateRoutineExercise(plan.copy(restSeconds = 600))
         val finished = Workout(id = "legacy-finished", name = "History", startedAt = 1000,
             endedAt = 2000, status = WorkoutStatus.FINISHED)
         val active = Workout(id = "legacy-active", name = "Active", startedAt = 3000)
@@ -250,6 +251,7 @@ class RoomPersistenceTest {
         val data = repo.snapshot()
         assertEquals(300, data.routineItems(routine).single().restSeconds)
         assertEquals(4, data.routineItems(routine).single().plannedSets)
+        assertEquals(4, data.plannedSets(plan.id).size)
         assertEquals(300, data.workoutItems(active.id).single().restSeconds)
         assertEquals(historical, data.workoutItems(finished.id).single())
         assertEquals(bodyweight, data.exerciseSets(historical.id).single())

@@ -11,11 +11,20 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     private val dao = db.dao()
 
     val data: Flow<AppData> = db.invalidationTracker.createFlow(
-        "exercises", "routines", "routine_exercises", "workouts", "workout_exercises", "workout_sets"
+        "exercises", "routines", "routine_exercises", "routine_sets", "workouts", "workout_exercises", "workout_sets"
     ).map { snapshot() }
 
     suspend fun initialize() = db.withTransaction {
         dao.seedExercises(ExerciseCatalog.exercises)
+        val catalog = ExerciseCatalog.exercises.associateBy { it.id }
+        dao.exercises().filterNot { it.custom }.forEach { existing ->
+            catalog[existing.id]?.let { current ->
+                if (existing.name != current.name || existing.muscle != current.muscle || existing.equipment != current.equipment) {
+                    dao.updateExercise(existing.copy(name = current.name, muscle = current.muscle, equipment = current.equipment))
+                }
+            }
+        }
+        dao.routineExercises().forEach { ensurePlannedSets(it) }
         // Update configurable values only; completed workout snapshots stay unchanged.
         dao.routineExercises().filter { (it.restSeconds ?: 0) > RestDuration.MAX_SECONDS }.forEach {
             dao.updateRoutineExercise(it.copy(restSeconds = RestDuration.MAX_SECONDS))
@@ -28,33 +37,69 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     }
 
     suspend fun snapshot(): AppData = db.withTransaction {
-        AppData(dao.exercises(), dao.routines(), dao.routineExercises(), dao.workouts(), dao.workoutExercises(), dao.sets())
+        AppData(dao.exercises(), dao.routines(), dao.routineExercises(), dao.workouts(), dao.workoutExercises(), dao.sets(), dao.routineSets())
     }
 
     /** Run only inside a repository transaction, never while rendering UI or editing an active set. */
     private suspend fun synchronizeRoutineTargets() {
-        val records = RoutineTargetRecords.latest(snapshot())
+        val records = RoutineTargetRecords.latest(snapshot()).associateBy { it.exerciseId to it.convention }
         val checkpoints = dao.targetCheckpoints().associateBy { it.exerciseId to it.convention }
         val exercises = dao.exercises().associateBy { it.id }
-        val plans = dao.routineExercises()
-        records.forEach { record ->
-            val previous = checkpoints[record.exerciseId to record.convention]?.record()
-            if (previous == null || RoutineTargetRecords.improves(record, previous)) {
-                plans.filter { it.exerciseId == record.exerciseId && exercises[it.exerciseId]?.convention == record.convention }
-                    .forEach { plan ->
-                        dao.updateRoutineExercise(plan.copy(targetWeightKg = record.weightKg, targetReps = record.reps))
-                    }
+        dao.routineExercises().forEach { plan ->
+            val exercise = requireNotNull(exercises[plan.exerciseId]) { "Exercise not found." }
+            val record = records[plan.exerciseId to exercise.convention]
+            val reps = record?.reps ?: 0
+            val weightKg = record?.weightKg
+            val changed = dao.plannedSets(plan.id).filter {
+                it.inheritPr && (it.targetReps != reps || it.targetWeightKg != weightKg)
+            }
+            changed.forEach { row ->
+                dao.updateRoutineSet(row.copy(targetWeightKg = weightKg, targetReps = reps))
+            }
+            if (changed.isNotEmpty()) mirrorPlan(plan.id)
+        }
+        // Row modes now protect manual values. A deleted/corrected maximum must not leave an old
+        // checkpoint suppressing new inherited targets; retain markers only for compatibility.
+        records.values.forEach { record ->
+            if (checkpoints[record.exerciseId to record.convention]?.record() != record) {
                 dao.saveTargetCheckpoint(RoutineTargetCheckpoint(record.exerciseId, record.convention, record.weightKg, record.reps))
             }
         }
     }
 
-    private suspend fun targetForNewPlan(plan: RoutineExercise): RoutineExercise {
+    private suspend fun inheritedSet(plan: RoutineExercise, position: Int, id: String = newId()): RoutineSet {
         val exercise = requireNotNull(dao.exercise(plan.exerciseId)) { "Exercise not found." }
         val record = RoutineTargetRecords.latest(snapshot()).firstOrNull {
             it.exerciseId == plan.exerciseId && it.convention == exercise.convention
-        } ?: return plan
-        return plan.copy(targetWeightKg = record.weightKg, targetReps = record.reps)
+        }
+        return RoutineSet(id, plan.id, position, record?.reps ?: 0, record?.weightKg, inheritPr = true)
+    }
+
+    /** Fallback for plans inserted by old import/test clients; real upgrades are handled by migration. */
+    private suspend fun ensurePlannedSets(plan: RoutineExercise): List<RoutineSet> {
+        var rows = dao.plannedSets(plan.id)
+        if (rows.isEmpty()) {
+            repeat(plan.plannedSets) { position ->
+                dao.insertRoutineSet(RoutineSet(routineExerciseId = plan.id, position = position,
+                    targetReps = plan.targetReps, targetWeightKg = plan.targetWeightKg, inheritPr = false))
+            }
+            rows = dao.plannedSets(plan.id)
+        }
+        return rows
+    }
+
+    /** Retain the old columns for compatibility; independent rows remain the source of truth. */
+    private suspend fun mirrorPlan(id: String) {
+        val plan = requireNotNull(dao.routineExercise(id)) { "Routine exercise not found." }
+        val rows = dao.plannedSets(id)
+        val first = rows.firstOrNull()
+        dao.updateRoutineExercise(plan.copy(plannedSets = rows.size,
+            targetReps = first?.targetReps ?: 0, targetWeightKg = first?.targetWeightKg))
+    }
+
+    private fun validateTarget(reps: Int, weightKg: Double?) {
+        require(reps in 0..9999) { "Target reps must be blank or between 1 and 9999." }
+        require(weightKg == null || (weightKg.isFinite() && weightKg in 0.0..100000.0)) { "Enter a valid non-negative target weight." }
     }
 
     private fun checkedName(value: String): String = value.trim().also {
@@ -77,7 +122,13 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         val original = requireNotNull(dao.routine(id)) { "Routine not found." }
         val copy = original.copy(id = newId(), name = (original.name.take(113) + " (copy)"), position = dao.routines().size)
         dao.insertRoutine(copy)
-        dao.routineItems(id).forEach { dao.insertRoutineExercise(it.copy(id = newId(), routineId = copy.id)) }
+        dao.routineItems(id).forEach { originalPlan ->
+            val plan = originalPlan.copy(id = newId(), routineId = copy.id)
+            dao.insertRoutineExercise(plan)
+            ensurePlannedSets(originalPlan).forEach { row ->
+                dao.insertRoutineSet(row.copy(id = newId(), routineExerciseId = plan.id))
+            }
+        }
         copy.id
     }
 
@@ -101,8 +152,11 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun addRoutineExercise(routineId: String, exerciseId: String): String = db.withTransaction {
         requireNotNull(dao.routine(routineId)) { "Routine not found." }
         requireNotNull(dao.exercise(exerciseId)) { "Exercise not found." }
-        val item = targetForNewPlan(RoutineExercise(routineId = routineId, exerciseId = exerciseId, position = dao.routineItems(routineId).size))
+        val item = RoutineExercise(routineId = routineId, exerciseId = exerciseId, position = dao.routineItems(routineId).size,
+            restSeconds = RestDuration.DEFAULT_SECONDS)
         dao.insertRoutineExercise(item)
+        repeat(item.plannedSets) { dao.insertRoutineSet(inheritedSet(item, it)) }
+        mirrorPlan(item.id)
         item.id
     }
 
@@ -111,16 +165,76 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         require(existing.routineId == item.routineId) { "Cannot move an exercise to another routine." }
         requireNotNull(dao.exercise(item.exerciseId)) { "Exercise not found." }
         require(item.plannedSets in 1..50) { "Planned sets must be between 1 and 50." }
-        require(item.targetReps in 0..9999) { "Target reps must be blank or between 1 and 9999." }
-        require(item.targetWeightKg == null || (item.targetWeightKg.isFinite() && item.targetWeightKg >= 0)) { "Enter a valid non-negative target weight." }
+        validateTarget(item.targetReps, item.targetWeightKg)
         require(item.restSeconds == null || item.restSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
+        require(existing.exerciseId == item.exerciseId) { "Use replacement to change exercise identity." }
+        val rows = ensurePlannedSets(existing)
+        val editedTargets = existing.targetReps != item.targetReps || existing.targetWeightKg != item.targetWeightKg
+        rows.drop(item.plannedSets).forEach { dao.deleteRoutineSet(it.id) }
+        rows.take(item.plannedSets).forEach { row ->
+            if (editedTargets) dao.updateRoutineSet(row.copy(targetReps = item.targetReps,
+                targetWeightKg = item.targetWeightKg, inheritPr = false))
+        }
+        for (position in rows.size until item.plannedSets) {
+            dao.insertRoutineSet(if (editedTargets) RoutineSet(routineExerciseId = item.id, position = position,
+                targetReps = item.targetReps, targetWeightKg = item.targetWeightKg, inheritPr = false)
+                else inheritedSet(item, position))
+        }
         dao.updateRoutineExercise(item)
+        mirrorPlan(item.id)
+    }
+
+    suspend fun addRoutineSet(entryId: String): String = db.withTransaction {
+        val plan = requireNotNull(dao.routineExercise(entryId)) { "Routine exercise not found." }
+        val rows = ensurePlannedSets(plan)
+        require(rows.size < 50) { "A maximum of 50 planned sets is supported per exercise." }
+        val row = inheritedSet(plan, rows.size)
+        dao.insertRoutineSet(row)
+        mirrorPlan(entryId)
+        row.id
+    }
+
+    suspend fun removeRoutineSet(setId: String) = db.withTransaction {
+        val row = requireNotNull(dao.routineSet(setId)) { "Routine set not found." }
+        val rows = dao.plannedSets(row.routineExerciseId)
+        require(rows.size > 1) { "Keep at least one planned set." }
+        dao.deleteRoutineSet(setId)
+        dao.plannedSets(row.routineExerciseId).forEachIndexed { index, item ->
+            dao.updateRoutineSet(item.copy(position = index))
+        }
+        mirrorPlan(row.routineExerciseId)
+    }
+
+    suspend fun updateRoutineSet(setId: String, reps: Int, weightKg: Double?) = db.withTransaction {
+        validateTarget(reps, weightKg)
+        val row = requireNotNull(dao.routineSet(setId)) { "Routine set not found." }
+        dao.updateRoutineSet(row.copy(targetReps = reps, targetWeightKg = weightKg, inheritPr = false))
+        mirrorPlan(row.routineExerciseId)
+    }
+
+    suspend fun inheritRoutineSet(setId: String) = db.withTransaction {
+        val row = requireNotNull(dao.routineSet(setId)) { "Routine set not found." }
+        val plan = requireNotNull(dao.routineExercise(row.routineExerciseId)) { "Routine exercise not found." }
+        dao.updateRoutineSet(inheritedSet(plan, row.position, row.id))
+        mirrorPlan(row.routineExerciseId)
+    }
+
+    suspend fun updateRoutineExerciseRest(entryId: String, seconds: Int) = db.withTransaction {
+        require(seconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
+        val plan = requireNotNull(dao.routineExercise(entryId)) { "Routine exercise not found." }
+        dao.updateRoutineExercise(plan.copy(restSeconds = seconds))
     }
 
     suspend fun replaceRoutineExercise(id: String, exerciseId: String) = db.withTransaction {
         val item = requireNotNull(dao.routineExercise(id)) { "Routine exercise not found." }
         requireNotNull(dao.exercise(exerciseId)) { "Exercise not found." }
-        dao.updateRoutineExercise(targetForNewPlan(item.copy(exerciseId = exerciseId, targetWeightKg = null, targetReps = 0)))
+        if (item.exerciseId == exerciseId) return@withTransaction
+        val replacement = item.copy(exerciseId = exerciseId, targetWeightKg = null, targetReps = 0)
+        dao.updateRoutineExercise(replacement)
+        ensurePlannedSets(item).forEach { row ->
+            dao.updateRoutineSet(inheritedSet(replacement, row.position, row.id))
+        }
+        mirrorPlan(id)
     }
 
     suspend fun removeRoutineExercise(id: String) = db.withTransaction {
@@ -169,12 +283,12 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         dao.insertWorkout(workout)
         dao.routineItems(routineId).forEach { plan ->
             val exercise = requireNotNull(dao.exercise(plan.exerciseId)) { "Exercise not found." }
-            val entry = snapshotExercise(exercise, workout.id, plan.position, (plan.restSeconds ?: defaultRestSeconds).coerceAtMost(RestDuration.MAX_SECONDS))
+            val entry = snapshotExercise(exercise, workout.id, plan.position, (plan.restSeconds ?: RestDuration.DEFAULT_SECONDS).coerceAtMost(RestDuration.MAX_SECONDS))
             dao.insertWorkoutExercise(entry)
-            repeat(plan.plannedSets) { position ->
-                dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = position,
-                    reps = plan.targetReps,
-                    weightKg = plan.targetWeightKg ?: 0.0,
+            ensurePlannedSets(plan).forEach { row ->
+                dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = row.position,
+                    reps = row.targetReps,
+                    weightKg = row.targetWeightKg ?: 0.0,
                     assistance = exercise.convention == LoadConvention.ASSISTANCE))
             }
         }

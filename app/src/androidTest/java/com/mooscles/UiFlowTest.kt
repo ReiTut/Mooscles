@@ -35,12 +35,27 @@ class UiFlowTest {
         compose.onAllNodesWithText("Add exercise").onFirst().performClick()
         compose.onNodeWithText("Find a movement").performTextInput("Barbell bench press")
         compose.onNode(hasText("Barbell bench press", substring = false) and !hasSetTextAction()).performClick()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("1. Barbell bench press").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasText("Reps") and hasSetTextAction())
-        compose.onNode(hasText("Reps") and hasSetTextAction()).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
-        compose.onNode(hasText("Reps") and hasSetTextAction()).performTextReplacement("8")
-        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasText("Rest duration") and hasSetTextAction())
-        compose.onNode(hasText("Rest duration") and hasSetTextAction()).performTextReplacement("2:00")
+        var entryId: String? = null
+        var firstSetId: String? = null
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Barbell bench press").fetchSemanticsNodes()
+            val data = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
+            val routineId = data.routines.singleOrNull { it.name == name }?.id
+            val entry = routineId?.let { data.routineItems(it).singleOrNull() }
+            val rows = entry?.let { data.plannedSets(it.id) }.orEmpty()
+            entryId = entry?.id
+            firstSetId = rows.firstOrNull()?.id
+            rows.size == 2
+        }
+        val repsTag = "routine-set-$firstSetId-reps"
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag(repsTag))
+        compose.onNodeWithTag(repsTag).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
+        compose.onNodeWithTag(repsTag).performTextReplacement("8")
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-$entryId-menu"))
+        compose.onNodeWithTag("routine-$entryId-menu").performClick()
+        compose.onNodeWithText("Edit Rest Timer").performClick()
+        compose.onNodeWithTag("routine-$entryId-rest").performTextReplacement("2:00")
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Save targets").assertDoesNotExist()
         compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasText("Start this routine"))
         compose.onNodeWithText("Start this routine").performClick()
@@ -51,7 +66,9 @@ class UiFlowTest {
         assertEquals(8, planned.targetReps)
         assertEquals(120, planned.restSeconds)
         assertEquals(120, workoutExercise.restSeconds)
-        assertTrue(started.exerciseSets(workoutExercise.id).all { it.reps == 8 && !it.completed })
+        assertEquals(listOf(8, 0), started.plannedSets(planned.id).map { it.targetReps })
+        assertEquals(listOf(8, 0), started.exerciseSets(workoutExercise.id).map { it.reps })
+        assertTrue(started.exerciseSets(workoutExercise.id).none { it.completed })
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasText("Rest duration") and hasSetTextAction())
         compose.onNode(hasText("Rest duration") and hasSetTextAction()).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("2:00")))
         compose.onNode(hasText("Rest duration") and hasSetTextAction()).performTextReplacement("1:45")

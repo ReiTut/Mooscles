@@ -37,7 +37,12 @@ class RoutineTargetPersistenceTest {
         val routine = repo.createRoutine("Routine ${newId()}")
         repo.addRoutineExercise(routine, exercise)
         val item = repo.snapshot().routineItems(routine).single()
-        repo.updateRoutineExercise(item.copy(targetWeightKg = weight, targetReps = reps, plannedSets = sets, restSeconds = 135))
+        repo.updateRoutineExercise(item.copy(plannedSets = sets, restSeconds = 135))
+        // Inherited targets originate in actual finished history, including for on-disk repos.
+        val convention = repo.snapshot().exercises.first { it.id == exercise }.convention
+        if (convention != LoadConvention.ASSISTANCE && ((weight ?: 0.0) > 0.0 || convention == LoadConvention.BODYWEIGHT)) {
+            finish(exercise, (weight ?: 0.0) to reps)
+        }
         return repo.snapshot().routineItems(routine).single()
     }
 
@@ -133,7 +138,7 @@ class RoutineTargetPersistenceTest {
         assertEquals(plans[1].copy(targetWeightKg = 22.0, targetReps = 6), saved(plans[1]))
     }
 
-    @Test fun manualTargetsSurviveRepeatedInitializationUntilANewerQualifyingRecord() = runBlocking {
+    @Test fun customTargetsSurviveRepeatedInitializationAndNewerQualifyingRecords() = runBlocking {
         val exercise = movement()
         val plan = plan(exercise)
         finish(exercise, 22.0 to 6)
@@ -143,7 +148,8 @@ class RoutineTargetPersistenceTest {
         finish(exercise, 20.0 to 40, 22.0 to 6)
         assertEquals(manual, saved(plan))
         finish(exercise, 22.0 to 7)
-        assertEquals(manual.copy(targetWeightKg = 22.0, targetReps = 7), saved(plan))
+        assertEquals(manual, saved(plan))
+        assertTrue(repo.snapshot().plannedSets(plan.id).none { it.inheritPr })
     }
 
     @Test fun activeAndCompletedSnapshotsRemainUnchangedDuringLegacySynchronization() = runBlocking {
@@ -160,8 +166,8 @@ class RoutineTargetPersistenceTest {
         assertEquals(before.workoutItems(old), after.workoutItems(old))
         assertEquals(before.workoutItems(active), after.workoutItems(active))
         assertEquals(before.sets, after.sets)
-        assertEquals(22.0, saved(plan).targetWeightKg!!, 0.0)
-        assertEquals(6, saved(plan).targetReps)
+        assertEquals(20.0, saved(plan).targetWeightKg!!, 0.0)
+        assertEquals(7, saved(plan).targetReps)
     }
 
     @Test fun routineTargetsWaitForFinalizationAndPreserveWorkingAndWarmupSetFlags() = runBlocking {
@@ -256,7 +262,7 @@ class RoutineTargetPersistenceTest {
             repo.initialize()
             assertEquals(manual, saved(plan))
             finish(exercise, 24.0 to 3)
-            assertEquals(manual.copy(targetWeightKg = 24.0, targetReps = 3), saved(plan))
+            assertEquals(manual, saved(plan))
             repo = memoryRepo
         } finally { disk.close(); context.deleteDatabase(name) }
     }

@@ -7,9 +7,14 @@ data class ExerciseUi(
     val id: String, val name: String, val muscle: String, val equipment: String,
     val convention: String = "External load as entered", val custom: Boolean = false,
 )
+data class RoutineSetUi(
+    val id: String, val reps: Int = 0, val weightKg: Double? = null, val inherited: Boolean = true,
+)
+
 data class PlannedExerciseUi(
     val id: String, val exercise: ExerciseUi, val sets: Int = 2, val reps: Int = 0,
     val weightKg: Double? = null, val restSeconds: Int = RestDuration.DEFAULT_SECONDS,
+    val setTargets: List<RoutineSetUi> = emptyList(),
 )
 data class RoutineUi(val id: String, val name: String, val exercises: List<PlannedExerciseUi> = emptyList())
 data class SetUi(
@@ -74,6 +79,11 @@ interface MoosclesActions : UpdateActions {
     fun removeRoutineExercise(entryId: String)
     fun moveRoutineExercise(entryId: String, direction: Int)
     fun updateRoutineExercise(entryId: String, sets: Int, reps: Int, weightKg: Double?, restSeconds: Int)
+    fun addRoutineSet(entryId: String)
+    fun removeRoutineSet(setId: String)
+    fun updateRoutineSet(setId: String, reps: Int, weightKg: Double?)
+    fun inheritRoutineSet(setId: String)
+    fun updateRoutineExerciseRest(entryId: String, seconds: Int)
     fun saveCustomExercise(id: String?, name: String, muscle: String, equipment: String, convention: String)
     fun startWorkout(routineId: String?)
     fun renameWorkout(id: String, name: String)

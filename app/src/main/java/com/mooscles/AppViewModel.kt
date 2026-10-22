@@ -59,6 +59,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     override fun replaceRoutineExercise(entryId: String, exerciseId: String) = act { repo.replaceRoutineExercise(entryId, exerciseId) }
     override fun removeRoutineExercise(entryId: String) = act { repo.removeRoutineExercise(entryId) }
     override fun moveRoutineExercise(entryId: String, direction: Int) = act { repo.moveRoutineExercise(entryId, direction) }
+    override fun addRoutineSet(entryId: String) = act { repo.addRoutineSet(entryId) }
+    override fun removeRoutineSet(setId: String) = act { repo.removeRoutineSet(setId) }
+    override fun updateRoutineSet(setId: String, reps: Int, weightKg: Double?) = act { repo.updateRoutineSet(setId, reps, weightKg) }
+    override fun inheritRoutineSet(setId: String) = act { repo.inheritRoutineSet(setId) }
+    override fun updateRoutineExerciseRest(entryId: String, seconds: Int) = act { repo.updateRoutineExerciseRest(entryId, seconds) }
     override fun updateRoutineExercise(entryId: String, sets: Int, reps: Int, weightKg: Double?, restSeconds: Int) = act {
         val item = repo.snapshot().routineExercises.first { it.id == entryId }
         repo.updateRoutineExercise(item.copy(plannedSets = sets, targetReps = reps, targetWeightKg = weightKg, restSeconds = restSeconds))
@@ -174,7 +179,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         }
         return UiState(loading, data.exercises.map { it.toUi() }, data.routines.sortedBy { it.position }.map { r ->
             RoutineUi(r.id, r.name, data.routineItems(r.id).mapNotNull { e -> exercises[e.exerciseId]?.let {
-                PlannedExerciseUi(e.id, it.toUi(), e.plannedSets, e.targetReps, e.targetWeightKg, e.restSeconds ?: prefs.defaultRestSeconds)
+                val targets = data.plannedSets(e.id).map { row -> RoutineSetUi(row.id, row.targetReps, row.targetWeightKg, row.inheritPr) }
+                PlannedExerciseUi(e.id, it.toUi(), targets.size, targets.firstOrNull()?.reps ?: 0,
+                    targets.firstOrNull()?.weightKg, e.restSeconds ?: com.mooscles.domain.RestDuration.DEFAULT_SECONDS, targets)
             } })
         }, data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedByDescending { it.startedAt }.map(::workout),
             data.activeWorkout?.let(::workout), records, timer, prefs, error)

@@ -39,6 +39,7 @@ object ExerciseCatalog {
         exercise("barbell_overhead_squat", "Barbell overhead squat", Muscle.QUADRICEPS)
         exercise("barbell_landmine_squat", "Landmine squat", Muscle.QUADRICEPS)
         exercise("barbell_split_squat", "Barbell split squat", Muscle.QUADRICEPS, Load.ONE_SIDE)
+        exercise("barbell_squat_bulgarian", "Barbell Bulgarian split squat", Muscle.QUADRICEPS, Load.ONE_SIDE)
         exercise("barbell_reverse_lunge", "Barbell reverse lunge", Muscle.QUADRICEPS, Load.ONE_SIDE)
         exercise("barbell_walking_lunge", "Barbell walking lunge", Muscle.QUADRICEPS, Load.ONE_SIDE)
         exercise("barbell_deadlift_conventional", "Conventional barbell deadlift", Muscle.BACK)
@@ -53,12 +54,16 @@ object ExerciseCatalog {
         exercise("barbell_curl_reverse", "Reverse-grip barbell curl", Muscle.FOREARMS)
         exercise("barbell_curl_preacher", "Barbell preacher curl", Muscle.BICEPS)
         exercise("barbell_curl_drag", "Barbell drag curl", Muscle.BICEPS)
+        exercise("ez_bar_curl", "EZ-bar curl", Muscle.BICEPS)
+        exercise("ez_bar_curl_preacher", "EZ-bar preacher curl", Muscle.BICEPS)
+        exercise("ez_bar_triceps_lying", "Lying EZ-bar triceps extension", Muscle.TRICEPS)
         exercise("barbell_triceps_lying", "Lying barbell triceps extension", Muscle.TRICEPS)
         exercise("barbell_wrist_curl", "Barbell wrist curl", Muscle.FOREARMS)
         exercise("barbell_wrist_curl_reverse", "Reverse barbell wrist curl", Muscle.FOREARMS)
         exercise("barbell_rollout", "Barbell rollout", Muscle.CORE, Load.BODYWEIGHT)
     } + section(Gear.DUMBBELL, Load.PER_HAND) {
         exercise("dumbbell_bench_flat", "Flat dumbbell bench press", Muscle.CHEST)
+        exercise("dumbbell_bench_one_arm", "One-arm dumbbell bench press", Muscle.CHEST, Load.ONE_SIDE)
         exercise("dumbbell_bench_incline", "Incline dumbbell bench press", Muscle.CHEST)
         exercise("dumbbell_bench_decline", "Decline dumbbell bench press", Muscle.CHEST)
         exercise("dumbbell_bench_neutral", "Neutral-grip dumbbell bench press", Muscle.CHEST)
@@ -141,7 +146,10 @@ object ExerciseCatalog {
         exercise("cable_chest_fly_high_low", "High-to-low cable chest fly", Muscle.CHEST)
         exercise("cable_chest_fly_low_high", "Low-to-high cable chest fly", Muscle.CHEST)
         exercise("cable_chest_fly_one_arm", "One-arm cable chest fly", Muscle.CHEST, Load.ONE_SIDE)
+        exercise("cable_chest_fly_flat_bench", "Flat-bench cable chest fly", Muscle.CHEST)
+        exercise("cable_chest_fly_incline_bench", "Incline-bench cable chest fly", Muscle.CHEST)
         exercise("cable_chest_press", "Standing cable chest press", Muscle.CHEST)
+        exercise("cable_shoulder_press", "Seated cable shoulder press", Muscle.SHOULDERS)
         exercise("cable_row_close_neutral", "Close neutral-grip seated cable row", Muscle.BACK)
         exercise("cable_row_wide_overhand", "Wide overhand seated cable row", Muscle.BACK)
         exercise("cable_row_underhand", "Underhand seated cable row", Muscle.BACK)
@@ -247,7 +255,8 @@ object ExerciseCatalog {
         exercise("selectorized_chest_press", "Selectorized chest press", Muscle.CHEST)
         exercise("selectorized_chest_press_incline", "Selectorized incline chest press", Muscle.CHEST)
         exercise("selectorized_pec_fly", "Pec deck fly", Muscle.CHEST)
-        exercise("selectorized_shoulder_press", "Selectorized shoulder press", Muscle.SHOULDERS)
+        // The familiar name updates the existing variation rather than creating a synonym entry.
+        exercise("selectorized_shoulder_press", "Seated Overhead Press (Machine)", Muscle.SHOULDERS)
         exercise("selectorized_lateral_raise", "Selectorized lateral raise", Muscle.SHOULDERS)
         exercise("selectorized_reverse_fly", "Reverse pec deck fly", Muscle.SHOULDERS)
         exercise("selectorized_lat_pulldown", "Selectorized lever lat pulldown", Muscle.BACK)
@@ -286,6 +295,7 @@ object ExerciseCatalog {
         exercise("plate_t_bar_row_supported", "Chest-supported T-bar row machine", Muscle.BACK)
         exercise("plate_hack_squat", "Plate-loaded hack squat", Muscle.QUADRICEPS)
         exercise("plate_pendulum_squat", "Pendulum squat", Muscle.QUADRICEPS)
+        exercise("plate_belt_squat", "Plate-loaded belt squat", Muscle.QUADRICEPS)
         exercise("plate_leverage_squat", "Leverage squat machine", Muscle.QUADRICEPS)
         exercise("plate_leg_press_45", "45-degree plate-loaded leg press", Muscle.QUADRICEPS)
         exercise("plate_leg_press_horizontal", "Horizontal plate-loaded leg press", Muscle.QUADRICEPS)
@@ -297,6 +307,9 @@ object ExerciseCatalog {
         exercise("plate_calf_raise_standing", "Plate-loaded standing calf raise", Muscle.CALVES)
         exercise("plate_biceps_curl", "Plate-loaded preacher curl", Muscle.BICEPS)
         exercise("plate_triceps_dip", "Plate-loaded seated dip press", Muscle.TRICEPS)
+    } + section(Gear.OTHER) {
+        // A hex/trap bar has a distinct implement and history from a straight barbell.
+        exercise("trap_bar_deadlift", "Trap-bar deadlift", Muscle.QUADRICEPS)
     }
 
     private fun section(

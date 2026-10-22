@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.mooscles.data.ExerciseSearch
 
 @Composable
 fun LibraryScreen(state: UiState, actions: MoosclesActions, onHistory: (String) -> Unit) {
@@ -24,7 +25,7 @@ fun LibraryScreen(state: UiState, actions: MoosclesActions, onHistory: (String) 
     var customOnly by remember { mutableStateOf(false) }
     var create by remember { mutableStateOf(false) }
     val filtered = state.exercises.filter { exercise ->
-        (search.isBlank() || "${exercise.name} ${exercise.muscle} ${exercise.equipment}".contains(search.trim(), true)) &&
+        ExerciseSearch.matches(exercise.id, exercise.name, exercise.muscle, exercise.equipment, search) &&
             (muscle.isEmpty() || exercise.muscle == muscle) && (equipment.isEmpty() || exercise.equipment == equipment) && (!customOnly || exercise.custom)
     }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -85,7 +86,7 @@ fun ExercisePicker(exercises: List<ExerciseUi>, onDismiss: () -> Unit, onSelect:
     var search by remember { mutableStateOf("") }
     var muscle by remember { mutableStateOf("") }
     var equipment by remember { mutableStateOf("") }
-    val matches = exercises.filter { (search.isBlank() || it.name.contains(search.trim(), true)) && (muscle.isBlank() || it.muscle == muscle) && (equipment.isBlank() || it.equipment == equipment) }
+    val matches = exercises.filter { ExerciseSearch.matches(it.id, it.name, it.muscle, it.equipment, search) && (muscle.isBlank() || it.muscle == muscle) && (equipment.isBlank() || it.equipment == equipment) }
     Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(max = 700.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

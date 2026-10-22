@@ -32,6 +32,9 @@ interface WorkoutDao {
     @Query("SELECT * FROM exercises ORDER BY name COLLATE NOCASE") suspend fun exercises(): List<Exercise>
     @Query("SELECT * FROM routines ORDER BY position") suspend fun routines(): List<Routine>
     @Query("SELECT * FROM routine_exercises ORDER BY position") suspend fun routineExercises(): List<RoutineExercise>
+    @Query("SELECT * FROM routine_sets ORDER BY position") suspend fun routineSets(): List<RoutineSet>
+    @Query("SELECT * FROM routine_sets WHERE routineExerciseId = :id ORDER BY position") suspend fun plannedSets(id: String): List<RoutineSet>
+    @Query("SELECT * FROM routine_sets WHERE id = :id") suspend fun routineSet(id: String): RoutineSet?
     @Query("SELECT * FROM workouts ORDER BY startedAt DESC") suspend fun workouts(): List<Workout>
     @Query("SELECT * FROM workout_exercises ORDER BY position") suspend fun workoutExercises(): List<WorkoutExercise>
     @Query("SELECT * FROM workout_sets ORDER BY position") suspend fun sets(): List<WorkoutSet>
@@ -52,6 +55,8 @@ interface WorkoutDao {
     @Update suspend fun updateRoutine(item: Routine)
     @Insert suspend fun insertRoutineExercise(item: RoutineExercise)
     @Update suspend fun updateRoutineExercise(item: RoutineExercise)
+    @Insert suspend fun insertRoutineSet(item: RoutineSet)
+    @Update suspend fun updateRoutineSet(item: RoutineSet)
     @Insert suspend fun insertWorkout(item: Workout)
     @Update suspend fun updateWorkout(item: Workout)
     @Insert suspend fun insertWorkoutExercise(item: WorkoutExercise)
@@ -60,6 +65,7 @@ interface WorkoutDao {
     @Update suspend fun updateSet(item: WorkoutSet)
     @Query("DELETE FROM routines WHERE id = :id") suspend fun deleteRoutine(id: String)
     @Query("DELETE FROM routine_exercises WHERE id = :id") suspend fun deleteRoutineExercise(id: String)
+    @Query("DELETE FROM routine_sets WHERE id = :id") suspend fun deleteRoutineSet(id: String)
     @Query("DELETE FROM workouts WHERE id = :id") suspend fun deleteWorkout(id: String)
     @Query("DELETE FROM workout_exercises WHERE id = :id") suspend fun deleteWorkoutExercise(id: String)
     @Query("DELETE FROM workout_sets WHERE id = :id") suspend fun deleteSet(id: String)
@@ -67,7 +73,7 @@ interface WorkoutDao {
 }
 
 /** Additive migrations preserve routines and all independent workout snapshots. */
-@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 2, exportSchema = true)
+@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 3, exportSchema = true)
 @TypeConverters(EnumConverters::class)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun dao(): WorkoutDao
@@ -79,8 +85,25 @@ abstract class WorkoutDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `routine_sets` (`id` TEXT NOT NULL, `routineExerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `targetReps` INTEGER NOT NULL, `targetWeightKg` REAL, `inheritPr` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`routineExerciseId`) REFERENCES `routine_exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_routine_sets_routineExerciseId` ON `routine_sets` (`routineExerciseId`)")
+                // Old shared targets are explicit prescriptions; never guess that they were inherited.
+                db.query("SELECT id, plannedSets, targetReps, targetWeightKg FROM routine_exercises").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        repeat(cursor.getInt(1).coerceAtLeast(0)) { position ->
+                            db.execSQL("INSERT INTO routine_sets (id, routineExerciseId, position, targetReps, targetWeightKg, inheritPr) VALUES (?, ?, ?, ?, ?, 0)",
+                                arrayOf<Any?>(newId(), cursor.getString(0), position, cursor.getInt(2),
+                                    if (cursor.isNull(3)) null else cursor.getDouble(3)))
+                        }
+                    }
+                }
+            }
+        }
+
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "mooscles.db"
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
     }
 }

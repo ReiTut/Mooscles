@@ -3,7 +3,7 @@ package com.mooscles.data
 import androidx.room.Entity
 import com.mooscles.domain.RoutineTargetRecord
 
-/** Last consumed PR, independent of manually editable routine prescriptions. */
+/** Last observed eligible PR retained for upgrade compatibility; each row's mode controls updates. */
 @Entity(tableName = "routine_target_checkpoints", primaryKeys = ["exerciseId", "convention"])
 data class RoutineTargetCheckpoint(
     val exerciseId: String,

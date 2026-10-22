@@ -13,13 +13,52 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Builds an actual version-one database from Room's exported schema before upgrading it. */
+/** Builds actual old databases from Room's exported schemas before running every migration. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class RoutineTargetMigrationTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
-    @Test fun versionOneUpgradeBackfillsPlansAndPreservesSnapshotsAndManualOverrides() = runBlocking {
+    @Test fun versionTwoUpgradeCopiesDecimalAndBlankPrescriptionsWithExactCountsAndRest() = runBlocking {
+        val filename = "rm-v2-${newId().take(8)}.db"
+        val exercise = Exercise("v2-exercise", "Press", MuscleGroup.CHEST, Equipment.DUMBBELL,
+            LoadConvention.PER_HAND, custom = true)
+        val routine = Routine("v2-routine", "Original routine")
+        val weighted = RoutineExercise("v2-weighted", routine.id, exercise.id, position = 0,
+            plannedSets = 4, targetReps = 7, targetWeightKg = 20.375, restSeconds = 135)
+        val blank = RoutineExercise("v2-blank", routine.id, exercise.id, position = 1,
+            plannedSets = 3, targetReps = 0, targetWeightKg = null, restSeconds = null)
+        val legacy = AppData(exercises = listOf(exercise), routines = listOf(routine), routineExercises = listOf(weighted, blank))
+        createLegacyDatabase(filename, legacy, version = 2)
+        var database: WorkoutDatabase? = null
+        try {
+            database = openMigrating(filename)
+            var repo = WorkoutRepository(database)
+            repo.initialize()
+            val snapshot = repo.snapshot()
+            assertEquals(listOf(weighted, blank), snapshot.routineItems(routine.id))
+            for (plan in listOf(weighted, blank)) {
+                val rows = snapshot.plannedSets(plan.id)
+                assertEquals(plan.plannedSets, rows.size)
+                assertEquals((0 until plan.plannedSets).toList(), rows.map { it.position })
+                assertTrue(rows.all { !it.inheritPr && it.targetReps == plan.targetReps && it.targetWeightKg == plan.targetWeightKg })
+            }
+            database.close()
+            database = openMigrating(filename)
+            repo = WorkoutRepository(database)
+            repo.initialize()
+            assertEquals(snapshot.routineSets, repo.snapshot().routineSets)
+            val workout = repo.startRoutine(routine.id, defaultRestSeconds = 30)
+            val started = repo.snapshot()
+            assertEquals(listOf(135, 120), started.workoutItems(workout).map { it.restSeconds })
+            assertTrue(started.exerciseSets(started.workoutItems(workout)[0].id).all { it.reps == 7 && it.weightKg == 20.375 })
+            assertTrue(started.exerciseSets(started.workoutItems(workout)[1].id).all { it.reps == 0 && it.weightKg == 0.0 })
+            assertEquals(4, started.exerciseSets(started.workoutItems(workout)[0].id).size)
+            assertEquals(3, started.exerciseSets(started.workoutItems(workout)[1].id).size)
+        } finally { database?.close(); context.deleteDatabase(filename) }
+    }
+
+    @Test fun versionOneUpgradePreservesEveryLegacyPrescriptionAsCustomAndLeavesSnapshotsUnchanged() = runBlocking {
         val filename = "rm-${newId().take(8)}.db"
         val bench = Exercise("legacy-bench", "Barbell press", MuscleGroup.CHEST,
             Equipment.BARBELL, LoadConvention.TOTAL_LOAD, custom = true)
@@ -55,23 +94,29 @@ class RoutineTargetMigrationTest {
         val legacy = AppData(listOf(bench, cable), listOf(push, fullBody),
             listOf(firstPlan, cablePlan, otherPlan), listOf(finished, active),
             listOf(historyEntry, activeEntry), sets)
-        createVersionOneDatabase(filename, legacy)
+        createLegacyDatabase(filename, legacy, version = 1)
 
         var database: WorkoutDatabase? = null
         try {
             database = openMigrating(filename)
             var repository = WorkoutRepository(database)
-            assertEquals(2, database.openHelper.writableDatabase.version)
+            assertEquals(3, database.openHelper.writableDatabase.version)
             assertTrue(database.dao().targetCheckpoints().isEmpty())
             assertLegacyDataUnchanged(legacy, repository.snapshot())
 
             repository.initialize()
             val synchronized = repository.snapshot()
-            assertEquals(firstPlan.copy(targetWeightKg = 22.0, targetReps = 6),
+            assertEquals(firstPlan,
                 synchronized.routineItems(push.id).first())
             assertEquals(cablePlan, synchronized.routineItems(push.id).last())
-            assertEquals(otherPlan.copy(targetWeightKg = 22.0, targetReps = 6),
+            assertEquals(otherPlan,
                 synchronized.routineItems(fullBody.id).single())
+            for (plan in legacy.routineExercises) {
+                val rows = synchronized.plannedSets(plan.id)
+                assertEquals(plan.plannedSets, rows.size)
+                assertEquals((0 until plan.plannedSets).toList(), rows.map { it.position })
+                assertTrue(rows.all { it.targetReps == plan.targetReps && it.targetWeightKg == plan.targetWeightKg && !it.inheritPr })
+            }
             assertEquals(listOf(firstPlan.id, cablePlan.id), synchronized.routineItems(push.id).map { it.id })
             assertSnapshotsUnchanged(legacy, synchronized)
             val checkpoint = database.dao().targetCheckpoints().single()
@@ -91,7 +136,7 @@ class RoutineTargetMigrationTest {
             val reopened = repository.snapshot()
             assertEquals(manual, reopened.routineItems(push.id).first())
             assertEquals(cablePlan, reopened.routineItems(push.id).last())
-            assertEquals(otherPlan.copy(targetWeightKg = 22.0, targetReps = 6),
+            assertEquals(otherPlan,
                 reopened.routineItems(fullBody.id).single())
             assertEquals(listOf(checkpoint), database.dao().targetCheckpoints())
             assertSnapshotsUnchanged(legacy, reopened)
@@ -103,7 +148,7 @@ class RoutineTargetMigrationTest {
 
     private fun openMigrating(filename: String): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .addMigrations(WorkoutDatabase.MIGRATION_1_2).build()
+            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3).build()
 
     private fun assertLegacyDataUnchanged(expected: AppData, actual: AppData) {
         assertEquals(expected.exercises.sortedBy { it.id }, actual.exercises.sortedBy { it.id })
@@ -118,8 +163,8 @@ class RoutineTargetMigrationTest {
         assertEquals(expected.sets.sortedBy { it.id }, actual.sets.sortedBy { it.id })
     }
 
-    private fun createVersionOneDatabase(filename: String, data: AppData) {
-        val schemaPath = "schemas/com.mooscles.data.WorkoutDatabase/1.json"
+    private fun createLegacyDatabase(filename: String, data: AppData, version: Int) {
+        val schemaPath = "schemas/com.mooscles.data.WorkoutDatabase/$version.json"
         val schemaFile = listOf(File(schemaPath), File("app/$schemaPath")).firstOrNull { it.isFile }
             ?: error("Room's exported version-one schema was not found")
         val schema = JSONObject(schemaFile.readText()).getJSONObject("database")
@@ -168,7 +213,7 @@ class RoutineTargetMigrationTest {
                     "assistance" to if (set.assistance) 1 else 0)
             }
             raw.version = schema.getInt("version")
-            assertEquals(1, raw.version)
+            assertEquals(version, raw.version)
         }
     }
 

@@ -68,6 +68,22 @@ data class RoutineExercise(
     val restSeconds: Int? = null
 )
 
+/** One independently saved prescription. Null load and zero reps are explicitly blank values. */
+@Entity(
+    tableName = "routine_sets",
+    foreignKeys = [ForeignKey(entity = RoutineExercise::class, parentColumns = ["id"],
+        childColumns = ["routineExerciseId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("routineExerciseId")]
+)
+data class RoutineSet(
+    @PrimaryKey val id: String = newId(),
+    val routineExerciseId: String,
+    val position: Int = 0,
+    val targetReps: Int = 0,
+    val targetWeightKg: Double? = null,
+    val inheritPr: Boolean = true
+)
+
 @Entity(tableName = "workouts")
 data class Workout(
     @PrimaryKey val id: String = newId(),
@@ -117,10 +133,12 @@ data class AppData(
     val routineExercises: List<RoutineExercise> = emptyList(),
     val workouts: List<Workout> = emptyList(),
     val workoutExercises: List<WorkoutExercise> = emptyList(),
-    val sets: List<WorkoutSet> = emptyList()
+    val sets: List<WorkoutSet> = emptyList(),
+    val routineSets: List<RoutineSet> = emptyList()
 ) {
     val activeWorkout: Workout? get() = workouts.firstOrNull { it.status == WorkoutStatus.ACTIVE }
     fun routineItems(routineId: String) = routineExercises.filter { it.routineId == routineId }.sortedBy { it.position }
     fun workoutItems(workoutId: String) = workoutExercises.filter { it.workoutId == workoutId }.sortedBy { it.position }
     fun exerciseSets(workoutExerciseId: String) = sets.filter { it.workoutExerciseId == workoutExerciseId }.sortedBy { it.position }
+    fun plannedSets(routineExerciseId: String) = routineSets.filter { it.routineExerciseId == routineExerciseId }.sortedBy { it.position }
 }

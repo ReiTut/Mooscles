@@ -1,6 +1,35 @@
 # Verification — 2026-10-22
 
-## Current release — 1.3.1 / build 9
+## Current release — 1.4.0 / build 10
+
+Routine targets now persist as ordered individual set rows. New exercises have two inherited rows; editing either value makes the whole row custom. Row menus can restore PR defaults or remove a set. Future eligible records update inherited rows using both values from one actual completed working set. Custom prescriptions, including explicit blank bodyweight, remain unchanged. Historical record corrections/deletions refresh inherited defaults on initialization/finalization without stale checkpoint suppression.
+
+Room schema v3 adds only `routine_sets`. Real on-disk v1 → v3 and v2 → v3 tests verify that every legacy target pair and set count is copied exactly into custom rows, retaining rest durations and independent completed/active snapshots. Reopening, duplication and future workout initialization preserve each corresponding row and inheritance mode. Routine edits never rewrite an active workout or completed performance.
+
+Exercise menus include **Edit Rest Timer**, with the existing fixed-colon editor, two-digit seconds and 0:00–5:00 validation. Rest is saved per routine exercise and displayed near its heading. Missing/new values use 120 seconds, and saved custom durations within the existing limit are preserved. Adjustment buttons reset the input mask to the adjusted value, including after an invalid typed draft.
+
+The catalog contains 287 distinct entries. The existing selectorized shoulder-press ID is renamed to **Seated Overhead Press (Machine)**. Ten genuine missing variations and shared alias search are available to existing installations without resetting custom exercises, load conventions, records or snapshots.
+
+Final command: `build.ps1 -Tasks @(':app:testDebugUnitTest', ':app:lintDebug', ':app:assembleDebug', ':app:assembleDebugAndroidTest')` with the bundled JDK 21 and Gradle 8.14.5.
+
+| Check | Result |
+| --- | --- |
+| Full host unit, persistence, native graphics and Compose suite | **PASS — 278 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 existing warnings** |
+| Debug APK and instrumented-test APK | **PASS — compiled and packaged** |
+| Actual APK identity | **com.mooscles; version 1.4.0; version code 10; minimum API 26** |
+| APK signing compatibility | **PASS — existing certificate, APK Signature Scheme v2** |
+| Release copy, generated metadata and checksum | **PASS — identical APK bytes and matching size/SHA-256** |
+| Native visual inspection | **PASS — independent example rows, multiple exercises, wrapped long names, focused fields and accessible Add Set in a verified 360dp viewport** |
+| Physical device installation and real keyboard | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+The 13 focused editor tests include independent input, autosave ordering, exact kg behind rounded lb, explicit bodyweight/custom behavior, PR-default restoration, replacement, add/remove limits, rest controls and constrained scrolling. A native graphics test renders four previews under `app/build/outputs/routine-editor-previews/`. The constrained viewport simulates space above a keyboard; it does not display a real Android IME. The full Activity → Room → workout → rest timer → history test and updated instrumented test source use the new per-set editor. Instrumented tests were compiled but could not be executed without a device.
+
+Verified APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.4.0-debug.apk` — **19,599,399 bytes**. SHA-256: `2f5162ad32d193194708266fa970ebec07541b95999e1aab0e1a02a9e70b41db`. The normal debug APK has identical bytes. `update.json` and `Mooscles-v1.4.0-debug.apk.sha256` were generated from that APK. Signing certificate SHA-256 remains `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`. Outputs/signing material remain ignored.
+
+Distribution: [v1.4.0 full GitHub Release](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.0), with the existing debug APK, update.json and checksum as assets. The existing publication helper rebuilds/checks the exact tagged commit, downloads and verifies draft assets, then explicitly publishes with `draft=false`, `prerelease=false` and Latest status. Stable discovery uses the existing updater and version code 10; automatic download/install remains subject to saved preferences and Android approval. Publication verification also checks the latest-release endpoint and downloads the public assets independently.
+
+## Prior release — 1.3.1 / build 9
 
 The timer uses the persisted active workout to control visibility and lifecycle. One dock remains above the footer across routes and scrolling. Finishing/discarding a session, orphaned startup state and stale receivers clear countdowns and cancel alarms, sounds and notifications. Unfinished sessions retain their timer; saved rest durations, workout data and Room schema v2 are unchanged.
 
