@@ -26,7 +26,7 @@ Existing saved workouts recalculate their corrected totals when reopened. No Roo
 
 ## Updater behavior
 
-- Official public GitHub Releases API for `ReiTut/Mooscles`, without embedded credentials or workout uploads. Stable releases are the default; prereleases require an explicit Settings preference. Drafts are always excluded.
+- Official public GitHub Releases API for `ReiTut/Mooscles`, without embedded credentials or workout uploads. Stable releases are the default in v1.1.0; prereleases require an explicit Settings preference. Drafts are always excluded. Promoting v1.1.1 to stable makes its existing version-code-6 metadata eligible for version-code-5 v1.1.0 installations without enabling prereleases or replacing the updater.
 - Foreground checks are throttled to one hour; manual checks are throttled to 30 seconds. Persistent GitHub rate-limit deadlines take precedence. ETag response caches survive restart; temporary failures use backoff.
 - Unique WorkManager 2.10.5 periodic work checks about every six hours with a network constraint. Unique download work respects Wi-Fi-only preferences (unmetered Wi-Fi by default), persists progress, and supports cancellation/retry. Interrupted transfers restart safely into private temporary files and reverify the complete download.
 - Update selection uses Android versionCode and strict update.json metadata. It selects only the named APK with matching asset size, then verifies downloaded SHA-256, package identity, version, minimum SDK and compatible signing certificates before staging it for installation.
@@ -68,7 +68,7 @@ Reports:
 **Metadata:** `D:\Programing\Mooscles\app\build\outputs\release\update.json`
 
 - Package: `com.mooscles`; version `1.1.1`; version code `6`
-- Size: **19344097 bytes**
+- Size: **19248571 bytes**
 - APK SHA-256: `addc83eabf063e216748d4b91a768a881dac72a9b2a726144265e26b3df3e66c`
 - Existing debug certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`
 - Android 8.0 / API 26 or newer; compile/target API 35
@@ -81,7 +81,11 @@ APKs, generated metadata, build outputs, SDK paths, keystores, passwords and cre
 
 `build.ps1` generates the versioned APK, update.json and checksum after successful debug assembly. `tools/prepare-release.ps1` verifies the actual APK, existing signer and increasing version code; negative checks reject a wrong package, signer or reused version code. `tools/publish-release.ps1` requires a clean tested source commit and exact local/remote tag, reruns checks, prepares and verifies all uploaded assets, and defaults to a draft prerelease. Publishing requires its explicit `-Publish` option. The release workflow also independently downloads and verifies uploaded assets before publication.
 
-The older v1.0.0 prerelease has an APK and checksum but no update.json; the updater safely skips such older releases. The v1.1.1 distribution includes the APK, generated update.json and checksum. Future releases also need both the exact versioned APK and its generated update.json. Debug distributions must remain prereleases, so users receiving them must enable Include prereleases. See [UPDATES.md](UPDATES.md).
+The older v1.0.0 prerelease has an APK and checksum but no update.json; the updater safely skips such older releases. The v1.1.1 distribution includes the APK, generated update.json and checksum. Future releases also need both the exact versioned APK and its generated update.json. The owner explicitly authorized promoting v1.1.1 to the official stable/latest GitHub release while retaining these exact assets and their debug signing identity for compatibility. Stable releases are eligible on v1.1.0's default update channel without enabling Include prereleases. GitHub release promotion is separate from the tested source tag and does not rebuild the APK, move the tag or establish production signing. See [UPDATES.md](UPDATES.md).
+
+Promotion verification confirmed `draft=false`, `prerelease=false`, and v1.1.1 as the repository's latest release. The exact existing APK and update metadata were downloaded and independently checked for size, SHA-256, package/version and signing identity. The local build/check workflow passed again with unchanged outputs; the 163-test reports still have zero failures, errors or skips, and lint has zero errors. The v1.1.1 source tag still points to tested commit `a01ea38cb4a423726d98a1ab1fceb8f47997a55a`.
+
+A live unauthenticated check using the actual compiled ReleaseClient (identical to v1.1.0's source) selected stable v1.1.1/code 6 for installed v1.1.0/code 5 with `includePrereleases=false`. Installed codes 6 and 7 were offered no update or downgrade. All three checks returned no diagnostics. This verifies public release discovery and compatibility metadata, not a physical-device installation. Automatic updates still respect saved preferences, user cancellations, Wi-Fi requirements and Android installation approval.
 
 An installed version without the updater must install this updater-enabled APK once. Future updates then use the selected channel and preferences. Android may require Allow from this source and installation confirmation. Six-hour scheduling is approximate, not immediate release delivery.
 

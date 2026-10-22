@@ -1,6 +1,6 @@
 # GitHub updates
 
-Mooscles discovers public releases from `ReiTut/Mooscles` using the official GitHub Releases API. Updates use Android `versionCode`; names and tags are display information. Drafts are always excluded. Stable releases are the default channel. Enable **Settings → App updates → Include prereleases** to receive this project's debug prereleases.
+Mooscles discovers public releases from `ReiTut/Mooscles` using the official GitHub Releases API. Updates use Android `versionCode`; names and tags are display information. Drafts are always excluded. Stable releases are the default channel, including the official v1.1.1 release. Version 1.1.0 already checks this channel automatically by default; **Include prereleases** is only needed for releases explicitly marked as prereleases.
 
 Automatic updates and Wi-Fi-only downloads are enabled initially. The app checks on foreground entry with throttling and uses unique network-constrained background work about every six hours. Android battery, network, and scheduling conditions may delay a background check. GitHub API limits and temporary failures also delay checks. The Settings section provides manual checks, progress, cancellation, retries, and installation approval.
 
@@ -78,7 +78,7 @@ After reviewing the draft, explicitly publish it by running the same helper with
     -PreviousVersionCode 4 -NotesFile .\.tooling\release-notes-v1.1.0.md -Publish
 ```
 
-It can resume an existing draft only when its notes and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the prerelease, checks the published asset list, and returns repository/release/download links. It never publishes a stable release for the current debug signing configuration.
+It can resume an existing draft only when its notes and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the prerelease, checks the published asset list, and returns repository/release/download links. The helper continues to publish debug builds as prereleases by default. An owner can separately authorize promotion of a verified compatible release to stable/latest on GitHub; this changes its distribution channel, not its APK, source tag, version code or signing identity. The owner explicitly requested this promotion for v1.1.1 so existing v1.1.0 installations can discover it on their default stable channel. The APK remains debug-signed, and Android may still require source permission or installation approval.
 
 Replace the tag, last distributed version code, and notes filename for each later version. The local preparation script never tags, pushes, publishes, changes signing configuration, or creates keys. Adding the updater and these helper scripts does not modify existing GitHub releases or publish a new release by itself.
 

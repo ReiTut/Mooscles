@@ -6,9 +6,9 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 The current release is **1.1.1**, version code **6**, with the same application ID and existing debug certificate.
 
-[v1.1.1 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.1.1) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/Mooscles-v1.1.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/update.json)
+[v1.1.1 official release](https://github.com/ReiTut/Mooscles/releases/tag/v1.1.1) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/Mooscles-v1.1.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.1.1/update.json)
 
-This is a debug-signed prerelease for testing. It keeps application ID `com.mooscles`, uses version name `1.1.1` and version code `6`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Install this APK once to enable future in-app updates, then enable **Settings → App updates → Include prereleases** to receive debug releases. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
+This official GitHub release retains the existing debug-signed APK for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.1.1` and version code `6`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Version 1.1.0 already checks for stable releases automatically by default, so **Include prereleases** is not needed for this release. Older versions without the updater must install this APK once. Automatic downloads use unmetered Wi-Fi by default, and Android may require installation approval. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate. Official GitHub release status does not change the APK into a production-signed build.
 
 ## Use
 
@@ -41,7 +41,7 @@ On a fresh checkout, install Adoptium JDK 21, Android SDK platform 35 and build-
 
 The latter requires a booted emulator or authorized USB device. Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Android Studio can open the project root directly. Test/lint reports are under `app/build/reports/`.
 
-To create an installable APK in Android Studio, select the `debug` build variant, then **Build → Generate Bundle(s) / APK(s) → Generate APK(s)**. When it finishes, click **locate** in the notification. You can copy/share `app-debug.apk` and install it directly on an Android 8+ device. The debug APK is signed automatically. For a public release, use **Build → Generate Signed App Bundle or APK → APK** with your own release signing key.
+To create an installable APK in Android Studio, select the `debug` build variant, then **Build → Generate Bundle(s) / APK(s) → Generate APK(s)**. When it finishes, click **locate** in the notification. You can copy/share `app-debug.apk` and install it directly on an Android 8+ device. The debug APK is signed automatically. For a future production-signed distribution, use **Build → Generate Signed App Bundle or APK → APK** after resolving signing compatibility with existing installations; changing the key can prevent updates.
 
 Version compatibility references: [AGP 8.7](https://developer.android.com/build/releases/agp-8-7-0-release-notes), [Kotlin Gradle compatibility](https://kotlinlang.org/docs/gradle-configure-project.html), [Compose compiler plugin](https://developer.android.com/jetpack/androidx/releases/compose-kotlin), [Room releases](https://developer.android.com/jetpack/androidx/releases/room).
 
