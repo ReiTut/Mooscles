@@ -113,5 +113,5 @@ if ((Get-Item -LiteralPath $releaseApk).Length -ne $writtenMetadata.apkSize -or
     ApkSize = $apkSize
     Sha256 = $sha256
     SignerSha256 = $signerHashes[0]
-    PrereleaseRequired = $debugBuild
+    IsDebugBuild = $debugBuild
 }

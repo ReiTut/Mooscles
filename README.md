@@ -1,14 +1,14 @@
 # Mooscles
 
-A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. Network requests only discover and download public GitHub app updates; no workout data is uploaded. No account, subscriptions or analytics.
+A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. App network requests only discover and download public GitHub updates. Optional sharing creates a workout image locally and opens the user's chosen destination; it never selects a recipient or sends automatically. No account, subscriptions or analytics.
 
 ## Download
 
-The current release is **1.2.0**, version code **7**, with the same application ID and existing debug certificate.
+The current release is **1.3.0**, version code **8**, with the same application ID and existing debug certificate.
 
-[v1.2.0 debug prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.2.0) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.2.0/Mooscles-v1.2.0-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.2.0/update.json)
+[v1.3.0 official release](https://github.com/ReiTut/Mooscles/releases/tag/v1.3.0) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.3.0/Mooscles-v1.3.0-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.3.0/update.json)
 
-This is a debug-signed prerelease. It keeps application ID `com.mooscles`, uses version name `1.2.0` and version code `7`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Version 1.1.0 and later already include the updater: enable **Settings → App updates → Include prereleases** to discover this version, then check for updates. Stable-channel users remain on the existing v1.1.1 release. Older versions without the updater must install this APK once. Automatic downloads use unmetered Wi-Fi by default, and Android may require installation approval. The existing local debug signing key is used; private keys and local signing settings are excluded from Git. Keep that key outside the repository for future installable updates signed with the same certificate.
+This official release retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.3.0` and version code `8`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Versions 1.1.0 and later already include the updater and discover this release on their default stable channel; **Include prereleases** is not required. Automatic downloads use unmetered Wi-Fi by default and respect saved preferences; Android may require installation approval. Older versions without the updater can install this APK once over their compatible existing app. The existing local debug signing key is retained and excluded from Git. Official GitHub release status does not change the APK's build type or signing certificate. Future release-helper runs use the official stable channel by default.
 
 ## Use
 
@@ -19,6 +19,12 @@ Start a routine or an empty session. Log decimal loads and reps, mark working/wa
 The offline catalog contains **277** established exercise variations across barbell, dumbbell, kettlebell, cable, bodyweight, Smith, selectorized and plate-loaded machines. Equipment, movement variation, and logging convention keep distinct records.
 
 ## Build
+
+The local **1.3.0 / build 8** update replaces the launcher icon with the supplied green arm/dumbbell artwork, including transparent/adaptive/legacy/themed resources and dark splash settings. See [artwork/README.md](artwork/README.md) for source preservation and regeneration.
+
+Completed workout summaries and history details include **Share workout**. The preview renders a 1080px-wide PNG from the selected saved workout, with its historical workout number, localized date and selected weight units, every completed exercise, actual best-set pairs, individual PR badges and summary totals. Long names wrap; exceptionally long workouts become ordered image pages with statistics intact. No failure indicators are invented. The card uses the app's English language, rather than the Portuguese sample text.
+
+Sharing supports WhatsApp, WhatsApp Business and the standard Android Sharesheet through private-cache FileProvider URIs and temporary read grants. The user chooses recipients and confirms sending in the destination. This needs no contacts or broad storage permissions. Exports remain available after the preview closes and old managed exports are cleaned after seven days; sharing refreshes the retention timestamp. Preview generation and file decoding run off the UI thread. No backend or workout database changes are required.
 
 Version 1.1.0 adds **Settings → App updates** with foreground checks, approximately six-hour background checks, stable/prerelease channels, Wi-Fi download preferences, progress, retries, and Android installation approval. Installation waits for saved workouts and stopped rest timers. Install this updater-enabled APK once on older versions to enable future updates. See [UPDATES.md](UPDATES.md) for the required APK + `update.json` release assets and publishing procedure.
 

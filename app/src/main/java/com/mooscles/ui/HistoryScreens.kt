@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
 
 @Composable
 fun HistoryScreen(state: UiState, actions: MoosclesActions, onDetail: (String) -> Unit) {
@@ -68,9 +70,10 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
     var rename by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
+    var share by remember(workout.id) { mutableStateOf(false) }
     val beaten = workout.records.filterNot { it.firstRecord }
     val first = workout.records.filter { it.firstRecord }
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    LazyColumn(modifier = Modifier.testTag("workout-details"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { PageHeading(if (editing) "Editing saved session" else if (summary) "Workout complete" else "Session breakdown", if (summary && !editing) "Strong work." else workout.name, if (summary && !editing) workout.name else null) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(25.dp)) {
@@ -85,6 +88,13 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
                     }
                     Metric(weight(workout.volumeKg, state.preferences.pounds), "Total weight moved · logged load × reps")
                 }
+            }
+        }
+        if (!editing && workout.endedAt != null) item {
+            FilledTonalButton(onClick = { share = true }, modifier = Modifier.fillMaxWidth().testTag("share-workout")) {
+                Icon(Icons.Outlined.Share, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.share_workout))
             }
         }
         if (workout.records.isNotEmpty()) item {
@@ -117,6 +127,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
     if (delete) ConfirmDialog("Delete this workout?", "This permanently removes this session and recalculates affected personal records.", onDismiss = { delete = false }, onConfirm = { actions.deleteWorkout(workout.id); onDeleted() })
     if (rename) NameDialog("Rename workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
+    if (share) WorkoutSharePreview(workout.id, state.preferences.pounds, onDismiss = { share = false })
 }
 
 @Composable

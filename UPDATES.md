@@ -4,7 +4,7 @@ Mooscles discovers public releases from `ReiTut/Mooscles` using the official Git
 
 Automatic updates and Wi-Fi-only downloads are enabled initially. The app checks on foreground entry with throttling and uses unique network-constrained background work about every six hours. Android battery, network, and scheduling conditions may delay a background check. GitHub API limits and temporary failures also delay checks. The Settings section provides manual checks, progress, cancellation, retries, and installation approval.
 
-Version **1.2.0 / build 7** is a debug prerelease. Enable **Settings → App updates → Include prereleases** to receive it from updater-enabled versions 1.1.0 or 1.1.1. Its existing signing identity and application ID are retained. The stable channel continues to offer v1.1.1; the earlier owner-authorized promotion of that release does not change v1.2.0's prerelease channel.
+Version **1.3.0 / build 8** is an official stable-channel release using the existing debug APK/signing identity. Updater-enabled versions 1.1.0, 1.1.1 and 1.2.0 discover it without enabling prereleases. The earlier v1.2.0 entry remains a prerelease; no previous release or tag is replaced. The owner explicitly confirmed that future releases should be official, and the publication helper now follows that default independently of build type.
 
 Downloads contain only APK release assets. No workout data is uploaded. Offline routines, workouts, history, PRs, and the rest timer continue to work. Installation waits while a workout or rest timer is active. Android may require **Allow from this source** and system installation approval; the app cannot promise silent installation on every Android version or device.
 
@@ -62,25 +62,25 @@ The updater checks package identity, supported SDK, version code, file size, SHA
 
 Source commits do not include APKs or credentials. Preserve remote history and never force-push a published tag. The guarded publication helper uses your existing GitHub CLI authentication, requires clean committed source and an existing local/remote tag pointing to the exact current commit, reruns the project's tests/lint/build, and generates metadata from that APK. It reads successful test and lint reports before uploading anything. It never creates commits, changes remotes, or pushes source or tags.
 
-Commit and push the intended source, then create and push a new version tag pointing to that commit. Put reviewed release notes in an ignored file such as `.tooling/release-notes-v1.1.0.md`. For this first updater version:
+Commit and push the intended source, then create and push a new version tag pointing to that commit. Put reviewed release notes in an ignored file such as `.tooling/release-notes-v1.3.0.md`. For version 1.3.0, following distributed build 7:
 
 ```powershell
-git tag v1.1.0 HEAD
-git push origin v1.1.0
-.\tools\publish-release.ps1 -Tag v1.1.0 `
-    -PreviousVersionCode 4 -NotesFile .\.tooling\release-notes-v1.1.0.md
+git tag v1.3.0 HEAD
+git push origin v1.3.0
+.\tools\publish-release.ps1 -Tag v1.3.0 `
+    -PreviousVersionCode 7 -NotesFile .\.tooling\release-notes-v1.3.0.md
 ```
 
-By default this creates a **draft prerelease** with the versioned APK, `update.json`, and `.sha256` attached. It checks asset names, sizes and available GitHub digests, then downloads all three assets to an ignored verification directory and compares their SHA-256 hashes. A failure leaves the draft unpublished. The tag must match the APK's version name exactly and the APK's version code must exceed `PreviousVersionCode`.
+By default this creates a **draft official release** with the versioned debug APK, `update.json`, and `.sha256` attached. It checks asset names, sizes, the selected channel and available GitHub digests, then downloads all three assets to an ignored verification directory and compares their SHA-256 hashes. A failure leaves the draft unpublished. The tag must match the APK's version name exactly and the APK's version code must exceed `PreviousVersionCode`.
 
 After reviewing the draft, explicitly publish it by running the same helper with `-Publish`:
 
 ```powershell
-.\tools\publish-release.ps1 -Tag v1.1.0 `
-    -PreviousVersionCode 4 -NotesFile .\.tooling\release-notes-v1.1.0.md -Publish
+.\tools\publish-release.ps1 -Tag v1.3.0 `
+    -PreviousVersionCode 7 -NotesFile .\.tooling\release-notes-v1.3.0.md -Publish
 ```
 
-It can resume an existing draft only when its notes and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the prerelease, checks the published asset list, and returns repository/release/download links. The helper continues to publish debug builds as prereleases by default. An owner can separately authorize promotion of a verified compatible release to stable/latest on GitHub; this changes its distribution channel, not its APK, source tag, version code or signing identity. The owner explicitly requested this promotion for v1.1.1 so existing v1.1.0 installations can discover it on their default stable channel. The APK remains debug-signed, and Android may still require source permission or installation approval.
+It can resume an existing draft only when its notes, channel and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the official release, marks it Latest, checks the published asset list, and returns repository/release/download links. The optional `-Prerelease` switch is reserved for an explicitly requested channel override and must be supplied consistently when resuming that draft. Build type remains checked independently: this workflow distributes the existing debug APK with the trusted signing identity. Android may still require source permission or installation approval.
 
 Replace the tag, last distributed version code, and notes filename for each later version. The local preparation script never tags, pushes, publishes, changes signing configuration, or creates keys. Adding the updater and these helper scripts does not modify existing GitHub releases or publish a new release by itself.
 

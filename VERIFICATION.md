@@ -1,13 +1,13 @@
 # Verification — 2026-10-22
 
-Release build: **Mooscles 1.2.0**, Android version code **7**, application ID `com.mooscles`. The existing Android Debug signing identity is retained. Room schema v2 adds an explicit non-destructive v1 → v2 migration for PR synchronization checkpoints; existing training tables remain unchanged. Distribution uses the debug prerelease channel with APK, generated update.json and SHA-256 checksum assets.
+Release build: **Mooscles 1.3.0**, Android version code **8**, application ID `com.mooscles`. The existing Android Debug signing identity and Room schema v2 are retained. Icon replacement and workout sharing do not change saved workout tables or preferences. The official stable distribution uses the verified debug APK, generated update.json and SHA-256 checksum; release channel and build type are independent.
 
 Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 
 | Check | Result |
 | --- | --- |
-| Host unit, persistence and Compose tests | **PASS — 199 tests; zero failures, errors or skips** |
-| Android lint | **PASS — 0 errors; 19 dependency-version advisories** |
+| Host unit, persistence, native graphics and Compose tests | **PASS — 236 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 warnings (19 dependency advisories and 2 compatibility/resource advisories)** |
 | Debug APK | **PASS** |
 | Instrumented test APK | **PASS — compiled and packaged** |
 | APK signature | **PASS — APK Signature Scheme v2; same existing certificate** |
@@ -15,6 +15,16 @@ Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 | APK freshness | **PASS — no production source/build inputs newer than final APK** |
 | Real on-disk Room v1 → v2 migration | **PASS — old plans, history and active snapshots preserved; existing PRs backfilled** |
 | Device upgrade / real installation | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+## v1.3.0 launcher icon and workout sharing
+
+The supplied JPG is copied unchanged into `artwork/`. The final transparent foreground retains the actual source RGB pixels, including dumbbell highlights, while removing the edge-connected neutral checkerboard. Circular, rounded-square and monochrome mask previews plus a dark splash layout were inspected. Actual APK resource inspection confirms an adaptive launcher XML with background, foreground and monochrome layers, the correct manifest icon/roundIcon references, and five-density legacy PNGs. Adaptive XML remains in `mipmap-anydpi-v26` alongside legacy PNGs so the APK selects it correctly; the resulting ObsoleteSdkInt warning is retained. The other compatibility warning concerns the inlined API-29 LineBreaker constant used by the API-23 StaticLayout builder, not a runtime call to a newer API.
+
+Finished summaries and history details expose Share workout. A saved snapshot feeds the same existing duration/volume/PR calculations into a 1080px native Canvas export. The preview precedes every explicit destination action. WhatsApp, Business, fallback chooser, PNG MIME type, single/multiple streams, scoped FileProvider URIs, temporary read grants, cache retention renewal and error/retry/close behavior are host-tested. No contacts or storage permissions were added, and the APK retains its existing package/signing identity.
+
+Thirty-seven focused sharing tests were added: 19 card data/best-set/bodyweight/PR tests, 5 native renderer/pagination/cache tests, 6 intent/provider/retention tests, 6 preview/action tests, and 1 real Room-to-native-PNG integration test. All prior 199 tests continue to pass. The integration sample derives workout #2, two bench sets, three bodyweight sets, 22 kg × 6, Bodyweight × 12, 44:00, 272 kg and two PR exercises from actual saved sample history; export leaves the saved snapshot unchanged.
+
+Visual review covered `representative-kg.png`, short/multiple-PR cards, wrapped long names in pounds, and all three pages of a 48-exercise workout, including the final statistics. Files are under `app/build/outputs/share-previews/`; icon previews are under `app/build/outputs/icon-previews/`. These are synthetic test data, not private user workouts. Physical launcher/splash display, Android recipient selection and WhatsApp/Business behavior were not tested on a device. See [SHARING.md](SHARING.md) and [artwork/README.md](artwork/README.md).
 
 ## v1.2.0 routine targets and rest defaults
 
@@ -62,7 +72,8 @@ The earlier 97 workout/timer/persistence/UI tests and 66 updater tests still pas
 | Running, paused and expired rest installation guards | 2 |
 | **New updater tests** | **66** |
 | PR routine synchronization, migration, editor and rest-default tests | 36 |
-| **Total including existing tests** | **199** |
+| Launcher/share feature tests | 37 |
+| **Total including existing tests** | **236** |
 
 Upgrade preservation tests use real on-disk Room databases and DataStore files: saved routines with explicit set counts, completed history and derived PRs, active workouts, exercise settings, preferences and timer deadlines survive simulated installed-version changes and update cleanup. These tests do not substitute for an actual Android package replacement.
 
@@ -74,23 +85,23 @@ Reports:
 
 ## Verified delivery assets
 
-**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.2.0-debug.apk`
+**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.3.0-debug.apk`
 
 **Metadata:** `D:\Programing\Mooscles\app\build\outputs\release\update.json`
 
-- Package: `com.mooscles`; version `1.2.0`; version code `7`
-- Size: **19264959 bytes**
-- APK SHA-256: `b99410f6d3936ab285a5f29a8689ff535d9d30887125d5b427e8f6fe12b68644`
+- Package: `com.mooscles`; version `1.3.0`; version code `8`
+- Size: **19987998 bytes**
+- APK SHA-256: `183dbda9c3dfe81a31a7699175b1177fa1a8763b25da91e19db781251a95cbfc`
 - Existing debug certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`
 - Android 8.0 / API 26 or newer; compile/target API 35
 - The normal `app/build/outputs/apk/debug/app-debug.apk` has identical bytes.
-- Adjacent `Mooscles-v1.2.0-debug.apk.sha256` supports manual verification.
+- Adjacent `Mooscles-v1.3.0-debug.apk.sha256` supports manual verification.
 
 APKs, generated metadata, build outputs, SDK paths, keystores, passwords and credentials remain excluded from source control.
 
 ## Release process and prerequisites
 
-`build.ps1` generates the versioned APK, update.json and checksum after successful debug assembly. `tools/prepare-release.ps1` verifies the actual APK, existing signer and increasing version code; negative checks reject a wrong package, signer or reused version code. `tools/publish-release.ps1` requires a clean tested source commit and exact local/remote tag, reruns checks, prepares and verifies all uploaded assets, and defaults to a draft prerelease. Publishing requires its explicit `-Publish` option. The release workflow also independently downloads and verifies uploaded assets before publication.
+`build.ps1` generates the versioned APK, update.json and checksum after successful debug assembly. `tools/prepare-release.ps1` verifies the actual APK, existing signer and increasing version code; negative checks reject a wrong package, signer or reused version code. `tools/publish-release.ps1` requires a clean tested source commit and exact local/remote tag, reruns checks, prepares and verifies all uploaded assets, and defaults to a draft official release as explicitly requested by the owner. Publishing requires its explicit `-Publish` option and marks the official release Latest. The release workflow also independently downloads and verifies uploaded assets before publication. APK preparation reports its debug build type separately from the distribution channel.
 
 The older v1.0.0 prerelease has an APK and checksum but no update.json; the updater safely skips such older releases. The v1.1.1 distribution includes the APK, generated update.json and checksum. Future releases also need both the exact versioned APK and its generated update.json. The owner explicitly authorized promoting v1.1.1 to the official stable/latest GitHub release while retaining these exact assets and their debug signing identity for compatibility. Stable releases are eligible on v1.1.0's default update channel without enabling Include prereleases. GitHub release promotion is separate from the tested source tag and does not rebuild the APK, move the tag or establish production signing. See [UPDATES.md](UPDATES.md).
 

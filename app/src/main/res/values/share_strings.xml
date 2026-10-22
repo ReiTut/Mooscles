@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_workout">Share workout</string>
+    <string name="share_preview_title">Workout preview</string>
+    <string name="share_preview_loading">Creating your workout image…</string>
+    <string name="share_preview_failed">This workout image could not be created. The saved workout may have changed or been removed. Try again.</string>
+    <string name="share_preview_page_failed">This image could not be opened. Try creating the preview again.</string>
+    <string name="share_preview_image">Workout image %1$d of %2$d</string>
+    <plurals name="share_preview_pages">
+        <item quantity="one">%1$d image · all exercises are included in order</item>
+        <item quantity="other">%1$d images · all exercises are included in order</item>
+    </plurals>
+    <string name="share_preview_hint">Choose who receives it in the next app, then confirm sending.</string>
+    <string name="share_whatsapp">Share with WhatsApp</string>
+    <string name="share_whatsapp_business">Share with WhatsApp Business</string>
+    <string name="share_other_apps">More sharing options</string>
+    <string name="share_choose_app">Choose an app</string>
+    <string name="share_open_failed">No sharing app could be opened. Try again or choose another option.</string>
+    <string name="share_retry">Try again</string>
+    <string name="share_cancel">Cancel</string>
+    <string name="share_close">Close preview</string>
+</resources>

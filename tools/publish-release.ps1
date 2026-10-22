@@ -4,7 +4,9 @@ param(
     [Parameter(Mandatory = $true)][ValidateRange(1, [long]::MaxValue)][long]$PreviousVersionCode,
     [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repository = 'ReiTut/Mooscles',
     [ValidatePattern('^[A-Za-z0-9_.-]+$')][string]$Remote = 'origin',
-    [switch]$Publish
+    [switch]$Publish,
+    # Official releases are the owner's default; build variant and distribution channel are independent.
+    [switch]$Prerelease
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -54,7 +56,7 @@ function Get-ReleaseInfo {
 }
 function Assert-ReleaseAssets($Release, $ExpectedAssets) {
     if ($Release.tagName -ne $Tag) { throw 'GitHub returned a different release tag.' }
-    if (-not $Release.isPrerelease) { throw 'The debug APK must remain clearly marked as a prerelease.' }
+    if ([bool]$Release.isPrerelease -ne $Prerelease.IsPresent) { throw 'The release channel differs from the requested official/prerelease channel.' }
     if (@($Release.assets).Count -ne $ExpectedAssets.Count) { throw 'The release does not contain the expected APK, update.json and checksum assets.' }
     foreach ($expected in $ExpectedAssets) {
         $asset = @($Release.assets | Where-Object { $_.name -ceq $expected.Name })
@@ -109,7 +111,7 @@ try {
         -PreviousVersionCode $PreviousVersionCode
     $metadata = Get-Content -LiteralPath $assets.MetadataPath -Raw | ConvertFrom-Json
     if ($Tag -cne ('v' + $metadata.versionName)) { throw 'The release tag must exactly match v plus the versionName read from the built APK.' }
-    if (-not $assets.PrereleaseRequired) { throw 'This workflow distributes the existing debug variant. Review production signing and release verification before changing variants.' }
+    if (-not $assets.IsDebugBuild) { throw 'This workflow distributes the existing debug variant. Review production signing and release verification before changing variants.' }
 
     $expectedAssets = @($assets.ApkPath, $assets.MetadataPath, $assets.ChecksumPath) | ForEach-Object {
         [pscustomobject]@{ Name = [IO.Path]::GetFileName($_); Size = (Get-Item -LiteralPath $_).Length; Hash = (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.ToLowerInvariant() }
@@ -128,9 +130,11 @@ try {
             throw 'The existing draft notes differ from NotesFile. Review them first; this helper never silently overwrites an existing draft.'
         }
     } else {
+        $releaseTitle = if ($Prerelease) { "Mooscles $Tag (debug prerelease)" } else { "Mooscles $Tag" }
         $createArguments = @('release', 'create', $Tag, $assets.ApkPath, $assets.MetadataPath, $assets.ChecksumPath,
-            '--repo', $Repository, '--verify-tag', '--target', $testedCommit, '--draft', '--prerelease',
-            '--title', "Mooscles $Tag (debug prerelease)", '--notes-file', $notesPath)
+            '--repo', $Repository, '--verify-tag', '--target', $testedCommit, '--draft',
+            '--title', $releaseTitle, '--notes-file', $notesPath)
+        if ($Prerelease) { $createArguments += '--prerelease' }
         $draftCreateAttempted = $true
         [void](Invoke-GitHubChecked -Arguments $createArguments)
         $draftCreated = $true
@@ -156,7 +160,9 @@ try {
     if ($Publish) {
         [void](Assert-CleanCommit -ExpectedCommit $testedCommit)
         Assert-ExactRemoteTag -ExpectedCommit $testedCommit
-        [void](Invoke-GitHubChecked -Arguments @('release', 'edit', $Tag, '--repo', $Repository, '--draft=false'))
+        $publishArguments = @('release', 'edit', $Tag, '--repo', $Repository, '--draft=false')
+        if (-not $Prerelease) { $publishArguments += '--latest' }
+        [void](Invoke-GitHubChecked -Arguments $publishArguments)
         $release = Get-ReleaseInfo
         if ($release.isDraft) { throw 'GitHub still reports a draft after the publish request.' }
         Assert-ReleaseAssets -Release $release -ExpectedAssets $expectedAssets
@@ -165,6 +171,7 @@ try {
         RepositoryUrl = "https://github.com/$Repository"
         ReleaseUrl = $release.url
         Draft = [bool]$release.isDraft
+        Prerelease = [bool]$release.isPrerelease
         TestedCommit = $testedCommit
         UnitTests = $testCount
         LintErrors = 0
