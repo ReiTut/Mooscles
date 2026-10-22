@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.mooscles.domain.RestDuration
 import java.util.UUID
 
 fun newId(): String = UUID.randomUUID().toString()
@@ -91,7 +92,7 @@ data class WorkoutExercise(
     val equipment: Equipment,
     val convention: LoadConvention,
     val position: Int = 0,
-    val restSeconds: Int = 90
+    val restSeconds: Int = RestDuration.DEFAULT_SECONDS
 )
 
 @Entity(

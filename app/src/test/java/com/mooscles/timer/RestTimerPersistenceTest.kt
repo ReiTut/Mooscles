@@ -61,6 +61,19 @@ class RestTimerPersistenceTest {
     }
 
     @Test
+    fun missingDurationDefaultsToTwoMinutesAndSavedCustomDurationsSurviveRecreation() = runBlocking {
+        assertEquals(120_000L, persistence.snapshot().durationMillis)
+        recreateStore()
+        assertEquals(120_000L, persistence.snapshot().durationMillis)
+        for (seconds in listOf(90, 135)) {
+            persistence.start("Bench press", seconds)
+            recreateStore()
+            assertEquals(seconds * 1000L, persistence.snapshot().durationMillis)
+            assertEquals(seconds * 1000L, persistence.snapshot().remaining(now))
+        }
+    }
+
+    @Test
     fun processRecreationRetainsDeadlineAndCountsBackgroundTime() = runBlocking {
         val original = persistence.start("Incline bench press", 90)
         now += 37_000

@@ -33,7 +33,8 @@ class AppPreferences(context: Context) {
                     }
                 }
                 store.data.collect {
-                    emit(PreferencesUi(it[pounds] ?: false, it[theme] ?: "system", it[autoRest] ?: true, it[defaultRest] ?: 90))
+                    emit(PreferencesUi(it[pounds] ?: false, it[theme] ?: "system", it[autoRest] ?: true,
+                        it[defaultRest] ?: RestDuration.DEFAULT_SECONDS))
                     emitted = true
                     backoff = 1000L
                 }

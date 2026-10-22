@@ -4,6 +4,12 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RestTimerStateTest {
+    @Test fun missingDurationDefaultsToTwoMinutesWhileSavedDurationsRemainExplicit() {
+        assertEquals(120_000L, RestTimerState().durationMillis)
+        assertEquals(90_000L, RestTimerState(durationMillis = 90_000).durationMillis)
+        assertEquals(135_000L, RestTimerState(durationMillis = 135_000).durationMillis)
+    }
+
     @Test fun restoredDeadlineIncludesBackgroundTime() {
         val original = RestTimerState(deadline = 100_000, durationMillis = 90_000)
         val restored = original.copy()

@@ -100,15 +100,45 @@ fun RoutineEditor(routine: RoutineUi, state: UiState, actions: MoosclesActions, 
 
 @Composable
 private fun PlannedExerciseCard(planned: PlannedExerciseUi, index: Int, count: Int, pounds: Boolean, onMove: (Int) -> Unit, onRemove: () -> Unit, onReplace: () -> Unit, onSave: (Int, Int, Double?, Int) -> Unit) {
-    // Saved emissions must not replace an in-progress edit or move its cursor.
+    // Keep local editing buffers through autosave echoes, while accepting actual
+    // target changes made by the repository (for example, a newly earned PR).
     var sets by remember(planned.id, planned.exercise.id) { mutableStateOf(planned.sets.toString()) }
     var reps by remember(planned.id, planned.exercise.id) { mutableStateOf(planned.reps.takeIf { it > 0 }?.toString() ?: "") }
-    val originalLoad = remember(planned.id, planned.exercise.id, pounds) { planned.weightKg?.let { number(kgToDisplay(it, pounds)) } ?: "" }
-    val originalWeightKg = remember(planned.id, planned.exercise.id, pounds) { planned.weightKg }
+    var originalWeightKg by remember(planned.id, planned.exercise.id, pounds) { mutableStateOf(planned.weightKg) }
+    val originalLoad = originalWeightKg?.let { number(kgToDisplay(it, pounds)) } ?: ""
     var load by remember(planned.id, planned.exercise.id, pounds) { mutableStateOf(originalLoad) }
     // Each valid field saves immediately using the last valid sibling values. A
     // temporarily empty set count must not prevent the rest duration from saving.
     var saved by remember(planned.id, planned.exercise.id, pounds) { mutableStateOf(PlannedValues(planned.sets, planned.reps, planned.weightKg, planned.restSeconds)) }
+    var observed by remember(planned.id, planned.exercise.id, pounds) { mutableStateOf(saved) }
+    val pendingSaves = remember(planned.id, planned.exercise.id, pounds) { mutableListOf<PlannedValues>() }
+    val incoming = PlannedValues(planned.sets, planned.reps, planned.weightKg, planned.restSeconds)
+    LaunchedEffect(incoming) {
+        val acknowledged = pendingSaves.indexOf(incoming)
+        if (acknowledged >= 0) {
+            // Room can conflate several quick edits. An older acknowledgement
+            // must not replace text the user has already entered since then.
+            pendingSaves.subList(0, acknowledged + 1).clear()
+        } else {
+            if (incoming.sets != observed.sets) {
+                if (incoming.sets != saved.sets) sets = incoming.sets.toString()
+                saved = saved.copy(sets = incoming.sets)
+            }
+            if (incoming.reps != observed.reps) {
+                if (incoming.reps != saved.reps) reps = incoming.reps.takeIf { it > 0 }?.toString() ?: ""
+                saved = saved.copy(reps = incoming.reps)
+            }
+            if (incoming.weightKg != observed.weightKg) {
+                if (incoming.weightKg != saved.weightKg) {
+                    originalWeightKg = incoming.weightKg
+                    load = incoming.weightKg?.let { number(kgToDisplay(it, pounds)) } ?: ""
+                }
+                saved = saved.copy(weightKg = incoming.weightKg)
+            }
+            if (incoming.restSeconds != observed.restSeconds) saved = saved.copy(restSeconds = incoming.restSeconds)
+        }
+        observed = incoming
+    }
     var menu by remember { mutableStateOf(false) }
     fun parseLoad(text: String): Double? {
         val normalized = text.replace(',', '.')
@@ -117,11 +147,12 @@ private fun PlannedExerciseCard(planned: PlannedExerciseUi, index: Int, count: I
             ?.takeIf { it.isFinite() && it in 0.0..100000.0 }
     }
     val validSets = sets.toIntOrNull()?.let { it in 1..50 } == true
-    val validReps = reps.isBlank() || reps.toIntOrNull()?.let { it in 0..999 } == true
+    val validReps = reps.isBlank() || reps.toIntOrNull()?.let { it in 0..9999 } == true
     val validLoad = load.isBlank() || parseLoad(load) != null
     fun save(values: PlannedValues) {
         if (values == saved) return
         saved = values
+        pendingSaves += values
         onSave(values.sets, values.reps, values.weightKg, values.restSeconds)
     }
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
@@ -144,8 +175,8 @@ private fun PlannedExerciseCard(planned: PlannedExerciseUi, index: Int, count: I
                 PlanField(reps, { text ->
                     reps = text
                     val value = if (text.isBlank()) 0 else text.toIntOrNull()
-                    value?.takeIf { it in 0..999 }?.let { save(saved.copy(reps = it)) }
-                }, "Reps", !validReps, "Optional · 1–999", Modifier.weight(1f).testTag("routine-${planned.id}-reps"))
+                    value?.takeIf { it in 0..9999 }?.let { save(saved.copy(reps = it)) }
+                }, "Reps", !validReps, "Optional · 1–9999", Modifier.weight(1f).testTag("routine-${planned.id}-reps"))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PlanField(load, { text ->

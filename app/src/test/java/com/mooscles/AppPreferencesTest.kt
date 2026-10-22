@@ -16,6 +16,24 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class AppPreferencesTest {
+    @Test fun missingDefaultRestUsesTwoMinutesWithoutReplacingOtherPreferences() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val rest = intPreferencesKey("default_rest")
+        val timerDeadline = longPreferencesKey("timer_deadline")
+        context.moosclesStore.edit { it.remove(rest); it[timerDeadline] = 123456L }
+        assertEquals(120, AppPreferences(context).flow.first().defaultRestSeconds)
+        assertEquals(123456L, context.moosclesStore.data.first()[timerDeadline])
+    }
+
+    @Test fun savedCustomDefaultRestSurvivesReopeningPreferencesIncludingPreviousNinetySeconds() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        for (seconds in listOf(90, 135, 0, 300)) {
+            AppPreferences(context).defaultRest(seconds)
+            assertEquals(seconds, AppPreferences(context).flow.first().defaultRestSeconds)
+            assertEquals(seconds, context.moosclesStore.data.first()[intPreferencesKey("default_rest")])
+        }
+    }
+
     @Test fun normalizesLegacyDefaultRestWithoutChangingTimerData() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val rest = intPreferencesKey("default_rest")

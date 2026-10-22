@@ -1,5 +1,7 @@
 package com.mooscles.ui
 
+import com.mooscles.domain.RestDuration
+
 /** Presentation snapshots use kg internally; only text entry and display use the selected unit. */
 data class ExerciseUi(
     val id: String, val name: String, val muscle: String, val equipment: String,
@@ -7,7 +9,7 @@ data class ExerciseUi(
 )
 data class PlannedExerciseUi(
     val id: String, val exercise: ExerciseUi, val sets: Int = 2, val reps: Int = 0,
-    val weightKg: Double? = null, val restSeconds: Int = 90,
+    val weightKg: Double? = null, val restSeconds: Int = RestDuration.DEFAULT_SECONDS,
 )
 data class RoutineUi(val id: String, val name: String, val exercises: List<PlannedExerciseUi> = emptyList())
 data class SetUi(
@@ -16,7 +18,7 @@ data class SetUi(
 )
 data class WorkoutExerciseUi(
     val id: String, val exercise: ExerciseUi, val sets: List<SetUi> = emptyList(),
-    val restSeconds: Int = 90, val previous: String? = null,
+    val restSeconds: Int = RestDuration.DEFAULT_SECONDS, val previous: String? = null,
     val provisionalRecordKg: Double? = null, val firstRecord: Boolean = false,
     val records: List<RecordUi> = emptyList(),
 )
@@ -43,12 +45,12 @@ data class WorkoutUi(
 }
 data class TimerUi(
     val exerciseName: String = "Rest timer", val remainingSeconds: Int = 0,
-    val durationSeconds: Int = 90, val running: Boolean = false, val paused: Boolean = false,
+    val durationSeconds: Int = RestDuration.DEFAULT_SECONDS, val running: Boolean = false, val paused: Boolean = false,
     val finished: Boolean = false,
 )
 data class PreferencesUi(
     val pounds: Boolean = false, val theme: String = "system", val autoRest: Boolean = true,
-    val defaultRestSeconds: Int = 90,
+    val defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS,
 )
 data class UiState(
     val loading: Boolean = true, val exercises: List<ExerciseUi> = emptyList(),

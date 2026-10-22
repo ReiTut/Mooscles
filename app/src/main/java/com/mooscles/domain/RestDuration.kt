@@ -2,6 +2,7 @@ package com.mooscles.domain
 
 /** Fixed digit slots keep the separator and the two seconds digits present during every edit. */
 object RestDuration {
+    const val DEFAULT_SECONDS = 120
     const val MAX_SECONDS = 300
     private val inputPattern = Regex("[0-5]:[0-5][0-9]")
     private val digitPositions = listOf(0, 2, 3)

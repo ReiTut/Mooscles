@@ -139,6 +139,64 @@ class AppViewModelRecordsHostTest {
         assertTrue(reopened.exercises.first { it.id == seeded.incompleteEntry }.records.isEmpty())
     }
 
+    @Test fun completedPrReachesTheSavedRoutinePresentationAndFutureWorkoutAfterReopening() {
+        val routineId = runBlocking(Dispatchers.IO) {
+            app.preferences.autoRest(false)
+            app.preferences.pounds(false)
+            val repo = app.repository
+            repo.initialize()
+            val bench = repo.createCustomExercise("Target bench", MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)
+            val prior = repo.startEmpty(now = 1_000)
+            val priorEntry = repo.addWorkoutExercise(prior, bench)
+            val priorSet = repo.snapshot().exerciseSets(priorEntry).first()
+            repo.updateSet(priorSet.copy(weightKg = 20.0, reps = 7, completed = true))
+            repo.finishWorkout(prior, now = 2_000)
+            val routine = repo.createRoutine("PR target routine")
+            val entry = repo.addRoutineExercise(routine, bench)
+            val plan = repo.snapshot().routineExercises.single { it.id == entry }
+            repo.updateRoutineExercise(plan.copy(plannedSets = 3, targetWeightKg = 20.0, targetReps = 7, restSeconds = 105))
+            repo.startRoutine(routine)
+            routine
+        }
+
+        val model = newModel()
+        awaitUi(model) { !it.loading && it.active != null && it.routines.any { routine -> routine.id == routineId } }
+        val active = model.ui.value.active!!
+        val setId = active.exercises.single().sets.first().id
+        model.updateSet(setId, reps = 6, weightKg = 22.0, completed = true, warmup = false, assistance = false)
+        awaitUi(model) { it.active?.exercises?.single()?.sets?.first()?.completed == true }
+        val duringSession = model.ui.value.routines.single { it.id == routineId }.exercises.single()
+        assertEquals(20.0, duringSession.weightKg!!, 0.0)
+        assertEquals(7, duringSession.reps)
+
+        model.finishWorkout()
+        awaitUi(model) {
+            val plan = it.routines.singleOrNull { routine -> routine.id == routineId }?.exercises?.single()
+            it.active == null && plan?.weightKg == 22.0 && plan.reps == 6 && it.history.any { workout -> workout.id == active.id }
+        }
+        val savedPlan = model.ui.value.routines.single { it.id == routineId }.exercises.single()
+        assertEquals(3, savedPlan.sets)
+        assertEquals(105, savedPlan.restSeconds)
+        val savedHistory = model.ui.value.history.single { it.id == active.id }
+        assertEquals(22.0, savedHistory.exercises.single().sets.first().weightKg, 0.0)
+        assertEquals(6, savedHistory.exercises.single().sets.first().reps)
+
+        model.viewModelScope.cancel()
+        val restored = newModel()
+        awaitUi(restored) {
+            !it.loading && it.routines.singleOrNull { routine -> routine.id == routineId }?.exercises?.single()?.let { plan ->
+                plan.weightKg == 22.0 && plan.reps == 6
+            } == true
+        }
+        restored.startWorkout(routineId)
+        awaitUi(restored) { it.active?.id != null && it.active.id != active.id }
+        val future = restored.ui.value.active!!.exercises.single()
+        assertEquals(105, future.restSeconds)
+        assertEquals(3, future.sets.size)
+        assertTrue(future.sets.all { it.weightKg == 22.0 && it.reps == 6 && !it.completed })
+        assertEquals(savedHistory, restored.ui.value.history.single { it.id == active.id })
+    }
+
     private fun newModel() = AppViewModel(app).also { models += it }
 
     private fun awaitUi(model: AppViewModel, predicate: (UiState) -> Boolean) {

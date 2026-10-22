@@ -4,6 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RestDurationTest {
+    @Test fun `new default is two minutes with a fixed colon and two seconds digits`() {
+        assertEquals(120, RestDuration.DEFAULT_SECONDS)
+        assertEquals("2:00", RestDuration.format(RestDuration.DEFAULT_SECONDS))
+        assertEquals("2:00", RestDuration.editor(RestDuration.DEFAULT_SECONDS).text)
+        assertEquals(300, RestDuration.MAX_SECONDS)
+    }
+
     @Test fun `formats rest as minutes and two digit seconds`() {
         assertEquals("0:00", RestDuration.format(0))
         assertEquals("0:05", RestDuration.format(5))

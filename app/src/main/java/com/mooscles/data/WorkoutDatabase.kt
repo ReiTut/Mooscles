@@ -11,6 +11,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 class EnumConverters {
     @TypeConverter fun muscle(value: String) = MuscleGroup.valueOf(value)
@@ -25,6 +27,8 @@ class EnumConverters {
 
 @Dao
 interface WorkoutDao {
+    @Query("SELECT * FROM routine_target_checkpoints") suspend fun targetCheckpoints(): List<RoutineTargetCheckpoint>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveTargetCheckpoint(item: RoutineTargetCheckpoint)
     @Query("SELECT * FROM exercises ORDER BY name COLLATE NOCASE") suspend fun exercises(): List<Exercise>
     @Query("SELECT * FROM routines ORDER BY position") suspend fun routines(): List<Routine>
     @Query("SELECT * FROM routine_exercises ORDER BY position") suspend fun routineExercises(): List<RoutineExercise>
@@ -62,15 +66,21 @@ interface WorkoutDao {
     @Query("DELETE FROM workout_sets WHERE workoutExerciseId = :id") suspend fun deleteExerciseSets(id: String)
 }
 
-/** Version 1 deliberately has no destructive fallback: unsupported future migrations fail visibly. */
-@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, Workout::class, WorkoutExercise::class, WorkoutSet::class], version = 1, exportSchema = true)
+/** Additive migrations preserve routines and all independent workout snapshots. */
+@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 2, exportSchema = true)
 @TypeConverters(EnumConverters::class)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun dao(): WorkoutDao
 
     companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `routine_target_checkpoints` (`exerciseId` TEXT NOT NULL, `convention` TEXT NOT NULL, `weightKg` REAL, `reps` INTEGER NOT NULL, PRIMARY KEY(`exerciseId`, `convention`))")
+            }
+        }
+
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "mooscles.db"
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 }

@@ -4,7 +4,8 @@ import com.mooscles.domain.RestDuration
 
 /** Wall-clock deadline survives process death and includes time spent outside the app. */
 data class RestTimerState(
-    val token: Long = 0, val exerciseName: String = "Rest timer", val durationMillis: Long = 90_000,
+    val token: Long = 0, val exerciseName: String = "Rest timer",
+    val durationMillis: Long = RestDuration.DEFAULT_SECONDS * 1000L,
     val deadline: Long = 0, val pausedMillis: Long = 0, val finished: Boolean = false,
 ) {
     val running get() = deadline > 0 && !finished

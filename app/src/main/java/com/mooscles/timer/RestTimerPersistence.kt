@@ -24,7 +24,7 @@ class RestTimerPersistence(
     private val finishedKey = booleanPreferencesKey("timer_finished")
 
     private fun decode(p: Preferences) = RestTimerState(
-        p[tokenKey] ?: 0, p[nameKey] ?: "Rest timer", p[durationKey] ?: 90_000,
+        p[tokenKey] ?: 0, p[nameKey] ?: "Rest timer", p[durationKey] ?: RestDuration.DEFAULT_SECONDS * 1000L,
         p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false
     )
 

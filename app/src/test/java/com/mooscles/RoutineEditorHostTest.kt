@@ -47,7 +47,7 @@ class RoutineEditorHostTest {
         // An empty required set count is still editable and cannot leak into saves.
         compose.onNodeWithTag("routine-entry-sets").performTextReplacement("")
         compose.onNodeWithTag("routine-entry-reps").performTextReplacement("12")
-        compose.runOnIdle { assertEquals(SavedPlan(3, 12, null, 90), saves.last()) }
+        compose.runOnIdle { assertEquals(SavedPlan(3, 12, null, 120), saves.last()) }
         // A persisted emission must not reset the incomplete set-count buffer.
         compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 12))) }
         compose.onNodeWithTag("routine-entry-sets").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
@@ -63,6 +63,92 @@ class RoutineEditorHostTest {
             assertEquals(listOf("save", "start"), events.takeLast(2))
             assertEquals(SavedPlan(4, 0, null, 120), saves.last())
         }
+    }
+
+    @Test
+    fun savedPrRefreshesBothTargetsWithoutOverwritingAnIncompleteSiblingOrSavingDuringRendering() {
+        val plan = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "CHEST", "BARBELL"), sets = 3, reps = 7, weightKg = 20.0)
+        val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(plan)))
+        val saves = mutableListOf<SavedPlan>()
+        val actions = actions { name, args ->
+            if (name == "updateRoutineExercise") saves += SavedPlan(args[1] as Int, args[2] as Int, args[3] as Double?, args[4] as Int)
+        }
+        compose.setContent { MaterialTheme { RoutineEditor(routine.value, UiState(loading = false), actions, {}) } }
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-entry-load"))
+        compose.onNodeWithTag("routine-entry-sets").performTextReplacement("")
+        compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 6, weightKg = 22.0))) }
+        assertField("load", "22")
+        assertField("reps", "6")
+        assertField("sets", "")
+        compose.runOnIdle { assertTrue(saves.isEmpty()) }
+
+        // Subsequent manual edits save the repository's new target pair, rather
+        // than accidentally restoring the values used when the editor opened.
+        compose.onNodeWithTag("routine-entry-sets").performTextReplacement("4")
+        compose.runOnIdle { assertEquals(SavedPlan(4, 6, 22.0, 120), saves.single()) }
+        compose.onNodeWithTag("routine-entry-reps").performTextReplacement("9999")
+        compose.runOnIdle { assertEquals(SavedPlan(4, 9999, 22.0, 120), saves.last()) }
+    }
+
+    @Test
+    fun autosaveAcknowledgementsDoNotReplaceNewerInput() {
+        val plan = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "CHEST", "BARBELL"), reps = 7, weightKg = 20.0)
+        val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(plan)))
+        val saves = mutableListOf<SavedPlan>()
+        val actions = actions { name, args ->
+            if (name == "updateRoutineExercise") saves += SavedPlan(args[1] as Int, args[2] as Int, args[3] as Double?, args[4] as Int)
+        }
+        compose.setContent { MaterialTheme { RoutineEditor(routine.value, UiState(loading = false), actions, {}) } }
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-entry-reps"))
+        compose.onNodeWithTag("routine-entry-reps").performTextReplacement("8")
+        compose.onNodeWithTag("routine-entry-reps").performTextReplacement("9")
+        compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 8))) }
+        assertField("reps", "9")
+        compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 9))) }
+        assertField("reps", "9")
+        compose.runOnIdle { assertEquals(2, saves.size) }
+    }
+
+    @Test
+    fun savedPrUsesPoundsForDisplayAndRetainsExactKilogramsWhenEditingOtherFields() {
+        val recordKg = 22.123456789
+        val plan = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "CHEST", "BARBELL"), reps = 7, weightKg = 20.0)
+        val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(plan)))
+        val saves = mutableListOf<SavedPlan>()
+        val actions = actions { name, args ->
+            if (name == "updateRoutineExercise") saves += SavedPlan(args[1] as Int, args[2] as Int, args[3] as Double?, args[4] as Int)
+        }
+        compose.setContent {
+            MaterialTheme { RoutineEditor(routine.value, UiState(loading = false, preferences = PreferencesUi(pounds = true)), actions, {}) }
+        }
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-entry-load"))
+        compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 6, weightKg = recordKg))) }
+        val displayedLoad = number(kgToDisplay(recordKg, true))
+        assertField("load", displayedLoad)
+        assertField("reps", "6")
+        compose.onNodeWithTag("routine-entry-sets").performTextReplacement("4")
+        compose.onNodeWithTag("routine-entry-load").performTextReplacement(displayedLoad)
+        compose.runOnIdle {
+            assertEquals(recordKg, saves.last().weightKg!!, 0.0)
+            assertEquals(6, saves.last().reps)
+        }
+    }
+
+    @Test
+    fun savedBodyweightPrRefreshesRepetitionsAndKeepsTheLoadBlank() {
+        val plan = PlannedExerciseUi("entry", ExerciseUi("pullup", "Pull-up", "BACK", "BODYWEIGHT"), reps = 10)
+        val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(plan)))
+        val saves = mutableListOf<SavedPlan>()
+        val actions = actions { name, args ->
+            if (name == "updateRoutineExercise") saves += SavedPlan(args[1] as Int, args[2] as Int, args[3] as Double?, args[4] as Int)
+        }
+        compose.setContent { MaterialTheme { RoutineEditor(routine.value, UiState(loading = false), actions, {}) } }
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-entry-load"))
+        compose.runOnIdle { routine.value = routine.value.copy(exercises = listOf(plan.copy(reps = 12))) }
+        assertField("reps", "12")
+        assertField("load", "")
+        compose.onNodeWithTag("routine-entry-sets").performTextReplacement("4")
+        compose.runOnIdle { assertEquals(SavedPlan(4, 12, null, 120), saves.single()) }
     }
 
     @Test
@@ -90,7 +176,7 @@ class RoutineEditorHostTest {
 
     @Test
     fun replacingExerciseCannotAutosavePreviousMovementsWeight() {
-        val original = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "Chest", "Barbell"), weightKg = 25.0)
+        val original = PlannedExerciseUi("entry", ExerciseUi("bench", "Bench press", "Chest", "Barbell"), weightKg = 25.0, restSeconds = 90)
         val routine = mutableStateOf(RoutineUi("routine", "Test routine", listOf(original)))
         val saves = mutableListOf<SavedPlan>()
         val actions = actions { name, args ->
@@ -109,6 +195,10 @@ class RoutineEditorHostTest {
     }
 
     private data class SavedPlan(val sets: Int, val reps: Int, val weightKg: Double?, val restSeconds: Int)
+
+    private fun assertField(field: String, text: String) {
+        compose.onNodeWithTag("routine-entry-$field").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString(text)))
+    }
 
     private fun actions(onCall: (String, Array<out Any?>) -> Unit): MoosclesActions = Proxy.newProxyInstance(
         MoosclesActions::class.java.classLoader, arrayOf(MoosclesActions::class.java)

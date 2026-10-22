@@ -1,20 +1,30 @@
-# Verification — 2026-10-21
+# Verification — 2026-10-22
 
-Current local build: **Mooscles 1.1.1**, Android version code **6**, application ID `com.mooscles`. The existing Android Debug signing identity and Room schema v1 are retained. No destructive migration or data reset was introduced.
+Release build: **Mooscles 1.2.0**, Android version code **7**, application ID `com.mooscles`. The existing Android Debug signing identity is retained. Room schema v2 adds an explicit non-destructive v1 → v2 migration for PR synchronization checkpoints; existing training tables remain unchanged. Distribution uses the debug prerelease channel with APK, generated update.json and SHA-256 checksum assets.
 
 Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.
 
 | Check | Result |
 | --- | --- |
-| Host unit, persistence and Compose tests | **PASS — 163 tests; zero failures, errors or skips** |
+| Host unit, persistence and Compose tests | **PASS — 199 tests; zero failures, errors or skips** |
 | Android lint | **PASS — 0 errors; 19 dependency-version advisories** |
 | Debug APK | **PASS** |
 | Instrumented test APK | **PASS — compiled and packaged** |
 | APK signature | **PASS — APK Signature Scheme v2; same existing certificate** |
 | Generated release APK and update.json | **PASS — actual package/version/minSdk/size/SHA-256 agree** |
 | APK freshness | **PASS — no production source/build inputs newer than final APK** |
-| Public GitHub Releases API | **PASS — unauthenticated request succeeded** |
+| Real on-disk Room v1 → v2 migration | **PASS — old plans, history and active snapshots preserved; existing PRs backfilled** |
 | Device upgrade / real installation | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+## v1.2.0 routine targets and rest defaults
+
+Completed eligible working-set records now persist their actual weight/repetition pair to every routine referencing the same exercise ID and load convention. Highest eligible weight takes priority; the best repetitions at that load come from the same real set. Same-weight repetition improvements advance the target; lower-weight repetitions do not replace the record load. Bodyweight repetition records save a null weight target, displayed blank. Warm-ups, assistance, unfinished sets, active workouts and discarded workouts are excluded.
+
+The repository synchronizes existing history on feature initialization and new records atomically with workout completion. Durable consumed-record checkpoints preserve later manual target edits until a newer qualifying PR. New/replaced routine references inherit eligible records. Saved target weight and reps appear in the routine editor, ViewModel presentation and future unfinished workout sets. Existing routine set counts/order/rest durations, active workouts and completed snapshots remain unchanged. Routine plans have one standard working-set prescription per exercise, without separate per-set warm-up/back-off prescriptions.
+
+The default rest is 120 seconds / **2:00** across repository creation paths, preferences, UI models, timer initialization and missing-value fallbacks. Explicit saved durations including 90 and 135 seconds remain unchanged. The fixed colon, two seconds digits and 300-second maximum remain intact. Empty plans and newly added sets retain blank reps; routine workouts now initialize reps from saved targets.
+
+Thirty-six focused tests were added: 13 selector/policy tests, 12 repository persistence tests, one real schema migration test, four editor tests, one actual Room → ViewModel → future workout test, and five rest-default/preservation tests. Existing UI-flow expectations were updated for saved rep targets. Final verification executed the full 199-test suite, lint, debug assembly and instrumented-test APK assembly successfully.
 
 ## v1.1.1 PR-counter correction
 
@@ -37,7 +47,7 @@ Existing saved workouts recalculate their corrected totals when reopened. No Roo
 
 ## Focused tests
 
-The existing 97 workout, timer, Room, preferences and UI tests still pass. The updater adds 66 tests:
+The earlier 97 workout/timer/persistence/UI tests and 66 updater tests still pass. The new target/default feature adds 36 tests:
 
 | Suite | Tests |
 | --- | ---: |
@@ -51,7 +61,8 @@ The existing 97 workout, timer, Room, preferences and UI tests still pass. The u
 | Material 3 update interface actions and retry states | 4 |
 | Running, paused and expired rest installation guards | 2 |
 | **New updater tests** | **66** |
-| **Total including existing tests** | **163** |
+| PR routine synchronization, migration, editor and rest-default tests | 36 |
+| **Total including existing tests** | **199** |
 
 Upgrade preservation tests use real on-disk Room databases and DataStore files: saved routines with explicit set counts, completed history and derived PRs, active workouts, exercise settings, preferences and timer deadlines survive simulated installed-version changes and update cleanup. These tests do not substitute for an actual Android package replacement.
 
@@ -63,17 +74,17 @@ Reports:
 
 ## Verified delivery assets
 
-**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.1.1-debug.apk`
+**APK:** `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.2.0-debug.apk`
 
 **Metadata:** `D:\Programing\Mooscles\app\build\outputs\release\update.json`
 
-- Package: `com.mooscles`; version `1.1.1`; version code `6`
-- Size: **19248571 bytes**
-- APK SHA-256: `addc83eabf063e216748d4b91a768a881dac72a9b2a726144265e26b3df3e66c`
+- Package: `com.mooscles`; version `1.2.0`; version code `7`
+- Size: **19264959 bytes**
+- APK SHA-256: `b99410f6d3936ab285a5f29a8689ff535d9d30887125d5b427e8f6fe12b68644`
 - Existing debug certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`
 - Android 8.0 / API 26 or newer; compile/target API 35
 - The normal `app/build/outputs/apk/debug/app-debug.apk` has identical bytes.
-- Adjacent `Mooscles-v1.1.1-debug.apk.sha256` supports manual verification.
+- Adjacent `Mooscles-v1.2.0-debug.apk.sha256` supports manual verification.
 
 APKs, generated metadata, build outputs, SDK paths, keystores, passwords and credentials remain excluded from source control.
 

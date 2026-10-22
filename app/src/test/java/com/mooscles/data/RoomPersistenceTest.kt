@@ -57,7 +57,7 @@ class RoomPersistenceTest {
         assertNotEquals(entry, data.routineItems(duplicate).single().id)
     }
 
-    @Test fun routinePlansAndNewSetsLeaveRepetitionsUnentered() = runBlocking {
+    @Test fun emptyRoutinePlansRemainBlankWhileSavedTargetsInitializeRoutineSets() = runBlocking {
         val routine = repo.createRoutine("Push")
         repo.addRoutineExercise(routine, repo.snapshot().exercises.first().id)
         val initialPlan = repo.snapshot().routineItems(routine).single()
@@ -70,7 +70,7 @@ class RoomPersistenceTest {
         val exercise = repo.snapshot().workoutItems(workout).single()
         val initialSets = repo.snapshot().exerciseSets(exercise.id)
         assertEquals(2, initialSets.size)
-        assertTrue(initialSets.all { it.reps == 0 && !it.completed })
+        assertTrue(initialSets.all { it.reps == 8 && it.weightKg == 22.5 && !it.completed })
         assertEquals(8, repo.snapshot().routineItems(routine).single().targetReps)
         repo.updateSet(initialSets.last().copy(reps = 12, weightKg = 25.0, completed = true))
         val addedId = repo.addSet(exercise.id)

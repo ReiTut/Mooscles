@@ -4,6 +4,8 @@ Mooscles discovers public releases from `ReiTut/Mooscles` using the official Git
 
 Automatic updates and Wi-Fi-only downloads are enabled initially. The app checks on foreground entry with throttling and uses unique network-constrained background work about every six hours. Android battery, network, and scheduling conditions may delay a background check. GitHub API limits and temporary failures also delay checks. The Settings section provides manual checks, progress, cancellation, retries, and installation approval.
 
+Version **1.2.0 / build 7** is a debug prerelease. Enable **Settings → App updates → Include prereleases** to receive it from updater-enabled versions 1.1.0 or 1.1.1. Its existing signing identity and application ID are retained. The stable channel continues to offer v1.1.1; the earlier owner-authorized promotion of that release does not change v1.2.0's prerelease channel.
+
 Downloads contain only APK release assets. No workout data is uploaded. Offline routines, workouts, history, PRs, and the rest timer continue to work. Installation waits while a workout or rest timer is active. Android may require **Allow from this source** and system installation approval; the app cannot promise silent installation on every Android version or device.
 
 A phone running a version without this updater must install the first updater-enabled APK once. Future discovery only works for releases that contain both the APK and the generated `update.json`. An older release without metadata is skipped.
