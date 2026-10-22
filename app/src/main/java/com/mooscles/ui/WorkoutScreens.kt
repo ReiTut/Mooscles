@@ -37,7 +37,6 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
                 item { EmptyState(Icons.Outlined.FitnessCenter, "A fresh start", "Start with a routine or build today’s session as you go.", "Choose a routine", onRoutines) }
                 item { Button(onClick = { actions.startWorkout(null) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Start empty workout") } }
             }
-            WorkoutTimerDock(state, actions)
         }
         return
     }
@@ -69,7 +68,6 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         }
         item { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
     }
-    WorkoutTimerDock(state, actions)
     }
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
@@ -79,9 +77,10 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
 }
 
-/** Measured beside the scrolling list, so rest controls never obscure its final rows. */
+/** A single measured dock above the app footer, independent of the scrolling route. */
 @Composable
-private fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
+internal fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
+    if (state.active == null) return
     Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth().testTag("active-rest-timer")) {
         Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             TimerPanel(state.timer, actions, state.preferences.defaultRestSeconds, compact = true)

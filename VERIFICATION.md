@@ -1,5 +1,29 @@
 # Verification — 2026-10-22
 
+## Current release — 1.3.1 / build 9
+
+The timer uses the persisted active workout to control visibility and lifecycle. One dock remains above the footer across routes and scrolling. Finishing/discarding a session, orphaned startup state and stale receivers clear countdowns and cancel alarms, sounds and notifications. Unfinished sessions retain their timer; saved rest durations, workout data and Room schema v2 are unchanged.
+
+| Check | Result |
+| --- | --- |
+| Host unit, persistence, native graphics and Compose tests | **PASS — 246 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 existing warnings** |
+| Debug APK and instrumented-test APK | **PASS — compiled and packaged** |
+| Actual APK identity | **com.mooscles; version 1.3.1; version code 9; minimum API 26** |
+| Signature | **PASS — existing certificate retained, APK Signature Scheme v2** |
+| Routine-code/hosting components | **Absent from source and final APK** |
+| Physical device installation | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+Ten focused timer tests were added: three on-disk persistence cases, four controller lifecycle/alarm/notification cases and three Compose visibility/placement cases. The full workout flow also verifies durable cleanup after completion. Its test resets AndroidX's process-wide ViewModel factory before Activity creation and after teardown, observes the Activity's actual application/database and verifies it matches the ViewModel. This prevents another Robolectric application's cached factory from leaking between tests; production code is unchanged by this test-isolation fix.
+
+The full test suite passed through `build.ps1 -Tasks @(':app:testDebugUnitTest')`; lint and both APKs passed through `build.ps1 -Tasks @(':app:lintDebug', ':app:assembleDebug', ':app:assembleDebugAndroidTest')`. Existing workout-image sharing remains packaged. New routine-code and hosting work was removed as requested.
+
+Verified APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.3.1-debug.apk` — **19,566,627 bytes**. SHA-256: `37a70601f4b88932ffe4e3bb0fc3bca24a30a915bf592e69791104b2294e4f26`. The normal debug APK has identical bytes. Generated update.json and checksum files match the APK; outputs and credentials remain ignored. The existing signing certificate SHA-256 is `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`.
+
+Distribution uses a full GitHub Release marked Latest, with the existing debug variant and signing identity: [v1.3.1](https://github.com/ReiTut/Mooscles/releases/tag/v1.3.1). APK, update.json and checksum are attached as release assets. The publication helper verifies draft assets before publishing explicitly with `draft=false`, `prerelease=false` and Latest status. The sections below document the prior 1.3.0 baseline.
+
+## Prior 1.3.0 baseline
+
 Release build: **Mooscles 1.3.0**, Android version code **8**, application ID `com.mooscles`. The existing Android Debug signing identity and Room schema v2 are retained. Icon replacement and workout sharing do not change saved workout tables or preferences. The official stable distribution uses the verified debug APK, generated update.json and SHA-256 checksum; release channel and build type are independent.
 
 Final command: `./build.ps1`, using Gradle 8.14.5 and bundled Adoptium JDK 21.

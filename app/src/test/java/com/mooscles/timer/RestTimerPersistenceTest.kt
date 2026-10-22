@@ -260,4 +260,51 @@ class RestTimerPersistenceTest {
         assertNotNull(persistence.claimCompletion(19L))
         assertTrue(persistence.snapshot().finished)
     }
+
+    @Test fun sessionClearSurvivesRestartRejectsOldAlarmAndPreservesRestPreferences() = runBlocking {
+        val defaultRest = longPreferencesKey("default_rest_seconds")
+        val exerciseRest = longPreferencesKey("test_exercise_rest")
+        store.edit { it[defaultRest] = 135L; it[exerciseRest] = 75L }
+        persistence.reconcileSession("workout-1")
+        val running = persistence.start("Custom rest", 75)
+        persistence.clear()
+        now += 100_000
+        recreateStore()
+        val idle = persistence.reconcileSession(null)
+        assertFalse(idle.running)
+        assertFalse(idle.paused)
+        assertFalse(idle.finished)
+        assertEquals("Rest timer", idle.exerciseName)
+        assertEquals(120_000L, idle.durationMillis)
+        assertNull(idle.workoutId)
+        assertNull(persistence.claimCompletion(running.token))
+        assertEquals(135L, store.data.first()[defaultRest])
+        assertEquals(75L, store.data.first()[exerciseRest])
+    }
+
+    @Test fun actualResumableSessionAdoptsLegacyTimerWithoutRestartingIt() = runBlocking {
+        val legacy = persistence.start("Saved squat", 135)
+        now += 30_000
+        recreateStore()
+        val adopted = persistence.reconcileSession("still-active")
+        assertEquals(legacy.token, adopted.token)
+        assertEquals(legacy.deadline, adopted.deadline)
+        assertEquals(105_000L, adopted.remaining(now))
+        assertEquals("still-active", adopted.workoutId)
+        recreateStore()
+        assertEquals(adopted, persistence.reconcileSession("still-active"))
+    }
+
+    @Test fun staleTimerBelongingToAnotherSessionCannotCarryIntoNewWorkout() = runBlocking {
+        persistence.reconcileSession("old")
+        val previous = persistence.start("Old workout exercise", 120)
+        persistence.pause()
+        recreateStore()
+        val current = persistence.reconcileSession("new")
+        assertEquals("new", current.workoutId)
+        assertFalse(current.running)
+        assertFalse(current.paused)
+        assertEquals("Rest timer", current.exerciseName)
+        assertTrue(current.token > previous.token)
+    }
 }

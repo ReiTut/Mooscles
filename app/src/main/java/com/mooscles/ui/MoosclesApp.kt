@@ -40,11 +40,14 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
                     actions = { IconButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) { Icon(Icons.Outlined.Tune, "Settings") } })
             },
             bottomBar = {
-                NavigationBar {
-                    destinations.forEach { destination ->
-                        NavigationBarItem(selected = route == destination.route, onClick = {
-                            nav.navigate(destination.route) { popUpTo(nav.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true }
-                        }, icon = { if (destination.route == "workout" && state.active != null) BadgedBox(badge = { Badge() }) { Icon(destination.icon, null) } else Icon(destination.icon, null) }, label = { Text(destination.label) })
+                Column {
+                    WorkoutTimerDock(state, actions)
+                    NavigationBar {
+                        destinations.forEach { destination ->
+                            NavigationBarItem(selected = route == destination.route, onClick = {
+                                nav.navigate(destination.route) { popUpTo(nav.graph.startDestinationId) { saveState = true }; launchSingleTop = true; restoreState = true }
+                            }, icon = { if (destination.route == "workout" && state.active != null) BadgedBox(badge = { Badge() }) { Icon(destination.icon, null) } else Icon(destination.icon, null) }, label = { Text(destination.label) })
+                        }
                     }
                 }
             }, snackbarHost = { SnackbarHost(snack) },
@@ -129,6 +132,5 @@ fun SettingsScreen(state: UiState, actions: MoosclesActions) {
                 Text("Your routines, workout history, and records stay on this device. Training works offline. App connections check and download updates from GitHub. Sharing creates a workout image on your device and opens the app you choose, where you select the recipient and confirm sending. Workout data is excluded from automatic cloud backups.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        item { TimerPanel(state.timer, actions, prefs.defaultRestSeconds) }
     }
 }

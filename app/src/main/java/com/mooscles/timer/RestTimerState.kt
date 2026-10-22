@@ -7,6 +7,7 @@ data class RestTimerState(
     val token: Long = 0, val exerciseName: String = "Rest timer",
     val durationMillis: Long = RestDuration.DEFAULT_SECONDS * 1000L,
     val deadline: Long = 0, val pausedMillis: Long = 0, val finished: Boolean = false,
+    val workoutId: String? = null,
 ) {
     val running get() = deadline > 0 && !finished
     val paused get() = pausedMillis > 0 && !finished

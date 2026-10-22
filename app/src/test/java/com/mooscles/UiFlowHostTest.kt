@@ -6,6 +6,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
+import androidx.lifecycle.ViewModelProvider
 import org.junit.rules.ExternalResource
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -24,8 +25,12 @@ import org.junit.runner.RunWith
 @Config(sdk = [35])
 @LooperMode(LooperMode.Mode.PAUSED)
 class UiFlowHostTest {
+    private var activityApplication: MoosclesApplication? = null
     @get:Rule(order = 0) val environment = object : ExternalResource() {
         override fun before() {
+            // AndroidX caches the first Application in a process-wide factory. Robolectric
+            // creates a new Application per sandbox, so another test's factory must not leak.
+            resetApplicationFactory()
             val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
             app.deleteDatabase("mooscles.db")
             // Other persistence tests intentionally change preferences; establish this flow's baseline.
@@ -33,24 +38,54 @@ class UiFlowHostTest {
             shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         }
         override fun after() {
-            val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
+            val app = activityApplication ?: ApplicationProvider.getApplicationContext<MoosclesApplication>()
             app.appScope.cancel()
             app.database.close()
+            resetApplicationFactory()
         }
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
+    private fun resetApplicationFactory() {
+        ViewModelProvider.AndroidViewModelFactory::class.java.getDeclaredField("_instance")
+            .apply { isAccessible = true }.set(null, null)
+    }
+
     @Test
     fun routineToWorkoutRestSummaryAndHistory() {
-        val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
+        // The Activity owns the ViewModel under test. Robolectric's global provider can refer to
+        // a different sandbox application after other Compose test classes have run.
+        val app = (compose.activity.application as MoosclesApplication).also { activityApplication = it }
+        val vm = ViewModelProvider(compose.activity)[AppViewModel::class.java]
+        assertSame("Observe the same Application used by the Activity ViewModel", app, vm.getApplication<MoosclesApplication>())
+        runBlocking { app.preferences.autoRest(true); app.preferences.pounds(false); app.preferences.defaultRest(90) }
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val name = "Flow test ${System.currentTimeMillis()}"
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("routines-list").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("active-rest-timer").assertDoesNotExist()
         compose.onNodeWithTag("routines-list").performScrollToNode(hasText("New routine"))
         compose.onNodeWithText("New routine").performClick()
         compose.onNodeWithText("Routine name").performTextInput(name)
-        compose.onNodeWithText("Save").performClick()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("Routine name") and hasSetTextAction()).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString(name)))
+        compose.onNodeWithText("Save").assertIsEnabled().performClick()
+        var createdRoutineId: String? = null
+        try {
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText(name).fetchSemanticsNodes()
+                createdRoutineId = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
+                    .routines.singleOrNull { it.name == name }?.id
+                createdRoutineId != null
+            }
+        } catch (failure: Throwable) {
+            val saved = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
+            val path = app.getDatabasePath("mooscles.db").absolutePath
+            throw AssertionError("Routine creation failed: expected=$name; loading=${vm.ui.value.loading}; " +
+                "error=${vm.ui.value.error}; databasePathLength=${path.length}; database=$path; " +
+                "savedRoutines=${saved.routines}; ui=${compose.onRoot().printToString()}", failure)
+        }
         compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasText("Add exercise"))
         compose.onAllNodesWithText("Add exercise").onFirst().performClick()
         compose.onNodeWithText("Find a movement").performTextInput("Barbell bench press")
         compose.onNode(hasText("Barbell bench press", substring = false) and !hasSetTextAction()).performClick()
@@ -65,7 +100,10 @@ class UiFlowHostTest {
         compose.onNodeWithText("Start this routine").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("active-workout-list").fetchSemanticsNodes().isNotEmpty() }
         val started = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
-        val planned = started.routineItems(started.routines.single { it.name == name }.id).single()
+        val createdRoutine = started.routines.firstOrNull { it.id == createdRoutineId }
+        assertNotNull("Created routine $createdRoutineId must remain saved; actual routines: ${started.routines}", createdRoutine)
+        assertEquals("Starting a routine must preserve its name", name, createdRoutine!!.name)
+        val planned = started.routineItems(createdRoutine.id).single()
         val workoutExercise = started.workoutItems(started.activeWorkout!!.id).single()
         assertEquals(8, planned.targetReps)
         assertEquals(120, planned.restSeconds)
@@ -95,6 +133,11 @@ class UiFlowHostTest {
         compose.onNodeWithText("Finish & save").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Strong work.").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Strong work.").assertIsDisplayed()
+        compose.onNodeWithTag("active-rest-timer").assertDoesNotExist()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("active-rest-timer").fetchSemanticsNodes()
+            app.timer.state.value.let { !it.running && !it.paused && !it.finished && it.workoutId == null }
+        }
         compose.onNodeWithText("History", substring = false).performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("history-list").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("history-list").performScrollToNode(hasText(name))

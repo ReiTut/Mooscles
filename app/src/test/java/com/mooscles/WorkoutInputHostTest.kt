@@ -162,10 +162,9 @@ class WorkoutInputHostTest {
         val state = UiState(loading = false, active = WorkoutUi("workout", "Long workout", System.currentTimeMillis(), exercises = entries),
             timer = TimerUi("Pull-up", remainingSeconds = 120, durationSeconds = 120, running = true))
         compose.setContent {
-            MaterialTheme {
-                Box(Modifier.size(320.dp, 470.dp)) { ActiveWorkoutScreen(state, actions, {}, {}, {}) }
-            }
+            Box(Modifier.size(320.dp, 470.dp)) { MoosclesApp(state, actions) }
         }
+        compose.onNodeWithText("Workout", substring = false).performClick()
         val dockBefore = compose.onNodeWithTag("active-rest-timer").assertIsDisplayed().getUnclippedBoundsInRoot()
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("finish-workout"))
         compose.onNodeWithTag("finish-workout").assertIsDisplayed()

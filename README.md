@@ -4,11 +4,11 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Download
 
-The current release is **1.3.0**, version code **8**, with the same application ID and existing debug certificate.
+The current release is **1.3.1**, version code **9**, with the same application ID and existing debug certificate.
 
-[v1.3.0 official release](https://github.com/ReiTut/Mooscles/releases/tag/v1.3.0) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.3.0/Mooscles-v1.3.0-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.3.0/update.json)
+[v1.3.1 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.3.1) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.3.1/Mooscles-v1.3.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.3.1/update.json)
 
-This official release retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.3.0` and version code `8`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Versions 1.1.0 and later already include the updater and discover this release on their default stable channel; **Include prereleases** is not required. Automatic downloads use unmetered Wi-Fi by default and respect saved preferences; Android may require installation approval. Older versions without the updater can install this APK once over their compatible existing app. The existing local debug signing key is retained and excluded from Git. Official GitHub release status does not change the APK's build type or signing certificate. Future release-helper runs use the official stable channel by default.
+This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.3.1` and version code `9`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Versions 1.1.0 and later already include the updater and discover this release on their default stable channel; **Include prereleases** is not required. Automatic downloads use unmetered Wi-Fi by default and respect saved preferences; Android may require installation approval. Older versions without the updater can install this APK once over their compatible existing app. The existing local debug signing key is retained and excluded from Git. Full GitHub release status does not change the APK's build type or signing certificate. Future release-helper runs use the full stable channel by default.
 
 ## Use
 
@@ -20,7 +20,9 @@ The offline catalog contains **277** established exercise variations across barb
 
 ## Build
 
-The local **1.3.0 / build 8** update replaces the launcher icon with the supplied green arm/dumbbell artwork, including transparent/adaptive/legacy/themed resources and dark splash settings. See [artwork/README.md](artwork/README.md) for source preservation and regeneration.
+Version **1.3.1 / build 9** shows one rest-timer dock above the footer only while a saved workout session is active. Finishing or discarding a session clears its countdown, alarm, sound and notification; restarting restores unfinished sessions and removes orphaned timers. Saved exercise rest durations and completed workout data are preserved.
+
+Version **1.3.0 / build 8** introduced the supplied green arm/dumbbell launcher artwork, including transparent/adaptive/legacy/themed resources and dark splash settings. See [artwork/README.md](artwork/README.md) for source preservation and regeneration.
 
 Completed workout summaries and history details include **Share workout**. The preview renders a 1080px-wide PNG from the selected saved workout, with its historical workout number, localized date and selected weight units, every completed exercise, actual best-set pairs, individual PR badges and summary totals. Long names wrap; exceptionally long workouts become ordered image pages with statistics intact. No failure indicators are invented. The card uses the app's English language, rather than the Portuguese sample text.
 

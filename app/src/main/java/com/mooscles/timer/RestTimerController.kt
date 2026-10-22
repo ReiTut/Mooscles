@@ -23,11 +23,17 @@ import kotlin.math.ceil
 class RestTimerController(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val persistence: RestTimerPersistence = RestTimerPersistence(context.moosclesStore)
+    private val persistence: RestTimerPersistence = RestTimerPersistence(context.moosclesStore),
+    private val activeWorkoutId: suspend () -> String? = {
+        (context.applicationContext as MoosclesApplication).repository.snapshot().activeWorkout?.id
+    },
+    private val sessionChanges: Flow<String?> = (context.applicationContext as MoosclesApplication)
+        .repository.data.map { it.activeWorkout?.id }.distinctUntilChanged(),
 ) {
     private val mutex = Mutex()
     private val alarm = context.getSystemService(AlarmManager::class.java)
     private val notifications = context.getSystemService(NotificationManager::class.java)
+    private var activeTone: ToneGenerator? = null
     private val problem = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = problem.asStateFlow()
     fun clearError() { problem.value = null }
@@ -51,16 +57,26 @@ class RestTimerController(
         notifications.createNotificationChannel(NotificationChannel("rest", "Rest timer", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "Alerts when an exercise rest period ends"; enableVibration(true)
         })
-        // Wait for actual disk state. The synthetic StateFlow initial value must never cancel a
-        // previously registered alarm while a killed process is being recreated.
+        // Observe actual persisted sessions, never a synthetic UI/loading value. Re-reading the
+        // snapshot also prevents a delayed emission from clearing a newly started session.
         scope.launch {
-            var restored = false
-            while (!restored) {
-                safely {
-                    mutex.withLock { schedule(persistence.snapshot()) }
-                    restored = true
+            sessionChanges.retryWhen { failure, attempt ->
+                report(failure)
+                delay((attempt + 1).coerceAtMost(30) * 1000)
+                true
+            }.collect {
+                var restored = false
+                while (!restored) {
+                    safely {
+                        mutex.withLock {
+                            val workoutId = activeWorkoutId()
+                            if (workoutId == null) cancelAlerts()
+                            schedule(persistence.reconcileSession(workoutId))
+                        }
+                        restored = true
+                    }
+                    if (!restored) delay(1000)
                 }
-                if (!restored) delay(1000)
             }
         }
     }
@@ -82,8 +98,21 @@ class RestTimerController(
             alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, s.deadline, pending)
         } else alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, s.deadline, pending)
     }
+    private fun cancelAlerts() {
+        alarm.cancel(intent())
+        notifications.cancel(1)
+        activeTone?.let { tone -> runCatching { tone.stopTone(); tone.release() } }
+        activeTone = null
+    }
     private suspend fun mutate(command: suspend RestTimerPersistence.() -> RestTimerState) = safely {
         mutex.withLock {
+            val workoutId = activeWorkoutId()
+            if (workoutId == null) cancelAlerts()
+            val restored = persistence.reconcileSession(workoutId)
+            if (workoutId == null) {
+                schedule(restored)
+                return@withLock
+            }
             // Schedule before returning, after DataStore has made the transition durable.
             schedule(persistence.command())
         }
@@ -97,21 +126,38 @@ class RestTimerController(
     suspend fun reset() { mutate { this.reset() }; notifications.cancel(1) }
     suspend fun skip() { mutate { this.skip() }; notifications.cancel(1) }
     suspend fun adjust(seconds: Int) { mutate { this.adjust(seconds) } }
-    suspend fun complete(token: Long) = safely {
-        val s = mutex.withLock {
-            val claimed = persistence.claimCompletion(token)
-            if (claimed != null) schedule(persistence.snapshot())
-            claimed
+    suspend fun clear() = safely {
+        mutex.withLock {
+            // Stop external effects even if the following durable clear temporarily fails.
+            cancelAlerts()
+            schedule(persistence.clear())
         }
-        if (s == null) return@safely
-        if (foreground) {
-            runCatching { val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85); tone.startTone(ToneGenerator.TONE_PROP_ACK, 600); scope.launch { delay(1000); tone.release() } }
-        } else if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            val notification = NotificationCompat.Builder(context, "rest").setSmallIcon(R.drawable.ic_rest_notification)
-                .setContentTitle("Rest complete").setContentText("${s.exerciseName} • Ready for your next set")
-                .setContentIntent(open).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH).build()
-            notifications.notify(1, notification)
+    }
+    suspend fun complete(token: Long) = safely {
+        mutex.withLock {
+            val workoutId = activeWorkoutId()
+            if (workoutId == null) cancelAlerts()
+            schedule(persistence.reconcileSession(workoutId))
+            if (workoutId == null) return@withLock
+            val s = persistence.claimCompletion(token) ?: return@withLock
+            schedule(persistence.snapshot())
+            if (foreground) {
+                runCatching {
+                    val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85)
+                    activeTone = tone
+                    tone.startTone(ToneGenerator.TONE_PROP_ACK, 600)
+                    scope.launch {
+                        delay(1000)
+                        if (activeTone === tone) { tone.release(); activeTone = null }
+                    }
+                }
+            } else if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+                val notification = NotificationCompat.Builder(context, "rest").setSmallIcon(R.drawable.ic_rest_notification)
+                    .setContentTitle("Rest complete").setContentText("${s.exerciseName} • Ready for your next set")
+                    .setContentIntent(open).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH).build()
+                notifications.notify(1, notification)
+            }
         }
     }
 }

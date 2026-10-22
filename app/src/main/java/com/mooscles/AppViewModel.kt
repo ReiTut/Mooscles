@@ -76,6 +76,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     override fun startWorkout(routineId: String?) = act {
         app.trainingGate.withLock {
             app.updates.assertTrainingMayStart()
+            if (repo.snapshot().activeWorkout == null) app.timer.clear()
             if (routineId == null) repo.startEmpty(defaultRestSeconds = ui.value.preferences.defaultRestSeconds)
             else repo.startRoutine(routineId, ui.value.preferences.defaultRestSeconds)
         }
@@ -101,10 +102,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     }
     override fun finishWorkout() = act {
         val active = repo.snapshot().activeWorkout ?: return@act
-        if (repo.finishWorkout(active.id)) app.timer.skip()
+        if (repo.finishWorkout(active.id)) app.timer.clear()
         app.updates.onTrainingChanged()
     }
-    override fun discardWorkout() = act { repo.snapshot().activeWorkout?.let { repo.discardWorkout(it.id) }; app.timer.skip(); app.updates.onTrainingChanged() }
+    override fun discardWorkout() = act { repo.snapshot().activeWorkout?.let { repo.discardWorkout(it.id) }; app.timer.clear(); app.updates.onTrainingChanged() }
     override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id) }
     override fun setPounds(pounds: Boolean) = act { app.preferences.pounds(pounds) }
     override fun setTheme(theme: String) = act { app.preferences.theme(theme.lowercase()) }

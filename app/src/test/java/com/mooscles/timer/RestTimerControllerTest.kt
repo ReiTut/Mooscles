@@ -12,6 +12,7 @@ import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -46,7 +47,7 @@ class RestTimerControllerTest {
     @Test fun inaccessiblePreferencesReportErrorWithoutCrashingOrOverwritingData() = runTest {
         val store = UnavailableStore()
         val controller = RestTimerController(ApplicationProvider.getApplicationContext<Context>(), backgroundScope,
-            RestTimerPersistence(store))
+            RestTimerPersistence(store), activeWorkoutId = { "active" }, sessionChanges = flowOf("active"))
         runCurrent()
         assertTrue(store.reads > 0)
         assertEquals(0, store.writes)
@@ -56,7 +57,7 @@ class RestTimerControllerTest {
         assertNull(controller.error.value)
         controller.start("Bench press", 90)
         assertTrue(controller.error.value!!.contains("Storage temporarily unavailable"))
-        assertEquals(1, store.writes)
+        assertEquals(0, store.writes)
         assertEquals(emptyPreferences(), store.stored)
         // The receiver/ticker completion path also contains failed DataStore access.
         controller.complete(123)
@@ -73,7 +74,7 @@ class RestTimerControllerTest {
             longPreferencesKey("timer_duration") to 120_000L
         )
         val controller = RestTimerController(ApplicationProvider.getApplicationContext<Context>(), backgroundScope,
-            RestTimerPersistence(store))
+            RestTimerPersistence(store), activeWorkoutId = { "active" }, sessionChanges = flowOf("active"))
         runCurrent()
         assertNotNull(controller.error.value)
         store.available = true
@@ -82,6 +83,6 @@ class RestTimerControllerTest {
         assertEquals("Saved squat", controller.state.value.exerciseName)
         assertEquals(deadline, controller.state.value.deadline)
         assertTrue(controller.state.value.running)
-        assertEquals(0, store.writes)
+        assertEquals(1, store.writes) // Attach the legacy countdown to the persisted active session.
     }
 }

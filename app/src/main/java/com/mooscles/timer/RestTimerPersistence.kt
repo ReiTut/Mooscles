@@ -22,10 +22,11 @@ class RestTimerPersistence(
     private val deadlineKey = longPreferencesKey("timer_deadline")
     private val pausedKey = longPreferencesKey("timer_paused")
     private val finishedKey = booleanPreferencesKey("timer_finished")
+    private val workoutKey = stringPreferencesKey("timer_workout")
 
     private fun decode(p: Preferences) = RestTimerState(
         p[tokenKey] ?: 0, p[nameKey] ?: "Rest timer", p[durationKey] ?: RestDuration.DEFAULT_SECONDS * 1000L,
-        p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false
+        p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false, p[workoutKey]
     )
 
     val states = store.data.map { preferences ->
@@ -44,6 +45,8 @@ class RestTimerPersistence(
             preferences[deadlineKey] = updated.deadline
             preferences[pausedKey] = updated.pausedMillis
             preferences[finishedKey] = updated.finished
+            if (updated.workoutId == null) preferences.remove(workoutKey)
+            else preferences[workoutKey] = updated.workoutId!!
         }
         return updated
     }
@@ -57,7 +60,8 @@ class RestTimerPersistence(
                 token = maxOf(currentTime, previous.token + 1),
                 exerciseName = name,
                 durationMillis = seconds * 1000L,
-                deadline = currentTime + seconds * 1000L
+                deadline = currentTime + seconds * 1000L,
+                workoutId = previous.workoutId
             )
         }
     }
@@ -73,6 +77,23 @@ class RestTimerPersistence(
             pausedMillis = 0, finished = false)
     }
     suspend fun adjust(seconds: Int) = update { it.adjust(seconds * 1000L, now()) }
+
+    /** Clear only the active countdown; routine/exercise rest prescriptions live elsewhere. */
+    suspend fun clear() = update { cleared(it) }
+
+    /** Bind legacy timers to the actual resumable session and reject timers from any other one. */
+    suspend fun reconcileSession(workoutId: String?): RestTimerState {
+        fun reconcile(saved: RestTimerState): RestTimerState = when {
+            workoutId == null -> if (saved == RestTimerState(token = saved.token)) saved else cleared(saved)
+            saved.workoutId == null -> saved.copy(workoutId = workoutId)
+            saved.workoutId == workoutId -> saved
+            else -> cleared(saved).copy(workoutId = workoutId)
+        }
+        val saved = snapshot()
+        return if (reconcile(saved) == saved) saved else update(::reconcile)
+    }
+
+    private fun cleared(previous: RestTimerState) = RestTimerState(token = maxOf(now(), previous.token + 1))
 
     /** A receiver and the foreground ticker may race; only one can claim the durable completion. */
     suspend fun claimCompletion(token: Long): RestTimerState? {

@@ -161,7 +161,7 @@ try {
         [void](Assert-CleanCommit -ExpectedCommit $testedCommit)
         Assert-ExactRemoteTag -ExpectedCommit $testedCommit
         $publishArguments = @('release', 'edit', $Tag, '--repo', $Repository, '--draft=false')
-        if (-not $Prerelease) { $publishArguments += '--latest' }
+        if (-not $Prerelease) { $publishArguments += @('--prerelease=false', '--latest') }
         [void](Invoke-GitHubChecked -Arguments $publishArguments)
         $release = Get-ReleaseInfo
         if ($release.isDraft) { throw 'GitHub still reports a draft after the publish request.' }
