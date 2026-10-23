@@ -49,7 +49,17 @@ class UiFlowTest {
             rows.size == 2
         }
         val repsTag = "routine-set-$firstSetId-reps"
-        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag(repsTag))
+        // Room can finish before the saved routine reaches Compose. Wait for the
+        // actual lazy-list item, scrolling on each attempt so this also works on small screens.
+        compose.waitUntil(30_000) {
+            try {
+                compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag(repsTag))
+                compose.onNodeWithTag(repsTag).assertExists()
+                true
+            } catch (_: AssertionError) {
+                false
+            }
+        }
         compose.onNodeWithTag(repsTag).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
         compose.onNodeWithTag(repsTag).performTextReplacement("8")
         compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag("routine-$entryId-menu"))

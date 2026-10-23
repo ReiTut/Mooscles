@@ -1,5 +1,33 @@
 # Verification — 2026-10-23
 
+## Release 1.4.4 / Build 15
+
+This update restores workout/card presentation to the UI thread and suppresses
+unchanged display preferences after timer or unrelated DataStore writes.
+Repository loading remains in the background. Application ID `com.mooscles`,
+Room schema v4, saved formats, updater source and the trusted signing certificate
+are unchanged. VersionName is **1.4.4**, versionCode **15**, above the previous
+distributed Build 14 and the connected emulator's installed Build 14.
+
+The implementation passed 14 focused host tests, debug lint and debug,
+instrumentation and optimized builds before release preparation. A real-file
+preference regression covers timer start/clear/reset suppression, actual setting
+changes and reopening. A Main-looper regression checks a persisted set edit.
+The prior Android 15 emulator comparison confirmed three worker presentation
+passes became one main-thread pass per Start and timer reset no longer caused
+presentation. Timing results were mixed; a consistent performance improvement
+was not demonstrated. See [PERFORMANCE.md](PERFORMANCE.md).
+
+Release preparation uses a clean archive of the intended commit, preserving
+unrelated IDE settings in the original checkout. The existing guarded publisher
+reruns the full host suite, debug lint and distribution build, verifies package,
+version and certificate, generates `update.json` and a checksum, checks uploaded
+bytes in a draft, then publishes a full release explicitly marked Latest.
+The APK is a **debug build**, retained for existing-installation compatibility.
+Final logs, hashes and public-delivery checks belong under ignored
+`.tooling/release-v144-*`; historical records below describe earlier binaries.
+Android may require source permission and installation approval.
+
 ## Release 1.4.3 / Build 14
 
 The responsiveness update is distributed with versionName **1.4.3**, versionCode **14**, application ID **com.mooscles**, minimum API 26 and target API 35. Published release metadata was inventoried before preparation: the highest existing build was 13; v1.4.2 was already used, making v1.4.3 the next unused patch. The current release keeps the established debug distribution variant and trusted certificate. The optimized performance variant remains a local measurement target.

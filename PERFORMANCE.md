@@ -1,6 +1,123 @@
 # Workout responsiveness verification
 
-## Status and limits
+## Current implementation: UI-thread preparation and preference filtering
+
+On 23 October 2026, workout/card presentation was moved from
+`withContext(Dispatchers.Default)` back into the flow collected by
+`viewModelScope` on the main thread. Repository loading remains in the background.
+`AppPreferences.flow` now applies `distinctUntilChanged()` after projecting the
+shared DataStore into display preferences. Timer start, clear and reset writes
+therefore do not emit unchanged settings or trigger another presentation.
+Existing caches, timer isolation and lazy inputs remain intact.
+
+Fourteen focused host tests passed: `AppPreferencesTest` (5),
+`AppViewModelPerformanceHostTest` (5), and `WorkoutPresentationTest` (4).
+After adding an explicit timer-clear assertion, only the five preference tests
+were rerun, successfully. Debug lint passed with zero errors / 21 warnings.
+Debug, instrumentation and R8-optimized performance APKs built. The opt-in
+additive `ThreadComparisonFixtureTest` passed once on the emulator; this is setup
+validation, not a passing full instrumented UI suite.
+
+Both comparison APKs use `com.mooscles`, version 1.4.3 / code 14 and the existing
+certificate. Tests targeted `emulator-5554` / `Medium_Phone`, Android 15 / API 35,
+x86_64, 1080 x 2400 at 60 Hz. Each non-debuggable, profileable APK was speed
+compiled and its installed hash verified. Six warm-process routine starts used
+an ABBAAB order, the same eight-exercise/four-set prescriptions and identical
+scroll gestures. Each test session was saved, so history increased during the
+comparison. No storage was cleared and no app was uninstalled.
+
+| Diagnostic | Before: background | After: UI thread + filtering |
+| --- | ---: | ---: |
+| Timer-reset presentation, same large active session | 1 worker pass, 23.87 ms | 0 passes |
+| Presentations per routine Start, every trial | 3 worker passes | 1 main-thread pass |
+| Start command median, three trials each | 143.47 ms | 165.82 ms |
+| Initial 1.4 s app deadline misses | 20/115 (17.39%) | 15/121 (12.40%) |
+| Initial maximum main frame, median | 51.19 ms | 61.72 ms |
+| Pure-scroll app deadline misses | 68/1,045 (6.51%) | 81/1,048 (7.73%) |
+| Pure-scroll frame pipeline p95, median | 40.90 ms | 43.69 ms |
+
+**The redundant work is eliminated, but a consistent performance improvement
+was not demonstrated.** Start timing and paired frame results were mixed.
+After-change main-thread presentation spans lasted 26.70-40.50 ms. The Start
+command ends at prepared-state acknowledgment, not the first usable frame.
+Frame pipeline durations include rendering and waits. The two changes were
+measured together; their individual performance effects cannot be separated.
+These small emulator samples do not establish physical-phone performance.
+All six traces had zero positive error or data-loss counters.
+
+Database comparison found every original exercise, routine and previously
+finished workout unchanged. The pre-existing synthetic active session was
+finished and saved, and six comparison sessions were retained. SQLite integrity
+passed. The updated optimized APK was left installed. Raw traces, installed
+APKs, findings, data comparisons and `REPORT.md` are under
+`app/build/outputs/thread-comparison/20261023/`, excluded from source control.
+These implementation measurements used Build 14 before release preparation.
+The same behavior is packaged as version 1.4.4 / Build 15 for distribution.
+
+## Earlier emulator verification, before the local thread change
+
+Android Studio's running `Medium_Phone` emulator was tested directly as
+`emulator-5554`: Android 15 / API 35, x86_64, 1080 x 2400 at 60 Hz. Its SDK and
+adb are the project's `.tooling/android-sdk`, confirmed against `local.properties`
+and Android Studio's SDK configuration. The app was initially absent; all
+workouts used for this run were synthetic. No app was uninstalled or storage
+cleared.
+
+The debug and optimized APKs built, 347 host tests passed, and debug lint had
+zero errors / 21 warnings. `:app:connectedDebugAndroidTest`, restricted to
+`WorkoutRepositoryTest` and `RestTimerPersistenceTest`, passed all 16 tests on
+that serial with APK retention enabled. The full `UiFlowTest` was attempted but
+did not complete: its initial database-versus-Compose readiness race was corrected
+in the test, then subsequent attempts lost the automation connection and ended
+with `UiAutomation.disconnect` / `DeadObjectException`. This is not a passing UI
+suite, and the underlying connection failure was not established.
+
+Measurements used the existing `performance` variant: R8 optimized, resource
+shrunk, non-debuggable and shell-profileable, `com.mooscles` 1.4.3 / Build 14,
+with the existing signing certificate. The installed APK was pulled back and
+its hash matched the built APK. Tests exercised 80 exercise instances with
+12 sets each, initially 200 finished sessions, and a subsequent saved test
+session. Manual checks covered fresh routine startup, resume, editing, the rest
+countdown, full-list traversal, finishing/saving and reopening. The edited
+22 kg x 11 completed set survived reopening and was saved to history; the next
+session opened with the routine's independent 20 kg x 8 prescription.
+
+The final database passed `PRAGMA quick_check`. Comparing every original row in
+all seven exercise/routine/workout tables against the final copy found zero
+missing or changed rows. Test-created sessions were retained. The current
+optimized APK was left installed and the fresh test workout open.
+
+| Emulator observation | Verified result |
+| --- | --- |
+| Fresh Start command to prepared-state acknowledgment | 297.545 ms; not first usable-frame latency |
+| Presentation during Start | Three spans on `DefaultDispatch` workers; none on main |
+| Main frame immediately after Start acknowledgment | 95.679 ms wall time, including 76.758 ms running and 64.035 ms in UI measurement |
+| Three fast-scroll diagnostic trials | 139 / 972 App Deadline Missed flags, 14.30% weighted |
+| Fast-scroll frame pipeline p95 | 42.952-47.220 ms across those three trials |
+| Timer scroll | 9 / 366 app deadline misses; no full presentation spans during countdown scrolling |
+| Matched historical baseline | Became unresponsive before a usable workout; Android reported a 5002 ms focus-input timeout |
+
+These results confirm that background preparation is followed by substantial
+initial UI composition/measurement. They do not isolate which implementation
+change caused the user's phone to stutter. Baseline scroll captures are excluded
+because an ANR dialog was present; there is no valid before/after speed claim.
+Frame pipeline time is not pure CPU time, and nested trace slices must not be
+summed. Emulator prediction/pacing errors occurred extensively. Physical-phone
+timings, exact tap-to-first-usable latency and repeated-cycle memory leak
+behavior remain unverified.
+
+Local evidence is under `app/build/outputs/device-validation/20261023/`, including
+`REPORT.md`, `performance-trace-summary.json`, the Perfetto traces, instrumented
+test logs, UI snapshots, signing checks and data-retention comparisons. Build
+outputs and database copies are ignored by Git. Use these measurements as
+emulator diagnostics; [Android's benchmark guidance](https://android.googlesource.com/platform/frameworks/support/+/7ebe543d88e892e4f0f5bd74e4bf7796138481b2/benchmark/docs/macrobenchmark.md)
+explains why emulator numbers do not represent physical-device performance.
+
+## Historical record: original verification before an emulator was available
+
+The remaining source/build notes describe the original optimization work.
+Their device-availability limits apply to that earlier stage; the current
+comparison and current thread placement are documented above.
 
 The baseline application source is commit `4c362999d3c33fdcb6cfd90ed86e16850e795d43`
 (version 1.4.1 / Build 13). On 23 October 2026, before the optimization edits,
@@ -50,10 +167,11 @@ layout, GC and frame deadlines on a device before calling any one of these the
 dominant runtime bottleneck. Database suspend operations alone do not establish
 that a query runs on the main thread.
 
-## Changes under verification
+## Original optimization changes
 
-- Presentation now runs on `Dispatchers.Default`, outside composition and the
-  main thread. Finished-history/record presentation is reused across active-set
+- The original optimization moved presentation to `Dispatchers.Default`; the
+  current local change above restores it to the main thread.
+  Finished-history/record presentation is reused across active-set
   edits; changes to completed data, catalog or units invalidate the appropriate
   cache. Unchanged active exercise/set UI objects retain their identities.
   Cache ownership stays within the sequential presentation flow. Session changes
@@ -146,8 +264,9 @@ try { .\gradlew.bat :app:assemblePerformance --console=plain } finally { Pop-Loc
 The initially built `.tooling/performance-baseline-project` APK belongs to the
 Build 13 implementation task. Its source and verification record are preserved.
 For Build 14 comparisons, regenerate the baseline in the new directory above
-using the current version and measurement configuration, then build it. No
-Build 14 device comparison has been performed. An archived debug APK and a
+using the corresponding version and measurement configuration, then build it.
+The later Build 14 thread-placement comparison is documented above and uses
+two matching performance variants. An archived debug APK and a
 current optimized APK are **not** a valid before/after pairing. Compare the two
 matching `performance` APKs. Keep both APKs, R8
 `mapping.txt` files, hashes, commit IDs, and fixture details with the traces.

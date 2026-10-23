@@ -9,13 +9,11 @@ import androidx.lifecycle.viewModelScope
 import com.mooscles.data.*
 import com.mooscles.ui.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 class AppViewModel(application: Application) : AndroidViewModel(application), MoosclesActions {
@@ -32,12 +30,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     private val commands = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val source = repo.data.catch { error.value = "Unable to open local data: ${it.message}"; emit(AppData()) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, AppData())
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    // Collected by contentUi in viewModelScope: prepare card details on the UI thread.
     private val presentation = combine(source, app.preferences.flow) { data, prefs -> data to prefs }
-        .mapLatest { (data, prefs) -> withContext(Dispatchers.Default) {
+        .map { (data, prefs) ->
             Trace.beginSection("Mooscles:present")
             try { presenter.present(data, prefs) } finally { Trace.endSection() }
-        } }
+        }
     private val problems = combine(error, app.preferences.error, app.timer.error) { action, prefs, timer -> action ?: prefs ?: timer }
     private val baseUi = combine(presentation, problems, initialized, app.updates.ui, startingWorkout) { base, problem, ready, updates, starting ->
         base.copy(error = problem, loading = !ready, updates = updates, startingWorkout = starting)

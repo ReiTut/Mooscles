@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 
@@ -25,8 +26,9 @@ class AppPreferences(context: Context) {
     private val defaultRest = intPreferencesKey("default_rest")
     private fun read(saved: Preferences) = PreferencesUi(saved[pounds] ?: false, saved[theme] ?: "system",
         saved[autoRest] ?: true, saved[defaultRest] ?: RestDuration.DEFAULT_SECONDS)
-    /** Commands must read durable settings, not a potentially pending background UI projection. */
+    /** Commands read durable settings even while display-state updates are pending. */
     suspend fun snapshot(): PreferencesUi = read(store.data.first())
+    // Filter after projection because timer keys share the underlying store.
     val flow = flow {
         var emitted = false
         var backoff = 1000L
@@ -50,7 +52,7 @@ class AppPreferences(context: Context) {
                 backoff = (backoff * 2).coerceAtMost(30_000L)
             }
         }
-    }
+    }.distinctUntilChanged()
     suspend fun pounds(value: Boolean) { store.edit { it[pounds] = value } }
     suspend fun theme(value: String) { require(value in listOf("light", "dark", "system")); store.edit { it[theme] = value } }
     suspend fun autoRest(value: Boolean) { store.edit { it[autoRest] = value } }

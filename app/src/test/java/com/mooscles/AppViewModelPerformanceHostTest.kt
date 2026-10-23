@@ -1,6 +1,8 @@
 package com.mooscles
 
 import android.os.Looper
+import android.os.Handler
+import android.os.Trace
 import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.data.*
@@ -15,8 +17,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowTrace
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Functional flow/persistence checks, deliberately not device timing benchmarks. */
 @RunWith(RobolectricTestRunner::class)
@@ -36,6 +40,43 @@ class AppViewModelPerformanceHostTest {
         app.appScope.cancel()
         shadowOf(Looper.getMainLooper()).idle()
         app.database.close()
+    }
+
+    @Test fun changedWorkoutCardDetailsArePresentedOnTheMainLooper() {
+        val workoutId = runBlocking(Dispatchers.IO) {
+            app.preferences.autoRest(false)
+            app.repository.initialize()
+            val id = app.repository.startEmpty()
+            val exerciseId = app.repository.snapshot().exercises.first().id
+            app.repository.addWorkoutExercise(id, exerciseId)
+            id
+        }
+        val model = AppViewModel(app).also { models += it }
+        awaitUi(model) { !it.loading && it.active?.id == workoutId }
+        val setId = model.contentUi.value.active!!.exercises.first().sets.first().id
+        val before = mainPresentationCount()
+        model.updateSet(setId, 11, 22.5, false, false, false)
+        awaitUi(model) { it.active?.exercises?.firstOrNull()?.sets?.firstOrNull()?.let { set ->
+            set.id == setId && set.reps == 11 && set.weightKg == 22.5
+        } == true }
+        assertTrue("The saved set edit must prepare its card details on the Android main looper",
+            mainPresentationCount() > before)
+    }
+
+    private fun mainPresentationCount(): Int {
+        val count = AtomicInteger(-1)
+        val main = Looper.getMainLooper()
+        Handler(main).post {
+            assertSame(main, Looper.myLooper())
+            // ShadowTrace's completed-section queue is thread-local. Read it on
+            // the actual main looper, independently of the test runner's thread.
+            ShadowTrace.setEnabled(true)
+            assertTrue(Trace.isEnabled())
+            count.set(ShadowTrace.getPreviousSections().count { it == "Mooscles:present" })
+        }
+        shadowOf(main).idle()
+        assertTrue("Main-looper trace sample did not execute", count.get() >= 0)
+        return count.get()
     }
 
     @Test fun rapidStartTapsCreateOneSessionAndQueuedEditsSurviveReopening() {
@@ -103,7 +144,7 @@ class AppViewModelPerformanceHostTest {
         assertEquals(1, runBlocking(Dispatchers.IO) { app.repository.snapshot().workouts.size })
     }
 
-    @Test fun queuedSettingChangesApplyToFollowingCommandsBeforeBackgroundPresentationCatchesUp() {
+    @Test fun queuedSettingChangesApplyToFollowingCommandsBeforePresentationCatchesUp() {
         val exerciseId = runBlocking(Dispatchers.IO) {
             app.preferences.defaultRest(120)
             app.preferences.autoRest(true)
