@@ -250,16 +250,10 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         items.forEachIndexed { index, item -> dao.updateRoutineExercise(item.copy(position = index)) }
     }
 
-    /** Reorder persistent instances atomically; shared catalog IDs never identify an occurrence. */
-    suspend fun reorderRoutineExercises(routineId: String, orderedIds: List<String>) = db.withTransaction {
-        requireNotNull(dao.routine(routineId)) { "Routine not found." }
+    suspend fun reorderRoutineExercises(routineId: String, ids: List<String>) = db.withTransaction {
         val items = dao.routineItems(routineId)
-        val byId = items.associateBy { it.id }
-        validateExerciseOrder(orderedIds, byId.keys)
-        orderedIds.forEachIndexed { index, id ->
-            val item = byId.getValue(id)
-            if (item.position != index) dao.updateRoutineExercise(item.copy(position = index))
-        }
+        require(ids.toSet() == items.map { it.id }.toSet() && ids.size == items.size) { "Invalid exercise order." }
+        ids.forEachIndexed { index, id -> dao.updateRoutineExercise(items.first { it.id == id }.copy(position = index)) }
     }
 
     suspend fun saveExercise(item: Exercise) = db.withTransaction {
@@ -352,17 +346,10 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         items.forEachIndexed { index, item -> dao.updateWorkoutExercise(item.copy(position = index)) }
     }
 
-    /** Only the active session changes: its source routine and finished snapshots stay untouched. */
-    suspend fun reorderWorkoutExercises(workoutId: String, orderedIds: List<String>) = db.withTransaction {
-        val workout = requireNotNull(dao.workout(workoutId)) { "Workout not found." }
-        require(workout.status == WorkoutStatus.ACTIVE) { "Only active workouts can be reordered." }
+    suspend fun reorderWorkoutExercises(workoutId: String, ids: List<String>) = db.withTransaction {
         val items = dao.workoutItems(workoutId)
-        val byId = items.associateBy { it.id }
-        validateExerciseOrder(orderedIds, byId.keys)
-        orderedIds.forEachIndexed { index, id ->
-            val item = byId.getValue(id)
-            if (item.position != index) dao.updateWorkoutExercise(item.copy(position = index))
-        }
+        require(ids.toSet() == items.map { it.id }.toSet() && ids.size == items.size) { "Invalid exercise order." }
+        ids.forEachIndexed { index, id -> dao.updateWorkoutExercise(items.first { it.id == id }.copy(position = index)) }
     }
 
     suspend fun addSet(workoutExerciseId: String): String = db.withTransaction {
@@ -428,12 +415,6 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         equipment = exercise.equipment, convention = exercise.convention, position = position,
         restSeconds = restSeconds.coerceIn(0, RestDuration.MAX_SECONDS)
     )
-
-    private fun validateExerciseOrder(orderedIds: List<String>, currentIds: Set<String>) {
-        require(orderedIds.size == currentIds.size && orderedIds.toSet() == currentIds) {
-            "Exercise order changed. Reopen Reorder Exercises and try again."
-        }
-    }
 
     private fun <T> move(items: MutableList<T>, id: String, direction: Int, identity: (T) -> String) {
         val index = items.indexOfFirst { identity(it) == id }

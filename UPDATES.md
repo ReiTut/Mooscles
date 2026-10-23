@@ -71,7 +71,7 @@ git push origin v1.3.0
     -PreviousVersionCode 7 -NotesFile .\.tooling\release-notes-v1.3.0.md
 ```
 
-By default this creates a **draft official release** with the versioned debug APK, `update.json`, and `.sha256` attached. It checks asset names, sizes, the selected channel and available GitHub digests, then downloads all three assets to an ignored verification directory and compares their SHA-256 hashes. A failure leaves the draft unpublished. The tag must match the APK's version name exactly and the APK's version code must exceed `PreviousVersionCode`.
+By default this creates a **draft official release** with the versioned debug APK, `update.json`, and `.sha256` attached. It checks asset names, sizes, the selected channel and available GitHub digests, then downloads all three assets to an ignored verification directory and compares their SHA-256 hashes. A failure leaves the draft unpublished. Normally the tag must be `v` plus the APK's version name; the build-number option below supports recovery releases. The APK's version code must exceed `PreviousVersionCode`.
 
 After reviewing the draft, explicitly publish it by running the same helper with `-Publish`:
 
@@ -83,6 +83,19 @@ After reviewing the draft, explicitly publish it by running the same helper with
 It can resume an existing draft only when its notes, channel and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the official release, marks it Latest, checks the published asset list, and returns repository/release/download links. The optional `-Prerelease` switch is reserved for an explicitly requested channel override and must be supplied consistently when resuming that draft. Build type remains checked independently: this workflow distributes the existing debug APK with the trusted signing identity. Android may still require source permission or installation approval.
 
 Replace the tag, last distributed version code, and notes filename for each later version. The local preparation script never tags, pushes, publishes, changes signing configuration, or creates keys. Adding the updater and these helper scripts does not modify existing GitHub releases or publish a new release by itself.
+
+## Recovery releases with a historical version name
+
+The updater shipped in v1.4.1 and v1.4.2 compares `update.json.versionCode` with the installed Android build number. It does not require increasing semantic version names or tags. A recovery of v1.4.1 functionality can therefore use **versionName 1.4.1 / versionCode 13** after distributed Build 12. Its unique tag is **v1.4.1-build13**; the original v1.4.1 tag is never overwritten. Settings displays the actual installed build number.
+
+Pass `-IncludeVersionCode` to `prepare-release.ps1` to include the actual code in the APK filename. This recovery's `build.ps1` already does so. The guarded publisher's `-UseBuildTag` uses the exact `v<versionName>-build<versionCode>` tag and the same filename convention:
+
+```powershell
+.\tools\publish-release.ps1 -Tag v1.4.1-build13 -UseBuildTag `
+    -PreviousVersionCode 12 -NotesFile .\.tooling\release-v141-build13-notes.md -Publish
+```
+
+The assets are `Mooscles-v1.4.1-build13-debug.apk`, `update.json`, and the APK's `.sha256` file. The JSON schema is unchanged; filename, package, actual version/build, SDK, size and checksum are still read from the final signed APK. Publication remains a full release explicitly marked Latest. Future releases must use a still higher actual version code. Preserve saved data formats and signing compatibility; a recovery is an Android upgrade, never an installation downgrade.
 
 Keep release assets public. The app includes no shared GitHub token. If source code becomes private, keep public update assets in a public release-only repository and explicitly configure the updater to use that repository before distributing it. Private assets need a separate authentication/distribution design; embedding an owner's token in the APK is not supported.
 

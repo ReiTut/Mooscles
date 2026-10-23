@@ -5,7 +5,9 @@ param(
     [string]$ExpectedApplicationId = 'com.mooscles',
     # Public fingerprint of the existing Mooscles debug signing certificate, not a secret.
     [string]$ExpectedSignerSha256 = '0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35',
-    [long]$PreviousVersionCode = 0
+    [long]$PreviousVersionCode = 0,
+    # Recovery releases may reuse versionName but always have a newer Android build number.
+    [switch]$IncludeVersionCode
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -74,7 +76,8 @@ if (-not $outputFullPath.StartsWith($ignoredBuildRoot, [StringComparison]::Ordin
 [void][IO.Directory]::CreateDirectory($outputFullPath)
 $safeVersionName = $versionName -replace '[^0-9A-Za-z._-]', '-'
 $buildSuffix = if ($debugBuild) { '-debug' } else { '' }
-$apkFileName = "Mooscles-v$safeVersionName$buildSuffix.apk"
+$versionCodeSuffix = if ($IncludeVersionCode) { "-build$versionCode" } else { '' }
+$apkFileName = "Mooscles-v$safeVersionName$versionCodeSuffix$buildSuffix.apk"
 $releaseApk = Join-Path $outputFullPath $apkFileName
 if (-not $apkFullPath.Equals($releaseApk, [StringComparison]::OrdinalIgnoreCase)) {
     Copy-Item -LiteralPath $apkFullPath -Destination $releaseApk -Force

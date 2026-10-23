@@ -5,6 +5,8 @@ param(
     [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repository = 'ReiTut/Mooscles',
     [ValidatePattern('^[A-Za-z0-9_.-]+$')][string]$Remote = 'origin',
     [switch]$Publish,
+    # A unique recovery tag can reuse versionName without replacing its original release.
+    [switch]$UseBuildTag,
     # Official releases are the owner's default; build variant and distribution channel are independent.
     [switch]$Prerelease
 )
@@ -108,9 +110,11 @@ try {
     $assets = & (Join-Path $projectRoot 'tools\prepare-release.ps1') `
         -ApkPath (Join-Path $projectRoot 'app\build\outputs\apk\debug\app-debug.apk') `
         -OutputDirectory (Join-Path $projectRoot 'app\build\outputs\release') `
-        -PreviousVersionCode $PreviousVersionCode
+        -PreviousVersionCode $PreviousVersionCode -IncludeVersionCode:$UseBuildTag
     $metadata = Get-Content -LiteralPath $assets.MetadataPath -Raw | ConvertFrom-Json
-    if ($Tag -cne ('v' + $metadata.versionName)) { throw 'The release tag must exactly match v plus the versionName read from the built APK.' }
+    $expectedTag = 'v' + $metadata.versionName
+    if ($UseBuildTag) { $expectedTag += '-build' + $metadata.versionCode }
+    if ($Tag -cne $expectedTag) { throw 'The tag must match the actual APK versionName and, with UseBuildTag, its build number.' }
     if (-not $assets.IsDebugBuild) { throw 'This workflow distributes the existing debug variant. Review production signing and release verification before changing variants.' }
 
     $expectedAssets = @($assets.ApkPath, $assets.MetadataPath, $assets.ChecksumPath) | ForEach-Object {

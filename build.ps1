@@ -12,7 +12,7 @@ try {
     $debugApk = Join-Path $projectRoot 'app\build\outputs\apk\debug\app-debug.apk'
     if (($Tasks | Where-Object { $_ -match '(^|:)assembleDebug$' }) -and (Test-Path -LiteralPath $debugApk -PathType Leaf)) {
         $releaseAssets = & (Join-Path $projectRoot 'tools\prepare-release.ps1') -ApkPath $debugApk `
-            -OutputDirectory (Join-Path $projectRoot 'app\build\outputs\release') -PreviousVersionCode 11
+            -OutputDirectory (Join-Path $projectRoot 'app\build\outputs\release') -PreviousVersionCode 12 -IncludeVersionCode
         Write-Output "Verified release APK: $($releaseAssets.ApkPath)"
         Write-Output "Update metadata: $($releaseAssets.MetadataPath)"
     }

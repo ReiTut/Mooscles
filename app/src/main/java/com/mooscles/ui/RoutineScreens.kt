@@ -9,7 +9,6 @@ import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -102,7 +101,6 @@ fun RoutineEditor(routine: RoutineUi, state: UiState, actions: MoosclesActions, 
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
     var blockedStart by remember { mutableStateOf(false) }
-    var ordering by rememberSaveable(routine.id) { mutableStateOf(false) }
     LaunchedEffect(state.active?.id) { blockedStart = false }
     val resumesThisRoutine = state.active?.sourceRoutineId == routine.id
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding().testTag("routine-editor-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -117,10 +115,9 @@ fun RoutineEditor(routine: RoutineUi, state: UiState, actions: MoosclesActions, 
             Icon(Icons.Outlined.PlayArrow, null)
             Text(if (resumesThisRoutine) "Resume active workout" else "Start this routine")
         } }
-        item { Text("Exercise plan", style = MaterialTheme.typography.titleLarge) }
-        item { ExercisePlanActions(onAdd = { picker = true }, onReorder = { ordering = true }, canReorder = routine.exercises.size > 1) }
+        item { SectionTitle("Exercise plan", "Add exercise", { picker = true }) }
         if (routine.exercises.isEmpty()) item { EmptyState(Icons.Outlined.FitnessCenter, "Your plan starts here", "Add movements and set your targets.", "Add exercise", { picker = true }) }
-        routine.exercises.forEach { planned ->
+        routine.exercises.forEachIndexed { index, planned ->
             item(key = "heading-${planned.id}") {
                 RoutineExerciseHeading(planned, state.preferences.pounds,
                     onRemove = { actions.removeRoutineExercise(planned.id) },
@@ -142,16 +139,15 @@ fun RoutineEditor(routine: RoutineUi, state: UiState, actions: MoosclesActions, 
                     }
                     Text("Blank weight = bodyweight · Logging: ${planned.exercise.convention}.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OrderButtons(index > 0, index < routine.exercises.lastIndex) { actions.moveRoutineExercise(planned.id, it) }
                     HorizontalDivider(Modifier.padding(top = 2.dp, bottom = 9.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
+        item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Add exercise") } }
     }
     if (rename) NameDialog("Rename routine", routine.name, onDismiss = { rename = false }, onSave = { actions.renameRoutine(routine.id, it) })
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { exerciseId -> replace?.let { actions.replaceRoutineExercise(it, exerciseId) } ?: actions.addRoutineExercise(routine.id, exerciseId) })
-    if (ordering) ExerciseOrderEditor(routine.exercises.map { OrderExerciseUi(it.id, it.exercise.name) },
-        onSave = { ids -> actions.reorderRoutineExercises(routine.id, ids); ordering = false },
-        onCancel = { ordering = false })
     if (blockedStart) state.active?.let { active ->
         ActiveWorkoutConflict(active.name, routine.name, onDismiss = { blockedStart = false },
             onResume = { blockedStart = false; onWorkout() })

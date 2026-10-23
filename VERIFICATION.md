@@ -1,6 +1,38 @@
 # Verification — 2026-10-23
 
-## Current release — 1.4.2 / build 12
+## Current recovery release — 1.4.1 / build 13
+
+Restored functionality comes from original `v1.4.1` / Build 11, commit **87152e11925a221f828896c5dc082d09c10c6494**. This is a new forward commit after distributed v1.4.2 (`f5aa3f2096cb33b665ca815e3aaf65549f897a38`), never a reset or replacement of either release. The UI screens and repository match the historical source. Build 12's prepared-presentation cache, drag ordering window, saveable-draft additions and discard-to-Train navigation are removed.
+
+The actual APK is **versionName 1.4.1 / versionCode 13**, with unique tag **v1.4.1-build13** and filename **Mooscles-v1.4.1-build13-debug.apk**. The maximum previously distributed code is 12 (all nine public releases inventoried; v1.0.0's code 3 verified from source and its APK). No connected test installation was present. Actual installed-version reporting reads the package and displays Build 13 rather than Build 11.
+
+Compatibility differences from the original snapshot are limited to the newer build identity and preserved nullable timer exercise-instance ownership. The three timer classes, the optional `TimerUi` field and auto-rest's instance-ID argument keep Build 12's saved owner readable through timer adjustments, reset, reopening and cleanup. The timer's internal clear wrapper retains the same visible behavior. The publisher adds optional build-number tags and filenames, so the original v1.4.1 tag/assets remain intact.
+
+Database entities, migrations, schema v4, core preferences and updater implementation are identical between original v1.4.1 and v1.4.2. Schema Git blob: `aa9f6dc6dc595072bf99034210e19555e937a660`; Room identity: `fa80dd71df6c40254d9d1b07ebd3f1a6`. No database downgrade, destructive migration, storage clearing or uninstall is used. Tests create a real database from the immutable distributed v1.4.2 schema and reopen it with the restored repository, preserving reordered duplicate instances, independent targets, precise weights, routines, history, PRs, checkpoints and partially completed sessions. Additional real-file tests read literal v1.4.2 training/updater/timer formats, including adjusted and paused intervals. Existing v1/v2/v3 → v4 migration checks remain in the full suite.
+
+Actual public v1.4.1 and v1.4.2 APK disassembly was compared for eleven updater classes. Their discovery, metadata, identity validation, scheduling and installation logic match. The shipped updater selects the highest eligible **metadata versionCode**, independently of semantic versionName or tag ordering. Its frozen Build 12 classes accept this lower display version with code 13, reject mismatched code/name/certificate, and discover a simulated future Build 14. The original updater remains in the restored application; no discovery fix exists only in the new APK.
+
+Final build command: `build.ps1` with bundled JDK 21 / Gradle 8.14.5.
+
+| Check | Result |
+| --- | --- |
+| Full restored host unit, persistence, Compose and native graphics suite | **PASS — 325 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 existing warnings** |
+| Debug APK and instrumented-test APK | **PASS — compiled and packaged** |
+| Actual APK identity | **com.mooscles; versionName 1.4.1; versionCode 13; minimum API 26; target API 35** |
+| Signing identity | **PASS — existing Android Debug certificate; APK Signature Scheme v2** |
+| Versioned APK and updater metadata/checksum | **PASS — actual package/version, filename, size and SHA-256 agree** |
+| Build 12 → restored saved-data transition | **PASS — real host SQLite/DataStore files; no destructive migration** |
+| Captured installed-updater validation | **PASS — ten discovery scenarios, one future-update scenario and four identity checks** |
+| Actual Android upgrade and restored installed UI | **Not verified — no connected device; isolated emulator could not boot** |
+
+An actual installation was attempted as a verification setup, not claimed as completed: official Emulator 37.2.12 and Android 26 x86_64 were installed only inside ignored `.tooling`, with an isolated AVD. All three driver-free headless configurations crashed before guest boot (`0xC0000005` / exit -1073741819). The hypervisor check reports the Android Emulator hypervisor driver missing. No APK was installed, no app storage was cleared, and no host driver/system setting changed. Therefore actual Build 12 → 13 installation, installed UI behavior and instrumented execution remain unverified. Host storage-transition and discovery validation do not substitute for a device installation claim.
+
+Verified local APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.4.1-build13-debug.apk` — **19,632,163 bytes**. SHA-256: `9cae0fb07af6e7e2849469eb01a0a010cc0a0c3524a2884555a82b29fe711eab`. Trusted certificate SHA-256 remains `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`. Normal and versioned debug APKs have identical bytes. APKs, metadata, keystores and local configuration remain excluded from source.
+
+Distribution: [v1.4.1-build13 full GitHub Release](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.1-build13), explicitly `draft=false`, `prerelease=false` and Latest. The existing helper validates the exact clean tagged commit, verifies downloaded draft assets before publication, and uses `-UseBuildTag` for this unique recovery identity. Public verification checks Latest, downloaded APK/metadata/checksum and captured Build 12 stable-channel discovery. Existing download preferences and Android installation approval still apply; ongoing training delays installation.
+
+## Prior release — 1.4.2 / build 12
 
 The workout presentation worker prepares every exercise, ordered set, target, rest value, previous-performance summary and record badge before publishing an interactive new or restored session. Database snapshots remain transactional; expensive presentation uses `Dispatchers.Default`. Indexed history/set lookups replace repeated whole-table scans. Bounded caches reuse unchanged workout/card/set objects; timer/updater copies and the isolated elapsed clock do not rebuild the exercise list. Lazy rendering keeps composition bounded, with saveable input drafts scoped to persistent exercise/set IDs.
 
