@@ -54,7 +54,7 @@ class RestTimerController(
         val now = now()
         if (s.running && s.remaining(now) == 0L) scope.launch { complete(s.token) }
         TimerUi(s.exerciseName, ceil(s.remaining(now) / 1000.0).toInt(), (s.durationMillis / 1000).toInt(),
-            s.running, s.paused, s.finished, progress = s.progress(now))
+            s.running, s.paused, s.finished, progress = s.progress(now), workoutExerciseId = s.workoutExerciseId)
     }.stateIn(scope, SharingStarted.Eagerly, TimerUi())
     init {
         notifications.createNotificationChannel(NotificationChannel("rest", "Rest timer", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -120,16 +120,18 @@ class RestTimerController(
             schedule(persistence.command())
         }
     }
-    suspend fun start(name: String, seconds: Int) {
+    suspend fun start(name: String, seconds: Int, workoutExerciseId: String? = null) {
         notifications.cancel(1)
-        mutate { this.start(name, seconds) }
+        mutate { this.start(name, seconds, workoutExerciseId) }
     }
     suspend fun pause() { mutate { this.pause() } }
     suspend fun resume() { mutate { this.resume() } }
     suspend fun reset() { mutate { this.reset() }; notifications.cancel(1) }
     suspend fun skip() { mutate { this.skip() }; notifications.cancel(1) }
     suspend fun adjust(seconds: Int) { mutate { this.adjust(seconds) } }
-    suspend fun clear() = safely {
+    suspend fun clear() = safely { clearForSessionEnd() }
+    /** Session completion navigation must not report success after a failed durable clear. */
+    suspend fun clearForSessionEnd() {
         mutex.withLock {
             // Stop external effects even if the following durable clear temporarily fails.
             cancelAlerts()

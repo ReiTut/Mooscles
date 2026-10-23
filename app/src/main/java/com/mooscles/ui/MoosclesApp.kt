@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,20 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route ?: "routines"
+        var handledDiscard by rememberSaveable { mutableStateOf<String?>(null) }
+        LaunchedEffect(state.discardedWorkoutId) {
+            val discarded = state.discardedWorkoutId
+            if (discarded != null && discarded != handledDiscard) {
+                // Remove both live and saved Workout destinations; Back and tab-state
+                // restoration must never return to the discarded session.
+                nav.clearBackStack("workout")
+                nav.navigate("routines") {
+                    popUpTo(nav.graph.id) { inclusive = false }
+                    launchSingleTop = true
+                }
+                handledDiscard = discarded
+            }
+        }
         LaunchedEffect(state.updateSettingsRequest) {
             if (state.updateSettingsRequest > 0) nav.navigate("settings") { launchSingleTop = true }
         }

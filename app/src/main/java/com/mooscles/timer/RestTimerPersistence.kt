@@ -24,6 +24,7 @@ class RestTimerPersistence(
     private val pausedKey = longPreferencesKey("timer_paused")
     private val finishedKey = booleanPreferencesKey("timer_finished")
     private val workoutKey = stringPreferencesKey("timer_workout")
+    private val exerciseKey = stringPreferencesKey("timer_workout_exercise")
 
     private fun decode(p: Preferences): RestTimerState {
         val duration = p[durationKey] ?: RestDuration.DEFAULT_SECONDS * 1000L
@@ -32,7 +33,9 @@ class RestTimerPersistence(
             p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false, p[workoutKey],
             // Previous versions persisted only the reset duration. bounded() also handles
             // an older countdown that was extended beyond that duration.
-            p[intervalKey] ?: duration.coerceIn(0, RestTimerState.MAX_MILLIS)
+            p[intervalKey] ?: duration.coerceIn(0, RestTimerState.MAX_MILLIS),
+            // Older name-only timers stay unassigned; never guess between repeated exercises.
+            workoutExerciseId = p[exerciseKey]
         )
     }
 
@@ -55,12 +58,14 @@ class RestTimerPersistence(
             preferences[finishedKey] = updated.finished
             if (updated.workoutId == null) preferences.remove(workoutKey)
             else preferences[workoutKey] = updated.workoutId!!
+            if (updated.workoutExerciseId == null) preferences.remove(exerciseKey)
+            else preferences[exerciseKey] = updated.workoutExerciseId!!
         }
         return updated
     }
 
     /** Completing another set replaces the timer and invalidates every previous completion token. */
-    suspend fun start(name: String, seconds: Int): RestTimerState {
+    suspend fun start(name: String, seconds: Int, workoutExerciseId: String? = null): RestTimerState {
         require(seconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         return update { previous ->
             val currentTime = now()
@@ -69,7 +74,8 @@ class RestTimerPersistence(
                 exerciseName = name,
                 durationMillis = seconds * 1000L,
                 deadline = currentTime + seconds * 1000L,
-                workoutId = previous.workoutId
+                workoutId = previous.workoutId,
+                workoutExerciseId = workoutExerciseId
             )
         }
     }

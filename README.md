@@ -4,11 +4,11 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Download
 
-The current release is **1.4.1**, version code **11**, with the same application ID and existing debug certificate.
+The current release is **1.4.2**, version code **12**, with the same application ID and existing debug certificate.
 
-[v1.4.1 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.1) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.4.1/Mooscles-v1.4.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.4.1/update.json)
+[v1.4.2 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.2) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.4.2/Mooscles-v1.4.2-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.4.2/update.json)
 
-This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.4.1` and version code `11`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Versions 1.1.0 and later already include the updater and discover this release on their default stable channel; **Include prereleases** is not required. Automatic downloads use unmetered Wi-Fi by default and respect saved preferences; Android may require installation approval. Older versions without the updater can install this APK once over their compatible existing app. The existing local debug signing key is retained and excluded from Git. Full GitHub release status does not change the APK's build type or signing certificate. Future release-helper runs use the full stable channel by default.
+This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.4.2` and version code `12`, and requires Android 8.0 or newer. APKs are release assets, not committed source files. Versions 1.1.0 and later already include the updater and discover this release on their default stable channel; **Include prereleases** is not required. Automatic downloads use unmetered Wi-Fi by default and respect saved preferences; Android may require installation approval. Older versions without the updater can install this APK once over their compatible existing app. The existing local debug signing key is retained and excluded from Git. Full GitHub release status does not change the APK's build type or signing certificate. Future release-helper runs use the full stable channel by default.
 
 ## Use
 
@@ -20,11 +20,19 @@ During a workout, tap the **Rest M:SS min** label beside **Add set** to edit tha
 
 Only a routine whose saved ID matches the active workout's source shows **Resume active**. Other cards retain **Start** and protect the existing session, offering to resume it instead of overwriting it. Renaming, reordering and duplicate names do not change the link. Free workouts and older unfinished sessions that have no stored source ID remain available through the general **Resume workout** action; the app does not guess a legacy association from a name.
 
+Starting or restoring a workout prepares every exercise card, set, target, rest setting, previous-performance summary and record badge on a background worker before the screen becomes interactive. A brief **Preparing your workout…** state covers a new start. Cards are still rendered lazily to keep memory bounded; showing another card does not fetch data. Timer ticks and elapsed time do not rebuild workout presentation. Unfinished numeric drafts survive scrolling away and back.
+
+Use **Reorder Exercises** beside **Add Exercise** in the routine editor or active workout to open compact exercise-name rows. Drag a handle to reorder; holding it near either edge scrolls the list. Tapping a handle or using accessibility actions offers Move up/down. **Save Changes** confirms only the order; **Cancel** or Back leaves it unchanged. The routine editor keeps its existing automatic saving for target edits, and its order is saved only when confirmed. Session ordering changes only the active session. Duplicate movements retain their independent instance IDs, sets, values, progress and rest settings, and the active timer keeps its owner and deadline.
+
+Confirming **Discard workout** deletes the active session, stops its rest timer and alerts, and returns to **Train** after successful persistence. The Workout navigation entry is cleared; Back, tab restoration and reopening cannot restore the discarded session. Its provisional records never enter completed history. Storage failures show an error without announcing successful discard navigation.
+
 Start a routine or an empty session. Log decimal loads and reps, mark working/warm-up/assistance sets, complete or undo sets, and finish to view the full breakdown. Rounded, filled numeric fields retain their original sizes. Active sessions save every valid edit automatically and can be resumed after app/process restart. History supports search, set corrections, exercise changes, renaming and confirmed deletion. Custom exercises retain stable identities when renamed.
 
 The offline catalog contains **287** established exercise variations across barbell, dumbbell, kettlebell, cable, bodyweight, Smith, selectorized and plate-loaded machines, plus a distinctly identified trap-bar deadlift. **Seated Overhead Press (Machine)** uses the existing selectorized shoulder-press ID, preserving its history and records. Ten genuine additions include EZ-bar exercises, barbell Bulgarian split squat, one-arm dumbbell bench press, bench-supported cable fly variations, cable shoulder press, belt squat and trap-bar deadlift. Both the library and picker recognize common equivalent names, abbreviations and punctuation/word-order differences, including shoulder/overhead press, pec deck/chest fly, hex/trap bar and skull crushers. Catalog refreshes add missing entries to existing installations without resetting data or deleting custom exercises; machine, cable, barbell and dumbbell variations keep separate identities.
 
 ## Build
+
+Version **1.4.2 / version code 12** adds background workout preparation and caching, durable discard-to-Train navigation, and confirmed drag ordering for routines and active sessions. Existing workout data, individual targets, custom rest durations and timer ownership are preserved.
 
 Version **1.4.1 / version code 11** adds rest-timer progress, an inline workout rest editor for subsequent rests, and persistent routine-source association so only the originating routine shows **Resume active**. Existing plans, workout snapshots and custom rest durations are preserved.
 

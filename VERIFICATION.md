@@ -1,6 +1,39 @@
-# Verification — 2026-10-22
+# Verification — 2026-10-23
 
-## Current release — 1.4.1 / build 11
+## Current release — 1.4.2 / build 12
+
+The workout presentation worker prepares every exercise, ordered set, target, rest value, previous-performance summary and record badge before publishing an interactive new or restored session. Database snapshots remain transactional; expensive presentation uses `Dispatchers.Default`. Indexed history/set lookups replace repeated whole-table scans. Bounded caches reuse unchanged workout/card/set objects; timer/updater copies and the isolated elapsed clock do not rebuild the exercise list. Lazy rendering keeps composition bounded, with saveable input drafts scoped to persistent exercise/set IDs.
+
+After a successful discard, the command waits for durable session deletion, timer clearing and refreshed no-active presentation before emitting navigation success. Train becomes selected, live/saved Workout destinations are cleared, and Back or app restoration cannot reopen the deleted session. Failed database deletion or timer clearing shows an error without success navigation. Discarded provisional records do not enter completed history or update routine targets. Alerts and notifications are cancelled.
+
+Both routine and active-workout screens have **Add Exercise / Reorder Exercises** controls. The separate compact ordering window keeps the full editor mounted behind it, supports drag handles with held-edge autoscroll, accessible moves, Save Changes and Cancel/Back. Reordering validates exact instance membership and updates positions atomically. Duplicate catalog movements keep independent sets, targets, rest settings and progress. Routine target editing retains its existing autosave behavior; only confirming the ordering window saves its order. Active reordering changes only the session, with no changes to routine/history snapshots or countdown state. A nullable DataStore exercise-instance owner supplements the timer's workout ID; legacy timers keep a null owner rather than guessing by name. Room schema v4 is unchanged.
+
+Final command: `build.ps1`, using bundled JDK 21 and Gradle 8.14.5.
+
+| Check | Result |
+| --- | --- |
+| Complete host unit, persistence, Compose and native graphics suite | **PASS — 351 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 existing warnings** |
+| Debug APK and instrumented-test APK | **PASS — compiled and packaged** |
+| Actual APK identity | **com.mooscles; version 1.4.2; version code 12; minimum API 26; target API 35** |
+| Signing identity | **PASS — existing Android Debug certificate retained; APK Signature Scheme v2** |
+| Versioned APK, update.json and checksum | **PASS — package/version, filename, size and SHA-256 agree; normal debug APK has identical bytes** |
+| Ordering visual review | **PASS — native 360dp and 430dp captures; duplicate/long names, handles and Save/Cancel remain readable** |
+| Real Android device, IME, frame timing and instrumented execution | **Not run — no connected device and no local emulator binary available** |
+
+Forty focused tests cover complete worker preparation and restoration, exact compatibility with the previous PR/history presentation (including randomized/tied/near-equal load cases), cache identity and invalidation, repeated fast scrolling and input restoration, discard navigation and storage failures, atomic ordering/rollback, duplicates, future routine order, reopened session order and persistent timer ownership. Actual ViewModel tests confirm that preparation runs on a DefaultDispatcher worker, and that auto-rest retains the exact repeated exercise instance through reorder and ViewModel recreation.
+
+Host CPU benchmark: **30 historical sessions, 48 exercises per session, 5,952 sets**. The final run measured **8,482.5 ms** for the previous preparation and **51.6 ms** for indexed preparation. **120 cached snapshots took 94.4 ms total and built zero extra cards**. See `app/build/reports/workout-preparation-benchmark.txt`. This is a synthetic host CPU comparison, not device startup or frame-rate timing.
+
+The 40-exercise/160-set Compose test performs **24 fast swipes and six end-to-end jumps**, verifies bounded composition and offscreen inputs, then forces actual saved-state disposal/restoration and confirms an unpersisted invalid numeric draft survives that restoration and saved reorder. The final run's functional scrolling loop took **2,834 ms of host wall time**; this is not an Android frame/jank measurement. See `app/build/outputs/workout-performance/scroll-host.txt`. The held-edge ordering test moves beyond twelve positions from the original viewport while holding the pointer stationary, then confirms all thirty distinct instance IDs remain in the saved order.
+
+Native screenshots under `app/build/outputs/workout-order-previews/` (`order-360dp.png`, `order-430dp.png`) were inspected. Existing native workout/dock previews also pass. No device scrolling, keyboard or installation claim is made from these host checks.
+
+Verified APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.4.2-debug.apk` — **19,697,699 bytes**. SHA-256: `739a637f5489b1b2a88878b920f6c06ad0d0229e6ab29899c95f0d15784db931`. Signing certificate SHA-256 remains `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`. Build outputs, metadata, local configuration and signing material remain ignored.
+
+Distribution: [v1.4.2 full GitHub Release](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.2), with the existing debug variant, update.json and checksum as assets. The publication helper verifies the exact clean tagged source, checks downloaded draft assets, then explicitly publishes with `draft=false`, `prerelease=false` and Latest status. Stable updater discovery uses version code 12; downloads respect saved preferences and Android may require installation approval. Public verification checks the latest-release endpoint, downloaded asset bytes, package identity, signing certificate and metadata.
+
+## Prior release — 1.4.1 / build 11
 
 The floating rest timer now shows a green determinate progress bar. Countdown and progress use the same clock. DataStore persists the adjusted interval basis separately from the original reset duration: accepted +/- changes preserve elapsed time, pause freezes the fraction, resume continues it, reset restores the original full interval, and completion/skip empty the bar. Remaining time stays within 0:00–5:00 and progress within 0–1. Tests cover custom durations, fractional seconds, capped/negative adjustments, legacy stores, real file reopening, background time, controller recreation and session cleanup.
 

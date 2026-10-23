@@ -10,6 +10,8 @@ data class RestTimerState(
     val workoutId: String? = null,
     /** Elapsed plus remaining time for this interval, including accepted +/- adjustments. */
     val intervalMillis: Long = durationMillis,
+    /** Instance ownership survives ordering changes and distinguishes repeated movements. */
+    val workoutExerciseId: String? = null,
 ) {
     val running get() = deadline > 0 && !finished
     val paused get() = pausedMillis > 0 && !finished

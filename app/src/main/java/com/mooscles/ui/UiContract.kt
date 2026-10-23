@@ -55,6 +55,7 @@ data class TimerUi(
     val finished: Boolean = false,
     val progress: Float = if (finished || durationSeconds <= 0) 0f
         else (remainingSeconds.toFloat() / durationSeconds).coerceIn(0f, 1f),
+    val workoutExerciseId: String? = null,
 )
 data class PreferencesUi(
     val pounds: Boolean = false, val theme: String = "system", val autoRest: Boolean = true,
@@ -67,6 +68,7 @@ data class UiState(
     val timer: TimerUi = TimerUi(), val preferences: PreferencesUi = PreferencesUi(),
     val error: String? = null,
     val updates: UpdateUi = UpdateUi(), val updateSettingsRequest: Long = 0,
+    val workoutPreparing: Boolean = false, val discardedWorkoutId: String? = null,
 )
 
 /** All changes are persisted by the implementation. move* takes -1 or +1. */
@@ -81,6 +83,7 @@ interface MoosclesActions : UpdateActions {
     fun replaceRoutineExercise(entryId: String, exerciseId: String)
     fun removeRoutineExercise(entryId: String)
     fun moveRoutineExercise(entryId: String, direction: Int)
+    fun reorderRoutineExercises(routineId: String, orderedIds: List<String>)
     fun updateRoutineExercise(entryId: String, sets: Int, reps: Int, weightKg: Double?, restSeconds: Int)
     fun addRoutineSet(entryId: String)
     fun removeRoutineSet(setId: String)
@@ -94,6 +97,7 @@ interface MoosclesActions : UpdateActions {
     fun replaceWorkoutExercise(entryId: String, exerciseId: String)
     fun removeWorkoutExercise(entryId: String)
     fun moveWorkoutExercise(entryId: String, direction: Int)
+    fun reorderWorkoutExercises(workoutId: String, orderedIds: List<String>)
     fun updateWorkoutExerciseRest(entryId: String, seconds: Int)
     fun addSet(entryId: String)
     fun removeSet(setId: String)

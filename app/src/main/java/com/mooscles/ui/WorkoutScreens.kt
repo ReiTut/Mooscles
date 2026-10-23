@@ -26,6 +26,27 @@ private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
 
 @Composable
 fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
+    // Timer ticks and updater progress belong to the app dock, not the exercise list.
+    // Keep this snapshot's identity unchanged until workout content actually changes.
+    val content = remember(state.active, state.exercises, state.history, state.preferences, state.error, state.workoutPreparing) {
+        UiState(loading = false, active = state.active, exercises = state.exercises,
+            history = state.history, preferences = state.preferences, error = state.error,
+            workoutPreparing = state.workoutPreparing)
+    }
+    ActiveWorkoutContent(content, actions, onRoutines, onHistory, onExerciseHistory)
+}
+
+@Composable
+private fun ActiveWorkoutContent(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
+    if (state.workoutPreparing) {
+        Box(Modifier.fillMaxSize().testTag("workout-preparing"), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                CircularProgressIndicator()
+                Text("Preparing your workout…")
+            }
+        }
+        return
+    }
     val workout = state.active
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
@@ -33,10 +54,11 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
     var finish by remember { mutableStateOf(false) }
     var rename by remember { mutableStateOf(false) }
     var finishingId by rememberSaveable { mutableStateOf<String?>(null) }
+    var discardingId by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(state.history, state.active, finishingId) {
         finishingId?.let { id -> if (state.history.any { it.id == id }) { finishingId = null; onHistory(id) } }
     }
-    LaunchedEffect(state.error) { if (state.error != null) finishingId = null }
+    LaunchedEffect(state.error) { if (state.error != null) { finishingId = null; discardingId = null } }
     if (workout == null) {
         Column(Modifier.fillMaxSize().imePadding()) {
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -48,6 +70,7 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         return
     }
     var restEditorId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
+    var ordering by rememberSaveable(workout.id) { mutableStateOf(false) }
     var restEditorExerciseId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
     val pendingRests = remember(workout.id) { mutableStateMapOf<String, WorkoutRestOverride>() }
     LaunchedEffect(workout.exercises) {
@@ -66,21 +89,14 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         val pending = pendingRests[entry.id]?.takeIf { it.exerciseId == entry.exercise.id }
         return if (pending == null) entry else entry.copy(restSeconds = pending.seconds)
     }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(workout.id) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     Column(Modifier.fillMaxSize().imePadding()) {
     LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Metric(durationText((now - workout.startedAt) / 1000), "Elapsed")
-                Metric(workout.completedSets.toString(), "Sets done")
-                Metric(weight(workout.volumeKg, state.preferences.pounds), "Weight moved")
-            }
-        }
-        item { SectionTitle("Today’s movements", "Add", { picker = true }) }
+        item { WorkoutSummaryMetrics(workout, state.preferences.pounds) }
+        item { Text("Today’s movements", style = MaterialTheme.typography.titleLarge) }
+        item { ExercisePlanActions(onAdd = { picker = true }, onReorder = { ordering = true }, canReorder = workout.exercises.size > 1) }
         if (workout.exercises.isEmpty()) item { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) }
-        itemsIndexed(workout.exercises, key = { _, it -> it.id }) { index, entry ->
+        itemsIndexed(workout.exercises, key = { _, it -> it.id }, contentType = { _, _ -> "workout-exercise" }) { index, entry ->
             WorkoutExerciseCard(withRestOverride(entry), index, workout.exercises.size, state.preferences.pounds, actions, editable = true,
                 onReplace = { replace = entry.id; picker = true }, onHistory = { onExerciseHistory(entry.exercise.id) },
                 onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
@@ -93,7 +109,10 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
             }
             if (workout.completedSets == 0) Text("Complete at least one set to finish your workout.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
+        item { TextButton(onClick = { discard = true }, enabled = discardingId == null,
+            modifier = Modifier.fillMaxWidth().testTag("discard-workout")) {
+                Text(if (discardingId == null) "Discard workout" else "Discarding…", color = MaterialTheme.colorScheme.error)
+        } }
     }
     }
     // Keep the modal outside lazy items: its originating card may leave the
@@ -111,10 +130,26 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         })
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
-    if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = actions::discardWorkout)
+    if (ordering) ExerciseOrderEditor(workout.exercises.map { OrderExerciseUi(it.id, it.exercise.name) },
+        onCancel = { ordering = false }, onSave = { ids -> actions.reorderWorkoutExercises(workout.id, ids); ordering = false })
+    if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = {
+        discard = false; discardingId = workout.id; actions.discardWorkout()
+    })
     if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
         text = { Text("Save ${workout.completedSets} completed sets across ${workout.completedExercises} exercises. Your records and session breakdown will be ready next.") },
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
+}
+
+/** Only the elapsed label ticks; its clock cannot invalidate the lazy exercise content. */
+@Composable
+private fun WorkoutSummaryMetrics(workout: WorkoutUi, pounds: Boolean) {
+    var now by remember(workout.id) { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(workout.id) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Metric(durationText((now - workout.startedAt) / 1000), "Elapsed")
+        Metric(workout.completedSets.toString(), "Sets done")
+        Metric(weight(workout.volumeKg, pounds), "Weight moved")
+    }
 }
 
 /** A single measured dock above the app footer, independent of the scrolling route. */
@@ -142,7 +177,7 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
         if (acknowledged >= 0) pendingRests.subList(0, acknowledged + 1).clear()
         if (pendingRests.isEmpty()) displayedRest = incoming
     }
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+    Card(modifier = Modifier.testTag("workout-exercise-${entry.id}"), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -176,8 +211,10 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
             if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
-                if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
-                else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
+                key(set.id) {
+                    if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
+                    else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
+                }
             }
             if (editable) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = { actions.addSet(entry.id) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
@@ -239,11 +276,11 @@ fun conventionExplanation(convention: String): String = when (convention) {
 
 @Composable
 private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions) {
-    var reps by remember(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
-    val originalLoad = remember(set.id, pounds) { if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds)) }
-    val originalWeightKg = remember(set.id, pounds) { set.weightKg }
-    var load by remember(set.id, pounds) { mutableStateOf(originalLoad) }
-    var touched by remember(set.id) { mutableStateOf(false) }
+    var reps by rememberSaveable(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
+    val originalLoad = rememberSaveable(set.id, pounds) { if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds)) }
+    val originalWeightKg = rememberSaveable(set.id, pounds) { set.weightKg }
+    var load by rememberSaveable(set.id, pounds) { mutableStateOf(originalLoad) }
+    var touched by rememberSaveable(set.id) { mutableStateOf(false) }
     var flags by remember { mutableStateOf(false) }
     val repsValue = if (reps.isBlank()) 0 else reps.toIntOrNull()
     val loadValue = if (load.isBlank()) 0.0 else load.replace(',', '.').toDoubleOrNull()

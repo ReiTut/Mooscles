@@ -5,35 +5,41 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mooscles.data.*
-import com.mooscles.domain.WorkoutCalculations
-import com.mooscles.domain.WeightUnits
 import com.mooscles.ui.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.withLock
-import java.util.Locale
 
 class AppViewModel(application: Application) : AndroidViewModel(application), MoosclesActions {
     private val app = application as MoosclesApplication
     private val repo = app.repository
     private val error = MutableStateFlow<String?>(null)
     private val initialized = MutableStateFlow(false)
+    private val workoutPreparing = MutableStateFlow(false)
+    private val discardedWorkoutId = MutableStateFlow<String?>(null)
     private val settingsRequest = MutableStateFlow(0L)
     private val installLaunches = Channel<Intent>(Channel.BUFFERED)
     val installIntents = installLaunches.receiveAsFlow()
     fun openUpdateSettings() { settingsRequest.value += 1 }
     private val commands = Channel<suspend () -> Unit>(Channel.UNLIMITED)
-    private val source = repo.data.catch { error.value = "Unable to open local data: ${it.message}"; emit(AppData()) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, AppData())
+    private val source = repo.data.map<AppData, AppData?> { it }
+        .catch { error.value = "Unable to open local data: ${it.message}"; emit(null) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val presenter = WorkoutPresenter()
     private val presentation = combine(source, app.preferences.flow) { data, prefs ->
-        present(data, prefs, TimerUi(), null, false)
-    }
+        if (data == null) UiState() else presenter.present(data, prefs)
+    }.distinctUntilChanged().flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
     private val problems = combine(error, app.preferences.error, app.timer.error) { action, prefs, timer -> action ?: prefs ?: timer }
     private val baseUi = combine(presentation, app.timer.ui, problems, initialized, app.updates.ui) { base, timer, problem, ready, updates ->
-        base.copy(timer = timer, error = problem, loading = !ready, updates = updates)
+        base.copy(timer = timer, error = problem, loading = base.loading || !ready, updates = updates)
     }.catch { emit(UiState(loading = false, error = "Unable to read local preferences: ${it.message}")) }
-    val ui = combine(baseUi, settingsRequest) { base, request -> base.copy(updateSettingsRequest = request) }
+    val ui = combine(baseUi, settingsRequest, workoutPreparing, discardedWorkoutId) { base, request, preparing, discarded ->
+        base.copy(updateSettingsRequest = request, workoutPreparing = preparing, discardedWorkoutId = discarded)
+    }
         .stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
 
     init {
@@ -59,6 +65,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     override fun replaceRoutineExercise(entryId: String, exerciseId: String) = act { repo.replaceRoutineExercise(entryId, exerciseId) }
     override fun removeRoutineExercise(entryId: String) = act { repo.removeRoutineExercise(entryId) }
     override fun moveRoutineExercise(entryId: String, direction: Int) = act { repo.moveRoutineExercise(entryId, direction) }
+    override fun reorderRoutineExercises(routineId: String, orderedIds: List<String>) = act { repo.reorderRoutineExercises(routineId, orderedIds) }
     override fun addRoutineSet(entryId: String) = act { repo.addRoutineSet(entryId) }
     override fun removeRoutineSet(setId: String) = act { repo.removeRoutineSet(setId) }
     override fun updateRoutineSet(setId: String, reps: Int, weightKg: Double?) = act { repo.updateRoutineSet(setId, reps, weightKg) }
@@ -78,12 +85,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
             repo.saveExercise(existing.copy(name = name, muscle = m, equipment = e, convention = c))
         }
     }
-    override fun startWorkout(routineId: String?) = act {
-        app.trainingGate.withLock {
-            app.updates.assertTrainingMayStart()
-            if (repo.snapshot().activeWorkout == null) app.timer.clear()
-            if (routineId == null) repo.startEmpty(defaultRestSeconds = ui.value.preferences.defaultRestSeconds)
-            else repo.startRoutine(routineId, ui.value.preferences.defaultRestSeconds)
+    override fun startWorkout(routineId: String?) {
+        workoutPreparing.value = true
+        act {
+            try {
+                val id = app.trainingGate.withLock {
+                    app.updates.assertTrainingMayStart()
+                    if (repo.snapshot().activeWorkout == null) app.timer.clear()
+                    if (routineId == null) repo.startEmpty(defaultRestSeconds = ui.value.preferences.defaultRestSeconds)
+                    else repo.startRoutine(routineId, ui.value.preferences.defaultRestSeconds)
+                }
+                // Both new and restored workouts become interactive only after every card
+                // (including its previous performance and records) is prepared off-main.
+                withTimeout(30_000) { presentation.first { !it.loading && it.active?.id == id } }
+            } finally { workoutPreparing.value = false }
         }
     }
     override fun renameWorkout(id: String, name: String) = act { repo.renameWorkout(id, name) }
@@ -91,6 +106,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     override fun replaceWorkoutExercise(entryId: String, exerciseId: String) = act { repo.replaceWorkoutExercise(entryId, exerciseId) }
     override fun removeWorkoutExercise(entryId: String) = act { repo.removeWorkoutExercise(entryId) }
     override fun moveWorkoutExercise(entryId: String, direction: Int) = act { repo.moveWorkoutExercise(entryId, direction) }
+    override fun reorderWorkoutExercises(workoutId: String, orderedIds: List<String>) = act { repo.reorderWorkoutExercises(workoutId, orderedIds) }
     override fun updateWorkoutExerciseRest(entryId: String, seconds: Int) = act { repo.updateWorkoutExerciseRest(entryId, seconds) }
     override fun addSet(entryId: String) = act { repo.addSet(entryId) }
     override fun removeSet(setId: String) = act { repo.removeSet(setId) }
@@ -102,7 +118,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         repo.updateSet(item.copy(reps = reps, weightKg = weightKg, completed = completed, warmup = warmup, assistance = assistance))
         val entry = data.workoutExercises.first { it.id == item.workoutExerciseId }
         val workout = data.workouts.first { it.id == entry.workoutId }
-        if (completed && !item.completed && workout.status == WorkoutStatus.ACTIVE && ui.value.preferences.autoRest) app.timer.start(entry.name, entry.restSeconds)
+        if (completed && !item.completed && workout.status == WorkoutStatus.ACTIVE && ui.value.preferences.autoRest) app.timer.start(entry.name, entry.restSeconds, entry.id)
         }
     }
     override fun finishWorkout() = act {
@@ -110,7 +126,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         if (repo.finishWorkout(active.id)) app.timer.clear()
         app.updates.onTrainingChanged()
     }
-    override fun discardWorkout() = act { repo.snapshot().activeWorkout?.let { repo.discardWorkout(it.id) }; app.timer.clear(); app.updates.onTrainingChanged() }
+    override fun discardWorkout() = act {
+        app.trainingGate.withLock {
+            val id = repo.snapshot().activeWorkout?.id ?: return@withLock
+            repo.discardWorkout(id)
+            app.timer.clearForSessionEnd()
+            withTimeout(30_000) { presentation.first { !it.loading && it.active?.id != id } }
+            discardedWorkoutId.value = id
+        }
+        app.updates.onTrainingChanged()
+    }
     override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id) }
     override fun setPounds(pounds: Boolean) = act { app.preferences.pounds(pounds) }
     override fun setTheme(theme: String) = act { app.preferences.theme(theme.lowercase()) }
@@ -130,60 +155,4 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     override fun cancelUpdate() = act { app.updates.cancelDownload() }
     override fun installUpdate() = act { app.updates.requestInstall()?.let { installLaunches.send(it) } }
 
-    private fun Exercise.toUi() = ExerciseUi(id, name, muscle.label, equipment.label, convention.label, custom)
-    private fun present(data: AppData, prefs: PreferencesUi, timer: TimerUi, error: String?, loading: Boolean): UiState {
-        val exercises = data.exercises.associateBy { it.id }
-        fun snapshot(e: WorkoutExercise) = ExerciseUi(e.exerciseId, e.name, e.muscle.label, e.equipment.label, e.convention.label, exercises[e.exerciseId]?.custom ?: false)
-        fun workout(w: Workout): WorkoutUi {
-            val prs = WorkoutCalculations.prsForWorkout(data, w.id)
-            val repsPrs = WorkoutCalculations.repsPrsForWorkout(data, w.id)
-            val records = prs.map { p ->
-                val e = data.workoutItems(w.id).first { it.exerciseId == p.exerciseId && it.convention == p.convention }
-                RecordUi(snapshot(e), p.newWeightKg, p.reps, p.previousWeightKg, w.id, w.endedAt ?: w.startedAt)
-            } + repsPrs.map { p ->
-                val e = data.workoutItems(w.id).first { it.exerciseId == p.exerciseId && it.convention == p.convention }
-                RecordUi(snapshot(e), p.weightKg, p.newReps, workoutId = w.id, date = w.endedAt ?: w.startedAt,
-                    kind = RecordKind.REPS, previousReps = p.previousReps, assistance = p.assistance)
-            }
-            val entries = data.workoutItems(w.id).map { e ->
-                val previous = WorkoutCalculations.performanceHistory(data, e.exerciseId, e.convention)
-                    .firstOrNull { it.workout.id != w.id && it.workout.startedAt < w.startedAt }
-                val pr = prs.firstOrNull { it.exerciseId == e.exerciseId && it.convention == e.convention }
-                WorkoutExerciseUi(e.id, snapshot(e), data.exerciseSets(e.id).map { SetUi(it.id, it.reps, it.weightKg, it.completed, it.warmup, it.assistance) },
-                    e.restSeconds, previous?.sets?.joinToString(" · ") {
-                        val load = if (it.weightKg == 0.0 && !it.assistance && e.convention != LoadConvention.ASSISTANCE) "Bodyweight"
-                        else "${if (it.assistance || e.convention == LoadConvention.ASSISTANCE) "Assistance " else ""}${String.format(Locale.US, "%.2f", WeightUnits.fromKg(it.weightKg, prefs.pounds)).trimEnd('0').trimEnd('.')} ${if (prefs.pounds) "lb" else "kg"}"
-                        "$load × ${it.reps}"
-                    }, pr?.newWeightKg, pr?.firstRecord ?: false,
-                    records.filter { record ->
-                        record.exercise.id == e.exerciseId && record.exercise.convention == e.convention.label &&
-                            data.exerciseSets(e.id).any { set ->
-                                val sameLoad = kotlin.math.abs(set.weightKg - record.weightKg) <=
-                                    maxOf(Math.ulp(set.weightKg), Math.ulp(record.weightKg)) * 4
-                                val assisted = set.assistance || e.convention == LoadConvention.ASSISTANCE
-                                WorkoutCalculations.validCompleted(set) && !set.warmup && sameLoad &&
-                                    if (record.kind == RecordKind.WEIGHT) !assisted
-                                    else assisted == record.assistance && set.reps == record.reps
-                            }
-                    })
-            }
-            return WorkoutUi(w.id, w.name, w.startedAt, w.endedAt, entries, records, sourceRoutineId = w.sourceRoutineId)
-        }
-        val records = WorkoutCalculations.records(data).map { r ->
-            val e = data.workoutItems(r.workoutId).first { it.exerciseId == r.exerciseId && it.convention == r.convention }
-            RecordUi(snapshot(e).copy(name = exercises[r.exerciseId]?.name ?: r.exerciseName), r.weightKg, r.reps, workoutId = r.workoutId, date = r.achievedAt)
-        } + WorkoutCalculations.repsRecords(data).map { r ->
-            val e = data.workoutItems(r.workoutId).first { it.exerciseId == r.exerciseId && it.convention == r.convention }
-            RecordUi(snapshot(e).copy(name = exercises[r.exerciseId]?.name ?: r.exerciseName), r.weightKg, r.reps,
-                workoutId = r.workoutId, date = r.achievedAt, kind = RecordKind.REPS, assistance = r.assistance)
-        }
-        return UiState(loading, data.exercises.map { it.toUi() }, data.routines.sortedBy { it.position }.map { r ->
-            RoutineUi(r.id, r.name, data.routineItems(r.id).mapNotNull { e -> exercises[e.exerciseId]?.let {
-                val targets = data.plannedSets(e.id).map { row -> RoutineSetUi(row.id, row.targetReps, row.targetWeightKg, row.inheritPr) }
-                PlannedExerciseUi(e.id, it.toUi(), targets.size, targets.firstOrNull()?.reps ?: 0,
-                    targets.firstOrNull()?.weightKg, e.restSeconds ?: com.mooscles.domain.RestDuration.DEFAULT_SECONDS, targets)
-            } })
-        }, data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedByDescending { it.startedAt }.map(::workout),
-            data.activeWorkout?.let(::workout), records, timer, prefs, error)
-    }
 }
