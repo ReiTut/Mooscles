@@ -25,10 +25,10 @@ class RestTimerController(
     private val scope: CoroutineScope,
     private val persistence: RestTimerPersistence = RestTimerPersistence(context.moosclesStore),
     private val activeWorkoutId: suspend () -> String? = {
-        (context.applicationContext as MoosclesApplication).repository.snapshot().activeWorkout?.id
+        (context.applicationContext as MoosclesApplication).repository.activeWorkout()?.id
     },
     private val sessionChanges: Flow<String?> = (context.applicationContext as MoosclesApplication)
-        .repository.data.map { it.activeWorkout?.id }.distinctUntilChanged(),
+        .repository.activeWorkoutIds,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val mutex = Mutex()

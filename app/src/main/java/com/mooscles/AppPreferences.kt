@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 
 val Context.moosclesStore by preferencesDataStore(name = "local_preferences")
 
@@ -22,6 +23,10 @@ class AppPreferences(context: Context) {
     private val theme = stringPreferencesKey("theme")
     private val autoRest = booleanPreferencesKey("auto_rest")
     private val defaultRest = intPreferencesKey("default_rest")
+    private fun read(saved: Preferences) = PreferencesUi(saved[pounds] ?: false, saved[theme] ?: "system",
+        saved[autoRest] ?: true, saved[defaultRest] ?: RestDuration.DEFAULT_SECONDS)
+    /** Commands must read durable settings, not a potentially pending background UI projection. */
+    suspend fun snapshot(): PreferencesUi = read(store.data.first())
     val flow = flow {
         var emitted = false
         var backoff = 1000L
@@ -33,8 +38,7 @@ class AppPreferences(context: Context) {
                     }
                 }
                 store.data.collect {
-                    emit(PreferencesUi(it[pounds] ?: false, it[theme] ?: "system", it[autoRest] ?: true,
-                        it[defaultRest] ?: RestDuration.DEFAULT_SECONDS))
+                    emit(read(it))
                     emitted = true
                     backoff = 1000L
                 }

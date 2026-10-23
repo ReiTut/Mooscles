@@ -20,7 +20,7 @@ class MoosclesApplication : Application() {
     val timer by lazy { RestTimerController(this, appScope) }
     val trainingGate = Mutex()
     val updates by lazy { UpdateManager(this, trainingGate, trainingBusy = {
-        repository.snapshot().activeWorkout != null || UpdatePolicy.restTimerBusy(
+        repository.activeWorkout() != null || UpdatePolicy.restTimerBusy(
             RestTimerPersistence(moosclesStore).snapshot(), System.currentTimeMillis())
     }) }
 }

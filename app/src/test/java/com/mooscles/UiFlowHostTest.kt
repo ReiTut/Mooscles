@@ -13,6 +13,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -58,7 +59,19 @@ class UiFlowHostTest {
         val app = (compose.activity.application as MoosclesApplication).also { activityApplication = it }
         val vm = ViewModelProvider(compose.activity)[AppViewModel::class.java]
         assertSame("Observe the same Application used by the Activity ViewModel", app, vm.getApplication<MoosclesApplication>())
-        runBlocking { app.preferences.autoRest(true); app.preferences.pounds(false); app.preferences.defaultRest(90) }
+        // The Activity has already subscribed to AppPreferences.flow. Its initial DataStore
+        // migration can resume on Android's paused main looper; blocking that looper here can
+        // deadlock the store's serialized edit queue. Keep driving Compose while setup completes.
+        val configuredPreferences = app.appScope.async(Dispatchers.IO) {
+            app.preferences.autoRest(true)
+            app.preferences.pounds(false)
+            app.preferences.defaultRest(90)
+        }
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithTag("routines-list").fetchSemanticsNodes()
+            configuredPreferences.isCompleted
+        }
+        runBlocking { configuredPreferences.await() } // Already completed; propagates setup errors.
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         val name = "Flow test ${System.currentTimeMillis()}"
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("routines-list").fetchSemanticsNodes().isNotEmpty() }

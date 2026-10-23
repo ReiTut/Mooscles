@@ -1,6 +1,51 @@
 # Verification — 2026-10-23
 
-## Current recovery release — 1.4.1 / build 13
+## Release 1.4.3 / Build 14
+
+The responsiveness update is distributed with versionName **1.4.3**, versionCode **14**, application ID **com.mooscles**, minimum API 26 and target API 35. Published release metadata was inventoried before preparation: the highest existing build was 13; v1.4.2 was already used, making v1.4.3 the next unused patch. The current release keeps the established debug distribution variant and trusted certificate. The optimized performance variant remains a local measurement target.
+
+The versioned source passed `testDebugUnitTest`, `lintDebug`, `lintPerformance`, `assembleDebug`, `assembleDebugAndroidTest` and `assemblePerformance`. Results: **347 tests in 49 suites; zero failures/errors/skips**; debug lint **0 errors/21 warnings**; performance lint **0 errors/22 warnings**, including the documented API 29+ profiling attribute warning. Room schema v4/migrations, saved session formats, preference keys, application ID, signing identity, and updater source remain compatible.
+
+Verified distribution APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.4.3-debug.apk` — **19,664,935 bytes**; SHA-256 **30aaee3083b362ead531158104778daa0f978b6903efe23bced615276c69077f**. The ordinary `app/build/outputs/apk/debug/app-debug.apk` contains identical bytes. Existing certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`; APK Signature Scheme v2 verifies successfully. `update.json` uses the unchanged seven-field schema and the exact APK filename, package, version, size and checksum; the adjacent `.sha256` agrees.
+
+Local optimized test APK: `D:\Programing\Mooscles\app\build\outputs\apk\performance\app-performance.apk`. It is non-debuggable, R8-optimized, resource-shrunk, and profileable by shell on API 29+. No Android device is connected and the available emulator cannot boot; device profiling, installation, installed UI behavior and device-level data retention remain unverified. Host storage-transition tests do not substitute for device installation. Android may require source permission/installation confirmation.
+
+Before publication, the frozen updater classes shipped by earlier versions passed **12 discovery cases**, one simulated future-update case and four identity-policy checks with the final Build 14 metadata. Builds 5, 11, 12 and 13 select Build 14 on the stable channel; Builds 14 and 15 reject it. The updater source is identical across those prior builds and the current update.
+
+Publication uses the existing guarded helper: commit the intended source, normally push `main` and the unique `v1.4.3` tag, rerun checks on that exact clean commit, create a draft with APK/metadata/checksum, verify uploaded bytes, then explicitly publish with `draft=false`, `prerelease=false` and Latest. Public asset downloads, the latest-release endpoint and live old-updater discovery are verified after publication. Previous tags/releases and unrelated local IDE settings are preserved. Local evidence is recorded under `.tooling/release-v143-*`; no APKs, keys, credentials or machine-specific configuration enter the source commit.
+
+## Responsiveness implementation validation — initial Build 13 (historical)
+
+Baseline application source: `4c362999d3c33fdcb6cfd90ed86e16850e795d43`. The local update preserves application ID `com.mooscles`, versionName `1.4.1`, versionCode `13`, Room schema v4, saved preference keys, and the existing signing identity. The published recovery record below describes the earlier binary; these local optimization changes have their own rebuilt artifacts.
+
+Routine start now uses five bulk SELECTs for both three and forty exercise occurrences, verified with real Room query callbacks. The former implementation required `3 + 2N` SELECTs (nine and eighty-three respectively, derived from its source). Each independent set and duplicate occurrence still receives its own saved identity and target pair inside the original transaction. Commands read focused rows and durable preferences, avoiding both full-archive command lookups and settings delayed by background UI projection. Broad observation retains a coherent seven-table snapshot; list comparison/deduplication and presentation preparation run off the main thread. Calculation-local indexes replace repeated archive filtering. History/record caches invalidate by actual saved content, units and catalog changes, while unchanged cards/sets retain their object identities.
+
+The active screen is lazy per heading, individual set and footer. Saveable drafts retain blanks, invalid input, exact kg and optimistic completion through disposal, unit switches and delayed save acknowledgments. Timer progress is collected only by the dock; elapsed time has an isolated metric. Decorative segments use a background rather than a touch-intercepting Surface; the existing rest-dialog pointer tests and complete Activity workout flow pass unchanged in their assertions. Start coalesces repeated requests, reports loading/errors, and waits for the matching persisted session.
+
+| Final check | Result |
+| --- | --- |
+| Full unit, Room, DataStore and Compose host suite | **PASS — 347 tests, 49 suites; zero failures/errors/skips** |
+| Debug lint | **PASS — 0 errors, 21 existing warnings** |
+| Optimized performance lint | **PASS — 0 errors, 22 warnings**; additional warning notes shell profiling requires API 29+ while normal app minimum remains API 26 |
+| Debug, instrumented-test and optimized APK builds | **PASS** |
+| Debug/optimized package and certificate | **PASS — com.mooscles; 1.4.1 / code 13; existing certificate; APK v2 signatures** |
+| Optimized target flags | **PASS — R8 optimization/resource shrinking; non-debuggable; profileable by shell** |
+| Comparable historical optimized APK | **PASS — baseline application source unchanged; identical measurement configuration** |
+| Device startup, scroll/timer frame timing, PSS and repeated-cycle performance | **UNVERIFIED — no connected device; available emulator cannot boot** |
+| Instrumentation execution and installed optimized behavior | **UNVERIFIED — instrumentation APK compiled only** |
+
+Verified artifacts:
+
+- Debug: `D:\Programing\Mooscles\app\build\outputs\apk\debug\app-debug.apk` — 20,074,692 bytes; SHA-256 `02298110c2cebc932de920e3f5faf98339744076c7d936bd12fe5fdb1b6900cc`.
+- Optimized: `D:\Programing\Mooscles\app\build\outputs\apk\performance\app-performance.apk` — 2,023,784 bytes; SHA-256 `310746fe0537bf311f8247cd7f12d485b17cf72b58983fff07beda5fd5ec4b57`.
+- Instrumentation: `D:\Programing\Mooscles\app\build\outputs\apk\androidTest\debug\app-debug-androidTest.apk` — 1,290,433 bytes; compiled opt-in fixture setup included.
+- Historical optimized baseline: `D:\Programing\Mooscles\.tooling\performance-baseline-project\app\build\outputs\apk\performance\app-performance.apk` — 2,007,400 bytes; SHA-256 `b9df649cdd6ce4b1b36046d7178d9a8052d18989360af51cc02eb0cdd5c4eb39`.
+
+Both application APKs retain certificate SHA-256 `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`. The build helper also produced matching local debug update metadata. Existing build-output filenames are reusable slots; historical hashes below identify earlier binaries rather than current slot contents. The unrelated pre-existing `gradle.properties` edit remains byte-for-byte unchanged.
+
+No device performance conclusions are drawn from host tests, APK size or build success. [PERFORMANCE.md](PERFORMANCE.md) records all unavailable before/after metrics, typical/large deterministic fixtures, and matching optimized build/capture steps. Broad snapshots still include archived sets; runtime traces are needed to decide whether further data partitioning is warranted. Evidence: `.tooling/performance-full-tests.log`, `.tooling/performance-build-lint-checks.log`, `.tooling/performance-final-artifacts.json`, `.tooling/performance-final-tests.json` and the Gradle reports under `app/build/reports`.
+
+## Published recovery release — 1.4.1 / build 13 (historical verification)
 
 Restored functionality comes from original `v1.4.1` / Build 11, commit **87152e11925a221f828896c5dc082d09c10c6494**. This is a new forward commit after distributed v1.4.2 (`f5aa3f2096cb33b665ca815e3aaf65549f897a38`), never a reset or replacement of either release. The UI screens and repository match the historical source. Build 12's prepared-presentation cache, drag ordering window, saveable-draft additions and discard-to-Train navigation are removed.
 

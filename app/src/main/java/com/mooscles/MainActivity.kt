@@ -28,7 +28,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { val state = vm.ui.collectAsStateWithLifecycle(); MoosclesApp(state.value, vm) }
+        setContent {
+            val state = vm.contentUi.collectAsStateWithLifecycle()
+            val timer = vm.timerUi.collectAsStateWithLifecycle()
+            MoosclesApp(state.value, vm, timer)
+        }
         if (intent?.action == UpdateNotifications.OPEN_UPDATES) vm.openUpdateSettings()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -1,6 +1,7 @@
 package com.mooscles.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,23 +27,37 @@ private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
 
 @Composable
 fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
-    val workout = state.active
+    ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
+        actions, onRoutines, onHistory, onExerciseHistory, state.startingWorkout)
+}
+
+/** The scrolling route deliberately receives no ticking rest-timer state. */
+@Composable
+fun ActiveWorkoutScreen(
+    workout: WorkoutUi?, exercises: List<ExerciseUi>, preferences: PreferencesUi,
+    history: List<WorkoutUi>, error: String?, actions: MoosclesActions,
+    onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit,
+    startingWorkout: Boolean = false,
+) {
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
     var finish by remember { mutableStateOf(false) }
     var rename by remember { mutableStateOf(false) }
     var finishingId by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(state.history, state.active, finishingId) {
-        finishingId?.let { id -> if (state.history.any { it.id == id }) { finishingId = null; onHistory(id) } }
+    LaunchedEffect(history, workout, finishingId) {
+        finishingId?.let { id -> if (history.any { it.id == id }) { finishingId = null; onHistory(id) } }
     }
-    LaunchedEffect(state.error) { if (state.error != null) finishingId = null }
+    LaunchedEffect(error) { if (error != null) finishingId = null }
     if (workout == null) {
         Column(Modifier.fillMaxSize().imePadding()) {
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 item { PageHeading("Your training space", "Ready to move?", "Every rep is a step forward.") }
                 item { EmptyState(Icons.Outlined.FitnessCenter, "A fresh start", "Start with a routine or build today’s session as you go.", "Choose a routine", onRoutines) }
-                item { Button(onClick = { actions.startWorkout(null) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Start empty workout") } }
+                item { Button(onClick = { actions.startWorkout(null) }, enabled = !startingWorkout, modifier = Modifier.fillMaxWidth()) {
+                    if (startingWorkout) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.Add, null)
+                    Spacer(Modifier.width(8.dp)); Text(if (startingWorkout) "Starting workout…" else "Start empty workout")
+                } }
             }
         }
         return
@@ -57,7 +72,7 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
             if (entry == null || pending == null || pending.exerciseId != entry.exercise.id || pending.seconds == entry.restSeconds)
                 pendingRests.remove(id)
         }
-        if (workout.exercises.none { it.id == restEditorId && it.exercise.id == restEditorExerciseId }) {
+        if (restEditorId != null && workout.exercises.none { it.id == restEditorId && it.exercise.id == restEditorExerciseId }) {
             restEditorId = null
             restEditorExerciseId = null
         }
@@ -66,40 +81,64 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         val pending = pendingRests[entry.id]?.takeIf { it.exerciseId == entry.exercise.id }
         return if (pending == null) entry else entry.copy(restSeconds = pending.seconds)
     }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(workout.id) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    val totals = remember(workout) { workoutTotals(workout) }
     Column(Modifier.fillMaxSize().imePadding()) {
-    LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) }
-        item {
+    LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        item(key = "workout-heading", contentType = "heading") { SpacedWorkoutItem { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) } }
+        item(key = "workout-totals", contentType = "totals") {
+            SpacedWorkoutItem {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Metric(durationText((now - workout.startedAt) / 1000), "Elapsed")
-                Metric(workout.completedSets.toString(), "Sets done")
-                Metric(weight(workout.volumeKg, state.preferences.pounds), "Weight moved")
+                WorkoutElapsedMetric(workout.startedAt)
+                Metric(totals.completedSets.toString(), "Sets done")
+                Metric(weight(totals.volumeKg, preferences.pounds), "Weight moved")
+            }
             }
         }
-        item { SectionTitle("Today’s movements", "Add", { picker = true }) }
-        if (workout.exercises.isEmpty()) item { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) }
-        itemsIndexed(workout.exercises, key = { _, it -> it.id }) { index, entry ->
-            WorkoutExerciseCard(withRestOverride(entry), index, workout.exercises.size, state.preferences.pounds, actions, editable = true,
-                onReplace = { replace = entry.id; picker = true }, onHistory = { onExerciseHistory(entry.exercise.id) },
-                onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
+        item(key = "workout-movements", contentType = "section") { SpacedWorkoutItem { SectionTitle("Today’s movements", "Add", { picker = true }) } }
+        if (workout.exercises.isEmpty()) item(key = "workout-empty", contentType = "empty") { SpacedWorkoutItem { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) } }
+        // An exercise is a group of independently lazy rows. Making the whole card
+        // one item would still compose every TextField in a large single exercise.
+        workout.exercises.forEachIndexed { index, entry ->
+            item(key = "exercise-heading:${entry.id}", contentType = "exercise-heading") {
+                WorkoutCardSegment(first = true) {
+                    WorkoutExerciseHeading(entry.exercise, entry.id, index, workout.exercises.size,
+                        entry.previous, entry.records, preferences.pounds, actions, editable = true,
+                        onReplace = { replace = entry.id; picker = true },
+                        onHistory = { onExerciseHistory(entry.exercise.id) })
+                }
+            }
+            itemsIndexed(entry.sets, key = { _, set -> "set:${entry.id}:${set.id}" }, contentType = { _, _ -> "working-set" }) { setIndex, set ->
+                WorkoutCardSegment {
+                    SetEditor(set, setIndex, preferences.pounds, entry.exercise.convention == "Assistance", actions)
+                }
+            }
+            item(key = "exercise-footer:${entry.id}", contentType = "exercise-footer") {
+                WorkoutCardSegment(last = true) {
+                    WorkoutExerciseFooter(entry.id, entry.exercise.name, withRestOverride(entry).restSeconds,
+                        actions, onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
+                }
+            }
         }
-        item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Add exercise") } }
-        item {
-            Button(onClick = { finish = true }, enabled = workout.completedSets > 0 && finishingId == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("finish-workout")) {
+        item(key = "workout-add", contentType = "button") { SpacedWorkoutItem { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Add exercise") } } }
+        item(key = "workout-finish", contentType = "finish") {
+            SpacedWorkoutItem {
+            Column {
+            Button(onClick = { finish = true }, enabled = totals.completedSets > 0 && finishingId == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("finish-workout")) {
                 if (finishingId != null) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.CheckCircleOutline, null)
                 Spacer(Modifier.width(8.dp)); Text(if (finishingId == null) "Finish workout" else "Saving workout…")
             }
-            if (workout.completedSets == 0) Text("Complete at least one set to finish your workout.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (totals.completedSets == 0) Text("Complete at least one set to finish your workout.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            }
         }
-        item { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
+        item(key = "workout-discard", contentType = "button") { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
     }
     }
     // Keep the modal outside lazy items: its originating card may leave the
     // viewport when the keyboard opens or while the workout list scrolls.
-    val editingRest = workout.exercises.find { it.id == restEditorId && it.exercise.id == restEditorExerciseId }
-        ?.let(::withRestOverride)
+    val editingRest = restEditorId?.let { id ->
+        workout.exercises.find { it.id == id && it.exercise.id == restEditorExerciseId }?.let(::withRestOverride)
+    }
     if (editingRest != null) WorkoutRestDialog(editingRest, editingRest.restSeconds,
         onDismiss = { restEditorId = null; restEditorExerciseId = null }, onSave = { seconds ->
             if (seconds != editingRest.restSeconds) {
@@ -109,12 +148,58 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
             restEditorId = null
             restEditorExerciseId = null
         })
-    if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
+    if (picker) ExercisePicker(exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
     if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = actions::discardWorkout)
     if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
-        text = { Text("Save ${workout.completedSets} completed sets across ${workout.completedExercises} exercises. Your records and session breakdown will be ready next.") },
+        text = { Text("Save ${totals.completedSets} completed sets across ${totals.completedExercises} exercises. Your records and session breakdown will be ready next.") },
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
+}
+
+private data class WorkoutTotals(val completedSets: Int, val completedExercises: Int, val volumeKg: Double)
+
+private fun workoutTotals(workout: WorkoutUi): WorkoutTotals {
+    var completedSets = 0
+    var completedExercises = 0
+    var volumeKg = 0.0
+    workout.exercises.forEach { entry ->
+        var hasCompletedSet = false
+        var exerciseVolumeKg = 0.0
+        entry.sets.forEach { set ->
+            if (set.completed) {
+                completedSets++
+                hasCompletedSet = true
+                if (entry.exercise.convention != "Assistance" && !set.assistance) exerciseVolumeKg += set.weightKg * set.reps
+            }
+        }
+        volumeKg += exerciseVolumeKg
+        if (hasCompletedSet) completedExercises++
+    }
+    return WorkoutTotals(completedSets, completedExercises, volumeKg)
+}
+
+@Composable
+private fun WorkoutElapsedMetric(startedAt: Long) {
+    var now by remember(startedAt) { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(startedAt) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    Metric(durationText((now - startedAt) / 1000), "Elapsed")
+}
+
+@Composable
+private fun SpacedWorkoutItem(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { content() }
+}
+
+/** Adjacent surfaces retain the card appearance without an unbounded Column. */
+@Composable
+private fun WorkoutCardSegment(first: Boolean = false, last: Boolean = false, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth().padding(bottom = if (last) 16.dp else 0.dp)
+        .background(MaterialTheme.colorScheme.surfaceContainerLow,
+            RoundedCornerShape(topStart = if (first) 22.dp else 0.dp, topEnd = if (first) 22.dp else 0.dp,
+                bottomStart = if (last) 22.dp else 0.dp, bottomEnd = if (last) 22.dp else 0.dp))) {
+        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = if (first) 16.dp else 0.dp,
+            bottom = if (last) 16.dp else 12.dp)) { content() }
+    }
 }
 
 /** A single measured dock above the app footer, independent of the scrolling route. */
@@ -130,8 +215,6 @@ internal fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
 
 @Composable
 fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds: Boolean, actions: MoosclesActions, editable: Boolean, onReplace: () -> Unit, onHistory: () -> Unit, onEditRest: (() -> Unit)? = null) {
-    var menu by remember { mutableStateOf(false) }
-    var remove by remember { mutableStateOf(false) }
     var restEditor by rememberSaveable(entry.id, entry.exercise.id) { mutableStateOf(false) }
     var displayedRest by remember(entry.id, entry.exercise.id) { mutableIntStateOf(entry.restSeconds.coerceAtLeast(0)) }
     val pendingRests = remember(entry.id, entry.exercise.id) { mutableListOf<Int>() }
@@ -144,51 +227,16 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
     }
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("${index + 1}. ${entry.exercise.name}", style = MaterialTheme.typography.titleMedium)
-                    Text("${human(entry.exercise.equipment)} · ${entry.exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Exercise options") }
-                    DropdownMenu(menu, { menu = false }) {
-                        DropdownMenuItem(text = { Text("Performance history") }, onClick = { menu = false; onHistory() })
-                        if (editable) {
-                            DropdownMenuItem(text = { Text("Replace exercise") }, onClick = { menu = false; onReplace() })
-                            DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entry.id, -1) })
-                            DropdownMenuItem(text = { Text("Move down") }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entry.id, 1) })
-                            DropdownMenuItem(text = { Text("Remove exercise", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
-                        }
-                    }
-                }
-            }
-            Text(conventionExplanation(entry.exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            entry.previous?.let { previous ->
-                Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = RoundedCornerShape(10.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) { Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text("Previous: $previous", style = MaterialTheme.typography.bodySmall) }
-                }
-            }
-            entry.records.forEach { record ->
-                Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) { Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp)); Text("${record.label}${if (record.firstRecord) " · first record" else ""} · ${recordAchievementText(record, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium) }
-                }
-            }
+            WorkoutExerciseHeading(entry.exercise, entry.id, index, count, entry.previous, entry.records,
+                pounds, actions, editable, onReplace, onHistory)
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
             if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
                 if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
                 else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
             }
-            if (editable) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = { actions.addSet(entry.id) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
-                TextButton(onClick = { onEditRest?.invoke() ?: run { restEditor = true } }, modifier = Modifier
-                    .testTag("workout-rest-edit-${entry.id}")
-                    .semantics { contentDescription = "Edit rest duration for ${entry.exercise.name}" }) {
-                    Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Rest ${RestDuration.format(rest)} min")
-                }
-            }
+            if (editable) WorkoutExerciseFooter(entry.id, entry.exercise.name, rest, actions,
+                onEditRest = { onEditRest?.invoke() ?: run { restEditor = true } })
         }
     }
     if (restEditor && editable && onEditRest == null) WorkoutRestDialog(entry, displayedRest,
@@ -200,7 +248,65 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             }
             restEditor = false
         })
-    if (remove) ConfirmDialog("Remove ${entry.exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove", onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entry.id) })
+}
+
+@Composable
+private fun WorkoutExerciseHeading(
+    exercise: ExerciseUi, entryId: String, index: Int, count: Int, previous: String?, records: List<RecordUi>,
+    pounds: Boolean, actions: MoosclesActions, editable: Boolean, onReplace: () -> Unit, onHistory: () -> Unit,
+) {
+    var menu by remember(entryId) { mutableStateOf(false) }
+    var remove by rememberSaveable(entryId) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("${index + 1}. ${exercise.name}", style = MaterialTheme.typography.titleMedium)
+                Text("${human(exercise.equipment)} · ${exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Exercise options") }
+                DropdownMenu(menu, { menu = false }) {
+                    DropdownMenuItem(text = { Text("Performance history") }, onClick = { menu = false; onHistory() })
+                    if (editable) {
+                        DropdownMenuItem(text = { Text("Replace exercise") }, onClick = { menu = false; onReplace() })
+                        DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entryId, -1) })
+                        DropdownMenuItem(text = { Text("Move down") }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entryId, 1) })
+                        DropdownMenuItem(text = { Text("Remove exercise", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
+                    }
+                }
+            }
+        }
+        Text(conventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        previous?.let {
+            Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text("Previous: $it", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        records.forEach { record ->
+            Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp))
+                    Text("${record.label}${if (record.firstRecord) " · first record" else ""} · ${recordAchievementText(record, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+    if (remove) ConfirmDialog("Remove ${exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove",
+        onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entryId) })
+}
+
+@Composable
+private fun WorkoutExerciseFooter(entryId: String, exerciseName: String, rest: Int, actions: MoosclesActions, onEditRest: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        TextButton(onClick = { actions.addSet(entryId) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
+        TextButton(onClick = onEditRest, modifier = Modifier.testTag("workout-rest-edit-$entryId")
+            .semantics { contentDescription = "Edit rest duration for $exerciseName" }) {
+            Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(rest)} min")
+        }
+    }
 }
 
 /** A draft edit changes only this exercise's future intervals, never the live countdown. */
@@ -239,53 +345,132 @@ fun conventionExplanation(convention: String): String = when (convention) {
 
 @Composable
 private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions) {
-    var reps by remember(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
+    // Lazy rows can leave composition while a write is still in flight. Save
+    // local drafts by the real set identity, including blank and invalid input.
+    var reps by rememberSaveable(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
     val originalLoad = remember(set.id, pounds) { if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds)) }
-    val originalWeightKg = remember(set.id, pounds) { set.weightKg }
-    var load by remember(set.id, pounds) { mutableStateOf(originalLoad) }
-    var touched by remember(set.id) { mutableStateOf(false) }
-    var flags by remember { mutableStateOf(false) }
-    val repsValue = if (reps.isBlank()) 0 else reps.toIntOrNull()
-    val loadValue = if (load.isBlank()) 0.0 else load.replace(',', '.').toDoubleOrNull()
-    fun exactKg(text: String, parsed: Double) = if (text == originalLoad) originalWeightKg else displayToKg(parsed, pounds)
-    val validReps = repsValue != null && repsValue in 1..9999
-    val showRepsError = !validReps && (touched || reps.isNotBlank() || set.completed)
-    val validLoad = loadValue != null && loadValue.isFinite() && exactKg(load, loadValue) in 0.0..100000.0
-    fun save(completed: Boolean = set.completed, warmup: Boolean = set.warmup, assistance: Boolean = set.assistance) {
-        if (completed && (!validReps || !validLoad)) return
-        actions.updateSet(set.id, repsValue?.takeIf { it in 0..9999 } ?: set.reps, if (validLoad) exactKg(load, loadValue!!) else set.weightKg, completed, warmup, assistance || assistanceConvention)
+    var referenceLoad by rememberSaveable(set.id) { mutableStateOf(originalLoad) }
+    var referenceWeightKg by rememberSaveable(set.id) { mutableDoubleStateOf(set.weightKg) }
+    var load by rememberSaveable(set.id) { mutableStateOf(originalLoad) }
+    var draftPounds by rememberSaveable(set.id) { mutableStateOf(pounds) }
+    var completed by rememberSaveable(set.id) { mutableStateOf(set.completed) }
+    var warmup by rememberSaveable(set.id) { mutableStateOf(set.warmup) }
+    var assistance by rememberSaveable(set.id) { mutableStateOf(set.assistance) }
+    var pendingSignature by rememberSaveable(set.id) { mutableStateOf<String?>(null) }
+    var pendingWeightKg by rememberSaveable(set.id) { mutableStateOf<Double?>(null) }
+    var pendingReps by rememberSaveable(set.id) { mutableStateOf<Int?>(null) }
+    var acknowledgedReps by rememberSaveable(set.id) { mutableIntStateOf(set.reps) }
+    var acknowledgedWeightKg by rememberSaveable(set.id) { mutableDoubleStateOf(set.weightKg) }
+    var submittedRepsText by rememberSaveable(set.id) { mutableStateOf(reps) }
+    var submittedLoadText by rememberSaveable(set.id) { mutableStateOf(load) }
+    LaunchedEffect(set) {
+        if (pendingSignature == null || pendingSignature == setEditSignature(set.reps, set.weightKg, set.completed, set.warmup, set.assistance)) {
+            // A matching acknowledgment retains the user's text (e.g. comma
+            // decimals). A subsequent external edit refreshes an untouched field,
+            // but must not erase a newer invalid/unsubmitted local draft.
+            if (pendingSignature == null) {
+                if (set.reps != acknowledgedReps && reps == submittedRepsText) {
+                    reps = if (set.reps > 0) set.reps.toString() else ""
+                    submittedRepsText = reps
+                }
+                if (set.weightKg != acknowledgedWeightKg && load == submittedLoadText) {
+                    referenceWeightKg = set.weightKg
+                    referenceLoad = if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds))
+                    load = referenceLoad
+                    submittedLoadText = load
+                }
+            }
+            acknowledgedReps = set.reps
+            acknowledgedWeightKg = set.weightKg
+            completed = set.completed
+            warmup = set.warmup
+            assistance = set.assistance
+            pendingSignature = null
+            pendingWeightKg = null
+            pendingReps = null
+        }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // A disposed row can restore a bundle written in the former display unit.
+    // Convert from exact kg before interpreting or saving its restored text.
+    LaunchedEffect(pounds) {
+        if (draftPounds != pounds) {
+            val kg = pendingWeightKg ?: set.weightKg
+            referenceWeightKg = kg
+            referenceLoad = if (kg == 0.0) "" else number(kgToDisplay(kg, pounds))
+            load = referenceLoad
+            submittedLoadText = load
+            draftPounds = pounds
+        }
+    }
+    var touched by rememberSaveable(set.id) { mutableStateOf(false) }
+    var flags by remember { mutableStateOf(false) }
+    fun parsedReps() = if (reps.isBlank()) 0 else reps.toIntOrNull()
+    fun parsedLoad() = if (load.isBlank()) 0.0 else load.replace(',', '.').toDoubleOrNull()
+    fun exactKg(text: String, parsed: Double) = if (text == referenceLoad) referenceWeightKg else displayToKg(parsed, pounds)
+    val repsValue = parsedReps()
+    val loadValue = parsedLoad()
+    val validReps = repsValue != null && repsValue in 1..9999
+    val showRepsError = !validReps && (touched || reps.isNotBlank() || completed)
+    val validLoad = loadValue != null && loadValue.isFinite() && exactKg(load, loadValue) in 0.0..100000.0
+    fun submit(nextReps: Int, kg: Double, nextCompleted: Boolean, nextWarmup: Boolean, nextAssistance: Boolean) {
+        completed = nextCompleted
+        warmup = nextWarmup
+        assistance = nextAssistance || assistanceConvention
+        pendingSignature = setEditSignature(nextReps, kg, completed, warmup, assistance)
+        pendingWeightKg = kg
+        pendingReps = nextReps
+        if (parsedReps() == nextReps) submittedRepsText = reps
+        parsedLoad()?.takeIf { it.isFinite() && exactKg(load, it) == kg }?.let { submittedLoadText = load }
+        actions.updateSet(set.id, nextReps, kg, completed, warmup, assistance)
+    }
+    fun save(nextCompleted: Boolean = completed, nextWarmup: Boolean = warmup, nextAssistance: Boolean = assistance) {
+        // Read the current drafts inside the callback, rather than the values
+        // captured by the preceding composition while another edit is pending.
+        val currentReps = parsedReps()
+        val currentLoad = parsedLoad()
+        val loadIsValid = currentLoad != null && currentLoad.isFinite() && exactKg(load, currentLoad) in 0.0..100000.0
+        if (nextCompleted && (currentReps == null || currentReps !in 1..9999 || !loadIsValid)) return
+        submit(currentReps?.takeIf { it in 0..9999 } ?: pendingReps ?: set.reps,
+            if (loadIsValid) exactKg(load, currentLoad!!) else pendingWeightKg ?: set.weightKg, nextCompleted, nextWarmup, nextAssistance)
+    }
+    Column(Modifier.testTag("workout-set-${set.id}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Surface(shape = RoundedCornerShape(8.dp), color = if (set.completed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest) { Text("${index + 1}", Modifier.padding(horizontal = 10.dp, vertical = 12.dp), style = MaterialTheme.typography.labelLarge) }
+            Surface(shape = RoundedCornerShape(8.dp), color = if (completed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest) { Text("${index + 1}", Modifier.padding(horizontal = 10.dp, vertical = 12.dp), style = MaterialTheme.typography.labelLarge) }
             TrainingNumberField(load, { next ->
                 load = next
                 val parsed = if (next.isBlank()) 0.0 else next.replace(',', '.').toDoubleOrNull()
-                if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!set.completed || validReps)) actions.updateSet(set.id, repsValue?.takeIf { it in 0..9999 } ?: set.reps, exactKg(next, parsed), set.completed, set.warmup, set.assistance || assistanceConvention)
+                val currentReps = parsedReps()
+                if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!completed || currentReps != null && currentReps in 1..9999))
+                    submit(currentReps?.takeIf { it in 0..9999 } ?: pendingReps ?: set.reps, exactKg(next, parsed), completed, warmup, assistance)
             }, label = if (pounds) "lb" else "kg", isError = !validLoad, decimal = true, modifier = Modifier.weight(1f).testTag("set-load-$index"))
             TrainingNumberField(reps, { next ->
                 reps = next
                 val parsed = if (next.isBlank()) 0 else next.toIntOrNull()
-                if (parsed != null && parsed in 0..9999 && validLoad && (!set.completed || parsed > 0)) actions.updateSet(set.id, parsed, exactKg(load, loadValue!!), set.completed, set.warmup, set.assistance || assistanceConvention)
+                val currentLoad = parsedLoad()
+                if (parsed != null && parsed in 0..9999 && currentLoad != null && currentLoad.isFinite() && exactKg(load, currentLoad) in 0.0..100000.0 && (!completed || parsed > 0))
+                    submit(parsed, exactKg(load, currentLoad), completed, warmup, assistance)
             }, label = "Reps", isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
-            IconToggleButton(checked = set.completed, onCheckedChange = { touched = true; save(completed = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (set.completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (set.completed) "Undo set completion" else "Complete set") }
+            IconToggleButton(checked = completed, onCheckedChange = { touched = true; save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (completed) "Undo set completion" else "Complete set") }
         }
         if (!validLoad) Text("Enter a valid weight of 0 or more.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        if (validLoad && loadValue == 0.0 && !set.assistance && !assistanceConvention) Text("Bodyweight · no added load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (validLoad && loadValue == 0.0 && !assistance && !assistanceConvention) Text("Bodyweight · no added load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (showRepsError) Text("Enter reps between 1 and 9999 to complete this set.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
-                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (set.warmup) "Warm-up" else if (set.assistance || assistanceConvention) "Assistance" else "Working set", style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
+                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (warmup) "Warm-up" else if (assistance || assistanceConvention) "Assistance" else "Working set", style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
                 DropdownMenu(flags, { flags = false }) {
-                    DropdownMenuItem(text = { Text("Working set") }, onClick = { flags = false; save(warmup = false, assistance = assistanceConvention) })
-                    DropdownMenuItem(text = { Text("Warm-up · excluded from PRs") }, onClick = { flags = false; save(warmup = true) })
-                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · separate reps records") }, onClick = { flags = false; save(warmup = false, assistance = true) })
+                    DropdownMenuItem(text = { Text("Working set") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = assistanceConvention) })
+                    DropdownMenuItem(text = { Text("Warm-up · excluded from PRs") }, onClick = { flags = false; save(nextWarmup = true) })
+                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · separate reps records") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = true) })
                 }
             }
             IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, "Remove set ${index + 1}", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
+
+private fun setEditSignature(reps: Int, kg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) =
+    "$reps:${kg.toBits()}:$completed:$warmup:$assistance"
 
 @Composable
 fun CompletedSetRow(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean = false) {

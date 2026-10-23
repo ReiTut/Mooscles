@@ -13,6 +13,7 @@ import androidx.room.TypeConverters
 import androidx.room.Update
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.flow.Flow
 
 class EnumConverters {
     @TypeConverter fun muscle(value: String) = MuscleGroup.valueOf(value)
@@ -42,11 +43,18 @@ interface WorkoutDao {
     @Query("SELECT * FROM routines WHERE id = :id") suspend fun routine(id: String): Routine?
     @Query("SELECT * FROM routine_exercises WHERE id = :id") suspend fun routineExercise(id: String): RoutineExercise?
     @Query("SELECT * FROM routine_exercises WHERE routineId = :id ORDER BY position") suspend fun routineItems(id: String): List<RoutineExercise>
+    @Query("SELECT * FROM exercises WHERE id IN (SELECT exerciseId FROM routine_exercises WHERE routineId = :routineId)")
+    suspend fun routineMovements(routineId: String): List<Exercise>
+    @Query("SELECT routine_sets.* FROM routine_sets INNER JOIN routine_exercises ON routine_sets.routineExerciseId = routine_exercises.id WHERE routine_exercises.routineId = :routineId ORDER BY routine_exercises.position, routine_sets.position")
+    suspend fun routinePlannedSets(routineId: String): List<RoutineSet>
     @Query("SELECT * FROM workouts WHERE id = :id") suspend fun workout(id: String): Workout?
     @Query("SELECT * FROM workouts WHERE status = 'ACTIVE' LIMIT 1") suspend fun activeWorkout(): Workout?
+    @Query("SELECT id FROM workouts WHERE status = 'ACTIVE' LIMIT 1") fun activeWorkoutId(): Flow<String?>
     @Query("SELECT * FROM workout_exercises WHERE id = :id") suspend fun workoutExercise(id: String): WorkoutExercise?
     @Query("SELECT * FROM workout_exercises WHERE workoutId = :id ORDER BY position") suspend fun workoutItems(id: String): List<WorkoutExercise>
     @Query("SELECT * FROM workout_sets WHERE workoutExerciseId = :id ORDER BY position") suspend fun exerciseSets(id: String): List<WorkoutSet>
+    @Query("SELECT workout_sets.* FROM workout_sets INNER JOIN workout_exercises ON workout_sets.workoutExerciseId = workout_exercises.id WHERE workout_exercises.workoutId = :workoutId ORDER BY workout_exercises.position, workout_sets.position")
+    suspend fun workoutSets(workoutId: String): List<WorkoutSet>
     @Query("SELECT * FROM workout_sets WHERE id = :id") suspend fun set(id: String): WorkoutSet?
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedExercises(items: List<Exercise>)
     @Insert suspend fun insertExercise(item: Exercise)
@@ -56,12 +64,15 @@ interface WorkoutDao {
     @Insert suspend fun insertRoutineExercise(item: RoutineExercise)
     @Update suspend fun updateRoutineExercise(item: RoutineExercise)
     @Insert suspend fun insertRoutineSet(item: RoutineSet)
+    @Insert suspend fun insertRoutineSets(items: List<RoutineSet>)
     @Update suspend fun updateRoutineSet(item: RoutineSet)
     @Insert suspend fun insertWorkout(item: Workout)
     @Update suspend fun updateWorkout(item: Workout)
     @Insert suspend fun insertWorkoutExercise(item: WorkoutExercise)
+    @Insert suspend fun insertWorkoutExercises(items: List<WorkoutExercise>)
     @Update suspend fun updateWorkoutExercise(item: WorkoutExercise)
     @Insert suspend fun insertSet(item: WorkoutSet)
+    @Insert suspend fun insertSets(items: List<WorkoutSet>)
     @Update suspend fun updateSet(item: WorkoutSet)
     @Query("DELETE FROM routines WHERE id = :id") suspend fun deleteRoutine(id: String)
     @Query("DELETE FROM routine_exercises WHERE id = :id") suspend fun deleteRoutineExercise(id: String)

@@ -69,6 +69,7 @@ data class UiState(
     val timer: TimerUi = TimerUi(), val preferences: PreferencesUi = PreferencesUi(),
     val error: String? = null,
     val updates: UpdateUi = UpdateUi(), val updateSettingsRequest: Long = 0,
+    val startingWorkout: Boolean = false,
 )
 
 /** All changes are persisted by the implementation. move* takes -1 or +1. */

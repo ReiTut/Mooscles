@@ -23,7 +23,7 @@ private val destinations = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoosclesApp(state: UiState, actions: MoosclesActions) {
+fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<TimerUi>? = null) {
     MoosclesTheme(state.preferences.theme) {
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
@@ -41,7 +41,7 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
             },
             bottomBar = {
                 Column {
-                    WorkoutTimerDock(state, actions)
+                    LiveWorkoutTimerDock(state, actions, timerState)
                     NavigationBar {
                         destinations.forEach { destination ->
                             NavigationBarItem(selected = route == destination.route, onClick = {
@@ -60,7 +60,9 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
                     if (routine != null) RoutineEditor(routine, state, actions, onWorkout = { nav.navigate("workout") })
                     else MissingScreen("Routine unavailable")
                 }
-                composable("workout") { ActiveWorkoutScreen(state, actions, onRoutines = { nav.navigate("routines") }, onHistory = { id -> nav.navigate("workoutDetail/$id?summary=true") }, onExerciseHistory = { nav.navigate("exercise/$it") }) }
+                composable("workout") { ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
+                    actions, onRoutines = { nav.navigate("routines") }, onHistory = { id -> nav.navigate("workoutDetail/$id?summary=true") },
+                    onExerciseHistory = { nav.navigate("exercise/$it") }, startingWorkout = state.startingWorkout) }
                 composable("library") { LibraryScreen(state, actions, onHistory = { nav.navigate("exercise/$it") }) }
                 composable("history") { HistoryScreen(state, actions, onDetail = { nav.navigate("workoutDetail/$it?summary=false") }) }
                 composable("workoutDetail/{id}?summary={summary}", arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("summary") { type = NavType.BoolType; defaultValue = false })) { page ->
@@ -78,6 +80,12 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions) {
             }
         }
     }
+}
+
+@Composable
+private fun LiveWorkoutTimerDock(state: UiState, actions: MoosclesActions, timerState: State<TimerUi>?) {
+    // Read the 250 ms progress state here, outside the navigation and workout-list scopes.
+    WorkoutTimerDock(state.copy(timer = timerState?.value ?: state.timer), actions)
 }
 
 @Composable

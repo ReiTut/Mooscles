@@ -3,16 +3,50 @@ package com.mooscles.data
 import androidx.room.withTransaction
 import com.mooscles.domain.RestDuration
 import com.mooscles.domain.RoutineTargetRecords
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 /** Small atomic commands shared by active tracking, routine editing, and history editing. */
 class WorkoutRepository(private val db: WorkoutDatabase) {
     private val dao = db.dao()
 
-    val data: Flow<AppData> = db.invalidationTracker.createFlow(
-        "exercises", "routines", "routine_exercises", "routine_sets", "workouts", "workout_exercises", "workout_sets"
-    ).map { snapshot() }
+    /** A narrow timer/session observer must not subscribe to the entire workout archive. */
+    val activeWorkoutIds: Flow<String?> = dao.activeWorkoutId().distinctUntilChanged()
+
+    /**
+     * Read all related tables in one transaction: another write can commit between an invalidation
+     * signal and this read, so the signal's table names cannot safely select cached table values.
+     * Reuse equal immutable lists only after that atomic read to preserve presentation identities.
+     */
+    val data: Flow<AppData> = flow {
+        var previous: AppData? = null
+        db.invalidationTracker.createFlow(
+            "exercises", "routines", "routine_exercises", "routine_sets", "workouts", "workout_exercises", "workout_sets"
+        ).collect {
+            val cached = previous
+            val loaded = snapshot()
+            val next = if (cached == null) loaded else {
+                loaded.copy(
+                    exercises = reuseEqual(cached.exercises, loaded.exercises),
+                    routines = reuseEqual(cached.routines, loaded.routines),
+                    routineExercises = reuseEqual(cached.routineExercises, loaded.routineExercises),
+                    workouts = reuseEqual(cached.workouts, loaded.workouts),
+                    workoutExercises = reuseEqual(cached.workoutExercises, loaded.workoutExercises),
+                    sets = reuseEqual(cached.sets, loaded.sets),
+                    routineSets = reuseEqual(cached.routineSets, loaded.routineSets)
+                )
+            }
+            previous = next
+            emit(next)
+        }
+    }.distinctUntilChanged().flowOn(Dispatchers.Default)
+
+    private fun <T> reuseEqual(previous: List<T>, current: List<T>): List<T> =
+        if (previous == current) previous else current
 
     suspend fun initialize() = db.withTransaction {
         dao.seedExercises(ExerciseCatalog.exercises)
@@ -39,6 +73,15 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun snapshot(): AppData = db.withTransaction {
         AppData(dao.exercises(), dao.routines(), dao.routineExercises(), dao.workouts(), dao.workoutExercises(), dao.sets(), dao.routineSets())
     }
+
+    // Commands that edit one row should not load the full workout archive to locate that row.
+    suspend fun activeWorkout(): Workout? = dao.activeWorkout()
+    suspend fun workout(id: String): Workout? = dao.workout(id)
+    suspend fun workoutSet(id: String): WorkoutSet? = dao.set(id)
+    suspend fun workoutExercise(id: String): WorkoutExercise? = dao.workoutExercise(id)
+    suspend fun routineExercise(id: String): RoutineExercise? = dao.routineExercise(id)
+    suspend fun exercise(id: String): Exercise? = dao.exercise(id)
+    suspend fun workoutSets(workoutId: String): List<WorkoutSet> = dao.workoutSets(workoutId)
 
     /** Run only inside a repository transaction, never while rendering UI or editing an active set. */
     private suspend fun synchronizeRoutineTargets() {
@@ -280,18 +323,34 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val routine = requireNotNull(dao.routine(routineId)) { "Routine not found." }
         val workout = Workout(name = routine.name, startedAt = now, sourceRoutineId = routine.id)
-        dao.insertWorkout(workout)
-        dao.routineItems(routineId).forEach { plan ->
-            val exercise = requireNotNull(dao.exercise(plan.exerciseId)) { "Exercise not found." }
+        val plans = dao.routineItems(routineId)
+        val exercises = dao.routineMovements(routineId).associateBy { it.id }
+        val plannedSets = dao.routinePlannedSets(routineId).groupBy { it.routineExerciseId }.toMutableMap()
+        // Legacy import clients can still create only the shared target columns. Repair those
+        // prescriptions in this transaction, without adding a query for every normal exercise.
+        val legacySets = plans.filter { plannedSets[it.id].isNullOrEmpty() }.flatMap { plan ->
+            List(plan.plannedSets) { position ->
+                RoutineSet(routineExerciseId = plan.id, position = position,
+                    targetReps = plan.targetReps, targetWeightKg = plan.targetWeightKg, inheritPr = false)
+            }.also { plannedSets[plan.id] = it }
+        }
+        if (legacySets.isNotEmpty()) dao.insertRoutineSets(legacySets)
+        val entries = ArrayList<WorkoutExercise>(plans.size)
+        val sets = ArrayList<WorkoutSet>(plannedSets.values.sumOf { it.size })
+        plans.forEach { plan ->
+            val exercise = requireNotNull(exercises[plan.exerciseId]) { "Exercise not found." }
             val entry = snapshotExercise(exercise, workout.id, plan.position, (plan.restSeconds ?: RestDuration.DEFAULT_SECONDS).coerceAtMost(RestDuration.MAX_SECONDS))
-            dao.insertWorkoutExercise(entry)
-            ensurePlannedSets(plan).forEach { row ->
-                dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = row.position,
+            entries.add(entry)
+            plannedSets[plan.id].orEmpty().forEach { row ->
+                sets.add(WorkoutSet(workoutExerciseId = entry.id, position = row.position,
                     reps = row.targetReps,
                     weightKg = row.targetWeightKg ?: 0.0,
                     assistance = exercise.convention == LoadConvention.ASSISTANCE))
             }
         }
+        dao.insertWorkout(workout)
+        dao.insertWorkoutExercises(entries)
+        dao.insertSets(sets)
         workout.id
     }
 
@@ -394,7 +453,7 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     suspend fun finishWorkout(id: String, now: Long = System.currentTimeMillis()): Boolean = db.withTransaction {
         val workout = requireNotNull(dao.workout(id)) { "Workout not found." }
         if (workout.status == WorkoutStatus.FINISHED) return@withTransaction false
-        val sets = dao.workoutItems(id).flatMap { dao.exerciseSets(it.id) }
+        val sets = dao.workoutSets(id)
         require(sets.any { it.completed }) { "Complete at least one set before finishing." }
         sets.forEach(::validateSet)
         dao.updateWorkout(workout.copy(status = WorkoutStatus.FINISHED, endedAt = now.coerceAtLeast(workout.startedAt)))
