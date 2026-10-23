@@ -73,7 +73,7 @@ interface WorkoutDao {
 }
 
 /** Additive migrations preserve routines and all independent workout snapshots. */
-@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 3, exportSchema = true)
+@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 4, exportSchema = true)
 @TypeConverters(EnumConverters::class)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun dao(): WorkoutDao
@@ -102,8 +102,16 @@ abstract class WorkoutDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Legacy names are not reliable identities. Leave their source unknown instead of
+                // matching routines by name or position, and keep history independent of deletions.
+                db.execSQL("ALTER TABLE `workouts` ADD COLUMN `sourceRoutineId` TEXT")
+            }
+        }
+
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "mooscles.db"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
     }
 }

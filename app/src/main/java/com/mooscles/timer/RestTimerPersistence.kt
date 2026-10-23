@@ -19,15 +19,22 @@ class RestTimerPersistence(
     private val tokenKey = longPreferencesKey("timer_token")
     private val nameKey = stringPreferencesKey("timer_name")
     private val durationKey = longPreferencesKey("timer_duration")
+    private val intervalKey = longPreferencesKey("timer_interval_duration")
     private val deadlineKey = longPreferencesKey("timer_deadline")
     private val pausedKey = longPreferencesKey("timer_paused")
     private val finishedKey = booleanPreferencesKey("timer_finished")
     private val workoutKey = stringPreferencesKey("timer_workout")
 
-    private fun decode(p: Preferences) = RestTimerState(
-        p[tokenKey] ?: 0, p[nameKey] ?: "Rest timer", p[durationKey] ?: RestDuration.DEFAULT_SECONDS * 1000L,
-        p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false, p[workoutKey]
-    )
+    private fun decode(p: Preferences): RestTimerState {
+        val duration = p[durationKey] ?: RestDuration.DEFAULT_SECONDS * 1000L
+        return RestTimerState(
+            p[tokenKey] ?: 0, p[nameKey] ?: "Rest timer", duration,
+            p[deadlineKey] ?: 0, p[pausedKey] ?: 0, p[finishedKey] ?: false, p[workoutKey],
+            // Previous versions persisted only the reset duration. bounded() also handles
+            // an older countdown that was extended beyond that duration.
+            p[intervalKey] ?: duration.coerceIn(0, RestTimerState.MAX_MILLIS)
+        )
+    }
 
     val states = store.data.map { preferences ->
         val saved = decode(preferences)
@@ -42,6 +49,7 @@ class RestTimerPersistence(
             preferences[tokenKey] = updated.token
             preferences[nameKey] = updated.exerciseName
             preferences[durationKey] = updated.durationMillis
+            preferences[intervalKey] = updated.intervalMillis
             preferences[deadlineKey] = updated.deadline
             preferences[pausedKey] = updated.pausedMillis
             preferences[finishedKey] = updated.finished
@@ -70,7 +78,7 @@ class RestTimerPersistence(
     suspend fun resume() = update { it.resume(now()) }
     suspend fun reset() = update {
         it.copy(token = maxOf(now(), it.token + 1), deadline = 0,
-            pausedMillis = it.durationMillis, finished = false)
+            pausedMillis = it.durationMillis, finished = false, intervalMillis = it.durationMillis)
     }
     suspend fun skip() = update {
         it.copy(token = maxOf(now(), it.token + 1), deadline = 0,

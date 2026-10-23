@@ -75,7 +75,7 @@ class UiFlowHostTest {
                 compose.onAllNodesWithText(name).fetchSemanticsNodes()
                 createdRoutineId = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
                     .routines.singleOrNull { it.name == name }?.id
-                createdRoutineId != null
+                createdRoutineId != null && vm.ui.value.routines.any { it.id == createdRoutineId }
             }
         } catch (failure: Throwable) {
             val saved = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
@@ -84,7 +84,8 @@ class UiFlowHostTest {
                 "error=${vm.ui.value.error}; databasePathLength=${path.length}; database=$path; " +
                 "savedRoutines=${saved.routines}; ui=${compose.onRoot().printToString()}", failure)
         }
-        compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithTag("routines-list").performScrollToNode(hasText(name))
+        compose.onNodeWithText(name).performClick()
         compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasText("Add exercise"))
         compose.onAllNodesWithText("Add exercise").onFirst().performClick()
         compose.onNodeWithText("Find a movement").performTextInput("Barbell bench press")
@@ -116,12 +117,15 @@ class UiFlowHostTest {
         assertEquals(8, planned.targetReps)
         assertEquals(120, planned.restSeconds)
         assertEquals(120, workoutExercise.restSeconds)
+        assertEquals(createdRoutine.id, started.activeWorkout!!.sourceRoutineId)
         assertEquals(listOf(8, 0), started.plannedSets(planned.id).map { it.targetReps })
         assertEquals(listOf(8, 0), started.exerciseSets(workoutExercise.id).map { it.reps })
         assertTrue(started.exerciseSets(workoutExercise.id).none { it.completed })
-        compose.onNodeWithTag("active-workout-list").performScrollToNode(hasText("Rest duration") and hasSetTextAction())
+        compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("workout-rest-edit-${workoutExercise.id}"))
+        compose.onNodeWithTag("workout-rest-edit-${workoutExercise.id}").performScrollTo().assertIsDisplayed().performClick()
         compose.onNode(hasText("Rest duration") and hasSetTextAction()).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("2:00")))
         compose.onNode(hasText("Rest duration") and hasSetTextAction()).performTextReplacement("1:45")
+        compose.onNodeWithTag("workout-rest-save-${workoutExercise.id}").performClick()
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("set-load-0"))
         compose.onNodeWithTag("set-reps-0").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("8")))
         compose.onNodeWithTag("set-load-0").performTextReplacement("20")
@@ -136,6 +140,24 @@ class UiFlowHostTest {
         }
         assertEquals(105_000L, app.timer.state.value.durationMillis)
         compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
+        val inProgressTimer = app.timer.state.value
+        compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("workout-rest-edit-${workoutExercise.id}"))
+        compose.onNodeWithTag("workout-rest-edit-${workoutExercise.id}").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithTag("workout-rest-${workoutExercise.id}").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("1:45")))
+        compose.onNodeWithTag("workout-rest-${workoutExercise.id}").performTextReplacement("2:30")
+        compose.onNodeWithTag("workout-rest-save-${workoutExercise.id}").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("active-workout-list").fetchSemanticsNodes()
+            vm.ui.value.active?.exercises?.single()?.restSeconds == 150
+        }
+        assertEquals("Changing the next rest must preserve the live interval", inProgressTimer, app.timer.state.value)
+        compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("set-reps-1"))
+        compose.onNodeWithTag("set-reps-1").performTextReplacement("8")
+        compose.onNodeWithTag("set-complete-1").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("active-workout-list").fetchSemanticsNodes()
+            app.timer.state.value.let { it.running && it.durationMillis == 150_000L && it.token != inProgressTimer.token }
+        }
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Pause rest timer").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
         compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("finish-workout"))
@@ -155,7 +177,7 @@ class UiFlowHostTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithText("SESSION BREAKDOWN").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("SESSION BREAKDOWN").assertIsDisplayed()
         val saved = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
-        assertEquals(105, saved.workoutExercises.single { it.id == workoutExercise.id }.restSeconds)
+        assertEquals(150, saved.workoutExercises.single { it.id == workoutExercise.id }.restSeconds)
         assertEquals(120, saved.routineExercises.single { it.id == planned.id }.restSeconds)
 
     }

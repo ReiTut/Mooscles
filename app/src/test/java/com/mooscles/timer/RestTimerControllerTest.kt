@@ -11,11 +11,14 @@ import androidx.test.core.app.ApplicationProvider
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +29,14 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class RestTimerControllerTest {
+    private class Store : DataStore<Preferences> {
+        private val mutex = Mutex()
+        override val data = MutableStateFlow(emptyPreferences())
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences) = mutex.withLock {
+            transform(data.value).also { data.value = it }
+        }
+    }
+
     private class UnavailableStore : DataStore<Preferences> {
         var available = false
         var reads = 0
@@ -84,5 +95,53 @@ class RestTimerControllerTest {
         assertEquals(deadline, controller.state.value.deadline)
         assertTrue(controller.state.value.running)
         assertEquals(1, store.writes) // Attach the legacy countdown to the persisted active session.
+    }
+
+    @Test fun displayedCountdownAndProgressFollowTheSameClockAcrossControls() = runTest {
+        var now = System.currentTimeMillis()
+        val persistence = RestTimerPersistence(Store()) { now }
+        val controller = RestTimerController(ApplicationProvider.getApplicationContext<Context>(), backgroundScope,
+            persistence, activeWorkoutId = { "active" }, sessionChanges = flowOf("active"), now = { now })
+        runCurrent()
+        controller.start("Seated row", 90)
+        runCurrent()
+        assertEquals(90, controller.ui.value.remainingSeconds)
+        assertEquals(1f, controller.ui.value.progress, 0f)
+        now += 22_500
+        advanceTimeBy(250)
+        runCurrent()
+        assertEquals(68, controller.ui.value.remainingSeconds)
+        assertEquals(0.75f, controller.ui.value.progress, 0.00001f)
+        controller.pause()
+        runCurrent()
+        now += 60_000
+        advanceTimeBy(250)
+        runCurrent()
+        assertTrue(controller.ui.value.paused)
+        assertEquals(68, controller.ui.value.remainingSeconds)
+        assertEquals(0.75f, controller.ui.value.progress, 0.00001f)
+        controller.adjust(15)
+        runCurrent()
+        assertEquals(83, controller.ui.value.remainingSeconds)
+        assertEquals(82.5f / 105f, controller.ui.value.progress, 0.00001f)
+        assertEquals(90, controller.ui.value.durationSeconds) // Reset remains the exercise's original interval.
+        controller.resume()
+        runCurrent()
+        assertEquals(83, controller.ui.value.remainingSeconds)
+        assertEquals(82.5f / 105f, controller.ui.value.progress, 0.00001f)
+        now += 82_500
+        advanceTimeBy(250)
+        runCurrent()
+        assertTrue(controller.ui.value.finished)
+        assertEquals(0, controller.ui.value.remainingSeconds)
+        assertEquals(0f, controller.ui.value.progress, 0f)
+        controller.reset()
+        runCurrent()
+        assertTrue(controller.ui.value.paused)
+        assertEquals(90, controller.ui.value.remainingSeconds)
+        assertEquals(1f, controller.ui.value.progress, 0f)
+        controller.skip()
+        runCurrent()
+        assertEquals(0f, controller.ui.value.progress, 0f)
     }
 }

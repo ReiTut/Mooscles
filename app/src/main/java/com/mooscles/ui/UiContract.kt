@@ -39,6 +39,7 @@ data class RecordUi(
 data class WorkoutUi(
     val id: String, val name: String, val startedAt: Long, val endedAt: Long? = null,
     val exercises: List<WorkoutExerciseUi> = emptyList(), val records: List<RecordUi> = emptyList(),
+    val sourceRoutineId: String? = null,
 ) {
     /** First records and records beaten both qualify; multiple badges still count once. */
     val prExerciseCount get() = records.map { it.exercise.id to it.exercise.convention }.distinct().size
@@ -52,6 +53,8 @@ data class TimerUi(
     val exerciseName: String = "Rest timer", val remainingSeconds: Int = 0,
     val durationSeconds: Int = RestDuration.DEFAULT_SECONDS, val running: Boolean = false, val paused: Boolean = false,
     val finished: Boolean = false,
+    val progress: Float = if (finished || durationSeconds <= 0) 0f
+        else (remainingSeconds.toFloat() / durationSeconds).coerceIn(0f, 1f),
 )
 data class PreferencesUi(
     val pounds: Boolean = false, val theme: String = "system", val autoRest: Boolean = true,

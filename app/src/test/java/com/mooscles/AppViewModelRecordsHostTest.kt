@@ -237,6 +237,58 @@ class AppViewModelRecordsHostTest {
         assertEquals(before, reopened.ui.value.active)
     }
 
+    @Test fun activeSourceIdSurvivesPresentationRecreationAndOtherStartsWithoutResettingTraining() {
+        val seeded = runBlocking(Dispatchers.IO) {
+            val repo = app.repository
+            repo.initialize()
+            val exercise = repo.createCustomExercise("Session press", MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)
+            val first = repo.createRoutine("Identical name")
+            val second = repo.createRoutine("Identical name")
+            repo.addRoutineExercise(first, exercise)
+            repo.addRoutineExercise(second, exercise)
+            val id = repo.startRoutine(second, now = System.currentTimeMillis() - 50_000)
+            val entry = repo.snapshot().workoutItems(id).single()
+            repo.updateWorkoutExerciseRest(entry.id, 145)
+            val set = repo.snapshot().exerciseSets(entry.id).first()
+            repo.updateSet(set.copy(reps = 8, weightKg = 20.0, completed = true))
+            app.timer.start(entry.name, 145)
+            Triple(first, second, id)
+        }
+        val model = newModel()
+        awaitUi(model) { !it.loading && it.active?.id == seeded.third && it.timer.running }
+        val before = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
+        val timer = app.timer.state.value
+        assertEquals(seeded.second, model.ui.value.active!!.sourceRoutineId)
+        assertEquals(145, model.ui.value.active!!.exercises.single().restSeconds)
+        assertEquals(1, model.ui.value.active!!.completedSets)
+        assertTrue(model.ui.value.timer.progress in 0f..1f)
+
+        // Both starts are serialized before the rename, which is an observable command barrier.
+        model.startWorkout(seeded.first)
+        model.startWorkout(null)
+        model.renameRoutine(seeded.second, "Renamed source")
+        awaitUi(model) { it.routines.single { routine -> routine.id == seeded.second }.name == "Renamed source" }
+        runBlocking(Dispatchers.IO) { app.repository.moveRoutine(seeded.second, -1) }
+        awaitUi(model) { it.routines.firstOrNull()?.id == seeded.second }
+        val after = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
+        assertEquals(before.workouts, after.workouts)
+        assertEquals(before.workoutExercises, after.workoutExercises)
+        assertEquals(before.sets, after.sets)
+        assertEquals(timer, app.timer.state.value)
+        assertEquals(seeded.second, model.ui.value.active!!.sourceRoutineId)
+
+        model.viewModelScope.cancel()
+        val restored = newModel()
+        awaitUi(restored) { !it.loading && it.active?.id == seeded.third && it.timer.running }
+        assertEquals(seeded.second, restored.ui.value.active!!.sourceRoutineId)
+        assertEquals(before.activeWorkout!!.startedAt, restored.ui.value.active!!.startedAt)
+        assertEquals(145, restored.ui.value.active!!.exercises.single().restSeconds)
+        assertEquals(timer, app.timer.state.value)
+        restored.finishWorkout()
+        awaitUi(restored) { it.active == null && !it.timer.running && !it.timer.paused }
+        assertTrue(restored.ui.value.history.any { it.id == seeded.third && it.sourceRoutineId == seeded.second })
+    }
+
     private fun newModel() = AppViewModel(app).also { models += it }
 
     private fun awaitUi(model: AppViewModel, predicate: (UiState) -> Boolean) {

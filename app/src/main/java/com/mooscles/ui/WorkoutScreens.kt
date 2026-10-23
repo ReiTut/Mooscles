@@ -11,11 +11,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.mooscles.domain.RestDuration
+
+private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
 
 @Composable
 fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
@@ -40,6 +47,25 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         }
         return
     }
+    var restEditorId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
+    var restEditorExerciseId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
+    val pendingRests = remember(workout.id) { mutableStateMapOf<String, WorkoutRestOverride>() }
+    LaunchedEffect(workout.exercises) {
+        pendingRests.keys.toList().forEach { id ->
+            val entry = workout.exercises.find { it.id == id }
+            val pending = pendingRests[id]
+            if (entry == null || pending == null || pending.exerciseId != entry.exercise.id || pending.seconds == entry.restSeconds)
+                pendingRests.remove(id)
+        }
+        if (workout.exercises.none { it.id == restEditorId && it.exercise.id == restEditorExerciseId }) {
+            restEditorId = null
+            restEditorExerciseId = null
+        }
+    }
+    fun withRestOverride(entry: WorkoutExerciseUi): WorkoutExerciseUi {
+        val pending = pendingRests[entry.id]?.takeIf { it.exerciseId == entry.exercise.id }
+        return if (pending == null) entry else entry.copy(restSeconds = pending.seconds)
+    }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(workout.id) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     Column(Modifier.fillMaxSize().imePadding()) {
@@ -55,8 +81,9 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         item { SectionTitle("Today’s movements", "Add", { picker = true }) }
         if (workout.exercises.isEmpty()) item { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) }
         itemsIndexed(workout.exercises, key = { _, it -> it.id }) { index, entry ->
-            WorkoutExerciseCard(entry, index, workout.exercises.size, state.preferences.pounds, actions, editable = true,
-                onReplace = { replace = entry.id; picker = true }, onHistory = { onExerciseHistory(entry.exercise.id) })
+            WorkoutExerciseCard(withRestOverride(entry), index, workout.exercises.size, state.preferences.pounds, actions, editable = true,
+                onReplace = { replace = entry.id; picker = true }, onHistory = { onExerciseHistory(entry.exercise.id) },
+                onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
         }
         item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Add exercise") } }
         item {
@@ -69,6 +96,19 @@ fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: ()
         item { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
     }
     }
+    // Keep the modal outside lazy items: its originating card may leave the
+    // viewport when the keyboard opens or while the workout list scrolls.
+    val editingRest = workout.exercises.find { it.id == restEditorId && it.exercise.id == restEditorExerciseId }
+        ?.let(::withRestOverride)
+    if (editingRest != null) WorkoutRestDialog(editingRest, editingRest.restSeconds,
+        onDismiss = { restEditorId = null; restEditorExerciseId = null }, onSave = { seconds ->
+            if (seconds != editingRest.restSeconds) {
+                pendingRests[editingRest.id] = WorkoutRestOverride(editingRest.exercise.id, seconds)
+                actions.updateWorkoutExerciseRest(editingRest.id, seconds)
+            }
+            restEditorId = null
+            restEditorExerciseId = null
+        })
     if (picker) ExercisePicker(state.exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
     if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = actions::discardWorkout)
@@ -89,9 +129,19 @@ internal fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
 }
 
 @Composable
-fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds: Boolean, actions: MoosclesActions, editable: Boolean, onReplace: () -> Unit, onHistory: () -> Unit) {
+fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds: Boolean, actions: MoosclesActions, editable: Boolean, onReplace: () -> Unit, onHistory: () -> Unit, onEditRest: (() -> Unit)? = null) {
     var menu by remember { mutableStateOf(false) }
     var remove by remember { mutableStateOf(false) }
+    var restEditor by rememberSaveable(entry.id, entry.exercise.id) { mutableStateOf(false) }
+    var displayedRest by remember(entry.id, entry.exercise.id) { mutableIntStateOf(entry.restSeconds.coerceAtLeast(0)) }
+    val pendingRests = remember(entry.id, entry.exercise.id) { mutableListOf<Int>() }
+    val rest = if (onEditRest == null) displayedRest else entry.restSeconds.coerceAtLeast(0)
+    LaunchedEffect(entry.restSeconds) {
+        val incoming = entry.restSeconds.coerceAtLeast(0)
+        val acknowledged = pendingRests.indexOf(incoming)
+        if (acknowledged >= 0) pendingRests.subList(0, acknowledged + 1).clear()
+        if (pendingRests.isEmpty()) displayedRest = incoming
+    }
     Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -124,10 +174,6 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
                 }
             }
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
-            if (editable) RestDurationField(entry.restSeconds,
-                { actions.updateWorkoutExerciseRest(entry.id, it) }, Modifier.fillMaxWidth(),
-                testTag = "workout-rest-${entry.id}",
-                help = "For your next rest. Use the timer controls to adjust rest in progress.")
             if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
                 if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
@@ -135,12 +181,52 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             }
             if (editable) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 TextButton(onClick = { actions.addSet(entry.id) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
-                val rest = entry.restSeconds.coerceIn(0, RestDuration.MAX_SECONDS)
-                TextButton(onClick = { actions.startTimer(entry.exercise.name, rest) }) { Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(rest)} min") }
+                TextButton(onClick = { onEditRest?.invoke() ?: run { restEditor = true } }, modifier = Modifier
+                    .testTag("workout-rest-edit-${entry.id}")
+                    .semantics { contentDescription = "Edit rest duration for ${entry.exercise.name}" }) {
+                    Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Rest ${RestDuration.format(rest)} min")
+                }
             }
         }
     }
+    if (restEditor && editable && onEditRest == null) WorkoutRestDialog(entry, displayedRest,
+        onDismiss = { restEditor = false }, onSave = { seconds ->
+            if (seconds != displayedRest) {
+                displayedRest = seconds
+                pendingRests += seconds
+                actions.updateWorkoutExerciseRest(entry.id, seconds)
+            }
+            restEditor = false
+        })
     if (remove) ConfirmDialog("Remove ${entry.exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove", onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entry.id) })
+}
+
+/** A draft edit changes only this exercise's future intervals, never the live countdown. */
+@Composable
+private fun WorkoutRestDialog(entry: WorkoutExerciseUi, seconds: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    var draft by rememberSaveable(entry.id, entry.exercise.id) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
+    AlertDialog(onDismissRequest = onDismiss, icon = { Icon(Icons.Outlined.Timer, null) },
+        title = { Text("Edit rest timer") }, text = {
+            // The dialog has its own composition and keyboard controller. Request
+            // focus here, after that composition attaches its text field.
+            val focus = remember { FocusRequester() }
+            val keyboard = LocalSoftwareKeyboardController.current
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(entry.exercise.name, style = MaterialTheme.typography.titleSmall)
+                RestDurationField(draft, { draft = it }, Modifier.fillMaxWidth().focusRequester(focus),
+                    testTag = "workout-rest-${entry.id}")
+                Text("For this workout's next rests. The current countdown keeps its own duration.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
+        }, confirmButton = {
+            TextButton(onClick = { onSave(draft) },
+                modifier = Modifier.testTag("workout-rest-save-${entry.id}")) { Text("Save") }
+        }, dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("workout-rest-cancel-${entry.id}")) { Text("Cancel") }
+        })
 }
 
 fun conventionExplanation(convention: String): String = when (convention) {

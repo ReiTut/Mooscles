@@ -9,7 +9,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -54,6 +58,7 @@ class RestTimerSessionLifecycleTest {
         assertFalse(saved.finished)
         assertNull(saved.workoutId)
         assertEquals("Rest timer", saved.exerciseName)
+        assertEquals(0f, controller.ui.value.progress, 0f)
         assertEquals(0, shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.size)
         assertEquals(0, shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications.size)
     }
@@ -76,7 +81,9 @@ class RestTimerSessionLifecycleTest {
         session.value = null // The same persisted transition follows a successful finish or discard.
         runCurrent()
         controller.complete(token)
+        runCurrent()
         assertFalse(persistence.snapshot().finished)
+        assertEquals(0f, controller.ui.value.progress, 0f)
         assertEquals(0, shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.size)
         assertEquals(0, shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications.size)
     }
@@ -114,5 +121,45 @@ class RestTimerSessionLifecycleTest {
         assertFalse(persistence.snapshot().finished)
         assertFalse(persistence.snapshot().running)
         assertEquals(0, shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications.size)
+    }
+
+    @Test fun controllerRecreationRetainsAdjustedProgressAndPausedStateUntilSessionEnds() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        var now = System.currentTimeMillis()
+        val persistence = RestTimerPersistence(Store()) { now }
+        persistence.reconcileSession("resumable")
+        persistence.start("Saved deadlift", 135)
+        now += 30_000
+        persistence.adjust(45)
+        val session = MutableStateFlow<String?>("resumable")
+        val oldScope = CoroutineScope(backgroundScope.coroutineContext + SupervisorJob(backgroundScope.coroutineContext[Job]))
+        try {
+            val old = RestTimerController(context, oldScope, persistence, { session.value }, session, now = { now })
+            runCurrent()
+            assertEquals(150, old.ui.value.remainingSeconds)
+            assertEquals(150f / 180f, old.ui.value.progress, 0.00001f)
+            old.pause()
+            runCurrent()
+            oldScope.cancel()
+            now += 3_600_000
+            val restored = RestTimerController(context, backgroundScope, persistence,
+                { session.value }, session, now = { now })
+            runCurrent()
+            assertTrue(restored.ui.value.paused)
+            assertEquals(150, restored.ui.value.remainingSeconds)
+            assertEquals(150f / 180f, restored.ui.value.progress, 0.00001f)
+            restored.resume()
+            runCurrent()
+            assertTrue(restored.ui.value.running)
+            assertEquals(150f / 180f, restored.ui.value.progress, 0.00001f)
+            session.value = null // Covers finish/discard: the authoritative persisted session disappears.
+            runCurrent()
+            assertEquals(0, restored.ui.value.remainingSeconds)
+            assertEquals(0f, restored.ui.value.progress, 0f)
+            assertFalse(restored.ui.value.running)
+            assertFalse(restored.ui.value.paused)
+        } finally {
+            oldScope.cancel()
+        }
     }
 }

@@ -1,6 +1,35 @@
 # Verification — 2026-10-22
 
-## Current release — 1.4.0 / build 10
+## Current release — 1.4.1 / build 11
+
+The floating rest timer now shows a green determinate progress bar. Countdown and progress use the same clock. DataStore persists the adjusted interval basis separately from the original reset duration: accepted +/- changes preserve elapsed time, pause freezes the fraction, resume continues it, reset restores the original full interval, and completion/skip empty the bar. Remaining time stays within 0:00–5:00 and progress within 0–1. Tests cover custom durations, fractional seconds, capped/negative adjustments, legacy stores, real file reopening, background time, controller recreation and session cleanup.
+
+The **Rest M:SS min** action beside **Add set** opens a focused fixed-colon Save/Cancel editor for that workout-exercise instance's configured duration. It never reads the bottom timer's remainder or issues countdown commands. Saving updates the inline label and persists the next-rest override; cancelling discards the draft. Other exercise instances and routine defaults remain unchanged. The dialog is owned outside the lazy list so scrolling, card disposal or a smaller keyboard-sized viewport cannot destroy its draft; removing/replacing the selected exercise safely closes it.
+
+Routine-based workouts now persist their stable source routine ID. Only that routine card shows **Resume active**; duplicate names, renames and reordering cannot move the association. Other Start actions protect the active session and offer an explicit resume. Free workouts and legacy sessions with unknown sources use the general Resume workout action. Room v4 adds only nullable `workouts.sourceRoutineId`, with no cascade or guessed backfill. Real v1/v2/v3 → v4 migrations preserve existing plans, targets, history and active snapshots.
+
+Final command: `build.ps1` using bundled JDK 21 and Gradle 8.14.5.
+
+| Check | Result |
+| --- | --- |
+| Full host unit, persistence, Compose and native graphics suite | **PASS — 311 tests; zero failures, errors or skips** |
+| Android lint | **PASS — 0 errors; 21 existing warnings** |
+| Debug APK and instrumented-test APK | **PASS — compiled and packaged** |
+| APK identity | **com.mooscles; version 1.4.1; version code 11; minimum API 26; target API 35** |
+| APK signing compatibility | **PASS — same existing Android Debug certificate; APK Signature Scheme v2** |
+| Versioned APK, update.json and checksum | **PASS — actual version, filename, size and SHA-256 agree; normal APK has identical bytes** |
+| Native layout review | **PASS — inline label/progress, long names, scrolling and constrained 550dp app viewport; dock and footer remain outside exercise rows** |
+| Physical keyboard, device installation and instrumented execution | **Not run — no connected device; emulator hypervisor driver unavailable** |
+
+The 33 additional tests cover the new timer state/persistence/controller behavior, workout-source migration and reopening, independent exercise-rest overrides, stable-ID card actions, dialog interactions, lazy-card disposal and native layout. The real Activity → Room → workout → rest → history test changes the next rest during a running interval, asserts the live state is unchanged, completes another set to verify the new duration, and verifies final timer cleanup plus the unchanged routine default. ViewModel recreation preserves source ID, elapsed start time, sets, rest override and countdown.
+
+Native graphics previews are under `app/build/outputs/rest-timer-previews/`: `inline-label-and-progress.png`, `long-exercise-name-and-timer.png`, and `rest-label-constrained-viewport.png`. These were inspected. Focus, numeric input, fixed-colon advancement, validation, cancellation, saving and dialog survival are exercised by legacy-graphics Compose tests. Native focused-dialog capture is unavailable because that graphics mode does not become idle in this host. The constrained viewport simulates keyboard space and does not display a real IME.
+
+Verified APK: `D:\Programing\Mooscles\app\build\outputs\release\Mooscles-v1.4.1-debug.apk` — **20,032,522 bytes**. SHA-256: `63aae24da5be85a99cf1e99c8668f154f0d4350e0861a5dc68079d09a248b70a`. Signing certificate SHA-256 remains `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775fbedfc301e22bb35`. Generated metadata/checksum and build outputs remain ignored.
+
+Distribution: [v1.4.1 full GitHub Release](https://github.com/ReiTut/Mooscles/releases/tag/v1.4.1), with the existing debug APK, update.json and checksum as assets. The publication helper rebuilds/checks the exact tagged commit, verifies downloaded draft assets, then explicitly publishes with `draft=false`, `prerelease=false` and Latest status. Stable discovery uses version code 11; automatic download/install respects saved preferences and Android approval. Publication verification checks the latest-release endpoint and independently downloads the public assets.
+
+## Prior release — 1.4.0 / build 10
 
 Routine targets now persist as ordered individual set rows. New exercises have two inherited rows; editing either value makes the whole row custom. Row menus can restore PR defaults or remove a set. Future eligible records update inherited rows using both values from one actual completed working set. Custom prescriptions, including explicit blank bodyweight, remain unchanged. Historical record corrections/deletions refresh inherited defaults on initialization/finalization without stale checkpoint suppression.
 

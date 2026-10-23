@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
@@ -180,6 +183,14 @@ fun TimerPanel(timer: TimerUi, actions: MoosclesActions, defaultSeconds: Int, co
                 }
                 Text("${restClock(timer.remainingSeconds)} min", style = MaterialTheme.typography.headlineSmall)
             }
+            val progress = timer.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+            LinearProgressIndicator(progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(5.dp).testTag("rest-timer-progress").semantics {
+                    contentDescription = "Rest timer progress"
+                    stateDescription = "${(progress * 100).roundToInt()}% remaining${if (timer.paused) ", paused" else ""}"
+                }, color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.16f),
+                gapSize = 0.dp, drawStopIndicator = {})
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { actions.adjustTimer(-15) }, enabled = timer.remainingSeconds > 0,
                     modifier = Modifier.weight(1f), contentPadding = PaddingValues(2.dp)) { Text("−0:15", maxLines = 1) }

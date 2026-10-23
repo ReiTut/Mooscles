@@ -307,4 +307,79 @@ class RestTimerPersistenceTest {
         assertEquals("Rest timer", current.exerciseName)
         assertTrue(current.token > previous.token)
     }
+
+    @Test fun adjustedIntervalProgressSurvivesFileReopenWithBackgroundTime() = runBlocking {
+        persistence.reconcileSession("active-routine")
+        persistence.start("Cable row", 90)
+        now += 30_000
+        val extended = persistence.adjust(60)
+        assertEquals(150_000L, extended.intervalMillis)
+        assertEquals(90_000L, extended.durationMillis)
+        assertEquals(120f / 150f, extended.progress(now), 0.00001f)
+        now += 22_500
+        recreateStore()
+        val restored = persistence.reconcileSession("active-routine")
+        assertEquals(extended.token, restored.token)
+        assertEquals(extended.deadline, restored.deadline)
+        assertEquals(150_000L, restored.intervalMillis)
+        assertEquals(97.5f / 150f, restored.progress(now), 0.00001f)
+        assertEquals(150_000L, store.data.first()[longPreferencesKey("timer_interval_duration")])
+    }
+
+    @Test fun pausedAdjustedProgressAndResetSkipAndCompletionAreDurable() = runBlocking {
+        persistence.start("Custom exercise", 75)
+        now += 25_000
+        persistence.pause()
+        val adjusted = persistence.adjust(30)
+        assertEquals(80f / 105f, adjusted.progress(now), 0.00001f)
+        now += 600_000
+        recreateStore()
+        assertEquals(adjusted.progress(now), persistence.snapshot().progress(now), 0f)
+        assertEquals(adjusted.progress(now), persistence.resume().progress(now), 0f)
+        val reset = persistence.reset()
+        assertEquals(75_000L, reset.intervalMillis)
+        assertEquals(1f, reset.progress(now), 0f)
+        recreateStore()
+        assertEquals(1f, persistence.snapshot().progress(now), 0f)
+        persistence.skip()
+        recreateStore()
+        assertEquals(0f, persistence.snapshot().progress(now), 0f)
+        val next = persistence.start("Next exercise", 35)
+        assertEquals(1f, next.progress(now), 0f)
+        now += 35_000
+        persistence.claimCompletion(next.token)
+        recreateStore()
+        assertTrue(persistence.snapshot().finished)
+        assertEquals(0f, persistence.snapshot().progress(now), 0f)
+    }
+
+    @Test fun legacyExtendedTimerGetsDurableSafeProgressWithoutRestartingCountdown() = runBlocking {
+        store.edit {
+            it[longPreferencesKey("timer_token")] = 23L
+            it[longPreferencesKey("timer_duration")] = 120_000L
+            it[longPreferencesKey("timer_deadline")] = now + 180_000L
+        }
+        val restored = persistence.snapshot()
+        assertEquals(180_000L, restored.intervalMillis)
+        assertEquals(120_000L, restored.durationMillis)
+        assertEquals(now + 180_000L, restored.deadline)
+        assertEquals(1f, restored.progress(now), 0f)
+        now += 30_000
+        recreateStore()
+        assertEquals(150f / 180f, persistence.snapshot().progress(now), 0.00001f)
+        assertEquals(180_000L, store.data.first()[longPreferencesKey("timer_interval_duration")])
+    }
+
+    @Test fun legacyNormalAndPausedTimersUseTheirSavedDurationForProgress() = runBlocking {
+        store.edit {
+            it[longPreferencesKey("timer_duration")] = 90_000L
+            it[longPreferencesKey("timer_deadline")] = now + 45_000L
+        }
+        assertEquals(0.5f, persistence.snapshot().progress(now), 0f)
+        persistence.pause()
+        now += 600_000
+        recreateStore()
+        assertEquals(0.5f, persistence.snapshot().progress(now), 0f)
+        assertEquals(90_000L, persistence.snapshot().intervalMillis)
+    }
 }

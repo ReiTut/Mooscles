@@ -90,7 +90,9 @@ data class Workout(
     val name: String,
     val startedAt: Long = System.currentTimeMillis(),
     val endedAt: Long? = null,
-    val status: WorkoutStatus = WorkoutStatus.ACTIVE
+    val status: WorkoutStatus = WorkoutStatus.ACTIVE,
+    /** Stable origin only; deleting or renaming a routine must never alter this snapshot. */
+    val sourceRoutineId: String? = null
 )
 
 /** Immutable exercise metadata is copied here when a workout starts. */

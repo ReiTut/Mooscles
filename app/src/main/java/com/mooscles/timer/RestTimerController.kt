@@ -29,6 +29,7 @@ class RestTimerController(
     },
     private val sessionChanges: Flow<String?> = (context.applicationContext as MoosclesApplication)
         .repository.data.map { it.activeWorkout?.id }.distinctUntilChanged(),
+    private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val mutex = Mutex()
     private val alarm = context.getSystemService(AlarmManager::class.java)
@@ -48,10 +49,12 @@ class RestTimerController(
         report(failure)
         emit(RestTimerState())
     }.stateIn(scope, SharingStarted.Eagerly, RestTimerState())
-    private val ticks = flow { while (true) { emit(System.currentTimeMillis()); delay(250) } }
-    val ui: StateFlow<TimerUi> = combine(state, ticks) { s, now ->
+    private val ticks = flow { while (true) { emit(Unit); delay(250) } }
+    val ui: StateFlow<TimerUi> = combine(state, ticks) { s, _ ->
+        val now = now()
         if (s.running && s.remaining(now) == 0L) scope.launch { complete(s.token) }
-        TimerUi(s.exerciseName, ceil(s.remaining(now) / 1000.0).toInt(), (s.durationMillis / 1000).toInt(), s.running, s.paused, s.finished)
+        TimerUi(s.exerciseName, ceil(s.remaining(now) / 1000.0).toInt(), (s.durationMillis / 1000).toInt(),
+            s.running, s.paused, s.finished, progress = s.progress(now))
     }.stateIn(scope, SharingStarted.Eagerly, TimerUi())
     init {
         notifications.createNotificationChannel(NotificationChannel("rest", "Rest timer", NotificationManager.IMPORTANCE_HIGH).apply {

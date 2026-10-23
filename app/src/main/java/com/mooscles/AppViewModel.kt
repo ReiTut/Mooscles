@@ -167,7 +167,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
                             }
                     })
             }
-            return WorkoutUi(w.id, w.name, w.startedAt, w.endedAt, entries, records)
+            return WorkoutUi(w.id, w.name, w.startedAt, w.endedAt, entries, records, sourceRoutineId = w.sourceRoutineId)
         }
         val records = WorkoutCalculations.records(data).map { r ->
             val e = data.workoutItems(r.workoutId).first { it.exerciseId == r.exerciseId && it.convention == r.convention }

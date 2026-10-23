@@ -279,7 +279,7 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         dao.activeWorkout()?.let { return@withTransaction it.id }
         require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val routine = requireNotNull(dao.routine(routineId)) { "Routine not found." }
-        val workout = Workout(name = routine.name, startedAt = now)
+        val workout = Workout(name = routine.name, startedAt = now, sourceRoutineId = routine.id)
         dao.insertWorkout(workout)
         dao.routineItems(routineId).forEach { plan ->
             val exercise = requireNotNull(dao.exercise(plan.exerciseId)) { "Exercise not found." }
