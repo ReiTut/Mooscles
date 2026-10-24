@@ -16,7 +16,9 @@ data class PlannedExerciseUi(
     val weightKg: Double? = null, val restSeconds: Int = RestDuration.DEFAULT_SECONDS,
     val setTargets: List<RoutineSetUi> = emptyList(),
 )
-data class RoutineUi(val id: String, val name: String, val exercises: List<PlannedExerciseUi> = emptyList())
+data class RoutineFolderUi(val id: String, val name: String)
+data class RoutineUi(val id: String, val name: String, val exercises: List<PlannedExerciseUi> = emptyList(),
+    val folderId: String = "default")
 data class SetUi(
     val id: String, val reps: Int = 0, val weightKg: Double = 0.0,
     val completed: Boolean = false, val warmup: Boolean = false, val assistance: Boolean = false,
@@ -61,6 +63,7 @@ data class TimerUi(
 data class PreferencesUi(
     val pounds: Boolean = false, val theme: String = "system", val autoRest: Boolean = true,
     val defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS,
+    val selectedRoutineFolderId: String = "default",
 )
 data class UiState(
     val loading: Boolean = true, val exercises: List<ExerciseUi> = emptyList(),
@@ -70,6 +73,8 @@ data class UiState(
     val error: String? = null,
     val updates: UpdateUi = UpdateUi(), val updateSettingsRequest: Long = 0,
     val startingWorkout: Boolean = false,
+    val discardingWorkout: Boolean = false, val discardNavigationRequest: Long = 0,
+    val routineFolders: List<RoutineFolderUi> = listOf(RoutineFolderUi("default", "My routines")),
 )
 
 /** All changes are persisted by the implementation. move* takes -1 or +1. */
@@ -80,6 +85,10 @@ interface MoosclesActions : UpdateActions {
     fun duplicateRoutine(id: String)
     fun deleteRoutine(id: String)
     fun moveRoutine(id: String, direction: Int)
+    fun createRoutineFolder(name: String)
+    fun renameRoutineFolder(id: String, name: String)
+    fun selectRoutineFolder(id: String)
+    fun moveRoutineToFolder(routineId: String, folderId: String)
     fun addRoutineExercise(routineId: String, exerciseId: String)
     fun replaceRoutineExercise(entryId: String, exerciseId: String)
     fun removeRoutineExercise(entryId: String)

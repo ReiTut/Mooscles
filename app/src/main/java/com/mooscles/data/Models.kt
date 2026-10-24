@@ -1,6 +1,7 @@
 package com.mooscles.data
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -42,11 +43,26 @@ data class Exercise(
     val custom: Boolean = false
 )
 
-@Entity(tableName = "routines")
-data class Routine(
+@Entity(tableName = "routine_folders")
+data class RoutineFolder(
     @PrimaryKey val id: String = newId(),
     val name: String,
     val position: Int = 0
+) {
+    companion object {
+        const val DEFAULT_ID = "default"
+        const val DEFAULT_NAME = "My routines"
+    }
+}
+
+// Folder commands validate membership. Keeping this additive avoids rebuilding the routine
+// tables and their cascading prescription rows when upgrading an existing workout database.
+@Entity(tableName = "routines", indices = [Index("folderId")])
+data class Routine(
+    @PrimaryKey val id: String = newId(),
+    val name: String,
+    val position: Int = 0,
+    @ColumnInfo(defaultValue = "'default'") val folderId: String = RoutineFolder.DEFAULT_ID
 )
 
 @Entity(
@@ -136,7 +152,8 @@ data class AppData(
     val workouts: List<Workout> = emptyList(),
     val workoutExercises: List<WorkoutExercise> = emptyList(),
     val sets: List<WorkoutSet> = emptyList(),
-    val routineSets: List<RoutineSet> = emptyList()
+    val routineSets: List<RoutineSet> = emptyList(),
+    val routineFolders: List<RoutineFolder> = emptyList()
 ) {
     val activeWorkout: Workout? get() = workouts.firstOrNull { it.status == WorkoutStatus.ACTIVE }
     fun routineItems(routineId: String) = routineExercises.filter { it.routineId == routineId }.sortedBy { it.position }

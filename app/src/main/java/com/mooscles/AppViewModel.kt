@@ -22,6 +22,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     private val error = MutableStateFlow<String?>(null)
     private val initialized = MutableStateFlow(false)
     private val startingWorkout = MutableStateFlow(false)
+    private val discardingWorkout = MutableStateFlow(false)
+    private val discardNavigationRequest = MutableStateFlow(0L)
     private val presenter = WorkoutPresentation()
     private val settingsRequest = MutableStateFlow(0L)
     private val installLaunches = Channel<Intent>(Channel.BUFFERED)
@@ -41,7 +43,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         base.copy(error = problem, loading = !ready, updates = updates, startingWorkout = starting)
     }.catch { emit(UiState(loading = false, error = "Unable to read local preferences: ${it.message}")) }
     /** Screens do not observe countdown ticks. Only the dock collects [timerUi]. */
-    val contentUi = combine(baseUi, settingsRequest) { base, request -> base.copy(updateSettingsRequest = request) }
+    val contentUi = combine(baseUi, settingsRequest, discardingWorkout, discardNavigationRequest) { base, request, discarding, discarded ->
+        base.copy(updateSettingsRequest = request, discardingWorkout = discarding, discardNavigationRequest = discarded)
+    }
         .stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
     val timerUi = app.timer.ui
     // Retained for consumers needing a complete snapshot; the Activity uses contentUi instead.
@@ -64,11 +68,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     }
     private fun act(block: suspend () -> Unit) { commands.trySend(block) }
     override fun clearError() { error.value = null; app.preferences.clearError(); app.timer.clearError() }
-    override fun createRoutine(name: String) = act { repo.createRoutine(name) }
+    override fun createRoutine(name: String) = act {
+        val savedFolder = app.preferences.snapshot().selectedRoutineFolderId
+        val folderId = repo.routineFolder(savedFolder)?.id ?: RoutineFolder.DEFAULT_ID
+        repo.createRoutine(name, folderId)
+    }
     override fun renameRoutine(id: String, name: String) = act { repo.renameRoutine(id, name) }
     override fun duplicateRoutine(id: String) = act { repo.duplicateRoutine(id) }
     override fun deleteRoutine(id: String) = act { repo.deleteRoutine(id) }
     override fun moveRoutine(id: String, direction: Int) = act { repo.moveRoutine(id, direction) }
+    override fun createRoutineFolder(name: String) = act {
+        val id = repo.createRoutineFolder(name)
+        app.preferences.selectRoutineFolder(id)
+    }
+    override fun renameRoutineFolder(id: String, name: String) = act { repo.renameRoutineFolder(id, name) }
+    override fun selectRoutineFolder(id: String) = act {
+        requireNotNull(repo.routineFolder(id)) { "Folder unavailable." }
+        app.preferences.selectRoutineFolder(id)
+    }
+    override fun moveRoutineToFolder(routineId: String, folderId: String) = act { repo.moveRoutineToFolder(routineId, folderId) }
     override fun addRoutineExercise(routineId: String, exerciseId: String) = act { repo.addRoutineExercise(routineId, exerciseId) }
     override fun replaceRoutineExercise(entryId: String, exerciseId: String) = act { repo.replaceRoutineExercise(entryId, exerciseId) }
     override fun removeRoutineExercise(entryId: String) = act { repo.removeRoutineExercise(entryId) }
@@ -143,7 +161,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         if (repo.finishWorkout(active.id)) app.timer.clear()
         app.updates.onTrainingChanged()
     }
-    override fun discardWorkout() = act { repo.activeWorkout()?.let { repo.discardWorkout(it.id) }; app.timer.clear(); app.updates.onTrainingChanged() }
+    override fun discardWorkout() {
+        if (!discardingWorkout.compareAndSet(false, true)) return
+        error.value = null
+        act {
+            try {
+                app.trainingGate.withLock {
+                    repo.activeWorkout()?.let { repo.discardWorkout(it.id) }
+                    // Unlike clear(), this propagates storage failures instead of reporting success.
+                    app.timer.clearForSessionEnd()
+                }
+                // Cards and navigation must observe the durable deletion together.
+                withTimeout(30_000) { contentUi.first { it.active == null } }
+                discardNavigationRequest.value += 1
+            } finally {
+                discardingWorkout.value = false
+            }
+            app.updates.onTrainingChanged()
+        }
+    }
     override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id) }
     override fun setPounds(pounds: Boolean) = act { app.preferences.pounds(pounds) }
     override fun setTheme(theme: String) = act { app.preferences.theme(theme.lowercase()) }

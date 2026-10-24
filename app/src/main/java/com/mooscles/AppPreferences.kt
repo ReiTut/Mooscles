@@ -24,8 +24,10 @@ class AppPreferences(context: Context) {
     private val theme = stringPreferencesKey("theme")
     private val autoRest = booleanPreferencesKey("auto_rest")
     private val defaultRest = intPreferencesKey("default_rest")
+    private val routineFolder = stringPreferencesKey("selected_routine_folder")
     private fun read(saved: Preferences) = PreferencesUi(saved[pounds] ?: false, saved[theme] ?: "system",
-        saved[autoRest] ?: true, saved[defaultRest] ?: RestDuration.DEFAULT_SECONDS)
+        saved[autoRest] ?: true, saved[defaultRest] ?: RestDuration.DEFAULT_SECONDS,
+        saved[routineFolder] ?: com.mooscles.data.RoutineFolder.DEFAULT_ID)
     /** Commands read durable settings even while display-state updates are pending. */
     suspend fun snapshot(): PreferencesUi = read(store.data.first())
     // Filter after projection because timer keys share the underlying store.
@@ -57,4 +59,8 @@ class AppPreferences(context: Context) {
     suspend fun theme(value: String) { require(value in listOf("light", "dark", "system")); store.edit { it[theme] = value } }
     suspend fun autoRest(value: Boolean) { store.edit { it[autoRest] = value } }
     suspend fun defaultRest(value: Int) { require(value in 0..RestDuration.MAX_SECONDS); store.edit { it[defaultRest] = value } }
+    suspend fun selectRoutineFolder(id: String) {
+        require(id.isNotBlank()) { "Choose a routine folder." }
+        store.edit { it[routineFolder] = id }
+    }
 }

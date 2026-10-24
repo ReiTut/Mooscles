@@ -75,6 +75,9 @@ class AppPreferencesTest {
             preferences.defaultRest(135)
             expected = expected.copy(defaultRestSeconds = 135)
             assertEquals(expected, withTimeout(5_000) { events.receive() })
+            preferences.selectRoutineFolder("saved-folder")
+            expected = expected.copy(selectedRoutineFolderId = "saved-folder")
+            assertEquals(expected, withTimeout(5_000) { events.receive() })
             assertEquals(expected, preferences.snapshot())
 
             collector.cancelAndJoin()

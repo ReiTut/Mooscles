@@ -4,7 +4,7 @@ Mooscles discovers public releases from `ReiTut/Mooscles` using the official Git
 
 Automatic updates and Wi-Fi-only downloads are enabled initially. The app checks on foreground entry with throttling and uses unique network-constrained background work about every six hours. Android battery, network, and scheduling conditions may delay a background check. GitHub API limits and temporary failures also delay checks. The Settings section provides manual checks, progress, cancellation, retries, and installation approval.
 
-Version **1.4.4 / Build 15** is a full stable-channel release marked Latest, using the existing debug APK/signing identity. Updater-enabled versions, including Build 14 and the Build 13 recovery release, discover its higher metadata build number without enabling prereleases. Previous releases and tags remain intact. The publication helper defaults to full releases independently of build type and explicitly publishes with `draft=false`, `prerelease=false` and Latest status.
+Version **1.4.5 / Build 16** is a full stable-channel release marked Latest, using the existing debug APK/signing identity. Updater-enabled versions, including Build 15 and the Build 13 recovery release, discover its higher metadata build number without enabling prereleases. The additive Room schema 5 migration preserves existing routines and workouts while adding folders. Previous releases and tags remain intact. The publication helper defaults to full releases independently of build type and explicitly publishes with `draft=false`, `prerelease=false` and Latest status.
 
 Downloads contain only APK release assets. No workout data is uploaded. Offline routines, workouts, history, PRs, and the rest timer continue to work. Installation waits while a workout or rest timer is active. Android may require **Allow from this source** and system installation approval; the app cannot promise silent installation on every Android version or device.
 
@@ -34,7 +34,7 @@ The build prepares release assets after a successful debug APK build. To prepare
 .\tools\prepare-release.ps1 `
     -ApkPath .\app\build\outputs\apk\debug\app-debug.apk `
     -OutputDirectory .\app\build\outputs\release `
-    -PreviousVersionCode 14
+    -PreviousVersionCode 15
 ```
 
 Use the last distributed version code for `PreviousVersionCode`. The script reads the application ID, version code, version name, minimum SDK, and debug status from the actual APK with Android SDK Build Tools. It verifies the APK signature and trusted certificate, copies the APK under a versioned filename, calculates its size and SHA-256, and writes UTF-8 JSON without a BOM. Generated assets stay in ignored build directories.

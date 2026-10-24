@@ -28,6 +28,11 @@ class EnumConverters {
 
 @Dao
 interface WorkoutDao {
+    @Query("SELECT * FROM routine_folders ORDER BY position, name COLLATE NOCASE") suspend fun routineFolders(): List<RoutineFolder>
+    @Query("SELECT * FROM routine_folders WHERE id = :id") suspend fun routineFolder(id: String): RoutineFolder?
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedRoutineFolder(item: RoutineFolder)
+    @Insert suspend fun insertRoutineFolder(item: RoutineFolder)
+    @Update suspend fun updateRoutineFolder(item: RoutineFolder)
     @Query("SELECT * FROM routine_target_checkpoints") suspend fun targetCheckpoints(): List<RoutineTargetCheckpoint>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveTargetCheckpoint(item: RoutineTargetCheckpoint)
     @Query("SELECT * FROM exercises ORDER BY name COLLATE NOCASE") suspend fun exercises(): List<Exercise>
@@ -84,7 +89,7 @@ interface WorkoutDao {
 }
 
 /** Additive migrations preserve routines and all independent workout snapshots. */
-@Database(entities = [Exercise::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 4, exportSchema = true)
+@Database(entities = [Exercise::class, RoutineFolder::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 5, exportSchema = true)
 @TypeConverters(EnumConverters::class)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun dao(): WorkoutDao
@@ -121,8 +126,27 @@ abstract class WorkoutDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                createDefaultFolder(db)
+                // SQLite fills every existing routine with the default without changing its ID,
+                // order, targets or history association, and without touching cascading children.
+                db.execSQL("ALTER TABLE `routines` ADD COLUMN `folderId` TEXT NOT NULL DEFAULT 'default'")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_routines_folderId` ON `routines` (`folderId`)")
+            }
+        }
+
+        private fun createDefaultFolder(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `routine_folders` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL("INSERT OR IGNORE INTO `routine_folders` (`id`, `name`, `position`) VALUES (?, ?, 0)",
+                arrayOf(RoutineFolder.DEFAULT_ID, RoutineFolder.DEFAULT_NAME))
+        }
+
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "mooscles.db"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addCallback(object : Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) = createDefaultFolder(db)
+            }).build()
     }
 }

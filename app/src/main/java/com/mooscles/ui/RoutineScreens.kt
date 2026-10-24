@@ -20,8 +20,18 @@ fun RoutinesScreen(state: UiState, actions: MoosclesActions, onEdit: (String) ->
     var rename by remember { mutableStateOf<RoutineUi?>(null) }
     var delete by remember { mutableStateOf<RoutineUi?>(null) }
     var blockedStart by remember { mutableStateOf<RoutineUi?>(null) }
+    var createFolder by remember { mutableStateOf(false) }
+    var renameFolder by remember { mutableStateOf<RoutineFolderUi?>(null) }
+    var moving by remember { mutableStateOf<RoutineUi?>(null) }
+    val selectedFolder = state.routineFolders.firstOrNull { it.id == state.preferences.selectedRoutineFolderId }
+        ?: state.routineFolders.firstOrNull() ?: RoutineFolderUi("default", "My routines")
+    val routines = state.routines.filter { it.folderId == selectedFolder.id }
     LaunchedEffect(state.active?.id) { blockedStart = null }
     LazyColumn(modifier = Modifier.testTag("routines-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item(key = "routine-folder-selector") {
+            RoutineFolderSelector(selectedFolder, state.routineFolders, actions::selectRoutineFolder,
+                onCreate = { createFolder = true }, onRename = { renameFolder = selectedFolder })
+        }
         item { PageHeading("Build your momentum", "Let’s get\nstronger.", "A little stronger, one session at a time.") }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(26.dp)) {
@@ -41,8 +51,8 @@ fun RoutinesScreen(state: UiState, actions: MoosclesActions, onEdit: (String) ->
             }
         }
         item { SectionTitle("Your routines", "New routine", { create = true }) }
-        if (state.routines.isEmpty()) item { EmptyState(Icons.AutoMirrored.Outlined.EventNote, "Find your rhythm", "Build a split that fits your week.", "Create your first routine", { create = true }) }
-        itemsIndexed(state.routines, key = { _, it -> it.id }) { index, routine ->
+        if (routines.isEmpty()) item { EmptyState(Icons.AutoMirrored.Outlined.EventNote, "No routines in ${selectedFolder.name}", "Create a routine here or move one from another folder.", "Create a routine", { create = true }) }
+        itemsIndexed(routines, key = { _, it -> it.id }) { index, routine ->
             var menu by remember { mutableStateOf(false) }
             val resumesThisRoutine = state.active?.sourceRoutineId == routine.id
             Card(onClick = { onEdit(routine.id) }, shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
@@ -52,13 +62,14 @@ fun RoutinesScreen(state: UiState, actions: MoosclesActions, onEdit: (String) ->
                         Spacer(Modifier.width(13.dp))
                         Column(Modifier.weight(1f)) { Text(routine.name, style = MaterialTheme.typography.titleLarge); Text("${routine.exercises.size} exercises · ${routine.exercises.sumOf { it.sets }} planned sets", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         Box {
-                            IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Routine actions") }
+                            IconButton(onClick = { menu = true }, modifier = Modifier.testTag("routine-${routine.id}-actions")) { Icon(Icons.Outlined.MoreVert, "Routine actions") }
                             DropdownMenu(menu, { menu = false }) {
                                 DropdownMenuItem(text = { Text("Edit exercises") }, onClick = { menu = false; onEdit(routine.id) })
                                 DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; rename = routine })
                                 DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menu = false; actions.duplicateRoutine(routine.id) })
+                                DropdownMenuItem(text = { Text("Move to folder") }, onClick = { menu = false; moving = routine })
                                 DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; actions.moveRoutine(routine.id, -1) })
-                                DropdownMenuItem(text = { Text("Move down") }, enabled = index < state.routines.lastIndex, onClick = { menu = false; actions.moveRoutine(routine.id, 1) })
+                                DropdownMenuItem(text = { Text("Move down") }, enabled = index < routines.lastIndex, onClick = { menu = false; actions.moveRoutine(routine.id, 1) })
                                 DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; delete = routine })
                             }
                         }
@@ -88,12 +99,67 @@ fun RoutinesScreen(state: UiState, actions: MoosclesActions, onEdit: (String) ->
         }
     }
     if (create) NameDialog("Create a routine", label = "Routine name", onDismiss = { create = false }, onSave = actions::createRoutine)
+    if (createFolder) NameDialog("Create a folder", label = "Folder name", onDismiss = { createFolder = false }, onSave = actions::createRoutineFolder)
+    renameFolder?.let { folder -> NameDialog("Rename folder", folder.name, label = "Folder name",
+        onDismiss = { renameFolder = null }, onSave = { actions.renameRoutineFolder(folder.id, it) }) }
+    moving?.let { routine ->
+        AlertDialog(onDismissRequest = { moving = null }, title = { Text("Move ${routine.name}") },
+            text = {
+                LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                    itemsIndexed(state.routineFolders, key = { _, folder -> folder.id }) { _, folder ->
+                        TextButton(onClick = { actions.moveRoutineToFolder(routine.id, folder.id); moving = null },
+                            modifier = Modifier.fillMaxWidth().testTag("move-to-folder-${folder.id}")) {
+                            Text(folder.name, modifier = Modifier.weight(1f))
+                            if (folder.id == routine.folderId) Icon(Icons.Outlined.Check, "Current folder")
+                        }
+                    }
+                }
+            }, confirmButton = { TextButton(onClick = { moving = null }) { Text("Cancel") } })
+    }
     rename?.let { routine -> NameDialog("Rename routine", routine.name, onDismiss = { rename = null }, onSave = { actions.renameRoutine(routine.id, it) }) }
     delete?.let { routine -> ConfirmDialog("Delete ${routine.name}?", "This removes the routine. Your completed workout history stays saved.", onDismiss = { delete = null }, onConfirm = { actions.deleteRoutine(routine.id) }) }
     blockedStart?.let { target -> state.active?.let { active ->
         ActiveWorkoutConflict(active.name, target.name, onDismiss = { blockedStart = null },
             onResume = { blockedStart = null; onWorkout() })
     } }
+}
+
+@Composable
+private fun RoutineFolderSelector(selected: RoutineFolderUi, folders: List<RoutineFolderUi>,
+    onSelect: (String) -> Unit, onCreate: () -> Unit, onRename: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) {
+            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().testTag("routine-folder-selector")) {
+                Icon(Icons.Outlined.Folder, null)
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                    Text("Routine folder", style = MaterialTheme.typography.labelSmall)
+                    Text(selected.name, modifier = Modifier.testTag("selected-routine-folder"))
+                }
+                Icon(Icons.Outlined.ArrowDropDown, "Choose folder")
+            }
+            DropdownMenu(expanded, { expanded = false }) {
+                folders.forEach { folder ->
+                    DropdownMenuItem(text = { Text(folder.name) },
+                        trailingIcon = { if (folder.id == selected.id) Icon(Icons.Outlined.Check, null) },
+                        modifier = Modifier.testTag("folder-choice-${folder.id}"),
+                        onClick = { expanded = false; onSelect(folder.id) })
+                }
+                HorizontalDivider()
+                DropdownMenuItem(text = { Text("New folder") }, leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, null) },
+                    onClick = { expanded = false; onCreate() })
+            }
+        }
+        Box {
+            IconButton(onClick = { menu = true }, modifier = Modifier.testTag("folder-actions")) { Icon(Icons.Outlined.MoreVert, "Folder actions") }
+            DropdownMenu(menu, { menu = false }) {
+                DropdownMenuItem(text = { Text("New folder") }, onClick = { menu = false; onCreate() })
+                DropdownMenuItem(text = { Text("Rename folder") }, onClick = { menu = false; onRename() })
+            }
+        }
+    }
 }
 
 @Composable

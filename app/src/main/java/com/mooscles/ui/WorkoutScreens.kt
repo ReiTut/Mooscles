@@ -28,7 +28,7 @@ private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
 @Composable
 fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
     ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
-        actions, onRoutines, onHistory, onExerciseHistory, state.startingWorkout)
+        actions, onRoutines, onHistory, onExerciseHistory, state.startingWorkout, state.discardingWorkout)
 }
 
 /** The scrolling route deliberately receives no ticking rest-timer state. */
@@ -38,6 +38,7 @@ fun ActiveWorkoutScreen(
     history: List<WorkoutUi>, error: String?, actions: MoosclesActions,
     onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit,
     startingWorkout: Boolean = false,
+    discardingWorkout: Boolean = false,
 ) {
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
@@ -123,7 +124,7 @@ fun ActiveWorkoutScreen(
         item(key = "workout-finish", contentType = "finish") {
             SpacedWorkoutItem {
             Column {
-            Button(onClick = { finish = true }, enabled = totals.completedSets > 0 && finishingId == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("finish-workout")) {
+            Button(onClick = { finish = true }, enabled = totals.completedSets > 0 && finishingId == null && !discardingWorkout, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("finish-workout")) {
                 if (finishingId != null) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.CheckCircleOutline, null)
                 Spacer(Modifier.width(8.dp)); Text(if (finishingId == null) "Finish workout" else "Saving workout…")
             }
@@ -131,7 +132,16 @@ fun ActiveWorkoutScreen(
             }
             }
         }
-        item(key = "workout-discard", contentType = "button") { TextButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth()) { Text("Discard workout", color = MaterialTheme.colorScheme.error) } }
+        item(key = "workout-discard", contentType = "button") {
+            TextButton(onClick = { discard = true }, enabled = !discardingWorkout && finishingId == null,
+                modifier = Modifier.fillMaxWidth().testTag("discard-workout")) {
+                if (discardingWorkout) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(if (discardingWorkout) "Discarding workout…" else "Discard workout", color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
     }
     // Keep the modal outside lazy items: its originating card may leave the
@@ -150,7 +160,10 @@ fun ActiveWorkoutScreen(
         })
     if (picker) ExercisePicker(exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
     if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
-    if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = actions::discardWorkout)
+    if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = {
+        discard = false
+        actions.discardWorkout()
+    })
     if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
         text = { Text("Save ${totals.completedSets} completed sets across ${totals.completedExercises} exercises. Your records and session breakdown will be ready next.") },
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })

@@ -1,5 +1,38 @@
 # Verification — 2026-10-23
 
+## Release 1.4.5 / Build 16
+
+This release adds locally saved routine folders, fixes Train navigation after
+discard, and positions the existing timer using keyboard insets. The package
+remains `com.mooscles`, versionName is **1.4.5**, versionCode is **16**, and the
+existing debug distribution variant/certificate are retained. Build 16 exceeds
+the previous published Build 15 and the connected test installation's Build 15.
+The normal publication process tests a clean committed-source copy, verifies the
+APK and generated update metadata, checks uploaded bytes in a draft, then
+publishes a full release explicitly marked Latest.
+
+The implementation passed 43 focused host checks before release preparation,
+debug lint (zero errors / 21 warnings), and debug/instrumentation builds. The
+Android 15 emulator navigation/folder UI check passed. Real keyboard placement
+was explicitly skipped because Gboard rendered only its small control bar, not
+a docked keypad; host inset geometry/countdown checks passed. A large-fixture
+startup input timeout was observed in the unchanged UI-thread PR calculation
+path. No improvement to that existing limitation is claimed by this release.
+
+The actual emulator migrated from Room schema 4 to 5, preserving every original
+routine/workout value, PR checkpoint, active session and preference/timer byte.
+Retained data included five routines, 994 planned sets, 208 completed workouts,
+one active workout and 12,672 workout sets. The additive migration keeps all
+original tables and adds default membership in My routines. Host tests cover
+historical migrations, file reopening and folder movement without changing
+prescriptions/history. Destructive migrations, uninstalling and storage clearing
+are not used.
+
+Final full-suite/build/publication results and the new APK/metadata hashes are
+recorded under ignored `.tooling/release-v145-*`. The previous feature-check
+report under `app/build/outputs/features-fix/` describes its earlier local
+Build 15 binary. Previous release records below remain historical.
+
 ## Release 1.4.4 / Build 15
 
 This update restores workout/card presentation to the UI thread and suppresses

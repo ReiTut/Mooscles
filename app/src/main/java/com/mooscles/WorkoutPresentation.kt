@@ -113,12 +113,15 @@ internal class WorkoutPresentation {
                     val targets = data.plannedSets(e.id).map { row -> RoutineSetUi(row.id, row.targetReps, row.targetWeightKg, row.inheritPr) }
                     PlannedExerciseUi(e.id, it.toUi(), targets.size, targets.firstOrNull()?.reps ?: 0,
                         targets.firstOrNull()?.weightKg, e.restSeconds ?: com.mooscles.domain.RestDuration.DEFAULT_SECONDS, targets)
-                } })
+                } }, folderId = r.folderId)
             }
             routineSource = routineData
         }
         val active = data.activeWorkout?.let { workout(it, data) }
         previousActive = previousActive?.takeIf { it == active } ?: active
-        return UiState(false, catalogUi, routinesUi, historyUi, previousActive, recordsUi, preferences = prefs)
+        val folders = data.routineFolders.sortedBy { it.position }.map { RoutineFolderUi(it.id, it.name) }
+            .ifEmpty { listOf(RoutineFolderUi(RoutineFolder.DEFAULT_ID, RoutineFolder.DEFAULT_NAME)) }
+        return UiState(false, catalogUi, routinesUi, historyUi, previousActive, recordsUi, preferences = prefs,
+            routineFolders = folders)
     }
 }

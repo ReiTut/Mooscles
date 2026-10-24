@@ -114,12 +114,14 @@ class RollbackV142DataCompatibilityTest {
 
     private fun open(): WorkoutRepository {
         database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4)
+            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5)
             .build()
-        assertEquals(4, database!!.openHelper.writableDatabase.version)
+        assertEquals(5, database!!.openHelper.writableDatabase.version)
         database!!.openHelper.readableDatabase.query("SELECT identity_hash FROM room_master_table WHERE id = 42").use {
             assertTrue(it.moveToFirst())
-            assertEquals("fa80dd71df6c40254d9d1b07ebd3f1a6", it.getString(0))
+            val schema = File("schemas/com.mooscles.data.WorkoutDatabase/5.json").takeIf { file -> file.isFile }
+                ?: File("app/schemas/com.mooscles.data.WorkoutDatabase/5.json")
+            assertEquals(JSONObject(schema.readText()).getJSONObject("database").getString("identityHash"), it.getString(0))
         }
         return WorkoutRepository(database!!)
     }
