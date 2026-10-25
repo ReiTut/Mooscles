@@ -1,4 +1,37 @@
-# Verification — 2026-10-23
+# Verification — 2026-10-25
+
+## Release 1.4.6 / Build 17
+
+This release skips historical PR baseline work for active sessions without eligible
+completed working sets, shares historical indexes/baselines with value-based
+invalidation, and consolidates set-editor draft persistence. The application ID,
+existing debug signing certificate, Room schema 5, saved data formats and updater
+implementation remain unchanged. VersionName is **1.4.6**, versionCode **17**,
+above the highest published metadata build (16) and the prior local test builds.
+
+The implementation passed **378 host tests across 55 suites**, debug lint
+(zero errors / 21 warnings), and debug/instrumentation builds. Fifteen focused
+regressions cover historical invalidation, equivalence with a frozen v1.4.5
+calculation oracle, and exact-weight/draft restoration. Three focused checks
+passed on a Redmi Note 12 running Android 15 in an isolated measurement package:
+real saved-session editing and Activity recreation, repeated discard/folder/tab
+navigation, and real keyboard/focus/timer placement. Production app data remained
+unchanged across all eight database tables and both preference files. These
+checks do not constitute installation of the final production release APK.
+
+Eight R8-optimized physical-phone captures measured roughly 29–31% shorter Start
+frame-commit readiness and 48% lower initial editor composition cost. Scrolling
+deadline misses were essentially unchanged (2.712% to 2.722%). The readiness proxy,
+small sample, trace limitations and two missing surface-token links are documented
+in [PERFORMANCE.md](PERFORMANCE.md); no whole-screen scrolling fix is claimed.
+
+Release preparation tests the exact clean committed-source archive, excluding
+unrelated local Gradle settings. The existing guarded publisher verifies the
+package/version/certificate and metadata, downloads draft assets to compare their
+bytes, then publishes with `draft=false`, `prerelease=false` and Latest status.
+Final build/public-delivery results belong under ignored `.tooling/release-v146*`.
+The previously retained local release backup is outside the repository and is
+not a release asset. Earlier verification sections remain historical records.
 
 ## Release 1.4.5 / Build 16
 

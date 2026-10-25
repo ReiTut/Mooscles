@@ -1,6 +1,75 @@
 # Workout responsiveness verification
 
-## Current implementation: UI-thread preparation and preference filtering
+## Version 1.4.6 optimizations measured on 24 October 2026
+
+The version 1.4.6 changes retain UI-thread presentation while removing unnecessary
+historical PR preparation. An active workout without eligible completed working
+sets returns before historical baseline calculation. A presenter-owned historical
+analysis shares an index, weight/repetition baselines, completed achievements and
+performance histories. Actual historical row contents invalidate the analysis,
+including edits, deletions, variations and chronology changes. Defensive list
+copies prevent mutable caller data from silently changing the cache key. Rare
+nontransitive four-ULP load comparisons retain the original ordering fallback.
+No database schema, saved workout format, application ID or signing identity changed.
+
+Set editors now save one immutable draft snapshot instead of sixteen separate
+registry entries, with one acknowledgment/unit synchronization effect. TextField
+appearance and structure remain intact. Blank/invalid drafts, delayed echoes,
+completion flags and exact stored kilograms remain independent of rounded display
+text. Fifteen focused regressions were added, including an independent frozen
+v1.4.5 oracle for PR/record/history behavior. The complete host suite passes
+**378 tests in 55 suites**, with zero failures/errors/skips; debug lint reports
+**0 errors and 21 warnings**. Debug and instrumentation APK builds pass.
+Three focused checks also passed on the physical phone: real saved-session input,
+exact kg/lb values and Activity recreation; folder/repeated-discard navigation;
+and real keyboard/focus/timer geometry. These functional checks used the isolated
+debug measurement variant, separately from the optimized performance captures.
+The user's installed app and all eight database tables plus both preference files
+were preserved. Temporary keep-awake changes were restored.
+
+Measurements used a real **Redmi Note 12 (Android 15, Adreno 610)** with its existing
+font scale 1.1, native approximately 120 Hz display, and the R8-optimized,
+nondebuggable, shell-profileable performance variant. A separate locally built
+measurement package protected the user's installed application and data. The same
+8-exercise/32-set routine and 200 finished synthetic workouts were used in ABBA
+order, with first and warm Start per batch and identical repeated fast swipes.
+ART compilation was `speed`. These are in-app Start interactions after Train was
+ready, not cold-launch times. Temporary diagnostics live only in ignored source copies.
+
+| Phone observation | Baseline | Optimized local source |
+| --- | ---: | ---: |
+| First Start to editable-row frame-commit proxy, median | 312.70 ms | 222.54 ms |
+| Warm Start to the same proxy, median | 218.65 ms | 150.62 ms |
+| Presentation median | 33.13 ms | 4.44 ms |
+| PR preparation median | 25.62 ms | 0.068 ms |
+| Initial editor composition, median | 29.52 ms | 15.25 ms |
+| Initial editor layout, median | 53.57 ms | 41.13 ms |
+| Pure-scroll app deadline misses | 84/3,097 (2.712%) | 84/3,086 (2.722%) |
+
+These trials show about **29-31% shorter Start readiness** and lower initial editor
+construction cost. They do **not** establish lower overall scrolling jank. Warm
+editor composition was slightly slower, and the small descriptive scrolling CPU
+reduction is not a reliable whole-screen smoothness improvement. No broader
+rendering redesign was made. The startup endpoint is a rendering-readiness proxy,
+not an exact human-perceived usability timestamp.
+
+Limits: one phone, small synthetic sample, identical diagnostic observer overhead
+in both builds. Every trace includes 19-39 dropped negative-timestamp events and
+36 setup notices; one candidate first-start trace also has three systrace parse
+failures. Dropped event types could not be attributed. Input anchors, completed
+first-field frame-commit markers and scheduler data are present in all eight
+captures. Six have matching first-editor surface-token links; B1-warm and B2-warm
+do not. Their readiness proxies are measured, but compositor/display endpoints
+remain unverified and the missing-link cause is unresolved. No `data_loss`
+severity flags were observed. Expected app processing budget
+(11.667 ms) differs from the approximately 8.353 ms display cadence. Exact results,
+quality flags, device checks and raw traces are retained locally in the ignored
+optimization evidence and report, outside release assets. These measurements were
+completed before release preparation; the measured local build used versionName
+1.4.5 / code 16. Version 1.4.6 packages the same runtime changes as Build 17.
+
+The following sections are historical measurements of the earlier implementation.
+## Earlier UI-thread preparation and preference filtering
 
 On 23 October 2026, workout/card presentation was moved from
 `withContext(Dispatchers.Default)` back into the flow collected by

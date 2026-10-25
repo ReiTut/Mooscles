@@ -152,4 +152,48 @@ class WorkoutPresentationTest {
         assertEquals("22 kg × 6", back.active!!.exercises[0].previous)
         assertEquals(22.0, data.sets.first { it.id == "a1" }.weightKg, 0.0)
     }
+
+    @Test fun inPlaceHistoricalCorrectionsAndDeletionInvalidateDefensiveCacheKeys() {
+        val base = fixture()
+        val rows = base.sets.map { if (it.id == "a1") it.copy(weightKg = 23.0, reps = 4, completed = true) else it }.toMutableList()
+        val workouts = base.workouts.toMutableList()
+        val entries = base.workoutExercises.toMutableList()
+        val data = base.copy(workouts = workouts, workoutExercises = entries, sets = rows)
+        val presenter = WorkoutPresentation()
+        val first = presenter.present(data, PreferencesUi())
+        assertEquals(23.0, first.active!!.exercises[0].provisionalRecordKg!!, 0.0)
+        val index = rows.indexOfFirst { it.id == "latest-record" }
+        rows[index] = rows[index].copy(weightKg = 25.0, reps = 3)
+        val corrected = presenter.present(data, PreferencesUi())
+        assertNotSame(first.history, corrected.history)
+        assertEquals("25 kg × 3", corrected.active!!.exercises[0].previous)
+        assertNull(corrected.active!!.exercises[0].provisionalRecordKg)
+        assertEquals(25.0, corrected.records.single { it.kind == RecordKind.WEIGHT }.weightKg, 0.0)
+        workouts.removeAll { it.id == "latest" }
+        // Orphaned rows must not keep the deleted workout in the historical baseline.
+        val deleted = presenter.present(data, PreferencesUi())
+        assertEquals(listOf("older"), deleted.history.map { it.id })
+        assertEquals("20 kg × 7", deleted.active!!.exercises[0].previous)
+        assertEquals(23.0, deleted.active!!.exercises[0].provisionalRecordKg!!, 0.0)
+        assertEquals(20.0, deleted.records.single { it.kind == RecordKind.WEIGHT }.weightKg, 0.0)
+        assertEquals(23.0, data.sets.first { it.id == "a1" }.weightKg, 0.0)
+    }
+
+    @Test fun historyCacheInvalidatesConventionEditsAndActiveBaselineWhenWorkoutOrderChanges() {
+        val presenter = WorkoutPresentation()
+        val base = fixture()
+        val data = base.copy(sets = base.sets.map { if (it.id == "a1") it.copy(weightKg = 23.0, reps = 4, completed = true) else it })
+        presenter.present(data, PreferencesUi())
+        val movedVariation = data.copy(workoutExercises = data.workoutExercises.map {
+            if (it.id == "latest-bench") it.copy(convention = LoadConvention.PER_HAND) else it
+        })
+        val changed = presenter.present(movedVariation, PreferencesUi())
+        assertEquals("20 kg × 7", changed.active!!.exercises[0].previous)
+        assertEquals(2, changed.records.count { it.kind == RecordKind.WEIGHT })
+        val backdated = data.copy(workouts = data.workouts.map { if (it.id == "active") it.copy(startedAt = 1500) else it })
+        val result = presenter.present(backdated, PreferencesUi())
+        val record = result.active!!.records.single { it.kind == RecordKind.WEIGHT }
+        assertEquals(20.0, record.previousKg!!, 0.0)
+        assertEquals("20 kg × 7", result.active!!.exercises[0].previous)
+    }
 }

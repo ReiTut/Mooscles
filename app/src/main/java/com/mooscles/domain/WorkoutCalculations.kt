@@ -100,7 +100,7 @@ data class ExercisePerformance(
     val volumeKg: Double
 )
 
-/** All derived values are recomputed from saved sets, so edits/deletions cannot leave stale PRs. */
+/** All derived values come from saved sets; reusable analyses are scoped to a value snapshot. */
 object WorkoutCalculations {
     private val chronology = compareBy<Workout> { it.startedAt }.thenBy { it.endedAt ?: Long.MAX_VALUE }.thenBy { it.id }
 
@@ -163,28 +163,217 @@ object WorkoutCalculations {
         it.status == WorkoutStatus.FINISHED && it.id != target.id && chronology.compare(it, target) < 0
     }.map { it.id }.toSet()
 
+    internal data class WorkoutPrs(val weights: List<WeightPr>, val repetitions: List<RepsPr>) {
+        companion object { val EMPTY = WorkoutPrs(emptyList(), emptyList()) }
+    }
+
+    private data class Candidates(
+        val weights: Map<Key, Pair<WorkoutExercise, WorkoutSet>>,
+        val repetitions: List<RepsCandidate>
+    ) {
+        val empty get() = weights.isEmpty() && repetitions.isEmpty()
+    }
+
+    private fun candidates(index: SnapshotIndex, entries: List<WorkoutExercise>): Candidates {
+        val weights = linkedMapOf<Key, Pair<WorkoutExercise, WorkoutSet>>()
+        val firstEntries = linkedMapOf<Key, WorkoutExercise>()
+        entries.forEach { exercise ->
+            val key = Key(exercise.exerciseId, exercise.convention)
+            firstEntries.putIfAbsent(key, exercise)
+            index.sets(exercise.id).forEach { set ->
+                if (workingSet(set, exercise.convention)) {
+                    val previous = weights[key]
+                    if (previous == null) weights[key] = firstEntries.getValue(key) to set
+                    else if (set.weightKg > previous.second.weightKg ||
+                        (set.weightKg == previous.second.weightKg && set.reps > previous.second.reps)) {
+                        // Retain the first entry's name, as the original grouped calculation did.
+                        weights[key] = previous.first to set
+                    }
+                }
+            }
+        }
+        val orderedWeights = firstEntries.keys.mapNotNull { key -> weights[key]?.let { key to it } }.toMap()
+        return Candidates(orderedWeights, bestRepetitionSets(index, entries))
+    }
+
+    private class Baseline(
+        val weights: MutableMap<Key, Double> = mutableMapOf(),
+        val repetitions: MutableList<RepsCandidate> = mutableListOf()
+    )
+
+    private fun baseline(index: SnapshotIndex, target: Workout): Baseline {
+        val earlier = earlierWorkoutIds(index.data, target)
+        val entries = index.data.workoutExercises.filter { it.workoutId in earlier }
+        val result = Baseline(repetitions = bestRepetitionSets(index, entries).toMutableList())
+        entries.forEach { exercise ->
+            index.sets(exercise.id).forEach { set ->
+                if (workingSet(set, exercise.convention)) {
+                    val key = Key(exercise.exerciseId, exercise.convention)
+                    result.weights[key] = maxOf(result.weights[key] ?: 0.0, set.weightKg)
+                }
+            }
+        }
+        return result
+    }
+
+    private fun achievements(current: Candidates, previous: Baseline): WorkoutPrs = WorkoutPrs(
+        current.weights.mapNotNull { (key, candidate) ->
+            val (exercise, best) = candidate
+            val old = previous.weights[key]
+            if (old != null && !heavier(best.weightKg, old)) null
+            else WeightPr(key.exerciseId, exercise.name, key.convention, old, best.weightKg, best.reps, old == null)
+        },
+        current.repetitions.mapNotNull { candidate ->
+            val old = previous.repetitions.firstOrNull { comparable(it, candidate) }?.set?.reps
+            if (old != null && candidate.set.reps <= old) null
+            else RepsPr(candidate.exercise.exerciseId, candidate.exercise.name, candidate.exercise.convention,
+                candidate.set.weightKg, candidate.assistance, old, candidate.set.reps, old == null)
+        }
+    )
+
+    private fun achievements(index: SnapshotIndex, workoutId: String): WorkoutPrs {
+        val target = index.data.workouts.firstOrNull { it.id == workoutId } ?: return WorkoutPrs.EMPTY
+        val current = candidates(index, index.entries(workoutId))
+        // Unfinished, warm-up and invalid sets need no historical scan. Zero-load/assisted
+        // working sets still qualify for repetition records.
+        if (current.empty) return WorkoutPrs.EMPTY
+        return achievements(current, baseline(index, target))
+    }
+
+    /**
+     * Sequential-owner cache, created only when finished row values change. It copies lists:
+     * a caller mutating an AppData list cannot silently mutate this analysis's cache key/data.
+     * Baselines are lazy; merely opening a workout with no completed working sets never asks
+     * for historical PR calculations. No stored weights are rounded or converted here.
+     */
+    internal class HistoricalAnalysis private constructor(private val index: SnapshotIndex) {
+        internal var baselineBuildCount = 0
+            private set
+        private val finished = index.data.workouts.sortedWith(chronology)
+        private var allAchievements: Map<String, WorkoutPrs>? = null
+        private var finalBaseline: Baseline? = null
+        private var activeTarget: Workout? = null
+        private var activeBaseline: Baseline? = null
+        private val histories = mutableMapOf<Pair<String, LoadConvention?>, List<ExercisePerformance>>()
+        private val weightRecords by lazy { WorkoutCalculations.records(index) }
+        private val repetitionRecords by lazy { WorkoutCalculations.repsRecords(index) }
+
+        fun entries(workoutId: String): List<WorkoutExercise> = index.entries(workoutId)
+        fun sets(exerciseId: String): List<WorkoutSet> = index.sets(exerciseId)
+        fun records(): List<ExerciseRecord> = weightRecords
+        fun repsRecords(): List<ExerciseRepsRecord> = repetitionRecords
+        fun performanceHistory(exerciseId: String, convention: LoadConvention? = null): List<ExercisePerformance> =
+            histories.getOrPut(exerciseId to convention) { WorkoutCalculations.performanceHistory(index, exerciseId, convention) }
+
+        fun prsForWorkout(workoutId: String): WorkoutPrs {
+            if (allAchievements == null) prepareHistory()
+            return allAchievements?.get(workoutId) ?: WorkoutPrs.EMPTY
+        }
+
+        fun prsForActive(workout: Workout, entries: List<WorkoutExercise>, sets: List<WorkoutSet>): WorkoutPrs {
+            val currentIndex = SnapshotIndex(AppData(workoutExercises = entries, sets = sets))
+            val current = candidates(currentIndex, currentIndex.entries(workout.id))
+            if (current.empty) return WorkoutPrs.EMPTY
+            if (activeTarget != workout || activeBaseline == null) {
+                activeTarget = workout
+                // Usually the active workout follows every finished workout. Reuse the final
+                // shared baseline when available; backdated/overlapping sessions use their cutoff.
+                activeBaseline = finalBaseline?.takeIf { finished.lastOrNull()?.let { chronology.compare(it, workout) < 0 } != false }
+                    ?: buildBaseline(workout)
+            }
+            return achievements(current, activeBaseline!!)
+        }
+
+        private fun buildBaseline(target: Workout): Baseline {
+            baselineBuildCount++
+            return baseline(index, target)
+        }
+
+        /**
+         * Ordinary load groups are equivalence classes, so one chronological pass can retain
+         * each group's best reps and original storage-order tie breaking. Four-ULP comparison
+         * is deliberately not globally transitive: for an unusual A~B~C but A!~C chain, use
+         * the legacy order-sensitive baseline instead of changing an existing achievement.
+         */
+        private fun prepareHistory() {
+            val ordered = index.data.workoutExercises.flatMap { exercise ->
+                index.sets(exercise.id).filter(::repetitionSet).map { RepsCandidate(exercise, it) }
+            }
+            val ambiguous = ordered.groupBy { it.key to it.assistance }.values.any { rows ->
+                val loads = rows.map { it.set.weightKg }.distinct().sorted()
+                var first = loads.firstOrNull() ?: 0.0
+                loads.zipWithNext().any { (left, right) ->
+                    if (!sameLoad(left, right)) first = right
+                    !sameLoad(first, right)
+                }
+            }
+            if (ambiguous) {
+                allAchievements = finished.associate { workout ->
+                    val current = candidates(index, index.entries(workout.id))
+                    workout.id to if (current.empty) WorkoutPrs.EMPTY else achievements(current, buildBaseline(workout))
+                }
+                return
+            }
+            baselineBuildCount++
+            val result = linkedMapOf<String, WorkoutPrs>()
+            val shared = Baseline()
+            // Original flattened rank preserves baseline grouping/ties even when rows are
+            // stored newest-first or exercise positions differ between saved workouts.
+            val rank = ordered.withIndex().associate { it.value.set.id to it.index }
+            val firstRank = mutableMapOf<Int, Int>()
+            finished.forEach { workout ->
+                val current = candidates(index, index.entries(workout.id))
+                result[workout.id] = if (current.empty) WorkoutPrs.EMPTY else achievements(current, shared)
+                index.entries(workout.id).forEach { exercise ->
+                    index.sets(exercise.id).forEach { set ->
+                        if (workingSet(set, exercise.convention)) {
+                            val key = Key(exercise.exerciseId, exercise.convention)
+                            shared.weights[key] = maxOf(shared.weights[key] ?: 0.0, set.weightKg)
+                        }
+                        if (repetitionSet(set)) {
+                            val candidate = RepsCandidate(exercise, set)
+                            val found = shared.repetitions.indexOfFirst { comparable(it, candidate) }
+                            if (found < 0) {
+                                shared.repetitions += candidate
+                                firstRank[shared.repetitions.lastIndex] = rank.getValue(set.id)
+                            } else {
+                                val previous = shared.repetitions[found]
+                                firstRank[found] = minOf(firstRank.getValue(found), rank.getValue(set.id))
+                                if (set.reps > previous.set.reps ||
+                                    (set.reps == previous.set.reps && rank.getValue(set.id) < rank.getValue(previous.set.id))) {
+                                    shared.repetitions[found] = candidate
+                                }
+                            }
+                        }
+                    }
+                }
+                // Nonoverlapping groups are distinct; iteration order only matters for a
+                // new active load between groups, so sort once after all history is ready.
+            }
+            val sorted = shared.repetitions.withIndex().sortedBy { firstRank.getValue(it.index) }.map { it.value }
+            finalBaseline = Baseline(shared.weights, sorted.toMutableList())
+            allAchievements = result
+        }
+
+        companion object {
+            fun from(data: AppData): HistoricalAnalysis {
+                val workouts = data.workouts.filter { it.status == WorkoutStatus.FINISHED }
+                val ids = workouts.mapTo(hashSetOf()) { it.id }
+                val entries = data.workoutExercises.filter { it.workoutId in ids }
+                val entryIds = entries.mapTo(hashSetOf()) { it.id }
+                return HistoricalAnalysis(SnapshotIndex(AppData(workouts = workouts,
+                    workoutExercises = entries, sets = data.sets.filter { it.workoutExerciseId in entryIds })))
+            }
+        }
+    }
+
+    internal fun historicalAnalysis(data: AppData): HistoricalAnalysis = HistoricalAnalysis.from(data)
+
     fun prsForWorkout(data: AppData, workoutId: String): List<WeightPr> =
         prsForWorkout(SnapshotIndex(data), workoutId)
 
     private fun prsForWorkout(index: SnapshotIndex, workoutId: String): List<WeightPr> {
-        val data = index.data
-        val target = data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
-        val earlier = earlierWorkoutIds(data, target)
-        val baseline = mutableMapOf<Key, Double>()
-        data.workoutExercises.filter { it.workoutId in earlier }.forEach { exercise ->
-            val best = index.sets(exercise.id).filter { workingSet(it, exercise.convention) }.maxOfOrNull { it.weightKg }
-            if (best != null) {
-                val key = Key(exercise.exerciseId, exercise.convention)
-                baseline[key] = maxOf(baseline[key] ?: 0.0, best)
-            }
-        }
-        return index.entries(workoutId).groupBy { Key(it.exerciseId, it.convention) }.mapNotNull { (key, entries) ->
-            val candidates = entries.flatMap { entry -> index.sets(entry.id).filter { workingSet(it, entry.convention) } }
-            val best = candidates.maxWithOrNull(compareBy<WorkoutSet> { it.weightKg }.thenBy { it.reps }) ?: return@mapNotNull null
-            val previous = baseline[key]
-            if (previous != null && !heavier(best.weightKg, previous)) return@mapNotNull null
-            WeightPr(key.exerciseId, entries.first().name, key.convention, previous, best.weightKg, best.reps, previous == null)
-        }
+        return achievements(index, workoutId).weights
     }
 
     /** Repetition records are independent for each variation, assistance mode, and external load. */
@@ -192,23 +381,15 @@ object WorkoutCalculations {
         repsPrsForWorkout(SnapshotIndex(data), workoutId)
 
     private fun repsPrsForWorkout(index: SnapshotIndex, workoutId: String): List<RepsPr> {
-        val data = index.data
-        val target = data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
-        val earlier = earlierWorkoutIds(data, target)
-        val baseline = bestRepetitionSets(index, data.workoutExercises.filter { it.workoutId in earlier })
-        return bestRepetitionSets(index, index.entries(workoutId)).mapNotNull { candidate ->
-            val previous = baseline.firstOrNull { comparable(it, candidate) }?.set?.reps
-            if (previous != null && candidate.set.reps <= previous) return@mapNotNull null
-            RepsPr(candidate.exercise.exerciseId, candidate.exercise.name, candidate.exercise.convention,
-                candidate.set.weightKg, candidate.assistance, previous, candidate.set.reps, previous == null)
-        }
+        return achievements(index, workoutId).repetitions
     }
 
     fun summary(data: AppData, workoutId: String, now: Long = System.currentTimeMillis()): WorkoutSummary? {
         val index = SnapshotIndex(data)
         val workout = data.workouts.firstOrNull { it.id == workoutId } ?: return null
-        val records = prsForWorkout(index, workoutId)
-        val repetitions = repsPrsForWorkout(index, workoutId)
+        val achievements = achievements(index, workoutId)
+        val records = achievements.weights
+        val repetitions = achievements.repetitions
         val exercises = index.entries(workoutId).map { exercise ->
             val completed = index.sets(exercise.id).filter(::validCompleted)
             ExerciseSummary(exercise, completed, completed.sumOf { volume(it, exercise.convention) },
@@ -223,8 +404,10 @@ object WorkoutCalculations {
         )
     }
 
-    fun records(data: AppData): List<ExerciseRecord> {
-        val index = SnapshotIndex(data)
+    fun records(data: AppData): List<ExerciseRecord> = records(SnapshotIndex(data))
+
+    private fun records(index: SnapshotIndex): List<ExerciseRecord> {
+        val data = index.data
         val result = mutableMapOf<Key, ExerciseRecord>()
         data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology).forEach { workout ->
             index.entries(workout.id).forEach { exercise ->
@@ -243,8 +426,10 @@ object WorkoutCalculations {
         return result.values.sortedWith(compareBy<ExerciseRecord> { it.exerciseName }.thenBy { it.convention.name })
     }
 
-    fun repsRecords(data: AppData): List<ExerciseRepsRecord> {
-        val snapshot = SnapshotIndex(data)
+    fun repsRecords(data: AppData): List<ExerciseRepsRecord> = repsRecords(SnapshotIndex(data))
+
+    private fun repsRecords(snapshot: SnapshotIndex): List<ExerciseRepsRecord> {
+        val data = snapshot.data
         val result = mutableListOf<ExerciseRepsRecord>()
         data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology).forEach { workout ->
             bestRepetitionSets(snapshot, snapshot.entries(workout.id)).forEach { candidate ->
@@ -263,8 +448,11 @@ object WorkoutCalculations {
             .thenBy { it.assistance }.thenBy { it.weightKg })
     }
 
-    fun performanceHistory(data: AppData, exerciseId: String, convention: LoadConvention? = null): List<ExercisePerformance> {
-        val index = SnapshotIndex(data)
+    fun performanceHistory(data: AppData, exerciseId: String, convention: LoadConvention? = null): List<ExercisePerformance> =
+        performanceHistory(SnapshotIndex(data), exerciseId, convention)
+
+    private fun performanceHistory(index: SnapshotIndex, exerciseId: String, convention: LoadConvention?): List<ExercisePerformance> {
+        val data = index.data
         val finished = data.workouts.filter { it.status == WorkoutStatus.FINISHED }.associateBy { it.id }
         return data.workoutExercises.filter { it.exerciseId == exerciseId && it.workoutId in finished &&
             (convention == null || convention == it.convention) }.map { exercise ->

@@ -13,6 +13,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.unit.dp
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
@@ -176,6 +177,76 @@ class WorkoutLazyRowsHostTest {
         compose.runOnIdle { emit(SetUi("set", 7, 26.0)) }
         field("set", "set-load-0").assert(editableText("-"))
         field("set", "set-reps-0").assert(editableText("7"))
+    }
+
+    @Test fun savedDraftRestoresPendingEditsInvalidTextAndExactKilogramsTogether() {
+        val exactKg = 17.123456789
+        val state = mutableStateOf(UiState(loading = false, preferences = PreferencesUi(pounds = true),
+            active = workout(listOf(WorkoutExerciseUi("entry", exercise, listOf(SetUi("set", 8, exactKg)))))))
+        val updates = mutableListOf<List<Any?>>()
+        val actions = actions { method, args -> if (method == "updateSet") updates += args.toList() }
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent { MaterialTheme { Box(Modifier.size(360.dp, 600.dp)) {
+            ActiveWorkoutScreen(state.value, actions, {}, {}, {})
+        } } }
+        list().performScrollToNode(hasTestTag("workout-set-set"))
+        field("set", "set-reps-0").performTextReplacement("9")
+        field("set", "set-load-0").performTextReplacement("-")
+        field("set", "set-complete-0").performClick()
+        compose.runOnIdle { assertEquals(exactKg, updates.single()[2] as Double, 0.0) }
+
+        restoration.emulateSavedInstanceStateRestore()
+        field("set", "set-reps-0").assert(editableText("9"))
+        field("set", "set-load-0").assert(editableText("-"))
+        compose.onNodeWithText("Enter a valid weight of 0 or more.").assertExists()
+        compose.onNodeWithContentDescription("Complete set").assertExists()
+        // The stale persisted 8-rep row must not replace the restored 9-rep edit.
+        field("set", "set-load-0").performTextReplacement(number(kgToDisplay(exactKg, true)))
+        field("set", "set-complete-0").performClick()
+        compose.runOnIdle {
+            assertEquals(9, updates.last()[1])
+            assertEquals(exactKg, updates.last()[2] as Double, 0.0)
+            assertEquals(true, updates.last()[3])
+        }
+    }
+
+    @Test fun restorationRetainsBlankRepsValidationWithoutWritingOrCompletingTheSet() {
+        val state = UiState(loading = false, active = workout(listOf(WorkoutExerciseUi("entry", exercise,
+            listOf(SetUi("set", 0, 20.0))))))
+        val updates = mutableListOf<String>()
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent { MaterialTheme { Box(Modifier.size(360.dp, 600.dp)) {
+            ActiveWorkoutScreen(state, actions { method, _ -> updates += method }, {}, {}, {})
+        } } }
+        list().performScrollToNode(hasTestTag("workout-set-set"))
+        field("set", "set-complete-0").performClick()
+        restoration.emulateSavedInstanceStateRestore()
+        field("set", "set-reps-0").assert(editableText(""))
+        compose.onNodeWithText("Enter reps between 1 and 9999 to complete this set.").assertExists()
+        compose.onNodeWithContentDescription("Complete set").assertExists()
+        compose.runOnIdle { assertTrue(updates.isEmpty()) }
+    }
+
+    @Test fun focusedFieldsKeepInputAndAccessibleActionsAcrossAcknowledgments() {
+        val state = mutableStateOf(UiState(loading = false, active = workout(listOf(WorkoutExerciseUi("entry", exercise,
+            listOf(SetUi("set", 8, 20.0)))))))
+        var lastUpdate: SetUi? = null
+        val actions = actions { method, args -> if (method == "updateSet") lastUpdate = SetUi(args[0] as String,
+            args[1] as Int, args[2] as Double, args[3] as Boolean, args[4] as Boolean, args[5] as Boolean) }
+        compose.setContent { MaterialTheme { Box(Modifier.size(360.dp, 600.dp)) {
+            ActiveWorkoutScreen(state.value, actions, {}, {}, {})
+        } } }
+        list().performScrollToNode(hasTestTag("workout-set-set"))
+        field("set", "set-load-0").performClick().assertIsFocused().assertIsEnabled()
+        field("set", "set-load-0").performTextReplacement("22,50")
+        compose.runOnIdle {
+            val current = state.value.active!!
+            state.value = state.value.copy(active = current.copy(exercises = listOf(current.exercises.single().copy(sets = listOf(lastUpdate!!)))))
+        }
+        field("set", "set-load-0").assertIsFocused().assert(editableText("22,50")).assertTextContains("kg")
+        field("set", "set-reps-0").performClick().assertIsFocused().assertIsEnabled().assertTextContains("Reps")
+        compose.onNodeWithContentDescription("Complete set").assertHasClickAction().assertIsEnabled()
+        compose.onNodeWithContentDescription("Remove set 1").assertHasClickAction().assertIsEnabled()
     }
 
     private fun workout(entries: List<WorkoutExerciseUi>) = WorkoutUi("workout", "Lazy session", System.currentTimeMillis(), exercises = entries)
