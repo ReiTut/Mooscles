@@ -12,6 +12,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'release-channel.ps1')
 $notesPath = (Resolve-Path -LiteralPath $NotesFile).Path
 if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf) -or
     [string]::IsNullOrWhiteSpace((Get-Content -LiteralPath $notesPath -Raw))) {
@@ -56,6 +57,48 @@ function Get-ReleaseInfo {
         '--json', 'url,isDraft,isPrerelease,assets,tagName,targetCommitish,body')
     return (($json -join [Environment]::NewLine) | ConvertFrom-Json)
 }
+function Get-LatestStableTag {
+    # The authenticated API read is independent of release-list order or semantic tag sorting.
+    $output = @(& $githubExecutable api "repos/$Repository/releases/latest" 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        if (($output -join [Environment]::NewLine) -match '\(HTTP 404\)') { return '' }
+        throw 'Unable to verify the repository Latest stable release.'
+    }
+    $latest = ($output -join [Environment]::NewLine) | ConvertFrom-Json
+    if ($latest.draft -or $latest.prerelease -or [string]::IsNullOrWhiteSpace($latest.tag_name)) {
+        throw 'The Latest release endpoint did not return a published stable release.'
+    }
+    return [string]$latest.tag_name
+}
+function Assert-DownloadedReleaseAsset([string]$Path, $Expected) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or
+        (Get-Item -LiteralPath $Path).Length -ne $Expected.Size -or
+        (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Expected.Hash) {
+        throw "Downloaded asset '$($Expected.Name)' failed independent size/checksum verification."
+    }
+}
+function Assert-PublicReleaseAssets($ExpectedAssets, [string]$Directory) {
+    [void][IO.Directory]::CreateDirectory($Directory)
+    foreach ($expected in $ExpectedAssets) {
+        $downloaded = Join-Path $Directory $expected.Name
+        $url = "https://github.com/$Repository/releases/download/$([Uri]::EscapeDataString($Tag))/$([Uri]::EscapeDataString($expected.Name))"
+        $received = $false
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            try {
+                # Deliberately no credentials: updater users need public asset URLs.
+                Invoke-WebRequest -Uri $url -OutFile $downloaded -UseBasicParsing -MaximumRedirection 10 -TimeoutSec 30 | Out-Null
+                $received = $true
+                break
+            } catch {
+                if ($attempt -eq 2) { throw "Public download of '$($expected.Name)' failed after publication." }
+                Start-Sleep -Seconds 3
+            }
+        }
+        if (-not $received) { throw "Public download of '$($expected.Name)' was not verified." }
+        Assert-DownloadedReleaseAsset -Path $downloaded -Expected $expected
+    }
+    return $Directory
+}
 function Assert-ReleaseAssets($Release, $ExpectedAssets) {
     if ($Release.tagName -ne $Tag) { throw 'GitHub returned a different release tag.' }
     if ([bool]$Release.isPrerelease -ne $Prerelease.IsPresent) { throw 'The release channel differs from the requested official/prerelease channel.' }
@@ -74,6 +117,7 @@ function Assert-ReleaseAssets($Release, $ExpectedAssets) {
 Push-Location -LiteralPath $projectRoot
 $draftCreated = $false
 $draftCreateAttempted = $false
+$publicationAttempted = $false
 try {
     $testedCommit = Assert-CleanCommit
     $remoteUrl = (Invoke-GitChecked -Arguments @('remote', 'get-url', $Remote) | Select-Object -First 1).Trim() -replace '\.git$', ''
@@ -85,6 +129,9 @@ try {
     $repositoryInfo = ($repoJson -join [Environment]::NewLine) | ConvertFrom-Json
     if ($repositoryInfo.isPrivate) { throw 'The updater needs public release assets. Choose a public release-only repository before publishing; do not embed a shared token in the APK.' }
     if ($repositoryInfo.viewerPermission -notin @('WRITE', 'MAINTAIN', 'ADMIN')) { throw 'The signed-in GitHub account needs write permission to create this release.' }
+    $previousLatestTag = if ($Prerelease) { Get-LatestStableTag } else { '' }
+    $latestTag = ''
+    $publicVerificationDirectory = $null
 
     # Building here associates the checks and APK with this exact clean commit.
     # Gradle validates task inputs even when existing verified outputs are up to date.
@@ -138,7 +185,7 @@ try {
         $createArguments = @('release', 'create', $Tag, $assets.ApkPath, $assets.MetadataPath, $assets.ChecksumPath,
             '--repo', $Repository, '--verify-tag', '--target', $testedCommit, '--draft',
             '--title', $releaseTitle, '--notes-file', $notesPath)
-        if ($Prerelease) { $createArguments += '--prerelease' }
+        $createArguments += @(Get-MoosclesReleaseChannelArguments -Prerelease:$Prerelease -Draft)
         $draftCreateAttempted = $true
         [void](Invoke-GitHubChecked -Arguments $createArguments)
         $draftCreated = $true
@@ -155,27 +202,39 @@ try {
     [void](Invoke-GitHubChecked -Arguments $downloadArguments)
     foreach ($expected in $expectedAssets) {
         $downloaded = Join-Path $verificationDirectory $expected.Name
-        if (-not (Test-Path -LiteralPath $downloaded -PathType Leaf) -or
-            (Get-Item -LiteralPath $downloaded).Length -ne $expected.Size -or
-            (Get-FileHash -LiteralPath $downloaded -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected.Hash) {
-            throw "Uploaded asset '$($expected.Name)' failed independent download verification."
-        }
+        Assert-DownloadedReleaseAsset -Path $downloaded -Expected $expected
+    }
+    if ($Prerelease) {
+        Assert-MoosclesLatestReleaseState -Tag $Tag -LatestTag (Get-LatestStableTag) -PreviousLatestTag $previousLatestTag -Prerelease
     }
     if ($Publish) {
         [void](Assert-CleanCommit -ExpectedCommit $testedCommit)
         Assert-ExactRemoteTag -ExpectedCommit $testedCommit
         $publishArguments = @('release', 'edit', $Tag, '--repo', $Repository, '--draft=false')
-        if (-not $Prerelease) { $publishArguments += @('--prerelease=false', '--latest') }
+        $publishArguments += @(Get-MoosclesReleaseChannelArguments -Prerelease:$Prerelease)
+        $publicationAttempted = $true
         [void](Invoke-GitHubChecked -Arguments $publishArguments)
         $release = Get-ReleaseInfo
         if ($release.isDraft) { throw 'GitHub still reports a draft after the publish request.' }
         Assert-ReleaseAssets -Release $release -ExpectedAssets $expectedAssets
+        $latestTag = Get-LatestStableTag
+        Assert-MoosclesLatestReleaseState -Tag $Tag -LatestTag $latestTag -PreviousLatestTag $previousLatestTag -Prerelease:$Prerelease
+        $publicVerificationDirectory = Assert-PublicReleaseAssets -ExpectedAssets $expectedAssets -Directory (Join-Path $verificationDirectory 'public')
+        [void](Assert-CleanCommit -ExpectedCommit $testedCommit)
+        Assert-ExactRemoteTag -ExpectedCommit $testedCommit
+        # Also detect a concurrent Latest change during public asset verification.
+        $latestTag = Get-LatestStableTag
+        Assert-MoosclesLatestReleaseState -Tag $Tag -LatestTag $latestTag -PreviousLatestTag $previousLatestTag -Prerelease:$Prerelease
     }
     [pscustomobject]@{
         RepositoryUrl = "https://github.com/$Repository"
         ReleaseUrl = $release.url
         Draft = [bool]$release.isDraft
         Prerelease = [bool]$release.isPrerelease
+        Latest = [bool]($Publish -and $latestTag -ceq $Tag)
+        LatestStableTag = if ($Publish) { $latestTag } else { $previousLatestTag }
+        PublicAssetsVerified = [bool]($Publish -and $publicVerificationDirectory)
+        PublicVerificationDirectory = $publicVerificationDirectory
         TestedCommit = $testedCommit
         UnitTests = $testCount
         LintErrors = 0
@@ -184,6 +243,7 @@ try {
         ApkDownloadUrl = if ($Publish) { "https://github.com/$Repository/releases/download/$([Uri]::EscapeDataString($Tag))/$([Uri]::EscapeDataString($metadata.apkFileName))" } else { $null }
     }
 } catch {
-    if ($draftCreated -or $draftCreateAttempted) { Write-Warning 'A draft may remain in GitHub. Review its state; failures before the explicit publication step leave it unpublished.' }
+    if ($publicationAttempted) { Write-Warning 'Publication was attempted. The release may already be public; inspect its state and finish verification without replacing its tag or assets.' }
+    elseif ($draftCreated -or $draftCreateAttempted) { Write-Warning 'A draft may remain in GitHub. Review its state; failures before the explicit publication step leave it unpublished.' }
     throw
 } finally { Pop-Location }

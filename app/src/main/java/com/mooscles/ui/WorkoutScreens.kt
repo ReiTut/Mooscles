@@ -1,8 +1,12 @@
 package com.mooscles.ui
 
+import android.animation.ValueAnimator
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,20 +15,54 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.mooscles.domain.RestDuration
 
 private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
+
+private data class WorkoutSecondaryGeometry(val pounds: Boolean,
+    val entries: List<Triple<String, String?, List<RecordUi>>>)
+
+/** Focus bookkeeping is not observable state and never causes list recomposition. */
+private class WorkoutInputAnchor {
+    private val focusedFields = mutableMapOf<String, String>()
+    var secondary: WorkoutSecondaryGeometry? = null
+    val focusedSetKey: String? get() = focusedFields.values.lastOrNull()
+    fun focus(setKey: String, field: String, focused: Boolean) {
+        val fieldKey = "$setKey:$field"
+        if (focused) focusedFields[fieldKey] = setKey else focusedFields.remove(fieldKey)
+    }
+}
+
+private fun workoutSetListIndex(workout: WorkoutUi, key: String): Int? {
+    var index = 3 // Heading, totals and movements.
+    workout.exercises.forEach { entry ->
+        index++ // Exercise heading.
+        entry.sets.forEach { set ->
+            if ("set:${entry.id}:${set.id}" == key) return index
+            index++
+        }
+        index += 2 // Footer and secondary information.
+    }
+    return null
+}
 
 @Composable
 fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
@@ -52,6 +90,10 @@ fun ActiveWorkoutScreen(
     }
     LaunchedEffect(error) { if (error != null) finishingId = null }
     if (workout == null) {
+        if (startingWorkout) {
+            StartingWorkoutState()
+            return
+        }
         Column(Modifier.fillMaxSize().imePadding()) {
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 item { PageHeading("Your training space", "Ready to move?", "Every rep is a step forward.") }
@@ -84,8 +126,29 @@ fun ActiveWorkoutScreen(
         return if (pending == null) entry else entry.copy(restSeconds = pending.seconds)
     }
     val totals = remember(workout) { workoutTotals(workout) }
+    val listState = rememberSaveable(workout.id, saver = LazyListState.Saver) { LazyListState() }
+    val inputAnchor = remember(workout.id) { WorkoutInputAnchor() }
+    val secondary = remember(workout.exercises, preferences.pounds) {
+        WorkoutSecondaryGeometry(preferences.pounds, workout.exercises.map { Triple(it.id, it.previous, it.records) })
+    }
+    // Stable lazy keys retain the first visible item. If that item is an earlier
+    // exercise's changing metadata, retain the focused set's offset instead.
+    // Read layout only on enrichment, without subscribing the screen to scrolls.
+    val pendingAnchor = if (inputAnchor.secondary != null && inputAnchor.secondary != secondary) {
+        inputAnchor.focusedSetKey?.let { key -> Snapshot.withoutReadObservation {
+            if (listState.isScrollInProgress) null else {
+                val visible = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }
+                val index = workoutSetListIndex(workout, key)
+                if (visible == null || index == null) null else index to -visible.offset
+            }
+        } }
+    } else null
+    SideEffect {
+        inputAnchor.secondary = secondary
+        pendingAnchor?.let { (index, offset) -> listState.requestScrollToItem(index, offset) }
+    }
     Column(Modifier.fillMaxSize().imePadding()) {
-    LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp)) {
+    LazyColumn(state = listState, modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp)) {
         item(key = "workout-heading", contentType = "heading") { SpacedWorkoutItem { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) } }
         item(key = "workout-totals", contentType = "totals") {
             SpacedWorkoutItem {
@@ -104,20 +167,32 @@ fun ActiveWorkoutScreen(
             item(key = "exercise-heading:${entry.id}", contentType = "exercise-heading") {
                 WorkoutCardSegment(first = true) {
                     WorkoutExerciseHeading(entry.exercise, entry.id, index, workout.exercises.size,
-                        entry.previous, entry.records, preferences.pounds, actions, editable = true,
+                        null, emptyList(), preferences.pounds, actions, editable = true,
                         onReplace = { replace = entry.id; picker = true },
                         onHistory = { onExerciseHistory(entry.exercise.id) })
                 }
             }
             itemsIndexed(entry.sets, key = { _, set -> "set:${entry.id}:${set.id}" }, contentType = { _, _ -> "working-set" }) { setIndex, set ->
                 WorkoutCardSegment {
-                    SetEditor(set, setIndex, preferences.pounds, entry.exercise.convention == "Assistance", actions)
+                    SetEditor(set, setIndex, preferences.pounds, entry.exercise.convention == "Assistance", actions,
+                        onInputFocusChanged = { field, focused ->
+                            inputAnchor.focus("set:${entry.id}:${set.id}", field, focused)
+                        })
                 }
             }
             item(key = "exercise-footer:${entry.id}", contentType = "exercise-footer") {
-                WorkoutCardSegment(last = true) {
+                WorkoutCardSegment {
                     WorkoutExerciseFooter(entry.id, entry.exercise.name, withRestOverride(entry).restSeconds,
                         actions, onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
+                }
+            }
+            // History and badges can arrive after typing has started. Keeping
+            // their expanding content after the editable rows prevents it from
+            // pushing this exercise's focused input beneath the timer/keyboard.
+            item(key = "exercise-metadata:${entry.id}", contentType = "exercise-metadata") {
+                WorkoutCardSegment(last = true) {
+                    WorkoutExerciseSecondaryInfo(entry.previous, entry.records, preferences.pounds,
+                        editable = true, modifier = Modifier.testTag("exercise-metadata-${entry.id}"))
                 }
             }
         }
@@ -168,6 +243,39 @@ fun ActiveWorkoutScreen(
     if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
         text = { Text("Save ${totals.completedSets} completed sets across ${totals.completedExercises} exercises. Your records and session breakdown will be ready next.") },
         confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
+}
+
+/** The only animated scope while opening; it never observes or changes workout data. */
+@Composable
+internal fun StartingWorkoutState(animationsEnabled: Boolean = ValueAnimator.areAnimatorsEnabled()) {
+    Box(Modifier.fillMaxSize().imePadding().testTag("starting-workout"), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(24.dp).semantics(mergeDescendants = true) {
+            liveRegion = LiveRegionMode.Polite
+        }, horizontalAlignment = Alignment.CenterHorizontally) {
+            StartingWorkoutProgress(animationsEnabled)
+            Spacer(Modifier.height(16.dp))
+            Text("Starting workout…", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            Text("Loading your routine in the background.", style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun StartingWorkoutProgress(animationsEnabled: Boolean) {
+    if (!animationsEnabled) {
+        Icon(Icons.Outlined.FitnessCenter, null,
+            Modifier.size(32.dp).testTag("starting-workout-static-progress").clearAndSetSemantics {},
+            tint = MaterialTheme.colorScheme.primary)
+        return
+    }
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val indicatorAlpha by animateFloatAsState(if (entered) 1f else 0f,
+        animationSpec = tween(120), label = "starting-progress-entry")
+    CircularProgressIndicator(Modifier.size(32.dp).graphicsLayer { alpha = indicatorAlpha }
+        .testTag("starting-workout-progress").clearAndSetSemantics {}, strokeWidth = 3.dp)
 }
 
 private data class WorkoutTotals(val completedSets: Int, val completedExercises: Int, val volumeKg: Double)
@@ -291,6 +399,18 @@ private fun WorkoutExerciseHeading(
             }
         }
         Text(conventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        WorkoutExerciseSecondaryInfo(previous, records, pounds, editable)
+    }
+    if (remove) ConfirmDialog("Remove ${exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove",
+        onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entryId) })
+}
+
+/** Full secondary information is retained; no fixed-height clipping or shortened history. */
+@Composable
+private fun WorkoutExerciseSecondaryInfo(previous: String?, records: List<RecordUi>, pounds: Boolean,
+    editable: Boolean, modifier: Modifier = Modifier) {
+    if (previous == null && records.isEmpty()) return
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         previous?.let {
             Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -307,8 +427,6 @@ private fun WorkoutExerciseHeading(
             }
         }
     }
-    if (remove) ConfirmDialog("Remove ${exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove",
-        onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entryId) })
 }
 
 @Composable
@@ -429,7 +547,8 @@ private data class WorkoutSetDraft(
 }
 
 @Composable
-private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions) {
+private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions,
+    onInputFocusChanged: (String, Boolean) -> Unit = { _, _ -> }) {
     // A single saved snapshot replaces sixteen registry entries per lazy row.
     // Keep text, exact kg and pending acknowledgments together across disposal.
     var draft by rememberSaveable(set.id, stateSaver = WorkoutSetDraft.Saver) {
@@ -474,14 +593,16 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
                 val currentReps = parsedReps()
                 if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!draft.completed || currentReps != null && currentReps in 1..9999))
                     submit(currentReps?.takeIf { it in 0..9999 } ?: draft.pendingReps ?: set.reps, exactKg(next, parsed), draft.completed, draft.warmup, draft.assistance)
-            }, label = if (pounds) "lb" else "kg", isError = !validLoad, decimal = true, modifier = Modifier.weight(1f).testTag("set-load-$index"))
+            }, label = if (pounds) "lb" else "kg", isError = !validLoad, decimal = true, modifier = Modifier.weight(1f).testTag("set-load-$index")
+                .onFocusChanged { onInputFocusChanged("load", it.isFocused) })
             TrainingNumberField(draft.reps, { next ->
                 draft = draft.copy(reps = next)
                 val parsed = if (next.isBlank()) 0 else next.toIntOrNull()
                 val currentLoad = parsedLoad()
                 if (parsed != null && parsed in 0..9999 && currentLoad != null && currentLoad.isFinite() && exactKg(draft.load, currentLoad) in 0.0..100000.0 && (!draft.completed || parsed > 0))
                     submit(parsed, exactKg(draft.load, currentLoad), draft.completed, draft.warmup, draft.assistance)
-            }, label = "Reps", isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
+            }, label = "Reps", isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index")
+                .onFocusChanged { onInputFocusChanged("reps", it.isFocused) })
             IconToggleButton(checked = draft.completed, onCheckedChange = { draft = draft.copy(touched = true); save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (draft.completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (draft.completed) "Undo set completion" else "Complete set") }
         }
         if (!validLoad) Text("Enter a valid weight of 0 or more.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)

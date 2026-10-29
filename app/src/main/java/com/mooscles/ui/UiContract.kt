@@ -75,6 +75,8 @@ data class UiState(
     val startingWorkout: Boolean = false,
     val discardingWorkout: Boolean = false, val discardNavigationRequest: Long = 0,
     val routineFolders: List<RoutineFolderUi> = listOf(RoutineFolderUi("default", "My routines")),
+    /** Editor essentials are usable while historical presentation catches up. */
+    val secondaryLoading: Boolean = false,
 )
 
 /** All changes are persisted by the implementation. move* takes -1 or +1. */
