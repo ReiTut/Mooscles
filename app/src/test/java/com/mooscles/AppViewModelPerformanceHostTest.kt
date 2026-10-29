@@ -1,14 +1,16 @@
 package com.mooscles
 
 import android.os.Looper
-import android.os.Handler
 import android.os.Trace
 import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.data.*
 import com.mooscles.ui.UiState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -20,11 +22,11 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowTrace
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.CopyOnWriteArrayList
 
 /** Functional flow/persistence checks, deliberately not device timing benchmarks. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], shadows = [PresentationThreadTraceShadow::class])
 @LooperMode(LooperMode.Mode.PAUSED)
 class AppViewModelPerformanceHostTest {
     private lateinit var app: MoosclesApplication
@@ -42,7 +44,7 @@ class AppViewModelPerformanceHostTest {
         app.database.close()
     }
 
-    @Test fun changedWorkoutCardDetailsArePresentedOnTheMainLooper() {
+    @Test fun changedWorkoutCardDetailsPrepareOffMainAndPublishOnTheMainLooper() {
         val workoutId = runBlocking(Dispatchers.IO) {
             app.preferences.autoRest(false)
             app.repository.initialize()
@@ -54,29 +56,30 @@ class AppViewModelPerformanceHostTest {
         val model = AppViewModel(app).also { models += it }
         awaitUi(model) { !it.loading && it.active?.id == workoutId }
         val setId = model.contentUi.value.active!!.exercises.first().sets.first().id
-        val before = mainPresentationCount()
-        model.updateSet(setId, 11, 22.5, false, false, false)
-        awaitUi(model) { it.active?.exercises?.firstOrNull()?.sets?.firstOrNull()?.let { set ->
-            set.id == setId && set.reps == 11 && set.weightKg == 22.5
-        } == true }
-        assertTrue("The saved set edit must prepare its card details on the Android main looper",
-            mainPresentationCount() > before)
-    }
-
-    private fun mainPresentationCount(): Int {
-        val count = AtomicInteger(-1)
-        val main = Looper.getMainLooper()
-        Handler(main).post {
-            assertSame(main, Looper.myLooper())
-            // ShadowTrace's completed-section queue is thread-local. Read it on
-            // the actual main looper, independently of the test runner's thread.
-            ShadowTrace.setEnabled(true)
-            assertTrue(Trace.isEnabled())
-            count.set(ShadowTrace.getPreviousSections().count { it == "Mooscles:present" })
+        ShadowTrace.setEnabled(true)
+        assertTrue(Trace.isEnabled())
+        val before = PresentationThreadTraceShadow.preparationThreads().size
+        val publicationsOnMain = CopyOnWriteArrayList<Boolean>()
+        // Unconfined observation records the actual StateFlow publisher thread,
+        // rather than moving collection to Main and accidentally proving only that.
+        val observer = CoroutineScope(Dispatchers.Unconfined).launch {
+            model.contentUi.collect { ui ->
+                if (ui.active?.exercises?.firstOrNull()?.sets?.firstOrNull()?.let { set ->
+                        set.id == setId && set.reps == 11 && set.weightKg == 22.5
+                    } == true) publicationsOnMain += Looper.myLooper() == Looper.getMainLooper()
+            }
         }
-        shadowOf(main).idle()
-        assertTrue("Main-looper trace sample did not execute", count.get() >= 0)
-        return count.get()
+        try {
+            model.updateSet(setId, 11, 22.5, false, false, false)
+            awaitUi(model) { it.active?.exercises?.firstOrNull()?.sets?.firstOrNull()?.let { set ->
+                set.id == setId && set.reps == 11 && set.weightKg == 22.5
+            } == true && publicationsOnMain.isNotEmpty() }
+            val preparation = PresentationThreadTraceShadow.preparationThreads().drop(before)
+            assertTrue("The saved edit must trigger preparation", preparation.isNotEmpty())
+            assertTrue("Card preparation must stay off the Android main looper", preparation.none { it })
+            assertTrue("Prepared screen state must be published on the Android main looper",
+                publicationsOnMain.all { it })
+        } finally { observer.cancel() }
     }
 
     @Test fun rapidStartTapsCreateOneSessionAndQueuedEditsSurviveReopening() {

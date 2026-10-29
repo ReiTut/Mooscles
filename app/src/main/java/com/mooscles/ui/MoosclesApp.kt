@@ -85,10 +85,10 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
             Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
                 // Keep the graph installed even while loading, including restores.
                 NavHost(nav, startDestination = "routines", modifier = Modifier.fillMaxSize()) {
-                    composable("routines") { RoutinesScreen(state, actions, onEdit = { nav.navigate("routine/$it") }, onWorkout = { nav.navigate("workout") }) }
+                    composable("routines") { RoutinesScreen(state, actions, onEdit = { nav.navigate("routine/$it") }, onWorkout = { nav.navigate("workout") { launchSingleTop = true } }) }
                     composable("routine/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { page ->
                         val routine = state.routines.find { it.id == page.arguments?.getString("id") }
-                        if (routine != null) RoutineEditor(routine, state, actions, onWorkout = { nav.navigate("workout") })
+                        if (routine != null) RoutineEditor(routine, state, actions, onWorkout = { nav.navigate("workout") { launchSingleTop = true } })
                         else MissingScreen("Routine unavailable")
                     }
                     composable("workout") { ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
