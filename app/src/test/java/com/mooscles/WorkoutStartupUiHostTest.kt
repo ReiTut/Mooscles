@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -13,9 +14,11 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -36,6 +39,7 @@ class WorkoutStartupUiHostTest {
             sets = List(2) { row -> SetUi("set-$entry-$row", 8, 20.0) }) })
     private val state = mutableStateOf(UiState(loading = false, active = initial))
     private val calls = mutableListOf<String>()
+    @After fun releaseAnimationClockBeforeRuleCleanup() { compose.mainClock.autoAdvance = true }
     private val actions = actions { name, args ->
         calls += name
         if (name == "updateSet") {
@@ -70,6 +74,29 @@ class WorkoutStartupUiHostTest {
         compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
             .assertTextContains("Starting workout…")
             .assertTextContains("Loading your routine in the background.")
+    }
+
+    @Test fun startingTitleUsesTheThemeForegroundOutsideScaffoldInDarkAndLightThemes() {
+        val theme = mutableStateOf("dark")
+        var expected = Color.Unspecified
+        // This reproduces the root overlay's actual context: MaterialTheme,
+        // without Scaffold/Surface providing an inherited content foreground.
+        compose.setContent {
+            MoosclesTheme(theme.value) {
+                expected = MaterialTheme.colorScheme.onSurface
+                StartingWorkoutState(animationsEnabled = false)
+            }
+        }
+        for (mode in listOf("dark", "light")) {
+            compose.runOnIdle { theme.value = mode }
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText("Starting workout…", useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { getLayout ->
+                    assertTrue(getLayout(layouts))
+                }
+            assertEquals("Root loading title must use $mode theme's onSurface foreground",
+                expected, layouts.single().layoutInput.style.color)
+        }
     }
 
     @Test fun newAndInvalidatedRecordsBelowCurrentInputsPreserveDraftFocusSelectionAndGeometry() {
@@ -133,9 +160,19 @@ class WorkoutStartupUiHostTest {
         compose.setContent { MoosclesApp(state.value, startActions) }
         compose.onNodeWithTag("routines-list").performScrollToNode(hasTestTag("routine-routine-start"))
         val click = compose.onNodeWithTag("routine-routine-start").fetchSemanticsNode().config[SemanticsActions.OnClick].action!!
+        compose.mainClock.autoAdvance = false
         compose.runOnIdle { click(); click() }
-        compose.onNodeWithTag("tab-workout").assertIsSelected()
+        compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithTag("starting-workout").assertIsDisplayed()
+        // Opening is now a full-window modal pane. Its covered footer is hidden
+        // from accessibility until the editor or previous route is available.
+        compose.onNodeWithTag("app-footer").assertDoesNotExist()
+        compose.runOnIdle { state.value = state.value.copy(active = initial, startingWorkout = false, secondaryLoading = true) }
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithTag("starting-workout").assertDoesNotExist()
+        compose.onNodeWithTag("tab-workout").assertIsSelected()
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithTag("active-workout-list").assertIsDisplayed()
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithTag("tab-routines").assertIsSelected()
         compose.onNodeWithTag("routines-list").assertIsDisplayed()

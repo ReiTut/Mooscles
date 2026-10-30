@@ -1,8 +1,6 @@
 package com.mooscles.ui
 
 import android.animation.ValueAnimator
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,12 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -78,6 +78,7 @@ fun ActiveWorkoutScreen(
     onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit,
     startingWorkout: Boolean = false,
     discardingWorkout: Boolean = false,
+    showStartingState: Boolean = true,
 ) {
     var picker by remember { mutableStateOf(false) }
     var replace by remember { mutableStateOf<String?>(null) }
@@ -91,7 +92,7 @@ fun ActiveWorkoutScreen(
     LaunchedEffect(error) { if (error != null) finishingId = null }
     if (workout == null) {
         if (startingWorkout) {
-            StartingWorkoutState()
+            if (showStartingState) StartingWorkoutState() else Spacer(Modifier.fillMaxSize())
             return
         }
         Column(Modifier.fillMaxSize().imePadding()) {
@@ -248,13 +249,20 @@ fun ActiveWorkoutScreen(
 /** The only animated scope while opening; it never observes or changes workout data. */
 @Composable
 internal fun StartingWorkoutState(animationsEnabled: Boolean = ValueAnimator.areAnimatorsEnabled()) {
-    Box(Modifier.fillMaxSize().imePadding().testTag("starting-workout"), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)
+        .testTag("starting-workout").pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+            }
+        }.safeDrawingPadding(), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(24.dp).semantics(mergeDescendants = true) {
             liveRegion = LiveRegionMode.Polite
+            paneTitle = "Starting workout"
         }, horizontalAlignment = Alignment.CenterHorizontally) {
             StartingWorkoutProgress(animationsEnabled)
             Spacer(Modifier.height(16.dp))
-            Text("Starting workout…", style = MaterialTheme.typography.titleMedium)
+            Text("Starting workout…", style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
             Text("Loading your routine in the background.", style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -270,11 +278,7 @@ private fun StartingWorkoutProgress(animationsEnabled: Boolean) {
             tint = MaterialTheme.colorScheme.primary)
         return
     }
-    var entered by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { entered = true }
-    val indicatorAlpha by animateFloatAsState(if (entered) 1f else 0f,
-        animationSpec = tween(120), label = "starting-progress-entry")
-    CircularProgressIndicator(Modifier.size(32.dp).graphicsLayer { alpha = indicatorAlpha }
+    CircularProgressIndicator(Modifier.size(32.dp)
         .testTag("starting-workout-progress").clearAndSetSemantics {}, strokeWidth = 3.dp)
 }
 

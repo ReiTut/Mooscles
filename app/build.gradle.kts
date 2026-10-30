@@ -12,8 +12,8 @@ android {
         applicationId = "com.mooscles"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.4.7-beta.1"
+        versionCode = 19
+        versionName = "1.4.7-beta.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }

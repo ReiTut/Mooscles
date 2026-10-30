@@ -140,11 +140,53 @@ class AppViewModelPerformanceHostTest {
         val model = AppViewModel(app).also { models += it }
         awaitUi(model) { !it.loading }
         model.startWorkout("missing-routine")
+        assertTrue(model.workoutOpening.value)
         awaitUi(model) { !it.startingWorkout && it.error?.contains("Routine not found") == true }
+        assertFalse(model.workoutOpening.value)
         assertNull(runBlocking(Dispatchers.IO) { app.repository.activeWorkout() })
         model.startWorkout(null)
+        assertTrue(model.workoutOpening.value)
         awaitUi(model) { !it.startingWorkout && it.active != null && it.error == null }
+        assertFalse(model.workoutOpening.value)
         assertEquals(1, runBlocking(Dispatchers.IO) { app.repository.snapshot().workouts.size })
+    }
+
+    @Test fun acceptedStartFeedbackIsImmediateWhileSessionPreparationIsSuspended() {
+        val model = AppViewModel(app).also { models += it }
+        awaitUi(model) { !it.loading }
+        runBlocking { app.trainingGate.lock() }
+        try {
+            model.startWorkout(null)
+            // No looper advance or repository response is needed for this signal.
+            assertTrue(model.workoutOpening.value)
+            repeat(10) { model.startWorkout(null) }
+            awaitUi(model) { it.startingWorkout }
+            assertNull(runBlocking(Dispatchers.IO) { app.repository.activeWorkout() })
+        } finally { app.trainingGate.unlock() }
+        awaitUi(model) { !it.startingWorkout && it.active != null }
+        assertFalse(model.workoutOpening.value)
+        assertNotNull("The editor content must exist before feedback settles", model.contentUi.value.active)
+        assertEquals(1, runBlocking(Dispatchers.IO) { app.repository.snapshot().workouts.size })
+    }
+
+    @Test fun cancellingPreparationReleasesTheDirectSignalAndANewModelCanStart() {
+        val model = AppViewModel(app).also { models += it }
+        awaitUi(model) { !it.loading }
+        runBlocking { app.trainingGate.lock() }
+        try {
+            model.startWorkout(null)
+            awaitUi(model) { it.startingWorkout }
+            model.viewModelScope.cancel()
+            shadowOf(Looper.getMainLooper()).idle()
+            assertFalse(model.workoutOpening.value)
+            assertNull(runBlocking(Dispatchers.IO) { app.repository.activeWorkout() })
+        } finally { app.trainingGate.unlock() }
+        val reopened = AppViewModel(app).also { models += it }
+        awaitUi(reopened) { !it.loading }
+        assertFalse(reopened.workoutOpening.value)
+        reopened.startWorkout(null)
+        awaitUi(reopened) { !it.startingWorkout && it.active != null }
+        assertFalse(reopened.workoutOpening.value)
     }
 
     @Test fun queuedSettingChangesApplyToFollowingCommandsBeforePresentationCatchesUp() {

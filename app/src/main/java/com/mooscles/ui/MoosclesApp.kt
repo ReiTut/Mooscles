@@ -1,5 +1,10 @@
 package com.mooscles.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
@@ -12,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.constrainHeight
 import androidx.navigation.NavType
@@ -29,11 +35,26 @@ private val destinations = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<TimerUi>? = null) {
+fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<TimerUi>? = null,
+    openingWorkoutState: State<Boolean>? = null) {
     MoosclesTheme(state.preferences.theme) {
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route ?: "routines"
+        // Start feedback bypasses both the presentation flow and the incoming
+        // navigation fade. Back may leave this route while the saved session
+        // continues becoming available for resume.
+        val openingWorkout = openingWorkoutState?.value ?: (state.startingWorkout && state.active == null)
+        val showOpeningWorkout = openingWorkout && route == "workout"
+        var instantWorkoutSourceId by remember { mutableStateOf<String?>(null) }
+        val openWorkout: () -> Unit = {
+            // A repeated callback can arrive before disabled buttons recompose.
+            // Keep the first source ID so it cannot turn this entry into a fade.
+            if (nav.currentDestination?.route != "workout") {
+                instantWorkoutSourceId = nav.currentBackStackEntry?.id
+                nav.navigate("workout") { launchSingleTop = true }
+            }
+        }
         var handledDiscard by rememberSaveable { mutableLongStateOf(0L) }
         LaunchedEffect(state.discardNavigationRequest, state.loading) {
             if (!state.loading && state.discardNavigationRequest == 0L) {
@@ -57,7 +78,8 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
         }
         val snack = remember { SnackbarHostState() }
         LaunchedEffect(state.error) { state.error?.let { snack.showSnackbar(it); actions.clearError() } }
-        Scaffold(
+        Box(Modifier.fillMaxSize().testTag("app-root")) {
+        Scaffold(modifier = if (showOpeningWorkout) Modifier.clearAndSetSemantics { } else Modifier,
             topBar = {
                 TopAppBar(title = { Text("mooscles", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
                     navigationIcon = { if (route !in destinations.map { it.route }) IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Outlined.ArrowBack, "Back") } },
@@ -68,6 +90,7 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
                     NavigationBar(Modifier.testTag("app-footer")) {
                         destinations.forEach { destination ->
                             NavigationBarItem(selected = route == destination.route, enabled = !state.loading, modifier = Modifier.testTag("tab-${destination.route}"), onClick = {
+                                if (nav.currentDestination?.route != destination.route) instantWorkoutSourceId = null
                                 // Train is the root itself, never a restored tail
                                 // that happens to have been saved under its ID.
                                 if (destination.route == "routines") nav.clearBackStack("routines")
@@ -84,17 +107,26 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
         ) { padding ->
             Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
                 // Keep the graph installed even while loading, including restores.
-                NavHost(nav, startDestination = "routines", modifier = Modifier.fillMaxSize()) {
-                    composable("routines") { RoutinesScreen(state, actions, onEdit = { nav.navigate("routine/$it") }, onWorkout = { nav.navigate("workout") { launchSingleTop = true } }) }
+                NavHost(nav, startDestination = "routines", modifier = Modifier.fillMaxSize(),
+                    // Only Start/resume entry skips the fade. Other routes and
+                    // footer navigation keep Navigation Compose's 700 ms fade.
+                    enterTransition = {
+                        if (initialState.id == instantWorkoutSourceId && targetState.destination.route == "workout")
+                            EnterTransition.None else fadeIn(tween(700))
+                    }, exitTransition = {
+                        if (initialState.id == instantWorkoutSourceId && targetState.destination.route == "workout")
+                            ExitTransition.None else fadeOut(tween(700))
+                    }) {
+                    composable("routines") { RoutinesScreen(state, actions, onEdit = { nav.navigate("routine/$it") }, onWorkout = openWorkout) }
                     composable("routine/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { page ->
                         val routine = state.routines.find { it.id == page.arguments?.getString("id") }
-                        if (routine != null) RoutineEditor(routine, state, actions, onWorkout = { nav.navigate("workout") { launchSingleTop = true } })
+                        if (routine != null) RoutineEditor(routine, state, actions, onWorkout = openWorkout)
                         else MissingScreen("Routine unavailable")
                     }
                     composable("workout") { ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
                         actions, onRoutines = { nav.navigate("routines") }, onHistory = { id -> nav.navigate("workoutDetail/$id?summary=true") },
-                        onExerciseHistory = { nav.navigate("exercise/$it") }, startingWorkout = state.startingWorkout,
-                        discardingWorkout = state.discardingWorkout) }
+                        onExerciseHistory = { nav.navigate("exercise/$it") }, startingWorkout = openingWorkout,
+                        discardingWorkout = state.discardingWorkout, showStartingState = false) }
                     composable("library") { LibraryScreen(state, actions, onHistory = { nav.navigate("exercise/$it") }) }
                     composable("history") { HistoryScreen(state, actions, onDetail = { nav.navigate("workoutDetail/$it?summary=false") }) }
                     composable("workoutDetail/{id}?summary={summary}", arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("summary") { type = NavType.BoolType; defaultValue = false })) { page ->
@@ -112,6 +144,9 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
                 }
                 if (state.loading) Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             }
+        }
+        // Draw last, outside Scaffold/NavHost, at full opacity on its first frame.
+        if (showOpeningWorkout) StartingWorkoutState()
         }
     }
 }

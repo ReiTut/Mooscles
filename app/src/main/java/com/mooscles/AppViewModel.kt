@@ -23,6 +23,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
     private val error = MutableStateFlow<String?>(null)
     private val initialized = MutableStateFlow(false)
     private val startingWorkout = MutableStateFlow(false)
+    /** Accepted-Start feedback must not wait for the prepared screen-state pipeline. */
+    val workoutOpening = startingWorkout.asStateFlow()
     private val startupHandoff = MutableStateFlow<WorkoutStartHandoff?>(null)
     private val endedWorkouts = MutableStateFlow<Set<String>>(emptySet())
     private var nextStartToken = 0L
