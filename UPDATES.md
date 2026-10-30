@@ -82,6 +82,24 @@ After reviewing the draft, explicitly publish it by running the same helper with
 
 It can resume an existing draft only when its notes, channel and verified assets match the tested local build. It does not replace an existing draft's assets or notes, and refuses to overwrite a published release. The explicit `-Publish` option verifies assets first, publishes the official release, marks it Latest, checks the published asset list, and returns repository/release/download links. The optional `-Prerelease` switch is reserved for an explicitly requested channel override and must be supplied consistently when resuming that draft. Build type remains checked independently: this workflow distributes the existing debug APK with the trusted signing identity. Android may still require source permission or installation approval.
 
+For an explicitly requested prerelease, supply `-Prerelease` when creating or resuming its draft and when publishing. For example, after setting a new APK version `1.4.7-beta.1` with build 18, committing the tested source and pushing its matching tag:
+
+```powershell
+.\tools\publish-release.ps1 -Tag v1.4.7-beta.1 `
+    -PreviousVersionCode 17 -NotesFile .\.tooling\release-notes-v1.4.7-beta.1.md `
+    -Prerelease -Publish
+```
+
+This explicitly publishes `draft=false`, `prerelease=true` and `make_latest=false`. The helper records the previous Latest stable tag and checks the latest-release endpoint before and after publication, refusing to silently change that channel. Official releases retain their existing full/Latest default. A prerelease's beta name does not control update ordering: its higher Android build number does. Existing updater versions discover it only when **Include prereleases** is enabled; stable-only users remain on the stable channel. A subsequent stable APK must still have a build number higher than any distributed beta.
+
+After publication, the helper downloads all three public asset URLs without authentication and verifies size and SHA-256 again. A public-download verification failure can happen after the release becomes public; inspect the existing release and finish verification without replacing its tag or assets. Source discovery and valid downloads do not prove Android installed the APK or retained data; report installation evidence separately.
+
+The deterministic channel safeguards can be checked locally, without network access or publishing:
+
+```powershell
+.\tools\test-release-channel.ps1
+```
+
 Replace the tag, last distributed version code, and notes filename for each later version. The local preparation script never tags, pushes, publishes, changes signing configuration, or creates keys. Adding the updater and these helper scripts does not modify existing GitHub releases or publish a new release by itself.
 
 ## Recovery releases with a historical version name

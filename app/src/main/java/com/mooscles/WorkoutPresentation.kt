@@ -19,6 +19,35 @@ internal class WorkoutPresentation {
     private var catalogUi = emptyList<ExerciseUi>()
     private val previousDescriptions = mutableMapOf<Triple<String, LoadConvention, Long>, String?>()
     private var previousActive: WorkoutUi? = null
+    private var lastUi = UiState()
+
+    /** Start-only path. No historical cache is consulted or invalidated by a partial snapshot. */
+    fun presentEssential(snapshot: ActiveWorkoutSnapshot, prefs: PreferencesUi): UiState {
+        val old = previousActive?.takeIf { it.id == snapshot.workout.id }
+        val oldEntries = old?.exercises?.associateBy { it.id }.orEmpty()
+        val metadata = snapshot.exercises.associateBy { it.id }
+        val setsByEntry = snapshot.sets.groupBy { it.workoutExerciseId }
+        val entries = snapshot.entries.map { entry ->
+            val prior = oldEntries[entry.id]
+            val priorSets = prior?.sets?.associateBy { it.id }.orEmpty()
+            val rows = setsByEntry[entry.id].orEmpty().sortedBy { it.position }.map { saved ->
+                val row = SetUi(saved.id, saved.reps, saved.weightKg, saved.completed, saved.warmup, saved.assistance)
+                priorSets[row.id]?.takeIf { it == row } ?: row
+            }.let { rows -> prior?.sets?.takeIf { it == rows } ?: rows }
+            // This partial path never guesses historical PRs from a possibly stale baseline.
+            // It is retired after one full read acknowledges the current saved editor rows.
+            val next = WorkoutExerciseUi(entry.id,
+                ExerciseUi(entry.exerciseId, entry.name, entry.muscle.label, entry.equipment.label,
+                    entry.convention.label, metadata[entry.exerciseId]?.custom ?: false),
+                rows, entry.restSeconds)
+            prior?.takeIf { it == next } ?: next
+        }
+        val saved = snapshot.workout
+        val active = WorkoutUi(saved.id, saved.name, saved.startedAt, saved.endedAt, entries,
+            sourceRoutineId = saved.sourceRoutineId)
+        previousActive = old?.takeIf { it == active } ?: active
+        return lastUi.copy(active = previousActive, preferences = prefs, secondaryLoading = true).also { lastUi = it }
+    }
 
     private fun Exercise.toUi() = ExerciseUi(id, name, muscle.label, equipment.label, convention.label, custom)
     fun present(data: AppData, prefs: PreferencesUi): UiState {
@@ -128,6 +157,6 @@ internal class WorkoutPresentation {
         val folders = data.routineFolders.sortedBy { it.position }.map { RoutineFolderUi(it.id, it.name) }
             .ifEmpty { listOf(RoutineFolderUi(RoutineFolder.DEFAULT_ID, RoutineFolder.DEFAULT_NAME)) }
         return UiState(false, catalogUi, routinesUi, historyUi, previousActive, recordsUi, preferences = prefs,
-            routineFolders = folders)
+            routineFolders = folders).also { lastUi = it }
     }
 }

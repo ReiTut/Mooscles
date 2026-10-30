@@ -78,6 +78,23 @@ class ReleaseClientTest {
         assertEquals(7L, client.check("com.mooscles", 5, 35, includePrereleases = true).available!!.metadata.versionCode)
     }
 
+    @Test fun betaVersionNamesUseBuildCodesAndRequireAnExplicitPrereleaseOptIn() {
+        val stable = metadata(17).copy(versionName = "1.4.6", apkFileName = "Mooscles-v1.4.6-debug.apk")
+        val beta = metadata(18).copy(versionName = "1.4.7-beta.1", apkFileName = "Mooscles-v1.4.7-beta.1-debug.apk")
+        val transport = fixture(release(beta, "v1.4.7-beta.1", prerelease = true) to beta,
+            release(stable, "v1.4.6") to stable)
+        val client = ReleaseClient(transport)
+
+        // An installed stable build must not discover a beta on its default channel.
+        assertNull(client.check("com.mooscles", 17, 35).available)
+        val optedIn = client.check("com.mooscles", 17, 35, includePrereleases = true).available!!
+        assertEquals(beta, optedIn.metadata)
+        assertTrue(optedIn.prerelease)
+        assertEquals("https://github.com/ReiTut/Mooscles/releases/download/v1.4.7-beta.1/${beta.apkFileName}", optedIn.apkUrl)
+        assertEquals(17L, client.check("com.mooscles", 16, 35).available!!.metadata.versionCode)
+        assertNull(client.check("com.mooscles", 18, 35, includePrereleases = true).available)
+    }
+
     @Test fun ignoresUnpublishedAndMalformedReleaseEntries() {
         val details = metadata()
         val release = release(details).put("published_at", JSONObject.NULL)
