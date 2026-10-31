@@ -1,8 +1,8 @@
 {
-  "baseCommit": "739a80039b61cb7edd2c09eeca6320518a44b4c1",
-  "baseApkSource": "app-debug-apk artifact of the green CI run 40983711502 on main (phase 4A base, where feat/phase4a-library starts)",
-  "baseApkBytes": 23652343,
-  "maxGrowthBytes": 1048576,
+  "baseCommit": "e6ada6a61d2174d51815bc412d124dcd0a22caf7",
+  "baseApkSource": "app-debug-apk artifact of CI run 41209938514 on main e6ada6a (phase 5 base, where feat/phase5a-progress starts; the run's host job failed only on the timing test fixed in 03b43ad, after assembleDebug)",
+  "baseApkBytes": 24469208,
+  "maxGrowthBytes": 524288,
   "maxFontBytes": 921600,
   "maxFontsAndIconsBytes": 1048576
 }
