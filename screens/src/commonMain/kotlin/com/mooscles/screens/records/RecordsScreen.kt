@@ -3,6 +3,7 @@ package com.mooscles.screens.records
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -209,13 +212,25 @@ internal fun RecordsScreen(
     // The callbacks are read when a row is tapped, so a host's new lambdas never recompose the rows.
     val openProgress by rememberUpdatedState(onOpenProgress)
     val openWorkout by rememberUpdatedState(onOpenWorkout)
-    val actionsOf = remember {
+    // The search keeps its focus after "Search" on the keyboard. The screen lets it go before it leaves (a row, its
+    // "Open workout", Settings) and when the list is dragged, so the field never holds the focus across a visit. Only
+    // the search's focus: a row reached by keyboard keeps its own. In touch mode (a tap) a cleared focus goes nowhere
+    // and the scroll comes back exactly; outside it (keyboard, mouse) Android hands the focus to the first focusable
+    // row, and one half under the month's sticky header is brought into view (task 13 fix round 1 report).
+    val focusManager = LocalFocusManager.current
+    var searchFocused by remember { mutableStateOf(false) }
+    val releaseSearch = { if (searchFocused) focusManager.clearFocus() }
+    val actionsOf = remember(focusManager) {
         RowActions(
             open = { event ->
                 val record = event.record
+                releaseSearch()
                 openProgress(record.exercise.id, if (record.kind == RecordKind.WEIGHT) ProgressMetric.LOAD else ProgressMetric.REPS)
             },
-            openWorkout = { event -> openWorkout(event.record.workoutId) },
+            openWorkout = { event ->
+                releaseSearch()
+                openWorkout(event.record.workoutId)
+            },
         )
     }
 
@@ -223,6 +238,10 @@ internal fun RecordsScreen(
     var choiceShown by remember { mutableStateOf(false) }
     LaunchedEffect(text, currentOnly, firstRecords) {
         if (choiceShown) listState.scrollToItem(0) else choiceShown = true
+    }
+    // A drag, not any scroll: a new search scrolls to the top while the person is still typing.
+    LaunchedEffect(listState, focusManager) {
+        listState.interactionSource.interactions.collect { if (it is DragInteraction.Start) releaseSearch() }
     }
     LaunchedEffect(focusReturns) {
         if (focusReturns == 0) return@LaunchedEffect
@@ -239,7 +258,10 @@ internal fun RecordsScreen(
                     MIconButton(
                         MIcons.Settings,
                         contentDescription = stringResource(Res.string.records_settings),
-                        onClick = onOpenSettings,
+                        onClick = {
+                            releaseSearch()
+                            onOpenSettings()
+                        },
                         modifier = Modifier.testTag(RecordsTags.SETTINGS),
                     )
                     MIconButton(
@@ -250,7 +272,7 @@ internal fun RecordsScreen(
                     )
                 },
             )
-            Box(Modifier.fillMaxWidth().testTag(RecordsTags.SEARCH).padding(horizontal = MTheme.space.s4, vertical = MTheme.space.s2)) {
+            Box(Modifier.fillMaxWidth().testTag(RecordsTags.SEARCH).onFocusChanged { searchFocused = it.hasFocus }.padding(horizontal = MTheme.space.s4, vertical = MTheme.space.s2)) {
                 MSearchField(
                     value = search,
                     onValueChange = { search = it },

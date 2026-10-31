@@ -85,6 +85,20 @@ private const val METRIC_ARG = "metric"
 private fun progressRoute(id: String, metric: ProgressMetric? = null) =
     if (metric == null) "exercise/$id" else "exercise/$id?$METRIC_ARG=${metric.route}"
 
+/** Opens the progress; a second tap before the first one lands opens no second progress over it. */
+private fun NavHostController.openProgress(id: String, metric: ProgressMetric? = null) = navigate(progressRoute(id, metric)) {
+    launchSingleTop = true
+}
+
+/**
+ * The prewarm's key: the history and the records as instances, as the cache keys its index (`===`). New lists equal
+ * to the old ones (kg to lb) are a new history to the cache, so they must prewarm again; `equals` would say no.
+ */
+private class HistoryIdentity(val history: List<WorkoutUi>, val records: List<RecordUi>) {
+    override fun equals(other: Any?) = other is HistoryIdentity && other.history === history && other.records === records
+    override fun hashCode() = 31 * System.identityHashCode(history) + System.identityHashCode(records)
+}
+
 /**
  * The progress's "About the exercise": back to the detail under it when that is the same exercise's (the detail's
  * "View progress"), so details never stack; otherwise the detail opens over the progress.
@@ -235,7 +249,7 @@ fun MoosclesApp(
         // Plan 5A decision 9: the next history's index is on its way before a screen asks for it. Never while
         // loading, whose empty lists are not the history. The prewarm never throws (a failure waits for a screen).
         val progressIndex = LocalProgressIndexCache.current
-        LaunchedEffect(progressIndex, state.history, state.records, state.loading) {
+        LaunchedEffect(progressIndex, HistoryIdentity(state.history, state.records), state.loading) {
             if (progressIndex != null && !state.loading) progressIndex.prewarm(state.history, state.records, TimeZone.currentSystemDefault())
         }
 
@@ -339,7 +353,7 @@ fun MoosclesApp(
                             state = state,
                             actions = hosted,
                             onBack = { nav.popBackStack() },
-                            onOpenHistory = { nav.navigate(progressRoute(it)) },
+                            onOpenHistory = { nav.openProgress(it) },
                             onOpenRoutine = { nav.openRoutine(it) },
                             onOpenWorkout = ::openWorkout,
                             foreground = foreground,
@@ -353,7 +367,7 @@ fun MoosclesApp(
                             workout == null -> MissingScreen("Workout unavailable")
                             asSummary -> SummaryRoute(workout, state, hosted, onDone = { selectTab(ShellTabs.TRAIN) },
                                 onDetails = { nav.navigate(detailRoute(workout.id, summary = false)) })
-                            else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.navigate(progressRoute(it)) })
+                            else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.openProgress(it) })
                         }
                     }
                     composable(PROGRESS_ROUTE, arguments = listOf(
@@ -373,7 +387,7 @@ fun MoosclesApp(
                     }
                     composable(ShellTabs.RECORDS) {
                         RecordsRoute(state, hosted,
-                            onOpenProgress = { id, metric -> nav.navigate(progressRoute(id, metric)) },
+                            onOpenProgress = { id, metric -> nav.openProgress(id, metric) },
                             onOpenWorkout = { nav.navigate(detailRoute(it, summary = false)) },
                             onOpenSettings = { nav.navigate(SettingsRoutes.settings()) { launchSingleTop = true } })
                     }
@@ -457,7 +471,7 @@ private fun WorkoutRoute(
         actions = actions,
         onMinimize = minimize,
         onOpenSummary = { id -> nav.navigate(detailRoute(id, summary = true)) { popUpTo(WORKOUT_ROUTE) { inclusive = true } } },
-        onExerciseHistory = { nav.navigate(progressRoute(it)) },
+        onExerciseHistory = { nav.openProgress(it) },
         onChooseRoutine = onChooseRoutine,
         onExerciseInfo = { nav.openExerciseInfo(it) },
         skeletonCards = skeletonCards,

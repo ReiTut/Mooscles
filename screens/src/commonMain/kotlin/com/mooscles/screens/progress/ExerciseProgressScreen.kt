@@ -267,7 +267,8 @@ internal fun ExerciseProgressScreen(
     val host = remember { MToastHostState() }
     ScreenErrorToast(state.errorCode, actions, host)
     var menuOpen by rememberSaveable { mutableStateOf(false) }
-    val load = rememberProgressIndex(state.history, state.records)
+    // No index of the loading state's empty lists (a restore): it would say "not found" or "not done yet" for a moment.
+    val load = if (state.loading) ProgressLoad.Loading else rememberProgressIndex(state.history, state.records)
     val index = load.valueOrNull
     val current = state.exercises.firstOrNull { it.id == exerciseId }
     val exercise = current ?: index?.snapshot(exerciseId)

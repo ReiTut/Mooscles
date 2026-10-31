@@ -136,19 +136,35 @@ class ProgressNavigationHostTest {
         assertEquals(top, topVisibleRow())
         assertEquals(topBounds, compose.onNodeWithTag(top).fetchSemanticsNode().boundsInRoot)
 
-        // With a search typed in, the text and the chips come back too, and so does the place in the list. The field
-        // still has focus when the row is tapped; leaving then brings the row under the month's sticky header fully
-        // into view before the scroll is saved, so the list may come back up to one row higher (task 13 report).
+        // With a search typed in (the field keeps its focus), the text, the chips and the exact place come back too.
+        // A real tap puts the window in touch mode, where the field's focus goes nowhere when it is let go;
+        // `performClick` does not, and outside touch mode the focus would go to the first row, half under the sticky
+        // header, and bring it into view.
+        enterTouchMode()
         compose.onNode(hasSetTextAction()).performTextReplacement(incline.name)
         compose.waitForIdle()
-        val (searchedTop, _) = scrollAndOpenAndReturn()
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+        val (searchedTop, searchedBounds) = scrollAndOpenAndReturn()
         assertEquals(incline.name, compose.onNode(hasSetTextAction()).fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
         compose.onNodeWithTag("records-first").assertIsOn()
         compose.onNodeWithTag("records-current-only").assertIsOff()
-        compose.onNodeWithTag(lastWeightRow).assertDoesNotExist()
-        // Newer sessions are higher in the list.
-        val shift = sessionOf(topVisibleRow()) - sessionOf(searchedTop)
-        assertTrue("The list came back $shift rows away from $searchedTop", shift in 0..1)
+        assertEquals(searchedTop, topVisibleRow())
+        assertEquals(searchedBounds, compose.onNodeWithTag(searchedTop).fetchSemanticsNode().boundsInRoot)
+    }
+
+    /** A second tap on a row before the first one lands opens no second progress (`launchSingleTop`). */
+    @Test fun aDoubleTapOnARecordOpensOneProgress() {
+        show()
+        openRecords()
+        val click = compose.onNodeWithTag(lastWeightRow).fetchSemanticsNode().config[SemanticsActions.OnClick]
+        compose.runOnIdle {
+            click.action?.invoke()
+            click.action?.invoke()
+        }
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+        back()
+        compose.onNodeWithTag(ExerciseProgressTag).assertDoesNotExist()
+        compose.onNodeWithTag(RecordsScreenTag).assertIsDisplayed()
     }
 
     /**
@@ -171,9 +187,6 @@ class ProgressNavigationHostTest {
         compose.waitForIdle()
         return top to topBounds
     }
-
-    /** The session number of a row's workout (`record-w12|…` is 12). */
-    private fun sessionOf(rowTag: String) = rowTag.removePrefix("record-w").substringBefore('|').toInt()
 
     @Test fun openWorkoutActionOpensTheDetail() {
         show()
@@ -301,6 +314,18 @@ class ProgressNavigationHostTest {
         assertNull("Nothing builds before the prewarm's delay", app.progressIndex.peek(next, nextRecords))
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PREWARM_DELAY_MILLIS))
         compose.waitUntil(10_000) { app.progressIndex.peek(next, nextRecords) != null }
+
+        // kg to lb: the presentation rebuilds the lists, equal but new instances, a new history to the cache (`===`).
+        // The prewarm keys on the instances too, so it runs again.
+        val same = next.toList()
+        val sameRecords = nextRecords.toList()
+        compose.runOnIdle {
+            state.value = state.value.copy(history = same, records = sameRecords, preferences = state.value.preferences.copy(pounds = true))
+        }
+        compose.waitForIdle()
+        assertNull(app.progressIndex.peek(same, sameRecords))
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PREWARM_DELAY_MILLIS))
+        compose.waitUntil(10_000) { app.progressIndex.peek(same, sameRecords) != null }
         compose.onNodeWithTag("routines-list").assertIsDisplayed()
     }
 
@@ -315,6 +340,19 @@ class ProgressNavigationHostTest {
     }
 
     private fun tab(route: String) = compose.onNodeWithTag("tab-$route")
+
+    /**
+     * Puts the window in touch mode, as a real tap does (`performClick` sends its events past the view root, so the
+     * test window stays out of it). Outside touch mode a cleared focus goes to the first focusable row.
+     */
+    private fun enterTouchMode() {
+        compose.runOnIdle {
+            val root = android.view.View::class.java.getMethod("getViewRootImpl").invoke(compose.activity.window.decorView)!!
+            root.javaClass.getDeclaredMethod("ensureTouchModeLocally", Boolean::class.javaPrimitiveType)
+                .apply { isAccessible = true }.invoke(root, true)
+        }
+        compose.runOnIdle { assertTrue(compose.activity.window.decorView.isInTouchMode) }
+    }
 
     /** The Records tab, once its timeline is built (off the main thread). */
     private fun openRecords() {

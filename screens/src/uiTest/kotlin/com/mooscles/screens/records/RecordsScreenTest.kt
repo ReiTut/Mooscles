@@ -11,7 +11,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
@@ -25,6 +27,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.DpSize
@@ -524,6 +528,61 @@ class RecordsScreenTest {
         waitForIdle()
         assertEquals(listOf("w2"), calls.workouts)
         assertTrue(calls.progress.isEmpty())
+    }
+
+    /**
+     * The search keeps its focus after typing; leaving with it would move the focus into the list and save a scroll the
+     * person did not make. A row, its "Open workout" and Settings let the focus go before they leave.
+     */
+    @Test
+    fun leavingLetsTheSearchFocusGo() = runComposeUiTest {
+        val calls = show()
+        waitForRows()
+        search("supino")
+        onNode(hasSetTextAction()).assertIsFocused()
+        onNodeWithTag(rowTag(benchW875)).performClick()
+        waitForIdle()
+        assertEquals(listOf(bench.id to ProgressMetric.LOAD), calls.progress)
+        onNode(hasSetTextAction()).assertIsNotFocused()
+
+        search("")
+        search("supino")
+        onNode(hasSetTextAction()).assertIsFocused()
+        val openWorkout = onNodeWithTag(rowTag(benchW85)).fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
+        runOnIdle { assertTrue(openWorkout.action()) }
+        waitForIdle()
+        assertEquals(listOf("w2"), calls.workouts)
+        onNode(hasSetTextAction()).assertIsNotFocused()
+
+        search("")
+        search("supino")
+        onNode(hasSetTextAction()).assertIsFocused()
+        onNodeWithTag(RecordsTags.SETTINGS).performClick()
+        waitForIdle()
+        assertEquals(1, calls.settings)
+        onNode(hasSetTextAction()).assertIsNotFocused()
+    }
+
+    /** A drag on the list lets the search's focus go; the scroll to the top of a new search does not. */
+    @Test
+    fun draggingTheListLetsTheSearchFocusGoButANewSearchKeepsIt() = runComposeUiTest {
+        val many = (1..30).map { i ->
+            val month = 1 + (30 - i) % 12
+            val year = 2024 + (30 - i) / 12
+            val record = RecordUi(bench, 80.0 + i, 5, previousKg = 79.0 + i, workoutId = "m$i", date = end(year, month, 3))
+            workout("m$i", at(year, month, 3), bench to listOf(80.0 + i to 5), records = listOf(record))
+        }.sortedByDescending { it.startedAt }
+        show(mutableStateOf(stateOf(history = many, records = emptyList())))
+        waitForRows()
+        onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
+        waitForIdle()
+        // A new search scrolls the list to the top while the field still has the focus.
+        search("supino")
+        waitUntil(timeoutMillis = 5_000) { rows().firstOrNull() == rowTag(many.first().records.single()) }
+        onNode(hasSetTextAction()).assertIsFocused()
+        onNodeWithTag(RecordsScreenTag).performTouchInput { swipeUp() }
+        waitForIdle()
+        onNode(hasSetTextAction()).assertIsNotFocused()
     }
 
     @Test
