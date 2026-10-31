@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
@@ -84,6 +83,7 @@ import com.mooscles.screens.resources.progress_no_estimate
 import com.mooscles.screens.resources.progress_no_points
 import com.mooscles.screens.resources.progress_one_session
 import com.mooscles.screens.workout.MenuItem
+import com.mooscles.screens.workout.RecompositionProbe
 import com.mooscles.screens.workout.ScreenErrorToast
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
@@ -116,12 +116,40 @@ internal object ProgressTags {
     const val LEGEND_RECORD = "progress-legend-record"
     const val DATA_TOGGLE = "progress-data-toggle"
     const val WEEKLY_NOTE = "progress-weekly-note"
+    const val CONVENTION_NOTE = "progress-convention-note"
+    const val EMPTY = "progress-empty"
+    const val MISSING = "progress-missing"
+
+    /** The records section's heading; every tag of the section starts with `progress-record`. */
+    const val RECORDS = "progress-records"
+    const val RECORDS_ALL = "progress-records-all"
+    const val RECORD_WEIGHT_LABEL = "progress-record-weight-label"
+    const val RECORD_WEIGHT = "progress-record-weight"
+    const val RECORD_REPS_LABEL = "progress-record-reps-label"
+
+    /** The sessions' heading; every tag of the section starts with `progress-session`. */
+    const val SESSIONS = "progress-sessions"
+
+    /** The record badge on a set of a session row. */
+    const val SESSION_RECORD = "progress-session-record"
 
     fun metric(metric: ProgressMetric) = "progress-metric-${metric.route}"
     fun period(period: ExercisePeriod) = "progress-period-${period.name}"
 
     /** The [index]th row of the data table, the newest first (from 0). */
     fun tableRow(index: Int) = "progress-table-row-$index"
+
+    /** The [index]th reps record shown, the highest load first (from 0). */
+    fun recordReps(index: Int) = "progress-record-reps-$index"
+
+    /** The row of the session of [workoutId]. */
+    fun session(workoutId: String) = "progress-session-$workoutId"
+}
+
+/** The keys this screen reports to `RecompositionProbe`, besides the rows' (their tags). */
+internal object ProgressProbe {
+    const val SCREEN = "progress-screen"
+    const val CHART = "progress-chart-probe"
 }
 
 /** The axis texts the chart was given, in tick order: what a test reads to see that the marks are round. */
@@ -182,10 +210,6 @@ internal data class ShownChartQuery(
     }
 }
 
-/** "Today" and the zone the chart is read in, taken on entry and at each period change (D8). */
-@Immutable
-private class ProgressCalendar(val zone: TimeZone, val today: LocalDate)
-
 /**
  * The exercise progress screen (spec "Progresso do exercício", route `exercise/{id}?metric=`), one lazy list from the
  * top: the name in the screen's language (`title.md`, whole at any size) over "Chest · Barbell"; the current
@@ -195,11 +219,18 @@ private class ProgressCalendar(val zone: TimeZone, val today: LocalDate)
  * chart, with the reading of the selected point above it, the record legend when a point has the ring, and "View
  * data", which swaps the chart for its table rows as items of the list. A weekly chart says so under it.
  *
- * The index and the chart come from the cache ([rememberProgressIndex], [rememberProgressQuery]), never computed in
- * composition, the metrics with the chart in one query; until they arrive the chart's place is a skeleton of its
- * height, and after a failure it says there is nothing to chart. The metric, the period and "View
- * data" are kept per exercise with `rememberSaveable`; the selection is not. Errors of the state show as this screen's
- * toast ([ScreenErrorToast]).
+ * Under the chart, the line about the exercise's sessions in other conventions (plan decision 8), then its records
+ * and its sessions ([progressSections]). An exercise without a session in any convention shows "You haven't done
+ * this exercise yet." with "View in the library" ([onAbout]); one that is neither in the library nor in the history,
+ * once the index is ready, "Exercise not found". A deleted exercise with history keeps working under its latest
+ * snapshot's name.
+ *
+ * The index, the chart and the sections come from the cache ([rememberProgressIndex], [rememberProgressQuery]),
+ * never computed in composition, the metrics with the chart in one query; until they arrive the chart's place is a
+ * skeleton of its height, and after a failure it says there is nothing to chart. A new history keeps showing the
+ * previous index's chart and sections, in the current unit, until its own is ready. The metric, the period, "View
+ * data" and "View all" records are kept per exercise with `rememberSaveable`; the selection is not. Errors of the
+ * state show as this screen's toast ([ScreenErrorToast]).
  */
 @Composable
 fun ExerciseProgressRoute(
@@ -228,6 +259,7 @@ internal fun ExerciseProgressScreen(
     modifier: Modifier = Modifier,
     seams: ProgressSeams = ProgressSeams.System,
 ) {
+    RecompositionProbe(ProgressProbe.SCREEN)
     val host = remember { MToastHostState() }
     ScreenErrorToast(state.errorCode, actions, host)
     var menuOpen by rememberSaveable { mutableStateOf(false) }
@@ -257,6 +289,11 @@ internal fun ExerciseProgressScreen(
     val pounds = state.preferences.pounds
     // A failure shows that there is nothing to chart, never a skeleton that would wait for good.
     val failed = load is ProgressLoad.Failed || shownLoad is ProgressLoad.Failed
+    val sections = key?.let { rememberProgressQuery(load, ProgressSectionsQuery(exerciseId, it.convention)) }?.valueOrNull
+    var allRecords by rememberSaveable(exerciseId) { mutableStateOf(false) }
+    val showAllRecords: () -> Unit = { allRecords = true }
+    val name = exercise?.let { exerciseName(it) }.orEmpty()
+    val otherConventions = sections?.otherConventions?.takeIf { it.isNotEmpty() && !failed }
 
     Box(modifier.fillMaxSize().background(MTheme.colors.bgBase)) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
@@ -281,9 +318,20 @@ internal fun ExerciseProgressScreen(
                     item(key = "convention") { ProgressConvention(convention) }
                 }
                 if (key == null) {
-                    item(key = "skeleton") { if (failed) ChartMessage(EmptyReason.NO_POINTS) else ChartSkeleton() }
+                    when {
+                        load is ProgressLoad.Failed -> item(key = "message") { ChartMessage(EmptyReason.NO_POINTS) }
+                        // Neither in the library nor in a ready index's history: gone for good.
+                        load is ProgressLoad.Ready && !state.loading -> item(key = "missing") { ProgressMissing() }
+                        else -> item(key = "skeleton") { ChartSkeleton() }
+                    }
                     return@LazyColumn
                 }
+                if (index != null && !failed && index.conventionsOf(exerciseId).isEmpty()) {
+                    item(key = "empty") { ProgressEmpty(onAbout) }
+                    return@LazyColumn
+                }
+                // Under the chart (or its sentence), before "View data".
+                val conventionNote = { if (otherConventions != null) item(key = "convention-note") { ConventionNote(otherConventions) } }
                 if (shown != null && !failed) {
                     val chosen = ProgressMetrics.initial(requested, shown.metrics)
                     item(key = "metrics") {
@@ -306,14 +354,21 @@ internal fun ExerciseProgressScreen(
                 when {
                     failed -> item(key = "message") { ChartMessage(EmptyReason.NO_POINTS) }
                     shown == null || chart == null -> item(key = "skeleton") { ChartSkeleton() }
-                    chart.empty != null -> item(key = "message") { ChartMessage(chart.empty) }
+                    chart.empty != null -> {
+                        item(key = "message") { ChartMessage(chart.empty) }
+                        conventionNote()
+                    }
                     // One session of the exercise in all; one point of a longer history is still drawn.
-                    shown.sessions == 1 -> item(key = "message") { ChartMessage(null) }
+                    shown.sessions == 1 -> {
+                        item(key = "message") { ChartMessage(null) }
+                        conventionNote()
+                    }
                     else -> {
                         if (!showTable) {
                             item(key = "readout") { ProgressReadout(shown, pounds, selection) }
                             item(key = "chart") { ProgressChart(shown, pounds, selection) }
                         }
+                        conventionNote()
                         item(key = "data") {
                             DataToggle(shown, showTable) {
                                 selection.value = null
@@ -326,7 +381,9 @@ internal fun ExerciseProgressScreen(
                         }
                     }
                 }
-                progressSections(exerciseId, key, index, state, onOpenWorkout)
+                if (sections != null && !failed) {
+                    progressSections(sections, name, key.convention, pounds, calendar, allRecords, showAllRecords, onOpenWorkout)
+                }
             }
         }
         MToastHost(host, Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
@@ -342,20 +399,6 @@ internal fun ExerciseProgressScreen(
             onDismiss = { menuOpen = false },
         )
     }
-}
-
-/**
- * The records of the exercise and its sessions, under the chart (Task 10). Nothing yet: the chart part above is this
- * task's whole screen.
- */
-@Suppress("UNUSED_PARAMETER")
-internal fun LazyListScope.progressSections(
-    exerciseId: String,
-    key: SeriesKey,
-    index: ProgressIndex?,
-    state: UiState,
-    onOpenWorkout: (workoutId: String) -> Unit,
-) {
 }
 
 /** The width of an item of the list: the content column, up to `contentMaxWidth`, with the 16 dp sides. */
@@ -556,6 +599,7 @@ private fun ProgressReadout(shown: ShownChart, pounds: Boolean, selection: Mutab
  */
 @Composable
 private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: MutableState<Int?>) {
+    RecompositionProbe(ProgressProbe.CHART)
     val chart = shown.chart
     val query = shown.query
     val metric = query.metric

@@ -55,6 +55,7 @@
     <string name="progress_sessions">Sessões</string>
     <string name="progress_session_spoken">%1$s, %2$s: %3$s</string>
     <string name="progress_empty_title">Você ainda não fez este exercício.</string>
+    <string name="progress_empty_body">Registre este exercício num treino para ver o progresso aqui.</string>
     <string name="progress_empty_action">Ver na biblioteca</string>
     <string name="progress_missing">Exercício não encontrado</string>
     <string name="progress_short_thousands">%1$s mil</string>

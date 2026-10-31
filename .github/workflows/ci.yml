@@ -296,7 +296,8 @@ jobs:
           # Phase 5A task 8: ProgressNumbersTest 4 (:screens commonTest); ProgressTextsTest is uiTest and does not run on the host. 1212 + 4 = 1216.
           # Phase 5A task 8 fix round 1: StringsParityTest.englishTextsHaveNoPortugueseAccentsOrWords +1 (:screens androidHostTest). 1216 + 1 = 1217.
           # Merged with phase 5A task 7 (same base): 1238.
-          MIN_HOST_TESTS: 1238
+          # Phase 5A task 10: ProgressSectionsQueryTest 4 (:screens commonTest); ExerciseProgressSectionsTest is uiTest. 1238 + 4 = 1242.
+          MIN_HOST_TESTS: 1242
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -663,7 +664,8 @@ jobs:
           # chartArrivesOnTheSecondFrameWithTheIndexReady, weeklyChartSaysWeekOfAndShowsTheNote,
           # onePointOfALongerHistoryIsStillDrawn), ProgressIndexComposeTest +2 (aFailingBuildKeepsThePreviousIndex,
           # aFailingQueryIsFailedNotThePreviousResult; one test renamed, +0). 805 + 6 = 811.
-          MIN_SCREENS_IOS_TESTS: 811
+          # Phase 5A task 10: ExerciseProgressSectionsTest 12 (uiTest) and ProgressSectionsQueryTest 4 (commonTest). 811 + 16 = 827.
+          MIN_SCREENS_IOS_TESTS: 827
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
