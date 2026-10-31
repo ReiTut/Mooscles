@@ -12,7 +12,6 @@ import com.mooscles.domain.WeightUnits
 import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.chartDate
 import com.mooscles.screens.format.chartWeekOf
-import com.mooscles.screens.format.shortDate
 import com.mooscles.screens.format.spokenDate
 import com.mooscles.screens.resources.*
 import com.mooscles.screens.workout.bestSetText
@@ -214,20 +213,10 @@ fun chartSummary(
 }
 
 /**
- * The data table behind a chart (D4), the newest row first: the date or the week, the value, the set when there is
- * one and whether it is a record. The running week of a weekly chart says so (D7). [today] is for that.
+ * Row [newest] of the data table behind a chart (D4), 0 being the newest point, alone: a lazy list formats only the
+ * rows it shows. The date or the week, the value, the set when there is one and whether it is a record; the running
+ * week of a weekly chart says so (D7), which is what [today] is for. Its key is the point's [ChartPoint.rowKey].
  */
-@Composable
-fun tableRows(
-    chart: ExerciseChart,
-    metric: ProgressMetric,
-    pounds: Boolean,
-    zone: TimeZone,
-    weekStart: DayOfWeek,
-    today: LocalDate = currentDay(zone),
-): List<ChartTableRowData> = chart.points.indices.map { tableRow(chart, it, metric, pounds, zone, weekStart, today) }
-
-/** Row [newest] of [tableRows] (0 is the newest point), alone: a lazy list formats only the rows it shows. */
 @Composable
 fun tableRow(
     chart: ExerciseChart,
@@ -307,22 +296,6 @@ fun recordWasText(
         else -> set
     }
 }
-
-/**
- * A record's set with its date: "100 kg × 3 · 12 set"; an [assistance] reps record ([kind] [RecordKind.REPS]) reads
- * "30 kg de assistência × 8 · 12 set".
- */
-@Composable
-fun recordLine(
-    weightKg: Double,
-    reps: Int,
-    epochMillis: Long,
-    pounds: Boolean,
-    zone: TimeZone,
-    kind: RecordKind = RecordKind.WEIGHT,
-    assistance: Boolean = false,
-): String =
-    stringResource(Res.string.progress_highlight, recordSetText(kind, weightKg, reps, pounds, assistance), shortDate(epochMillis, zone))
 
 /** A record's set read aloud: "87,5 quilos por 6", "peso corporal por 12", "30 quilos de assistência por 8". */
 @Composable

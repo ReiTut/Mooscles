@@ -57,12 +57,14 @@ import com.mooscles.designsystem.components.MToastHostState
 import com.mooscles.designsystem.components.TopBar
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.theme.MTheme
-import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.catalogInPortuguese
+import com.mooscles.screens.progress.ProgressCalendar
 import com.mooscles.screens.progress.ProgressLoad
 import com.mooscles.screens.progress.ProgressMetric
+import com.mooscles.screens.progress.ProgressSeams
 import com.mooscles.screens.progress.RecordEvent
 import com.mooscles.screens.progress.recordsMonthHeader
+import com.mooscles.screens.progress.rememberProgressCalendar
 import com.mooscles.screens.progress.rememberProgressIndex
 import com.mooscles.screens.progress.rememberProgressQuery
 import com.mooscles.screens.progress.valueOrNull
@@ -83,10 +85,7 @@ import com.mooscles.screens.workout.ScreenErrorToast
 import com.mooscles.ui.MoosclesActions
 import com.mooscles.ui.RecordKind
 import com.mooscles.ui.UiState
-import kotlin.time.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import org.jetbrains.compose.resources.stringResource
 
@@ -132,21 +131,6 @@ internal object RecordsTags {
     fun rule(index: Int) = "records-rule-$index"
 }
 
-/** What the tab reads from the world: the clock (for the spoken dates' year) and the zone the months are in. Tests pass fixed ones. */
-@Immutable
-internal class RecordsSeams(val nowMillis: () -> Long, val zone: () -> TimeZone) {
-    companion object {
-        val System = RecordsSeams(
-            nowMillis = { Clock.System.now().toEpochMilliseconds() },
-            zone = { TimeZone.currentSystemDefault() },
-        )
-    }
-}
-
-/** The zone the months are read in and "today", taken once when the tab opens. */
-@Immutable
-private class RecordsCalendar(val zone: TimeZone, val today: LocalDate)
-
 /**
  * The Records tab (spec "Recordes (aba)" and D11): "Records" with the Settings shortcut ([onOpenSettings]) and "How we
  * count records" (`Info`), which opens [RecordRulesSheet]; the search ("Search exercise", both languages) and the chips
@@ -161,7 +145,8 @@ private class RecordsCalendar(val zone: TimeZone, val today: LocalDate)
  * [onOpenWorkout].
  *
  * The timeline comes from the progress cache ([rememberProgressIndex], [rememberProgressQuery] with a [RecordsQuery]),
- * never computed in composition. While [UiState.loading], the index or the query is on its way, the list is a
+ * never computed in composition, in the zone and "today" of [rememberProgressCalendar] (the clock is the spoken
+ * dates' year). While [UiState.loading], the index or the query is on its way, the list is a
  * skeleton; with no record at all, an empty state; with only first records and nothing asked for, an empty state whose
  * button turns "First records" on; otherwise, with none that fits, "No records found". A failed build or query shows
  * "No records found" too, never a skeleton that would wait for good. The search, the chips, the open
@@ -178,7 +163,7 @@ fun RecordsRoute(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RecordsScreen(state, actions, onOpenProgress, onOpenWorkout, onOpenSettings, modifier, RecordsSeams.System)
+    RecordsScreen(state, actions, onOpenProgress, onOpenWorkout, onOpenSettings, modifier, ProgressSeams.System)
 }
 
 /** [RecordsRoute] with its [seams]. */
@@ -190,7 +175,7 @@ internal fun RecordsScreen(
     onOpenWorkout: (workoutId: String) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    seams: RecordsSeams = RecordsSeams.System,
+    seams: ProgressSeams = ProgressSeams.System,
 ) {
     var search by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     var currentOnly by rememberSaveable { mutableStateOf(false) }
@@ -200,10 +185,7 @@ internal fun RecordsScreen(
     val host = remember { MToastHostState() }
     val rulesFocus = remember { FocusRequester() }
     var focusReturns by remember { mutableIntStateOf(0) }
-    val calendar = remember {
-        val zone = seams.zone()
-        RecordsCalendar(zone, ScreenDates.localDate(seams.nowMillis(), zone))
-    }
+    val calendar = rememberProgressCalendar(seams)
 
     val text = search.text.trim()
     // No index of the loading state's empty lists: kept as the previous index, it would show "no records" until the
@@ -398,7 +380,7 @@ private fun RecordsList(
     timeline: RecordsTimeline?,
     empty: EmptyKind,
     pounds: Boolean,
-    calendar: RecordsCalendar,
+    calendar: ProgressCalendar,
     listState: LazyListState,
     actions: RowActions,
     onShowFirstRecords: () -> Unit,

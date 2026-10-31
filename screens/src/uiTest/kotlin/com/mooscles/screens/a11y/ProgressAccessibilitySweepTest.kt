@@ -54,7 +54,6 @@ import com.mooscles.screens.records.RecordTimelines
 import com.mooscles.screens.records.RecordsQuery
 import com.mooscles.screens.records.RecordsScreen
 import com.mooscles.screens.records.RecordsScreenTag
-import com.mooscles.screens.records.RecordsSeams
 import com.mooscles.screens.records.RecordsTags
 import com.mooscles.screens.screenReaderOrder
 import com.mooscles.screens.spokenLabel
@@ -107,7 +106,7 @@ class ProgressAccessibilitySweepTest {
 
     private val utc = TimeZone.UTC
     private val now = LocalDateTime(2026, 10, 31, 12, 0).toInstant(utc).toEpochMilliseconds()
-    private val recordsSeams = RecordsSeams(nowMillis = { now }, zone = { utc })
+    private val recordsSeams = ProgressSeams(nowMillis = { now }, zone = { utc })
     private val progressSeams = ProgressSeams(nowMillis = { now }, zone = { utc }, weekStart = { DayOfWeek.MONDAY })
 
     private fun at(y: Int, mo: Int, d: Int) = LocalDateTime(y, mo, d, 9, 0).toInstant(utc).toEpochMilliseconds()

@@ -27,7 +27,7 @@ data class ExerciseChartQuery(
     override fun compute(index: ProgressIndex): ExerciseChart = ExerciseCharts.query(index, this)
 }
 
-/** The Library card's sparkline of [key] ([ExerciseCharts.sparkline]) as a cache query. */
+/** The sparkline of the exercise detail's "Your history" card ([ExerciseCharts.sparkline]) of [key], as a cache query. */
 data class SparklineQuery(val key: SeriesKey, val last: Int = 12) : ProgressQuery<List<Double>> {
     override fun compute(index: ProgressIndex): List<Double> = ExerciseCharts.sparkline(index, key, last)
 }
@@ -110,7 +110,7 @@ object ExerciseCharts {
         return ExerciseChart(points, weekly, sessions.size, points.first(), points.last(), best, trend, null)
     }
 
-    /** The first metric of the convention over the last [last] sessions that have it, oldest first (the Library card). */
+    /** The first metric of the convention over the last [last] sessions that have it, oldest first (the detail's "Your history"). */
     fun sparkline(index: ProgressIndex, key: SeriesKey, last: Int = 12): List<Double> {
         val sessions = index.sessions(key)
         val metric = ProgressMetrics.available(key.convention, sessions).first()

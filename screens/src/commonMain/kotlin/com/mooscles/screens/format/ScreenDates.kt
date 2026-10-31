@@ -144,11 +144,6 @@ fun spokenDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
     }
 }
 
-/** `Semana de 6 out` / `Week of Oct 6`: a weekly point is dated at the start of its week (P25), and always reads like this. */
-@Composable
-fun weekOf(weekStartMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
-    stringResource(Res.string.progress_week_of, shortDate(weekStartMillis, zone))
-
 /**
  * A date of the progress screen's texts ("since", the reading of a point, the data table): [shortDateAged], whose
  * year shows for a date a year or more before [today], with no-break spaces, so a narrow line or a large font moves
@@ -157,7 +152,10 @@ fun weekOf(weekStartMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault
 @Composable
 fun chartDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String = unbroken(shortDateAged(epochMillis, zone, today))
 
-/** `Semana de 6 out` / `Week of Oct 6` with the date as [chartDate] writes it (the year when it is a year or more ago). */
+/**
+ * `Semana de 6 out` / `Week of Oct 6`: a weekly point is dated at the start of its week (P25), and always reads like
+ * this, with the date as [chartDate] writes it (the year when it is a year or more ago).
+ */
 @Composable
 fun chartWeekOf(weekStartMillis: Long, zone: TimeZone, today: LocalDate): String =
     stringResource(Res.string.progress_week_of, chartDate(weekStartMillis, zone, today))

@@ -69,17 +69,11 @@ import com.mooscles.screens.workout.loadSpoken
 import com.mooscles.screens.workout.loadText
 import com.mooscles.ui.RecordKind
 import com.mooscles.ui.SetUi
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import com.mooscles.designsystem.resources.Res as DsRes
 
 /** How many reps records the section shows before "View all N". */
 internal const val SHOWN_REPS_RECORDS = 5
-
-/** "Today" and the zone the screen reads its dates in (D8). Compared by value, so an equal one skips what reads it. */
-@Immutable
-internal data class ProgressCalendar(val zone: TimeZone, val today: LocalDate)
 
 /** One row of the sessions: a session of the exercise in [convention] (the chart's, or an older one). */
 @Immutable
@@ -189,18 +183,13 @@ internal fun LazyListScope.progressSections(
     }
 }
 
-/** The width of an item of the list, as above the chart: the content column, up to `contentMaxWidth`, with the 16 dp sides. */
-@Composable
-private fun Modifier.sectionItem(): Modifier =
-    widthIn(max = MTheme.sizes.contentMaxWidth).fillMaxWidth().padding(horizontal = MTheme.space.s4)
-
 @Composable
 private fun SectionHeading(text: String, tag: String) {
     MText(
         text,
         MTheme.type.titleSm,
         color = MTheme.colors.textPrimary,
-        modifier = Modifier.sectionItem().padding(top = MTheme.space.s6, bottom = MTheme.space.s2).testTag(tag).semantics { heading() },
+        modifier = Modifier.progressItem().padding(top = MTheme.space.s6, bottom = MTheme.space.s2).testTag(tag).semantics { heading() },
     )
 }
 
@@ -211,7 +200,7 @@ private fun RecordCaption(text: String, tag: String) {
         text,
         MTheme.type.labelCaps,
         color = MTheme.colors.textSecondary,
-        modifier = Modifier.sectionItem().padding(top = MTheme.space.s2).testTag(tag),
+        modifier = Modifier.progressItem().padding(top = MTheme.space.s2).testTag(tag),
     )
 }
 
@@ -246,7 +235,7 @@ private fun RecordRow(event: RecordEvent, exerciseName: String, pounds: Boolean,
         MTheme.type.bodyLg,
         color = MTheme.colors.textPrimary,
         modifier = Modifier
-            .sectionItem()
+            .progressItem()
             .padding(vertical = MTheme.space.s2)
             .testTag(tag)
             .semantics(mergeDescendants = true) { contentDescription = spoken },
@@ -256,7 +245,7 @@ private fun RecordRow(event: RecordEvent, exerciseName: String, pounds: Boolean,
 /** "View all 7": shows every reps record in place. */
 @Composable
 private fun ViewAllRecords(count: Int, onClick: () -> Unit) {
-    Box(Modifier.sectionItem()) {
+    Box(Modifier.progressItem()) {
         MButton(
             pluralCount(Res.plurals.progress_view_all_records, count),
             onClick = onClick,
@@ -384,7 +373,7 @@ internal fun ConventionNote(conventions: List<String>) {
         stringResource(Res.string.progress_other_convention, labels),
         MTheme.type.bodyMd,
         color = MTheme.colors.textSecondary,
-        modifier = Modifier.sectionItem().padding(top = MTheme.space.s2).testTag(ProgressTags.CONVENTION_NOTE),
+        modifier = Modifier.progressItem().padding(top = MTheme.space.s2).testTag(ProgressTags.CONVENTION_NOTE),
     )
 }
 
@@ -395,7 +384,7 @@ internal fun ProgressEmpty(onAbout: () -> Unit) {
         icon = MIcons.ChartLine,
         title = stringResource(Res.string.progress_empty_title),
         body = stringResource(Res.string.progress_empty_body),
-        modifier = Modifier.sectionItem().testTag(ProgressTags.EMPTY),
+        modifier = Modifier.progressItem().testTag(ProgressTags.EMPTY),
         primaryAction = stringResource(Res.string.progress_empty_action) to onAbout,
     )
 }
@@ -407,6 +396,6 @@ internal fun ProgressMissing() {
         icon = MIcons.SearchX,
         title = stringResource(Res.string.progress_missing),
         body = stringResource(Res.string.exercise_not_found_body),
-        modifier = Modifier.sectionItem().testTag(ProgressTags.MISSING),
+        modifier = Modifier.progressItem().testTag(ProgressTags.MISSING),
     )
 }

@@ -49,6 +49,7 @@ import com.mooscles.screens.progress.LocalProgressIndexCache
 import com.mooscles.screens.progress.ProgressIndex
 import com.mooscles.screens.progress.ProgressIndexCache
 import com.mooscles.screens.progress.ProgressMetric
+import com.mooscles.screens.progress.ProgressSeams
 import com.mooscles.screens.progress.RecordEvent
 import com.mooscles.screens.screenRestoration
 import com.mooscles.screens.withScreen
@@ -89,7 +90,7 @@ class RecordsScreenTest {
 
     private val utc = TimeZone.UTC
     private val now = LocalDateTime(2026, 10, 31, 12, 0).toInstant(utc).toEpochMilliseconds()
-    private val seams = RecordsSeams(nowMillis = { now }, zone = { utc })
+    private val seams = ProgressSeams(nowMillis = { now }, zone = { utc })
 
     private fun at(y: Int, mo: Int, d: Int) = LocalDateTime(y, mo, d, 9, 0).toInstant(utc).toEpochMilliseconds()
 

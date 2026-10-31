@@ -62,10 +62,8 @@ import com.mooscles.designsystem.components.Skeleton
 import com.mooscles.designsystem.components.TopBar
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.theme.MTheme
-import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.conventionCaption
 import com.mooscles.screens.format.conventionLabel
-import com.mooscles.screens.format.currentWeekStart
 import com.mooscles.screens.format.equipmentLabel
 import com.mooscles.screens.format.exerciseName
 import com.mooscles.screens.format.muscleLabel
@@ -84,7 +82,6 @@ import com.mooscles.screens.workout.ScreenErrorToast
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
 import com.mooscles.ui.UiState
-import kotlin.time.Clock
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -150,25 +147,6 @@ internal object ProgressTags {
 internal object ProgressProbe {
     const val SCREEN = "progress-screen"
     const val CHART = "progress-chart-probe"
-}
-
-/**
- * What the screen reads from the world (spec D8): the clock and the zone, read on entry and at each period change, and
- * the first day of the week. Tests pass fixed ones.
- */
-@Immutable
-internal class ProgressSeams(
-    val nowMillis: () -> Long,
-    val zone: () -> TimeZone,
-    val weekStart: @Composable () -> DayOfWeek,
-) {
-    companion object {
-        val System = ProgressSeams(
-            nowMillis = { Clock.System.now().toEpochMilliseconds() },
-            zone = { TimeZone.currentSystemDefault() },
-            weekStart = { currentWeekStart() },
-        )
-    }
 }
 
 /**
@@ -274,10 +252,8 @@ internal fun ExerciseProgressScreen(
     val period = ExercisePeriod.entries.firstOrNull { it.name == periodName } ?: ExercisePeriod.ALL
     val requested = ProgressMetric.parse(metricChoice)
 
-    val calendar = remember(period) {
-        val zone = seams.zone()
-        ProgressCalendar(zone, ScreenDates.localDate(seams.nowMillis(), zone))
-    }
+    // Read again at each period change (D8).
+    val calendar = rememberProgressCalendar(seams, period)
     val weekStart = seams.weekStart()
     val shownLoad = key?.let { rememberProgressQuery(load, ShownChartQuery(it, requested, period, calendar.today, calendar.zone, weekStart)) }
     val shown = shownLoad?.valueOrNull
@@ -400,11 +376,6 @@ internal fun ExerciseProgressScreen(
         )
     }
 }
-
-/** The width of an item of the list: the content column, up to `contentMaxWidth`, with the 16 dp sides. */
-@Composable
-private fun Modifier.progressItem(): Modifier =
-    widthIn(max = MTheme.sizes.contentMaxWidth).fillMaxWidth().padding(horizontal = MTheme.space.s4)
 
 /** The name (a heading, `title.md`, wrapping whole at any size) and "Chest · Barbell" under it. */
 @Composable

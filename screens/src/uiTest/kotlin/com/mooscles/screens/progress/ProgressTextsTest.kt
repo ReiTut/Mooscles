@@ -9,7 +9,7 @@ import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.progress_view_all_records
 import com.mooscles.screens.format.spokenDate
-import com.mooscles.screens.format.weekOf
+import com.mooscles.screens.format.chartWeekOf
 import com.mooscles.screens.withScreen
 import com.mooscles.ui.RecordKind
 import kotlinx.datetime.DayOfWeek
@@ -173,7 +173,7 @@ class ProgressTextsTest {
                 sinceText(old, point(28, 92.5), ProgressMetric.LOAD, false, utc, today = today),
                 readoutText(old, ProgressMetric.LOAD, false, utc, today = today),
                 readoutText(old, ProgressMetric.LOAD, false, utc, weekly = true, today = today),
-                tableRows(chart(listOf(old, point(28, 92.5)), null), ProgressMetric.LOAD, false, utc, DayOfWeek.MONDAY, today)[1].label,
+                tableRow(chart(listOf(old, point(28, 92.5)), null), 1, ProgressMetric.LOAD, false, utc, DayOfWeek.MONDAY, today).label,
             )
         }
         assertEquals(
@@ -221,7 +221,8 @@ class ProgressTextsTest {
             point(30, 92.5, SetValue(92.5, 85.0, 3)),
         )
         val texts = inBoth {
-            tableRows(chart(points, null), ProgressMetric.E1RM, false, utc, DayOfWeek.MONDAY, today)
+            val chart = chart(points, null)
+            points.indices.map { tableRow(chart, it, ProgressMetric.E1RM, false, utc, DayOfWeek.MONDAY, today) }
         }
         for ((locale, rows) in texts) {
             assertEquals(listOf("workout|w30", "workout|w28"), rows.map(ChartTableRowData::key), locale)
@@ -241,7 +242,8 @@ class ProgressTextsTest {
         val midnight = { d: Int -> LocalDateTime(2026, 10, d, 0, 0).toInstant(utc).toEpochMilliseconds() }
         val weeks = listOf(ChartPoint(midnight(6), 9_800.0, null, false, null), ChartPoint(midnight(26), 7_000.0, null, false, null))
         val texts = inBoth {
-            tableRows(chart(weeks, null, weekly = true), ProgressMetric.VOLUME, false, utc, DayOfWeek.MONDAY, today)
+            val chart = chart(weeks, null, weekly = true)
+            weeks.indices.map { tableRow(chart, it, ProgressMetric.VOLUME, false, utc, DayOfWeek.MONDAY, today) }
         }
         assertEquals("Semana de 26\u00A0out · esta semana (em andamento)", texts["pt-BR"]!![0].label)
         assertEquals("Semana de 6\u00A0out", texts["pt-BR"]!![1].label)
@@ -276,11 +278,15 @@ class ProgressTextsTest {
                 ScreenDates.monthYear(2026, Month.OCTOBER),
                 spokenDate(at(2026, 6, 3), utc, today),
                 spokenDate(at(2025, 6, 3), utc, today),
-                weekOf(at(2026, 10, 6), utc),
+                chartWeekOf(at(2026, 10, 6), utc, today),
+                chartWeekOf(at(2025, 10, 6), utc, today),
             )
         }
-        assertEquals(listOf("outubro de 2026", "3 de junho", "3 de junho de 2025", "Semana de 6 out"), texts["pt-BR"])
-        assertEquals(listOf("October 2026", "June 3", "June 3, 2025", "Week of Oct 6"), texts["en"])
+        assertEquals(
+            listOf("outubro de 2026", "3 de junho", "3 de junho de 2025", "Semana de 6\u00A0out", "Semana de 6\u00A0out\u00A02025"),
+            texts["pt-BR"],
+        )
+        assertEquals(listOf("October 2026", "June 3", "June 3, 2025", "Week of Oct\u00A06", "Week of Oct\u00A06,\u00A02025"), texts["en"])
     }
 
     @Test
@@ -295,7 +301,6 @@ class ProgressTextsTest {
                 recordWasText(RecordKind.REPS, 80.0, 8, previousKg = null, previousReps = 6, pounds = false),
                 recordWasText(RecordKind.REPS, 80.0, 8, previousKg = null, previousReps = 1, pounds = false),
                 recordWasText(RecordKind.WEIGHT, 87.5, 6, previousKg = null, previousReps = null, pounds = false),
-                recordLine(100.0, 3, at(2026, 9, 12), false, utc),
                 recordSpoken(
                     "Supino", RecordKind.WEIGHT, 87.5, 6, previousKg = 85.0, previousReps = null, pounds = false,
                     epochMillis = at(2026, 10, 28), zone = utc, today = today, current = true, first = false,
@@ -312,16 +317,15 @@ class ProgressTextsTest {
         assertEquals("80 kg × 8 · antes 6 repetições".nb(), pt[5])
         assertEquals("80 kg × 8 · antes 1 repetição".nb(), pt[6])
         assertEquals("87,5 kg × 6".nb(), pt[7])
-        assertEquals("100 kg × 3 · 12 set".nb(), pt[8])
-        assertEquals("Supino, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual", pt[9])
-        assertEquals("28 de outubro, Treino A: A 40 × 10, 80 × 8", pt[10])
+        assertEquals("Supino, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual", pt[8])
+        assertEquals("28 de outubro, Treino A: A 40 × 10, 80 × 8", pt[9])
         val en = texts["en"]!!
         assertEquals("October 2026 · 5 records", en[0])
         assertEquals("October 2026 · 1 record", en[1])
         assertEquals("87.5 kg × 6 · was 85 kg".nb(), en[4])
         assertEquals("80 kg × 8 · was 6 reps".nb(), en[5])
         assertEquals("80 kg × 8 · was 1 rep".nb(), en[6])
-        assertEquals("100 kg × 3 · Sep 12".nb(), en[8])
+        assertEquals("87.5 kg × 6".nb(), en[7])
     }
 
     /**
