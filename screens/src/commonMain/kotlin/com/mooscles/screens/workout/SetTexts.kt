@@ -5,9 +5,7 @@ import com.mooscles.designsystem.components.spokenLoadByReps
 import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.designsystem.format.currentNumberLocale
-import com.mooscles.designsystem.resources.Res
-import com.mooscles.designsystem.resources.ds_unit_kg_spoken
-import com.mooscles.designsystem.resources.ds_unit_lb_spoken
+import com.mooscles.designsystem.format.spokenWeight
 import com.mooscles.domain.WeightUnits
 import com.mooscles.screens.resources.best_set_bodyweight
 import com.mooscles.ui.PreviousSetUi
@@ -46,7 +44,7 @@ internal fun loadText(weightKg: Double, pounds: Boolean): String =
 /** [weightKg] as read aloud: "82,5 quilos", "80 pounds". */
 @Composable
 internal fun loadSpoken(weightKg: Double, pounds: Boolean): String =
-    stringResource(if (pounds) Res.string.ds_unit_lb_spoken else Res.string.ds_unit_kg_spoken, loadText(weightKg, pounds))
+    spokenWeight(MoosclesNumbers.plain(WeightUnits.fromKg(weightKg, pounds)), pounds)
 
 /**
  * The previous session's set as the "previous" column shows it: "80 × 6", without the unit, as on

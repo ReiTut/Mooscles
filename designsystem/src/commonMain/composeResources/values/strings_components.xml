@@ -6,8 +6,14 @@
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>
     </plurals>
-    <string name="ds_unit_kg_spoken">%1$s kilograms</string>
-    <string name="ds_unit_lb_spoken">%1$s pounds</string>
+    <plurals name="ds_unit_kg_spoken">
+        <item quantity="one">%1$s kilogram</item>
+        <item quantity="other">%1$s kilograms</item>
+    </plurals>
+    <plurals name="ds_unit_lb_spoken">
+        <item quantity="one">%1$s pound</item>
+        <item quantity="other">%1$s pounds</item>
+    </plurals>
     <string name="ds_back">Back</string>
     <string name="ds_loading">Loading</string>
     <string name="ds_error_prefix">Error</string>

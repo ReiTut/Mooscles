@@ -59,6 +59,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 
 class GallerySmokeTest {
@@ -328,7 +329,7 @@ class GallerySmokeTest {
     fun setRowSampleReadsThePreviousSetWithItsReps() = runComposeUiTest {
         withTheme { GalleryPage.SetRow.Content() }
         waitForIdle()
-        val previous = getString(Res.string.ds_load_by_reps_spoken, getString(Res.string.ds_unit_kg_spoken, "55"), 10)
+        val previous = getString(Res.string.ds_load_by_reps_spoken, getPluralString(Res.plurals.ds_unit_kg_spoken, 55, "55"), 10)
         onNode(hasContentDescription(previous, substring = true)).assertExists()
     }
 

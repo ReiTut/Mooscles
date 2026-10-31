@@ -7,6 +7,7 @@ import com.mooscles.designsystem.components.spokenLoadByReps
 import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.format.pluralCount
+import com.mooscles.designsystem.format.spokenWeight
 import com.mooscles.domain.WeightUnits
 import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.shortDate
@@ -26,9 +27,6 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
 import kotlin.math.round
 import kotlin.time.Clock
-import com.mooscles.designsystem.resources.Res as DsRes
-import com.mooscles.designsystem.resources.ds_unit_kg_spoken
-import com.mooscles.designsystem.resources.ds_unit_lb_spoken
 
 // The words of the exercise progress screen and of the records tab. Values arrive in exact kg (or reps) and are
 // shown in the unit of [pounds]; dates come from the string resources, never from a platform formatter.
@@ -95,8 +93,7 @@ private fun valueString(kgOrReps: Double, metric: ProgressMetric, pounds: Boolea
 private fun spokenValue(kgOrReps: Double, metric: ProgressMetric, pounds: Boolean): String {
     val shown = ProgressNumbers.displayValue(kgOrReps, metric, pounds)
     if (metric == ProgressMetric.REPS) return repsString(round(shown).toInt())
-    val number = MoosclesNumbers.localize(MoosclesNumbers.plain(shown), currentNumberLocale())
-    return stringResource(if (pounds) DsRes.string.ds_unit_lb_spoken else DsRes.string.ds_unit_kg_spoken, number)
+    return spokenWeight(MoosclesNumbers.plain(shown), pounds)
 }
 
 /** An axis label for [value], already in the unit shown: the thousands form from 10.000 ("42 mil"), else the plain number. */
