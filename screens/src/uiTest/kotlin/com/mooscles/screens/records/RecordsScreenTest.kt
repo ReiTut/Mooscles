@@ -11,6 +11,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
@@ -61,14 +62,18 @@ import com.mooscles.ui.UiState
 import com.mooscles.ui.WorkoutExerciseUi
 import com.mooscles.ui.WorkoutUi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.concurrent.Volatile
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -584,6 +589,64 @@ class RecordsScreenTest {
         onNodeWithTag(RecordsScreenTag).performTouchInput { swipeUp() }
         waitForIdle()
         onNode(hasSetTextAction()).assertIsNotFocused()
+    }
+
+    /**
+     * Final review of phase 5A (FR-I1): a chip whose result adds a newer month shows that month on top. The list goes to
+     * the top once the new result is shown, not before: scrolled while the previous result is still there, the new one
+     * keeps the previous first row in place, which leaves the newer month above the screen. The queries wait for a gate
+     * here, so the previous result is surely still shown when the chip is tapped.
+     */
+    @Test
+    fun aChipThatAddsANewerMonthShowsItOnTop() = runComposeUiTest {
+        val many = (1..30).map { i ->
+            val month = 1 + (30 - i) % 12
+            val year = 2024 + (30 - i) / 12
+            val record = RecordUi(bench, 80.0 + i, 5, previousKg = 79.0 + i, workoutId = "m$i", date = end(year, month, 3))
+            workout("m$i", at(year, month, 3), bench to listOf(80.0 + i to 5), records = listOf(record))
+        }.sortedByDescending { it.startedAt }
+        // A first record in October, newer than every beaten one (the newest in June): hidden without the chip.
+        val squatFirst = RecordUi(squat, 100.0, 5, workoutId = "sq", date = end(2026, 10, 10))
+        val history = listOf(workout("sq", at(2026, 10, 10), squat to listOf(100.0 to 5), records = listOf(squatFirst))) + many
+        val gate = GatedContext()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            show(mutableStateOf(stateOf(history = history, records = emptyList())), cache = ProgressIndexCache(scope, gate))
+            waitForRows()
+            assertEquals("junho de 2026 · 1 recorde", headers().first())
+            onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
+            waitForIdle()
+
+            gate.hold = CompletableDeferred()
+            onNodeWithTag(RecordsTags.FIRST).performClick()
+            waitForIdle()
+            gate.hold?.complete(Unit)
+            waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(rowTag(squatFirst)).fetchSemanticsNodes().isNotEmpty() }
+            waitForIdle()
+            // On screen, inside the list: a header placed above it (in the list's top padding) is not shown.
+            onNodeWithTag(RecordsTags.month(2026, 10)).assertIsDisplayed()
+            onNodeWithTag(rowTag(squatFirst)).assertIsDisplayed()
+            val list = onNodeWithTag(RecordsScreenTag).getUnclippedBoundsInRoot()
+            val october = onNodeWithTag(RecordsTags.month(2026, 10)).getUnclippedBoundsInRoot()
+            assertTrue(october.top >= list.top, "the October header is at the list's top: ${october.top} vs ${list.top}")
+        } finally {
+            gate.hold?.complete(Unit)
+            scope.cancel()
+        }
+    }
+
+    /** Runs on [Dispatchers.Default], each block first waiting for [hold] when it is set. */
+    private class GatedContext : CoroutineDispatcher() {
+        @Volatile
+        var hold: CompletableDeferred<Unit>? = null
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            val held = hold
+            Dispatchers.Default.dispatch(context, Runnable {
+                held?.let { runBlocking { it.await() } }
+                block.run()
+            })
+        }
     }
 
     @Test

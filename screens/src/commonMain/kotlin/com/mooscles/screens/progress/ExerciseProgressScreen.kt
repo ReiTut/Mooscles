@@ -377,7 +377,7 @@ internal fun ExerciseProgressScreen(
                         }
                         if (showTable) {
                             val points = chart.points
-                            items(points.size, key = { "row-${points[points.size - 1 - it].startedAt}" }) { i -> ProgressTableRow(shown, pounds, i) }
+                            items(points.size, key = { "row-${points[points.size - 1 - it].rowKey}" }) { i -> ProgressTableRow(shown, pounds, i) }
                         }
                     }
                 }

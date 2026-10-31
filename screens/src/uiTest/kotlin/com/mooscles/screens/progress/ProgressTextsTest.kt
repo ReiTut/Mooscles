@@ -224,7 +224,7 @@ class ProgressTextsTest {
             tableRows(chart(points, null), ProgressMetric.E1RM, false, utc, DayOfWeek.MONDAY, today)
         }
         for ((locale, rows) in texts) {
-            assertEquals(listOf(points[1].startedAt.toString(), points[0].startedAt.toString()), rows.map(ChartTableRowData::key), locale)
+            assertEquals(listOf("workout|w30", "workout|w28"), rows.map(ChartTableRowData::key), locale)
             assertEquals("85 kg × 3".nb(), rows[0].detail, locale)
             assertFalse(rows[0].record, locale)
             assertTrue(rows[1].record, locale)

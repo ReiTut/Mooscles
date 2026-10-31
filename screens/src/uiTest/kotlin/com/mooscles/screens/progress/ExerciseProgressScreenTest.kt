@@ -345,6 +345,23 @@ class ExerciseProgressScreenTest {
         onNodeWithTag(ProgressTags.DATA_TOGGLE).assertTextContains("Ver dados")
     }
 
+    /** Final review of phase 5A (CR-1): two workouts that started in the same millisecond are two rows, not one key twice. */
+    @Test
+    fun twoWorkoutsStartedTogetherAreTwoRowsOfTheTable() = runComposeUiTest {
+        val same = at(2026, 10, 28)
+        show(mutableStateOf(stateOf(listOf(workout("w2", same, bench, 92.5 to 5), workout("w1", same, bench, 90.0 to 5)))))
+        chartReady()
+        scrollTo(ProgressTags.DATA_TOGGLE)
+        onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
+        waitForTag(ProgressTags.tableRow(0))
+        scrollTo(ProgressTags.tableRow(1))
+        val rows = (0..1).map { i ->
+            onNodeWithTag(ProgressTags.tableRow(i)).fetchSemanticsNode().config[SemanticsProperties.Text].joinToString(" ") { it.text }
+        }
+        assertTrue(rows.any { "92,5 kg × 5".nb() in it } && rows.any { "90 kg × 5".nb() in it }, "$rows")
+        assertGone(ProgressTags.tableRow(2))
+    }
+
     @Test
     fun selectingAPointShowsTheReadout() = runComposeUiTest {
         show(mutableStateOf(stateOf(benchHistory())))

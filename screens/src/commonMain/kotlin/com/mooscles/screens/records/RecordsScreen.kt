@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -164,7 +165,8 @@ private class RecordsCalendar(val zone: TimeZone, val today: LocalDate)
  * skeleton; with no record at all, an empty state; with only first records and nothing asked for, an empty state whose
  * button turns "First records" on; otherwise, with none that fits, "No records found". A failed build or query shows
  * "No records found" too, never a skeleton that would wait for good. The search, the chips, the open
- * sheet and the scroll are kept with `rememberSaveable`; a new search or chip starts the list from the top. Errors of
+ * sheet and the scroll are kept with `rememberSaveable`; a new search or chip starts the list from the top once its own
+ * result is shown (a newer month it adds is above the old first row). Errors of
  * the state show as this screen's toast ([ScreenErrorToast]).
  */
 @Composable
@@ -234,10 +236,17 @@ internal fun RecordsScreen(
         )
     }
 
-    // A new search or chip starts the list from the top; a recreation keeps the scroll it had.
-    var choiceShown by remember { mutableStateOf(false) }
-    LaunchedEffect(text, currentOnly, firstRecords) {
-        if (choiceShown) listState.scrollToItem(0) else choiceShown = true
+    // A new search or chip starts the list from the top once its own result is shown: while the previous result is
+    // still there, a scroll would be undone by the new one, which keeps its first row in place and so hides a newer
+    // month it adds above it. The scroll is asked for before the frame's measure, which applies it with the new rows.
+    // The first result shown (a recreation's too) keeps the scroll it has.
+    val shownQuery = timeline.valueOrNull?.query
+    val scrolledFor = remember { ShownChoice() }
+    SideEffect {
+        if (shownQuery != null && shownQuery != scrolledFor.query) {
+            if (scrolledFor.query != null) listState.requestScrollToItem(0)
+            scrolledFor.query = shownQuery
+        }
     }
     // A drag, not any scroll: a new search scrolls to the top while the person is still typing.
     LaunchedEffect(listState, focusManager) {
@@ -327,6 +336,9 @@ internal fun RecordsScreen(
         )
     }
 }
+
+/** The query of the result the list last showed, so a new one is scrolled to the top once. Not state: nothing reads it to compose. */
+private class ShownChoice(var query: RecordsQuery? = null)
 
 /** What a row does when tapped and with its accessibility action, made once per screen. */
 @Immutable

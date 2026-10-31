@@ -247,7 +247,7 @@ fun tableRow(
     }
     val set = point.set?.takeIf { metric != ProgressMetric.VOLUME }
     return ChartTableRowData(
-        key = point.startedAt.toString(),
+        key = point.rowKey,
         label = label,
         value = valueText(point, metric, pounds),
         detail = set?.let { bestSetText(it.weightKg, it.reps, pounds) },

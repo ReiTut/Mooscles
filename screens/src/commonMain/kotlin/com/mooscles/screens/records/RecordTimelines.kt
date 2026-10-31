@@ -25,9 +25,12 @@ data class RecordsQuery(
 @Immutable
 class RecordMonth(val year: Int, val month: Month, val items: List<RecordEvent>)
 
-/** The months of a query, newest first, and the number of events in them. */
+/**
+ * The months of a query, newest first, and the number of events in them. [query] is the one it answers: the cache
+ * keeps showing the previous result while a new one is computed, so the screen tells by it which choice is on screen.
+ */
 @Immutable
-class RecordsTimeline(val months: List<RecordMonth>, val total: Int)
+class RecordsTimeline(val months: List<RecordMonth>, val total: Int, val query: RecordsQuery)
 
 /** The query behind the Records tab (spec D11), over the events and current records of a [ProgressIndex]. */
 object RecordTimelines {
@@ -68,7 +71,7 @@ object RecordTimelines {
             items += event
         }
         if (month != null) months += RecordMonth(year, month, items)
-        return RecordsTimeline(months, events.size)
+        return RecordsTimeline(months, events.size, query)
     }
 
     /**

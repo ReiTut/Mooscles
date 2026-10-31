@@ -48,7 +48,13 @@ data class ChartPoint(
     val set: SetValue?,
     val record: Boolean,
     val workoutId: String?,
-)
+) {
+    /**
+     * Unique along a chart and a plain String: a session's point by its workout (two workouts may start in the same
+     * millisecond), a week's by its start (one point per week).
+     */
+    val rowKey: String get() = workoutId?.let { "workout|$it" } ?: "week|$startedAt"
+}
 
 /**
  * The chart of one metric over one period. [best] is the highest point, or the lowest on Assistance's load (less help
