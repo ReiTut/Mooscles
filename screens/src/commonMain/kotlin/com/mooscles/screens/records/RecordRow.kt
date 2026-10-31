@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import com.mooscles.designsystem.components.MText
 import com.mooscles.designsystem.components.PrBadge
 import com.mooscles.designsystem.components.Skeleton
@@ -41,17 +43,21 @@ import com.mooscles.screens.progress.recordSpoken
 import com.mooscles.screens.progress.recordWasText
 import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.records_current
+import com.mooscles.screens.resources.records_first_short
 import com.mooscles.screens.resources.records_open_workout
 import com.mooscles.screens.workout.RecompositionProbe
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
+import com.mooscles.designsystem.resources.Res as DsRes
+import com.mooscles.designsystem.resources.ds_pr_label
 
 /**
  * One record of the timeline (spec D11), one button and one node for a screen reader ([recordSpoken]: "Supino reto
- * com barra, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual"): the record badge ([PrBadge], soft on
- * a first record) before the name in the screen's language ([portuguese], `title.sm`, wrapping whole); the set and
- * what it beat ("87,5 kg × 6 · antes 85 kg", "Peso corporal × 12 · antes 10 repetições"); then the kind ("Carga",
+ * com barra, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual"): the record badge ([PrBadge]; on a
+ * first record, soft and saying "Primeiro" instead of "PR") before the name in the screen's language ([portuguese], `title.sm`, wrapping whole); the set and
+ * what it beat ("87,5 kg × 6 · antes 85 kg", "Peso corporal × 12 · antes 10 repetições", and for an assisted reps
+ * record "30 kg de assistência × 8 · antes 6 repetições"); then the kind ("Carga",
  * "Repetições"), the short date and, on a record that still holds, "Atual" written out. Each part wraps to a line of its
  * own rather than being cut. A tap is [RowActions.open]; the accessibility action "Open workout" is
  * [RowActions.openWorkout].
@@ -74,12 +80,14 @@ internal fun RecordRow(
     val name = displayName(record.exercise, portuguese)
     val first = record.firstRecord
     val kind = recordKindLabel(record.kind)
-    val value = recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds)
+    val value = recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds, record.assistance)
     val date = shortDate(record.date, zone)
     val spoken = recordSpoken(
         name, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
-        record.date, zone, today, current = event.current, first = first,
+        record.date, zone, today, current = event.current, first = first, assistance = record.assistance,
     )
+    // A first record's badge says so in words ("Primeiro"), never by its quieter fill alone.
+    val badgeLabel = if (first) stringResource(Res.string.records_first_short) else stringResource(DsRes.string.ds_pr_label)
     val openWorkoutLabel = stringResource(Res.string.records_open_workout)
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
@@ -104,9 +112,14 @@ internal fun RecordRow(
             verticalArrangement = Arrangement.spacedBy(MTheme.space.s1),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            // The badge's own words are in the row's description: kept out of the merged node.
-            Box(Modifier.clearAndSetSemantics { testTag = if (first) RecordsTags.BADGE_FIRST else RecordsTags.BADGE }) {
-                PrBadge(soft = first)
+            // The badge's description is the row's: kept out of the merged node, with the word it draws as its text.
+            Box(
+                Modifier.clearAndSetSemantics {
+                    testTag = if (first) RecordsTags.BADGE_FIRST else RecordsTags.BADGE
+                    text = AnnotatedString(badgeLabel)
+                },
+            ) {
+                PrBadge(soft = first, label = badgeLabel)
             }
             MText(name, MTheme.type.titleSm, color = colors.textPrimary, modifier = Modifier.testTag(RecordsTags.ROW_NAME))
         }

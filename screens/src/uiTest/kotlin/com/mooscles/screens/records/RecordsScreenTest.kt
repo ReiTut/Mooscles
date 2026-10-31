@@ -290,6 +290,55 @@ class RecordsScreenTest {
     }
 
     @Test
+    fun assistedRepsRecordSaysAssistance() = runComposeUiTest {
+        val assisted = catalog("selectorized_assisted_pull_up")
+        // An Assistance exercise, and an assisted set of a load exercise: the number is help, not load.
+        val dip = RecordUi(assisted, 30.0, 8, previousReps = 6, workoutId = "a1", date = end(2026, 10, 15), kind = RecordKind.REPS, assistance = true)
+        val benchAssisted = RecordUi(bench, 20.0, 10, previousReps = 7, workoutId = "a1", date = end(2026, 10, 15), kind = RecordKind.REPS, assistance = true)
+        val history = listOf(
+            WorkoutUi(
+                "a1", "Treino a1", at(2026, 10, 15), at(2026, 10, 15) + HOUR,
+                exercises = listOf(
+                    WorkoutExerciseUi("e-a1-0", assisted, listOf(SetUi("s-a1-0", 8, 30.0, completed = true, assistance = true))),
+                    WorkoutExerciseUi("e-a1-1", bench, listOf(SetUi("s-a1-1", 10, 20.0, completed = true, assistance = true))),
+                ),
+                records = listOf(dip, benchAssisted),
+            ),
+        )
+        show(mutableStateOf(stateOf(history = history, records = emptyList())), tall = true)
+        waitForRows()
+        part(dip, RecordsTags.ROW_VALUE).assertTextEquals("30 kg de assistência × 8 · antes 6 repetições".nb())
+        part(dip, RecordsTags.ROW_KIND).assertTextEquals("Repetições")
+        assertTrue(spoken(dip).contains("30 quilos de assistência por 8, antes 6 repetições"), spoken(dip))
+        part(benchAssisted, RecordsTags.ROW_VALUE).assertTextEquals("20 kg de assistência × 10 · antes 7 repetições".nb())
+        assertTrue(spoken(benchAssisted).contains("20 quilos de assistência por 10"), spoken(benchAssisted))
+    }
+
+    @Test
+    fun onlyFirstRecordsOffersTheChip() = runComposeUiTest {
+        // A new person: two workouts, every record a first one, which the timeline hides without the chip.
+        val firsts = history.filter { it.id == "w5" || it.id == "w1" }
+        show(mutableStateOf(stateOf(history = firsts, records = listOf(pushFirst, benchFirstW, benchFirstR))), tall = true)
+        waitForTag(RecordsTags.ONLY_FIRST)
+        onNode(hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Nenhum recorde batido ainda"), useUnmergedTree = true).assertExists()
+        onNode(
+            hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Seus primeiros registros ficam em “Primeiros registros”."),
+            useUnmergedTree = true,
+        ).assertExists()
+        assertGone(RecordsTags.EMPTY)
+        assertGone(RecordsTags.NONE_FOUND)
+        onNode(hasClickAction() and hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Ver primeiros registros")).performClick()
+        waitUntil(timeoutMillis = 5_000) { rows().size == 3 }
+        onNodeWithTag(RecordsTags.FIRST).assertIsOn()
+        assertEquals(listOf(pushFirst, benchFirstW, benchFirstR).map(::rowTag), rows())
+        // A search that finds nothing is still "nothing found", not this state.
+        onNodeWithTag(RecordsTags.FIRST).performClick()
+        search("remada curvada")
+        waitForTag(RecordsTags.NONE_FOUND)
+        assertGone(RecordsTags.ONLY_FIRST)
+    }
+
+    @Test
     fun firstRecordsChipAddsThemWithTheSoftBadge() = runComposeUiTest {
         show(tall = true)
         waitForRows()
@@ -305,7 +354,11 @@ class RecordsScreenTest {
             assertEquals(1, partCount(first, RecordsTags.BADGE_FIRST), rowTag(first))
             assertEquals(0, partCount(first, RecordsTags.BADGE), rowTag(first))
             assertTrue(spoken(first).endsWith("Primeiro registro"), spoken(first))
+            // Told apart in words, not by the fill alone.
+            part(first, RecordsTags.BADGE_FIRST).assertTextEquals("Primeiro")
         }
+        part(benchW875, RecordsTags.BADGE).assertTextEquals("PR")
+        part(benchW85, RecordsTags.BADGE).assertTextEquals("PR")
         // A first record has no previous value: just the set.
         part(benchFirstW, RecordsTags.ROW_VALUE).assertTextEquals("80 kg × 6".nb())
         part(squatFirst, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
@@ -431,13 +484,16 @@ class RecordsScreenTest {
     }
 
     @Test
-    fun failedBuildShowsTheEmptyStateNotTheSkeleton() = runComposeUiTest {
+    fun failedBuildShowsNoneFoundNotTheSkeleton() = runComposeUiTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         val cache = ProgressIndexCache(scope, build = { _, _ -> error("build failed on purpose") })
         try {
             show(cache = cache)
-            waitForTag(RecordsTags.EMPTY)
+            // Neutral: a person with many records is never told to go and set their first one.
+            waitForTag(RecordsTags.NONE_FOUND)
             assertGone(RecordsTags.SKELETON)
+            assertGone(RecordsTags.EMPTY)
+            assertGone(RecordsTags.ONLY_FIRST)
             search("supino")
             waitForTag(RecordsTags.NONE_FOUND)
             assertGone(RecordsTags.SKELETON)
@@ -549,9 +605,17 @@ class RecordsScreenTest {
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOn()
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
         waitUntil(timeoutMillis = 5_000) { rows().firstOrNull() == rowTag(many.first().records.single()) }
+
+        // "Só atuais" and the open rules sheet come back too.
+        onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
+        waitForTag(RecordsTags.NONE_FOUND)
+        onNodeWithTag(RecordsTags.RULES).performClick()
+        waitForTag(RecordsTags.RULES_SHEET)
         restoration.emulateSaveAndRestore()
-        waitForRows()
-        onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOff()
+        waitForTag(RecordsTags.RULES_SHEET)
+        waitForTag(RecordsTags.NONE_FOUND)
+        onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOn()
+        onNodeWithTag(RecordsTags.FIRST).assertIsOn().assertIsNotEnabled()
     }
 
     @Test

@@ -40,12 +40,20 @@ const val PrBadgeTag = "pr-badge"
  * The personal record badge: a pill with the record icon and "PR", so it is never color alone.
  * It is read as "personal record". [soft] uses the quiet `pr.subtle` fill instead of `pr.solid`.
  * With [animateIn] it appears with the `PersonalRecord` key moment (a spring, or a fade with reduced motion).
+ * [label] and [spoken] replace "PR" and "personal record" for a badge that means something else in words, such as
+ * the records timeline's first record ("First"), so two badges never differ by their fill alone.
  */
 @Composable
-fun PrBadge(modifier: Modifier = Modifier, soft: Boolean = false, animateIn: Boolean = false) {
+fun PrBadge(
+    modifier: Modifier = Modifier,
+    soft: Boolean = false,
+    animateIn: Boolean = false,
+    label: String? = null,
+    spoken: String? = null,
+) {
     val colors = MTheme.colors
-    val spoken = stringResource(Res.string.ds_pr_spoken)
-    val label = stringResource(Res.string.ds_pr_label)
+    val spokenText = spoken ?: stringResource(Res.string.ds_pr_spoken)
+    val labelText = label ?: stringResource(Res.string.ds_pr_label)
     val container = if (soft) colors.prSubtle else colors.prSolid
     val content = if (soft) colors.prText else colors.prOn
     val choice = MotionPolicy.keyMoment(KeyMoment.PersonalRecord, MTheme.reducedMotion)
@@ -91,11 +99,11 @@ fun PrBadge(modifier: Modifier = Modifier, soft: Boolean = false, animateIn: Boo
             }
             .background(container, MTheme.radius.full)
             .padding(horizontal = MTheme.space.s2, vertical = MTheme.space.s1)
-            .clearAndSetSemantics { contentDescription = spoken },
+            .clearAndSetSemantics { contentDescription = spokenText },
         horizontalArrangement = Arrangement.spacedBy(MTheme.space.s1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MIcon(MIcons.PlateRecord, contentDescription = null, size = MTheme.sizes.icon16, tint = content)
-        MText(label, MTheme.type.labelMd, color = content)
+        MText(labelText, MTheme.type.labelMd, color = content)
     }
 }

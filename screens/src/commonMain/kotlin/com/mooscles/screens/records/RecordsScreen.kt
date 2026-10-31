@@ -68,6 +68,9 @@ import com.mooscles.screens.resources.records_empty_body
 import com.mooscles.screens.resources.records_empty_title
 import com.mooscles.screens.resources.records_first
 import com.mooscles.screens.resources.records_none_found
+import com.mooscles.screens.resources.records_only_first_action
+import com.mooscles.screens.resources.records_only_first_body
+import com.mooscles.screens.resources.records_only_first_title
 import com.mooscles.screens.resources.records_rules
 import com.mooscles.screens.resources.records_search
 import com.mooscles.screens.resources.records_settings
@@ -91,10 +94,12 @@ internal object RecordsTags {
     const val SETTINGS = "records-settings"
     const val RULES = "records-rules"
     const val RULES_SHEET = "records-rules-sheet"
+    /** The search field's box, around the field: the node with the text action is the field inside it. */
     const val SEARCH = "records-search"
     const val CURRENT_ONLY = "records-current-only"
     const val FIRST = "records-first"
     const val EMPTY = "records-empty"
+    const val ONLY_FIRST = "records-only-first"
     const val NONE_FOUND = "records-none-found"
     const val SKELETON = "records-skeleton-row"
 
@@ -153,8 +158,9 @@ private class RecordsCalendar(val zone: TimeZone, val today: LocalDate)
  *
  * The timeline comes from the progress cache ([rememberProgressIndex], [rememberProgressQuery] with a [RecordsQuery]),
  * never computed in composition. While [UiState.loading], the index or the query is on its way, the list is a
- * skeleton; with no record at all, an empty state; with records but none that fits, "No records found". A failed build
- * or query shows the same as nothing found, never a skeleton that would wait for good. The search, the chips, the open
+ * skeleton; with no record at all, an empty state; with only first records and nothing asked for, an empty state whose
+ * button turns "First records" on; otherwise, with none that fits, "No records found". A failed build or query shows
+ * "No records found" too, never a skeleton that would wait for good. The search, the chips, the open
  * sheet and the scroll are kept with `rememberSaveable`; a new search or chip starts the list from the top. Errors of
  * the state show as this screen's toast ([ScreenErrorToast]).
  */
@@ -267,9 +273,11 @@ internal fun RecordsScreen(
             } else {
                 val built = index.valueOrNull
                 val empty = when {
-                    // A failure: nothing to show, said as the empty state, or as nothing found for a search.
-                    shown == null -> if (text.isEmpty()) EmptyKind.NO_RECORDS else EmptyKind.NONE_FOUND
+                    // A failure: nothing to show, said neutrally (the person may have many records).
+                    shown == null -> EmptyKind.NONE_FOUND
                     built != null && built.events.isEmpty() && built.currentRecords.isEmpty() -> EmptyKind.NO_RECORDS
+                    // Records, all first ones, hidden by D11 with nothing asked for: say where they are.
+                    text.isEmpty() && !currentOnly && !firstRecords -> EmptyKind.ONLY_FIRST
                     else -> EmptyKind.NONE_FOUND
                 }
                 RecordsList(
@@ -279,6 +287,7 @@ internal fun RecordsScreen(
                     calendar = calendar,
                     listState = listState,
                     actions = actionsOf,
+                    onShowFirstRecords = { firstRecords = true },
                     modifier = content,
                 )
             }
@@ -301,8 +310,11 @@ internal fun RecordsScreen(
 @Immutable
 internal class RowActions(val open: (RecordEvent) -> Unit, val openWorkout: (RecordEvent) -> Unit)
 
-/** What the list says when it has no row. */
-private enum class EmptyKind { NO_RECORDS, NONE_FOUND }
+/**
+ * What the list says when it has no row: no record at all; only first records, which the timeline hides without the
+ * chip; or nothing that fits the search or the chips (also after a failure).
+ */
+private enum class EmptyKind { NO_RECORDS, ONLY_FIRST, NONE_FOUND }
 
 /** "Current only" and "First records", filters ([MChipKind.Filter], checkboxes) on one scrolling line. */
 @Composable
@@ -355,6 +367,7 @@ private fun RecordsList(
     calendar: RecordsCalendar,
     listState: LazyListState,
     actions: RowActions,
+    onShowFirstRecords: () -> Unit,
     modifier: Modifier,
 ) {
     val portuguese = catalogInPortuguese()
@@ -365,7 +378,13 @@ private fun RecordsList(
         contentPadding = PaddingValues(top = MTheme.space.s2, bottom = bottom + MTheme.space.s6),
     ) {
         if (timeline == null || timeline.total == 0) {
-            item(key = "empty") { if (empty == EmptyKind.NO_RECORDS) NoRecords() else NoneFound() }
+            item(key = "empty") {
+                when (empty) {
+                    EmptyKind.NO_RECORDS -> NoRecords()
+                    EmptyKind.ONLY_FIRST -> OnlyFirstRecords(onShowFirstRecords)
+                    EmptyKind.NONE_FOUND -> NoneFound()
+                }
+            }
             return@LazyColumn
         }
         for (month in timeline.months) {
@@ -406,7 +425,19 @@ private fun NoRecords() {
     )
 }
 
-/** Records exist, but none fits the search or the chips. */
+/** Every record is a first record, hidden without the chip: a button turns "First records" on. */
+@Composable
+private fun OnlyFirstRecords(onShowFirstRecords: () -> Unit) {
+    EmptyState(
+        icon = MIcons.PlateRecord,
+        title = stringResource(Res.string.records_only_first_title),
+        body = stringResource(Res.string.records_only_first_body),
+        modifier = Modifier.testTag(RecordsTags.ONLY_FIRST),
+        primaryAction = stringResource(Res.string.records_only_first_action) to onShowFirstRecords,
+    )
+}
+
+/** Records exist, but none fits the search or the chips; or the timeline could not be made. */
 @Composable
 private fun NoneFound() {
     MText(

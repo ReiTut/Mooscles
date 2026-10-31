@@ -665,7 +665,10 @@ jobs:
           # aFailingQueryIsFailedNotThePreviousResult; one test renamed, +0). 805 + 6 = 811.
           # Phase 5A task 11: RecordsScreenTest 18 (uiTest: the 16 of the brief, failedBuildShowsTheEmptyStateNotTheSkeleton,
           # unrelatedStateChangesDoNotRecomposeTheRows). 811 + 18 = 829.
-          MIN_SCREENS_IOS_TESTS: 829
+          # Phase 5A task 11 fix round 1: RecordsScreenTest +2 (uiTest: assistedRepsRecordSaysAssistance,
+          # onlyFirstRecordsOffersTheChip; failedBuildShowsTheEmptyStateNotTheSkeleton renamed
+          # failedBuildShowsNoneFoundNotTheSkeleton, +0). 829 + 2 = 831.
+          MIN_SCREENS_IOS_TESTS: 831
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

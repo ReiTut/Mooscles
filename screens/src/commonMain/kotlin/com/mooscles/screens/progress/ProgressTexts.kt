@@ -250,12 +250,33 @@ fun recordKindLabel(kind: RecordKind): String =
     stringResource(if (kind == RecordKind.WEIGHT) Res.string.records_kind_weight else Res.string.records_kind_reps)
 
 /**
- * A record's line: "87,5 kg × 6 · antes 85 kg" for a load record, "80 kg × 8 · antes 6 repetições" for a reps record,
- * and just the set for a first record (no previous value).
+ * A record's set: "87,5 kg × 6", "Peso corporal × 12", and for an [assistance] reps record (an assisted set, or any
+ * set of an Assistance exercise) "30 kg de assistência × 8", since its number is help, not load.
  */
 @Composable
-fun recordWasText(kind: RecordKind, weightKg: Double, reps: Int, previousKg: Double?, previousReps: Int?, pounds: Boolean): String {
-    val set = bestSetText(weightKg, reps, pounds)
+private fun recordSetText(kind: RecordKind, weightKg: Double, reps: Int, pounds: Boolean, assistance: Boolean): String =
+    if (kind == RecordKind.REPS && assistance) {
+        stringResource(Res.string.records_assisted_set, loadString(WeightUnits.fromKg(weightKg, pounds), pounds), reps)
+    } else {
+        bestSetText(weightKg, reps, pounds)
+    }
+
+/**
+ * A record's line: "87,5 kg × 6 · antes 85 kg" for a load record, "80 kg × 8 · antes 6 repetições" for a reps record,
+ * and just the set for a first record (no previous value). An [assistance] reps record writes its set as assistance
+ * ("30 kg de assistência × 8 · antes 6 repetições").
+ */
+@Composable
+fun recordWasText(
+    kind: RecordKind,
+    weightKg: Double,
+    reps: Int,
+    previousKg: Double?,
+    previousReps: Int?,
+    pounds: Boolean,
+    assistance: Boolean = false,
+): String {
+    val set = recordSetText(kind, weightKg, reps, pounds, assistance)
     return when {
         kind == RecordKind.WEIGHT && previousKg != null ->
             stringResource(Res.string.records_was_load, set, loadString(WeightUnits.fromKg(previousKg, pounds), pounds))
@@ -265,18 +286,34 @@ fun recordWasText(kind: RecordKind, weightKg: Double, reps: Int, previousKg: Dou
     }
 }
 
-/** A record's set with its date: "100 kg × 3 · 12 set". */
+/**
+ * A record's set with its date: "100 kg × 3 · 12 set"; an [assistance] reps record ([kind] [RecordKind.REPS]) reads
+ * "30 kg de assistência × 8 · 12 set".
+ */
 @Composable
-fun recordLine(weightKg: Double, reps: Int, epochMillis: Long, pounds: Boolean, zone: TimeZone): String =
-    stringResource(Res.string.progress_highlight, bestSetText(weightKg, reps, pounds), shortDate(epochMillis, zone))
+fun recordLine(
+    weightKg: Double,
+    reps: Int,
+    epochMillis: Long,
+    pounds: Boolean,
+    zone: TimeZone,
+    kind: RecordKind = RecordKind.WEIGHT,
+    assistance: Boolean = false,
+): String =
+    stringResource(Res.string.progress_highlight, recordSetText(kind, weightKg, reps, pounds, assistance), shortDate(epochMillis, zone))
 
 @Composable
-private fun spokenSet(weightKg: Double, reps: Int, pounds: Boolean): String =
-    if (weightKg == 0.0) bestSetText(weightKg, reps, pounds) else spokenLoadByReps(loadSpoken(weightKg, pounds), reps)
+private fun spokenSet(kind: RecordKind, weightKg: Double, reps: Int, pounds: Boolean, assistance: Boolean): String = when {
+    kind == RecordKind.REPS && assistance ->
+        spokenLoadByReps(stringResource(Res.string.records_spoken_assistance, loadSpoken(weightKg, pounds)), reps)
+    weightKg == 0.0 -> bestSetText(weightKg, reps, pounds)
+    else -> spokenLoadByReps(loadSpoken(weightKg, pounds), reps)
+}
 
 /**
  * A record row read aloud, without the visual dot: "Supino, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro,
- * Atual". [current] adds "Atual"; [first] adds "Primeiro registro".
+ * Atual". [current] adds "Atual"; [first] adds "Primeiro registro"; an [assistance] reps record reads its set as
+ * "30 quilos de assistência por 8".
  */
 @Composable
 fun recordSpoken(
@@ -292,8 +329,9 @@ fun recordSpoken(
     today: LocalDate,
     current: Boolean,
     first: Boolean,
+    assistance: Boolean = false,
 ): String {
-    var detail = spokenSet(weightKg, reps, pounds)
+    var detail = spokenSet(kind, weightKg, reps, pounds, assistance)
     val was = when {
         kind == RecordKind.WEIGHT && previousKg != null -> stringResource(Res.string.records_spoken_was_load, loadSpoken(previousKg, pounds))
         kind == RecordKind.REPS && previousReps != null -> pluralCount(Res.plurals.records_spoken_was_reps, previousReps, previousReps)
