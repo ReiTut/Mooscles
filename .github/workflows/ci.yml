@@ -668,7 +668,13 @@ jobs:
           # Phase 5A task 10 fix round 1: ExerciseProgressSectionsTest +6 (uiTest: assistedRepsRecordsAreTheirOwnGroupLowestAssistanceFirst,
           # sessionOfAnotherConventionSaysItsConvention, assistedSetAndZeroLoadSayWhatTheyAre, assistanceSessionsHaveNoAssistedLetter,
           # datesAYearOrMoreAgoShowTheYear, viewAllSurvivesRecreation); MIN_HOST_TESTS stays 1242 (commonTest only gained asserts). 827 + 6 = 833.
-          MIN_SCREENS_IOS_TESTS: 833
+          # Phase 5A task 11: RecordsScreenTest 18 (uiTest: the 16 of the brief, failedBuildShowsTheEmptyStateNotTheSkeleton,
+          # unrelatedStateChangesDoNotRecomposeTheRows). 811 + 18 = 829.
+          # Phase 5A task 11 fix round 1: RecordsScreenTest +2 (uiTest: assistedRepsRecordSaysAssistance,
+          # onlyFirstRecordsOffersTheChip; failedBuildShowsTheEmptyStateNotTheSkeleton renamed
+          # failedBuildShowsNoneFoundNotTheSkeleton, +0). 829 + 2 = 831.
+          # Merge of the task 10 and task 11 lanes: 833 + 20 (task 11 and its fix round) = 853.
+          MIN_SCREENS_IOS_TESTS: 853
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

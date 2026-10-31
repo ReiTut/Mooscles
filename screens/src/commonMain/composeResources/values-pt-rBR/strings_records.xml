@@ -36,4 +36,10 @@
     <string name="records_empty_title">Seu primeiro recorde aparece aqui</string>
     <string name="records_empty_body">Conclua séries de trabalho para registrar recordes de carga e de repetições.</string>
     <string name="records_none_found">Nenhum recorde encontrado</string>
+    <string name="records_assisted_set">%1$s de assistência × %2$d</string>
+    <string name="records_spoken_assistance">%1$s de assistência</string>
+    <string name="records_first_short">Primeiro</string>
+    <string name="records_only_first_title">Nenhum recorde batido ainda</string>
+    <string name="records_only_first_body">Seus primeiros registros ficam em “Primeiros registros”.</string>
+    <string name="records_only_first_action">Ver primeiros registros</string>
 </resources>
