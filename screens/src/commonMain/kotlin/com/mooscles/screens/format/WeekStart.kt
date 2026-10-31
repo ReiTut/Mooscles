@@ -2,6 +2,7 @@ package com.mooscles.screens.format
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.intl.Locale
+import com.mooscles.designsystem.i18n.deviceRegion
 import kotlinx.datetime.DayOfWeek
 
 /**
@@ -33,14 +34,19 @@ object WeekStart {
         "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW",
     )
 
-    /** [languageTag] such as `pt-BR`, `zh-Hant-TW` or `pt_BR`. Without a region, `pt` starts on Sunday and the rest on Monday. */
-    fun of(languageTag: String): DayOfWeek {
+    /**
+     * [languageTag] such as `pt-BR`, `zh-Hant-TW` or `pt_BR`. A tag without a region takes
+     * [deviceRegion] (the system's, spec D8: an app language chosen as plain `en` must not hide an
+     * `US` device); without either, `pt` starts on Sunday and the rest on Monday.
+     */
+    fun of(languageTag: String, deviceRegion: String? = null): DayOfWeek {
         val parts = languageTag.replace('_', '-').split('-')
         val language = parts.firstOrNull()?.lowercase().orEmpty()
         // The region is the first 2-letter (or 3-digit) subtag after the language, before any extension.
         val region = parts.drop(1).takeWhile { it.length > 1 }
             .firstOrNull { (it.length == 2 && it.all(Char::isLetter)) }
             ?.uppercase()
+            ?: deviceRegion?.takeIf { it.length == 2 && it.all(Char::isLetter) }?.uppercase()
         return when {
             region in sunday -> DayOfWeek.SUNDAY
             region in saturday -> DayOfWeek.SATURDAY
@@ -52,6 +58,6 @@ object WeekStart {
     }
 }
 
-/** The first day of the week for the current locale. */
+/** The first day of the week for the current locale, by the device's region when the app's language has none. */
 @Composable
-fun currentWeekStart(): DayOfWeek = WeekStart.of(Locale.current.toLanguageTag())
+fun currentWeekStart(): DayOfWeek = WeekStart.of(Locale.current.toLanguageTag(), deviceRegion())

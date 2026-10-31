@@ -304,7 +304,8 @@ jobs:
           # RecordsTapBaselineHostTest -2 retired: the old screens are gone; the numbers stay in the report
           # (reports/2026-10-31-phase5a-verificacao/tap-baseline-5a.md). 1244 + 15 - 2 = 1257.
           # Phase 5A task 13 fix round 1 (:app host): ProgressNavigationHostTest +1 (aDoubleTapOnARecordOpensOneProgress). 1257 + 1 = 1258.
-          MIN_HOST_TESTS: 1258
+          # Phase 5A task 16 round 2: WeekStartTest +1 (:screens commonTest: aRegionlessLanguageTakesTheDeviceRegion). 1258 + 1 = 1259.
+          MIN_HOST_TESTS: 1259
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -690,7 +691,8 @@ jobs:
           # seeTheEstimatedOneRepMaxOfTheBench) and ProgressAccessibilitySweepTest 15 (uiTest: six Records states, six
           # progress states, the history card, recordsReadingOrder, progressReadingOrder). 857 + 18 = 875.
           # Merge of the task 13 and tasks 14-15 lanes (same base, 855): 855 + 2 + 20 = 877.
-          MIN_SCREENS_IOS_TESTS: 877
+          # Phase 5A task 16 round 2: WeekStartTest +1 (commonTest: aRegionlessLanguageTakesTheDeviceRegion). 877 + 1 = 878.
+          MIN_SCREENS_IOS_TESTS: 878
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
