@@ -685,7 +685,12 @@ jobs:
           # fullHistoryOpensTheOldScreen renamed viewProgressFromTheCardAndTheMenu, +0). 853 + 2 = 855.
           # Task 13 fix round 1 (RecordsScreenTest: leavingLetsTheSearchFocusGo,
           # draggingTheListLetsTheSearchFocusGoButANewSearchKeepsIt). 855 + 2 = 857.
-          MIN_SCREENS_IOS_TESTS: 857
+          # Phase 5A task 14: ProgressFlowTest 2 (uiTest: progressFlowPortugueseLightAtOneX, progressFlowEnglishDarkAtTwoX). 855 + 2 = 857.
+          # Phase 5A task 15: TapBudgetTest +3 (uiTest: seeTheCurrentRecordOfAnExercise, fromARecordToTheExerciseProgress,
+          # seeTheEstimatedOneRepMaxOfTheBench) and ProgressAccessibilitySweepTest 15 (uiTest: six Records states, six
+          # progress states, the history card, recordsReadingOrder, progressReadingOrder). 857 + 18 = 875.
+          # Merge of the task 13 and tasks 14-15 lanes (same base, 855): 855 + 2 + 20 = 877.
+          MIN_SCREENS_IOS_TESTS: 877
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
