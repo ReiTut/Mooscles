@@ -19,6 +19,9 @@ import com.mooscles.designsystem.components.ExerciseMenuTag
 import com.mooscles.designsystem.components.MTabBarTag
 import com.mooscles.designsystem.licenses.LicensesContentTag
 import com.mooscles.screens.library.LibraryScreenTag
+import com.mooscles.screens.progress.ExerciseProgressTag
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.unit.dp
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
@@ -261,12 +264,37 @@ class ShellNavigationHostTest {
         openFromTheBar()
         compose.onNodeWithTag(ExerciseMenuTag).performClick()
         compose.onNodeWithTag("exercise-menu-history").performClick()
-        compose.onNodeWithText("Movement history", substring = true, ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
         compose.onNodeWithTag("workout-route").assertDoesNotExist()
         compose.onNodeWithTag("shell-workout-bar").assertIsDisplayed()
         back()
         compose.onNodeWithTag("workout-route").assertIsDisplayed()
         compose.onNodeWithTag(MTabBarTag).assertDoesNotExist()
+    }
+
+    /** Spec D2: the base route `exercise/{id}` of before opens the convention's first metric. */
+    @Test fun progressRouteWithoutMetricOpensTheDefault() {
+        showWithNav(activeState())
+        openRoute("exercise/bench")
+        assertMetricSelected("load")
+        compose.onNodeWithTag("progress-metric-e1rm").assertIsNotSelected()
+    }
+
+    @Test fun progressRouteWithMetricOpensIt() {
+        showWithNav(activeState())
+        openRoute("exercise/bench?metric=e1rm")
+        assertMetricSelected("e1rm")
+        compose.onNodeWithTag("progress-metric-load").assertIsNotSelected()
+    }
+
+    /** Only the four lower-case routes are metrics: anything else opens the default, never a blank chart. */
+    @Test fun unknownMetricFallsBackToTheDefault() {
+        showWithNav(activeState())
+        openRoute("exercise/bench?metric=LOAD")
+        assertMetricSelected("load")
+        back()
+        openRoute("exercise/bench?metric=calories")
+        assertMetricSelected("load")
     }
 
     @Test fun theBarFromAScreenOpenedInTheWorkoutReturnsToThatWorkout() {
@@ -444,6 +472,26 @@ class ShellNavigationHostTest {
         compose.waitForIdle()
     }
 
+    private lateinit var nav: NavHostController
+
+    /** [show] with the graph's controller kept in [nav], to open a route directly. */
+    private fun showWithNav(initial: UiState) {
+        state = mutableStateOf(initial)
+        compose.setContent { MoosclesApp(state.value, actions, navController = rememberNavController().also { nav = it }) }
+        compose.waitForIdle()
+    }
+
+    private fun openRoute(route: String) {
+        compose.runOnIdle { nav.navigate(route) }
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+    }
+
+    /** The metric chips come with the chart, built off the main thread. */
+    private fun assertMetricSelected(route: String) {
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("progress-metric-$route").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("progress-metric-$route").assertIsSelected()
+    }
+
     private fun tab(route: String) = compose.onNodeWithTag("tab-$route")
     private fun openFromTheBar() {
         compose.onNodeWithTag("shell-workout-bar").performClick()
@@ -466,7 +514,7 @@ class ShellNavigationHostTest {
     private fun openExerciseHistory() {
         compose.onNodeWithTag(ExerciseMenuTag).performClick()
         compose.onNodeWithTag("exercise-menu-history").performClick()
-        compose.onNodeWithText("Movement history", substring = true, ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
     }
     private fun bounds(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
     private fun assertLibraryRoot() {

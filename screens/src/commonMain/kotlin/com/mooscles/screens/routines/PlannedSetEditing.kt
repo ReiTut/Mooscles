@@ -36,12 +36,11 @@ import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.format.pluralCount
+import com.mooscles.designsystem.format.spokenWeight
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.resources.ds_reps_count
 import com.mooscles.designsystem.resources.ds_stepper_decrease
 import com.mooscles.designsystem.resources.ds_stepper_increase
-import com.mooscles.designsystem.resources.ds_unit_kg_spoken
-import com.mooscles.designsystem.resources.ds_unit_lb_spoken
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.domain.WeightUnits
 import com.mooscles.screens.resources.Res
@@ -340,7 +339,7 @@ internal fun PlannedStepperPanel(
     val stepPlain = MoosclesNumbers.plain(step)
     val stepText = if (load) MoosclesNumbers.weight(stepPlain, unit, locale) else stepPlain
     val stepSpoken = if (load) {
-        stringResource(if (pounds) DsRes.string.ds_unit_lb_spoken else DsRes.string.ds_unit_kg_spoken, MoosclesNumbers.localize(stepPlain, locale))
+        spokenWeight(stepPlain, pounds, locale)
     } else {
         pluralCount(DsRes.plurals.ds_reps_count, 1)
     }

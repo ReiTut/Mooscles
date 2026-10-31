@@ -124,4 +124,13 @@
     <string name="gallery_sample_deadlift">Levantamento terra</string>
     <string name="gallery_sample_pull_up">Barra fixa</string>
     <string name="gallery_sample_lateral_raise">Elevação lateral</string>
+    <!-- Fase 5A: a página de gráficos. Os resumos são exemplos; cada tela escreve o seu a partir dos dados. -->
+    <string name="gallery_page_charts">Gráficos</string>
+    <string name="gallery_section_charts">Linha, barras e sparkline</string>
+    <string name="gallery_sample_chart_line">1RM estimado: de 80 kg a 92,5 kg; máximo 95 kg; tendência em alta; 8 treinos.</string>
+    <string name="gallery_sample_chart_flat">Carga: de 60 kg a 62,5 kg; 2 treinos.</string>
+    <string name="gallery_sample_chart_long">Carga, todo o período: de 40 kg a 100 kg; tendência em alta; 300 treinos.</string>
+    <string name="gallery_sample_chart_bars">Volume por semana, últimas 8 semanas: maior semana 14.200 kg; 1 semana sem treino.</string>
+    <string name="gallery_sample_chart_workout">Treino %1$d</string>
+    <string name="gallery_sample_chart_week">Semana %1$d</string>
 </resources>

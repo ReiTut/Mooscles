@@ -125,4 +125,13 @@
     <string name="gallery_sample_deadlift">Deadlift</string>
     <string name="gallery_sample_pull_up">Pull-up</string>
     <string name="gallery_sample_lateral_raise">Lateral raise</string>
+    <!-- Phase 5A: the charts page. The summaries are samples; a screen writes its own from its data. -->
+    <string name="gallery_page_charts">Charts</string>
+    <string name="gallery_section_charts">Line, bars and sparkline</string>
+    <string name="gallery_sample_chart_line">Estimated 1RM: from 80 kg to 92.5 kg; highest 95 kg; trending up; 8 workouts.</string>
+    <string name="gallery_sample_chart_flat">Load: from 60 kg to 62.5 kg; 2 workouts.</string>
+    <string name="gallery_sample_chart_long">Load, all time: from 40 kg to 100 kg; trending up; 300 workouts.</string>
+    <string name="gallery_sample_chart_bars">Volume per week, last 8 weeks: highest week 14,200 kg; 1 week without workouts.</string>
+    <string name="gallery_sample_chart_workout">Workout %1$d</string>
+    <string name="gallery_sample_chart_week">Week %1$d</string>
 </resources>

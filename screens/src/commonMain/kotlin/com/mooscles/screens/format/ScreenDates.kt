@@ -10,6 +10,22 @@ import com.mooscles.screens.resources.date_day_thu
 import com.mooscles.screens.resources.date_day_tue
 import com.mooscles.screens.resources.date_day_wed
 import com.mooscles.screens.resources.date_month_apr
+import com.mooscles.screens.resources.date_month_full_apr
+import com.mooscles.screens.resources.date_month_full_aug
+import com.mooscles.screens.resources.date_month_full_dec
+import com.mooscles.screens.resources.date_month_full_feb
+import com.mooscles.screens.resources.date_month_full_jan
+import com.mooscles.screens.resources.date_month_full_jul
+import com.mooscles.screens.resources.date_month_full_jun
+import com.mooscles.screens.resources.date_month_full_mar
+import com.mooscles.screens.resources.date_month_full_may
+import com.mooscles.screens.resources.date_month_full_nov
+import com.mooscles.screens.resources.date_month_full_oct
+import com.mooscles.screens.resources.date_month_full_sep
+import com.mooscles.screens.resources.date_month_year
+import com.mooscles.screens.resources.date_spoken
+import com.mooscles.screens.resources.date_spoken_year
+import com.mooscles.screens.resources.progress_week_of
 import com.mooscles.screens.resources.date_month_aug
 import com.mooscles.screens.resources.date_month_dec
 import com.mooscles.screens.resources.date_month_feb
@@ -23,6 +39,7 @@ import com.mooscles.screens.resources.date_month_oct
 import com.mooscles.screens.resources.date_month_sep
 import com.mooscles.screens.resources.date_range_format
 import com.mooscles.screens.resources.date_short_format
+import com.mooscles.screens.resources.date_short_year_format
 import com.mooscles.screens.resources.duration_hours
 import com.mooscles.screens.resources.duration_hours_minutes
 import com.mooscles.screens.resources.duration_under_minute
@@ -31,7 +48,9 @@ import com.mooscles.ui.WorkoutUi
 import kotlin.time.Instant
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
@@ -44,6 +63,9 @@ object ScreenDates {
     /** The wall-clock date and time of [epochMillis] in [zone], daylight saving included. */
     fun localDateTime(epochMillis: Long, zone: TimeZone): LocalDateTime =
         Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(zone)
+
+    /** The calendar date of [epochMillis] in [zone]. */
+    fun localDate(epochMillis: Long, zone: TimeZone): LocalDate = localDateTime(epochMillis, zone).date
 
     /**
      * Finished workouts whose end falls on one of the last 28 calendar days of [zone], today
@@ -58,7 +80,19 @@ object ScreenDates {
             day >= first && day <= today
         }
     }
+
+    /** `outubro de 2026` / `October 2026`: the header of a month. */
+    @Composable
+    fun monthYear(year: Int, month: Month): String =
+        stringResource(Res.string.date_month_year, stringResource(fullMonthNames[month.number - 1]), year.toString())
 }
+
+private val fullMonthNames: List<StringResource> = listOf(
+    Res.string.date_month_full_jan, Res.string.date_month_full_feb, Res.string.date_month_full_mar,
+    Res.string.date_month_full_apr, Res.string.date_month_full_may, Res.string.date_month_full_jun,
+    Res.string.date_month_full_jul, Res.string.date_month_full_aug, Res.string.date_month_full_sep,
+    Res.string.date_month_full_oct, Res.string.date_month_full_nov, Res.string.date_month_full_dec,
+)
 
 private val monthNames: List<StringResource> = listOf(
     Res.string.date_month_jan, Res.string.date_month_feb, Res.string.date_month_mar,
@@ -80,9 +114,54 @@ private fun weekdayName(day: DayOfWeek): StringResource = when (day) {
 /** `21 out` / `Oct 21`. */
 @Composable
 fun shortDate(epochMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {
-    val date = ScreenDates.localDateTime(epochMillis, zone).date
+    val date = ScreenDates.localDate(epochMillis, zone)
     return stringResource(Res.string.date_short_format, date.day, stringResource(monthNames[date.month.number - 1]))
 }
+
+/**
+ * [shortDate], with the year for a date a year or more before [today] (`12 set 2025` / `Sep 12, 2025`), which the day
+ * and month alone would read as recent; a date of the last twelve months has one place on the calendar and stays short.
+ */
+@Composable
+fun shortDateAged(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
+    val date = ScreenDates.localDate(epochMillis, zone)
+    if (date > today.minus(DatePeriod(years = 1))) return shortDate(epochMillis, zone)
+    return stringResource(Res.string.date_short_year_format, date.day, stringResource(monthNames[date.month.number - 1]), date.year)
+}
+
+/**
+ * A date to be read aloud, in full: `3 de junho` / `June 3`, with the year (`3 de junho de 2025`) only when it is not
+ * the year of [today].
+ */
+@Composable
+fun spokenDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
+    val date = ScreenDates.localDate(epochMillis, zone)
+    val month = stringResource(fullMonthNames[date.month.number - 1])
+    return if (date.year == today.year) {
+        stringResource(Res.string.date_spoken, date.day, month)
+    } else {
+        stringResource(Res.string.date_spoken_year, date.day, month, date.year)
+    }
+}
+
+/**
+ * A date of the progress screen's texts ("since", the reading of a point, the data table): [shortDateAged], whose
+ * year shows for a date a year or more before [today], with no-break spaces, so a narrow line or a large font moves
+ * the whole date down instead of leaving "26" on one line and "mai" on the next.
+ */
+@Composable
+fun chartDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String = unbroken(shortDateAged(epochMillis, zone, today))
+
+/**
+ * `Semana de 6 out` / `Week of Oct 6`: a weekly point is dated at the start of its week (P25), and always reads like
+ * this, with the date as [chartDate] writes it (the year when it is a year or more ago).
+ */
+@Composable
+fun chartWeekOf(weekStartMillis: Long, zone: TimeZone, today: LocalDate): String =
+    stringResource(Res.string.progress_week_of, chartDate(weekStartMillis, zone, today))
+
+/** [text] with its spaces made no-break spaces (U+00A0). */
+internal fun unbroken(text: String): String = text.replace(' ', '\u00A0')
 
 /** `ter., 29 out · 18:02–18:44` / `Tue, Oct 29 · 18:02–18:44` (24 h clock in both languages). */
 @Composable

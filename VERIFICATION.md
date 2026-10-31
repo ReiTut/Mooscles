@@ -1,5 +1,36 @@
 # Verification — 2026-10-23
 
+## Phase 5A charts, progress and Records (unreleased, fork branch) — 2026-10-31
+
+Branch `feat/phase5a-progress` in the fork, not in a published release. It adds the chart components in `:designsystem` (own drawing, no library), the exercise progress screen (route `exercise/{id}?metric=`), the new Records tab as a timeline, the sparkline on the exercise detail's history card, and one shared progress index built off the main thread. The old Records and exercise history screens are gone. No data change: Room stays at version 6, no DataStore key changed, `versionCode` 16 and `versionName` 1.4.5 are the same. Full report: `docs/superpowers/reports/2026-10-31-phase5a-verificacao.md`.
+
+Verified:
+
+- Host and iOS simulator tests on CI: run 41232962795 at `096ec3c` (Push 2): host 1258, `:shared` 280, `:designsystem` 405 and `:screens` 877 on the iOS simulator, all passing (Push 1, run 41215063507 at `fe6cf43`: 1212, 280, 404 and 747). The current minimums in `ci.yml` (host 1260, `:designsystem` 411, `:screens` 886) come from the later commits (`8bddc89`, `d704237` to `4d5c529`), which have **not** been through CI yet.
+- Android 15 emulator, full suites once (`a0eab5f`): `:designsystem` 405, `:screens` 881 (one opt-in skipped) and `:app` 25. One `UiFlowTest` failure (it assumed automatic rest was on in the data already on the emulator) was fixed in test code only and rerun. After that only the touched classes were rerun.
+- Spike S1 (own charts instead of a library): approved on the emulator and on the iOS simulator (chart components 58,084 bytes of dex, under the 60 KiB limit); the scroll check with a chart on screen gave 4.0-5.4% janky frames against 3.4-4.6% for the same gesture without one.
+- Touch budget (emulator, real view model and database): see the current record of an exercise 2 taps (the focus on the search field counts as a tap, as in the baseline measured on the old screens), from the record to the progress screen 2, see the estimated 1RM 3.
+- Upgrade in place on the emulator from the fork's main (`596c5bd`, database v6) with network off: `user_version` 6 before and after, same schema, byte-identical preferences file (same MD5), the running rest kept its deadline, the same 208 workouts and 12,688 sets, 480 record events and 246 current records, and the export after matched the export before except `exportedAt`.
+- Offline: on a fresh install with the network off and the large history imported, the Records tab, search, chips, every metric and period of the progress screen, "View data" and the history card sparkline worked; the branch adds no network call and no manifest change.
+- Debug APK size (local build, CI base `e6ada6a`): +284,839 bytes. That is inside the limit for 5A and 5B together (524,288), and **22,695 bytes over the 5A-only goal** (262,144); 5B keeps 239,449. Measured before the Task 17 fixes and not measured again. No new dependency (the dependency tree diff is empty).
+- Performance on the emulator (R8 build for the index): building the index on the large history took a median of 3.9 ms; the Records timeline with "Current only" scrolled with 3.2-3.7% janky frames (budget 5%). Queries and keystrokes were measured only on the debuggable test APK (p95 under 2.6 ms).
+- Screen critique (Task 17): one high finding (the week started on Monday under a per-app language without a region) and seven medium ones fixed; the high one with a device test that failed on the old code. The Added weight measure is now called "Peso adicional" everywhere in Portuguese.
+- The compatibility paths (`data/`, `timer/`, `shared/src/androidMain`, `updates/`, both `AppPreferences.kt`, both `build.gradle.kts`, `shared/schemas`) have an empty `git diff --stat` against main, so the `compat-reviewer` was not needed.
+
+Not verified:
+
+- The Library scroll used as the control measured 1.75-2.3% janky frames, against about 1% in phase 4A. It is **not attributable to 5A**: the Library code is unchanged, and the gesture had to move off the search field while the Mac was almost out of memory. It needs a recheck on the preview build on the S23.
+- The chart was **not measured again** after Task 17 put its drawing in a `graphicsLayer`. The layer only avoids re-recording the drawing, but that is not a frame measurement.
+- The queries and search keystrokes on the R8 build (only the index was measured there).
+- The label drawn inside the "PR" and "First" badges cannot be measured for clipping; it was checked only in the 200% font captures.
+- The first day of the week now comes from `LocaleManager.getSystemLocales()` on Android 13 and newer. The path below Android 13 (`Resources.getSystem()`) was not run, and the iOS path (`NSLocale`) was only compiled.
+- The large test history uses ids that are not catalog ids, so some captures show the stored English names in Portuguese. That is the specified behaviour for such exercises, not a defect.
+- Anything on an iPhone: VoiceOver reading the chart summaries and table rows, dragging on a chart, performance.
+- Anything on a physical Android phone: a real TalkBack session, dragging the chart selection with a finger, 120 Hz, performance on the S23 Ultra, Android 8 to 14.
+- Whether the charts motivate people to come back, and how good the estimated 1RM is for people who train.
+- The full device suites after `a0eab5f` (only touched classes were rerun) and the whole `:app` host suite after Task 17: CI does that on the next push.
+- The upgrade from a published APK signed with the original key: the key is not on this Mac, and v1.5.0 is not published. The rest notification in the background after the upgrade was not checked either.
+
 ## Phase 4B routines (unreleased, fork branch) — 2026-10-30
 
 Branch `feat/phase4b-routines` in the fork, not in a published release. It adds the new Train tab (folders, routine cards), the routine editor (drag and drop, planned sets with warm-ups, per-exercise rest), the target line on the active workout card, the custom exercise photo (gallery or camera, Android only) and the multi-select exercise picker, in the `:screens` module (English and Brazilian Portuguese), the reorder component in `:designsystem`, and the routine commands in `:shared`. The old Train and routine screens are gone. Room moved from version 5 to **6** (`routine_sets.warmup`, `INTEGER NOT NULL DEFAULT 0`, additive `MIGRATION_5_6`; `6.json` is KSP-generated); the backup gains an optional `warmup` field and keeps format version 1. versionCode 16 and versionName 1.4.5 are unchanged; no DataStore key, updater contract or signing change. Full report, in Portuguese: [docs/superpowers/reports/2026-10-30-phase4b-verificacao.md](docs/superpowers/reports/2026-10-30-phase4b-verificacao.md).

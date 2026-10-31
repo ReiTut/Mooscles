@@ -113,10 +113,14 @@ private val buttonText = SemanticsMatcher.keyIsDefined(SemanticsProperties.Text)
  * again at the parent's width), so the lines it needs at its own width are bounded from below by
  * its max intrinsic width over that width (with 5% for the spaces a line break drops); the height
  * they need may exceed the text's by a quarter of a line (the platforms round it differently).
+ *
+ * [except] leaves out nodes whose text is a semantics stand-in, not a laid out text (one set by
+ * `clearAndSetSemantics { text = … }` over a component that clears its own text): they have no
+ * layout to measure, and the caller checks what is drawn there another way.
  */
 @OptIn(ExperimentalTestApi::class)
-fun ComposeUiTest.assertButtonTextsWhole(where: String): Int {
-    val nodes = unmerged(buttonText)
+fun ComposeUiTest.assertButtonTextsWhole(where: String, except: SemanticsMatcher? = null): Int {
+    val nodes = unmerged(if (except == null) buttonText else buttonText and !except)
     for (node in nodes) {
         val text = node.config[SemanticsProperties.Text].joinToString("") { it.text }
         if (text.isBlank()) continue

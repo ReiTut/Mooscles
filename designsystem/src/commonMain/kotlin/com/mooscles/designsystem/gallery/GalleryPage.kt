@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.mooscles.designsystem.gallery.pages.ButtonsPage
+import com.mooscles.designsystem.gallery.pages.ChartsPage
 import com.mooscles.designsystem.gallery.pages.ChipsPage
 import com.mooscles.designsystem.gallery.pages.ExerciseCardPage
 import com.mooscles.designsystem.gallery.pages.FieldsPage
@@ -21,6 +22,7 @@ import com.mooscles.designsystem.gallery.pages.TimerPage
 import com.mooscles.designsystem.gallery.pages.WorkoutInputsPage
 import com.mooscles.designsystem.resources.Res
 import com.mooscles.designsystem.resources.gallery_page_buttons
+import com.mooscles.designsystem.resources.gallery_page_charts
 import com.mooscles.designsystem.resources.gallery_page_chips
 import com.mooscles.designsystem.resources.gallery_page_exercise_card
 import com.mooscles.designsystem.resources.gallery_page_fields
@@ -54,6 +56,7 @@ enum class GalleryPage(val title: StringResource) {
     ExerciseCard(Res.string.gallery_page_exercise_card),
     Shell(Res.string.gallery_page_shell),
     Reorder(Res.string.gallery_page_reorder),
+    Charts(Res.string.gallery_page_charts),
 }
 
 fun galleryPageTag(page: GalleryPage): String = "gallery-page-${page.name}"
@@ -97,6 +100,7 @@ fun GalleryPage.Content() {
             GalleryPage.ExerciseCard -> ExerciseCardPage()
             GalleryPage.Shell -> ShellPage()
             GalleryPage.Reorder -> ReorderPage()
+            GalleryPage.Charts -> ChartsPage()
         }
     }
 }

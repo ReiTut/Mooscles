@@ -89,7 +89,7 @@ internal fun ExerciseMenuSheet(
     MBottomSheet(onDismiss = onDismiss) {
         SheetTitle(exerciseName(entry.exercise))
         MenuItem(MIcons.Dumbbell, stringResource(Res.string.workout_menu_about), ExerciseMenuTags.ABOUT, onClick = onAbout)
-        MenuItem(MIcons.History, stringResource(Res.string.workout_menu_history), ExerciseMenuTags.HISTORY, onClick = onHistory)
+        MenuItem(MIcons.ChartLine, stringResource(Res.string.workout_menu_history), ExerciseMenuTags.HISTORY, onClick = onHistory)
         MenuItem(MIcons.ArrowLeftRight, stringResource(Res.string.workout_menu_swap), ExerciseMenuTags.SWAP, onClick = onSwap)
         MenuItem(
             MIcons.ArrowUp, stringResource(Res.string.workout_menu_move_up), ExerciseMenuTags.MOVE_UP,

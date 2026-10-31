@@ -1,5 +1,6 @@
 package com.mooscles.screens.exercise
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,8 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,32 +26,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.compose.runtime.collectAsState
-import com.mooscles.screens.exercise.photo.rememberStoredPhoto
-import com.mooscles.screens.exercise.photo.PhotoSource
-import com.mooscles.screens.exercise.photo.LocalExercisePhotos
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.Image
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.mooscles.data.Anatomy
 import com.mooscles.data.ExerciseAnatomy
 import com.mooscles.data.MuscleRegion
+import com.mooscles.designsystem.charts.MSparkline
 import com.mooscles.designsystem.components.EmptyState
 import com.mooscles.designsystem.components.ExerciseEquipmentIconTag
 import com.mooscles.designsystem.components.MBottomSheet
@@ -78,13 +74,22 @@ import com.mooscles.designsystem.illustration.BodyMapLegend
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.exercise.figures.ExerciseFigures
 import com.mooscles.screens.exercise.figures.FigureHighlights
+import com.mooscles.screens.exercise.photo.LocalExercisePhotos
+import com.mooscles.screens.exercise.photo.PhotoSource
+import com.mooscles.screens.exercise.photo.rememberStoredPhoto
+import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.anatomySentence
 import com.mooscles.screens.format.conventionCaption
 import com.mooscles.screens.format.conventionLabel
 import com.mooscles.screens.format.equipmentLabel
 import com.mooscles.screens.format.exerciseName
 import com.mooscles.screens.format.muscleLabel
-import com.mooscles.screens.format.shortDate
+import com.mooscles.screens.format.shortDateAged
+import com.mooscles.screens.progress.SeriesKey
+import com.mooscles.screens.progress.SparklineQuery
+import com.mooscles.screens.progress.rememberProgressIndex
+import com.mooscles.screens.progress.rememberProgressQuery
+import com.mooscles.screens.progress.valueOrNull
 import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.exercise_add_routine
 import com.mooscles.screens.resources.exercise_add_workout
@@ -115,7 +120,10 @@ import com.mooscles.screens.workout.bestSetText
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
 import com.mooscles.ui.UiState
+import kotlin.time.Clock
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 
 /** The tag of the exercise detail route's root. */
@@ -139,6 +147,7 @@ internal object ExerciseInfoTags {
     const val HISTORY_BEST = "exercise-info-history-best"
     const val HISTORY_SESSIONS = "exercise-info-history-sessions"
     const val HISTORY_FULL = "exercise-info-history-full"
+    const val HISTORY_SPARKLINE = "exercise-history-sparkline"
     const val ADD_ROUTINE = "exercise-info-add-routine"
     const val ADD_WORKOUT = "exercise-info-add-workout"
     const val MENU_EDIT = "exercise-info-menu-edit"
@@ -166,7 +175,7 @@ internal data class PendingAdd(val targetId: String, val before: Int, val failur
 
 /**
  * The exercise detail (spec "Detalhe do exercício", route `exerciseInfo/{id}`), from the top: back
- * and the menu ("Edit exercise" for a custom exercise, "View full history") in the fixed bar; then,
+ * and the menu ("Edit exercise" for a custom exercise, "View progress") in the fixed bar; then,
  * scrolling, the name (`title.md`, a heading, whole at any length: in the fixed bar a long custom
  * name at a large text size would push the rest off the screen); the media,
  * a 1:1 frame as wide as the content up to `sizes.mediaDetailMax`, centered, with the alternating
@@ -175,7 +184,7 @@ internal data class PendingAdd(val targetId: String, val before: Int, val failur
  * with the convention's one-line caption when it is not the total load; the body map with its
  * legend and its text equivalent under it; the numbered cues ("How to do it"), when there are any;
  * "Your history" ([ExerciseHistorySummaries]: the last time, the best set or the record, the
- * sessions), with "View full history" ([onOpenHistory], the old screen); and "Add to routine"
+ * sessions), with "View progress" ([onOpenHistory], the old screen); and "Add to routine"
  * ([AddToRoutineSheet]) and, with a workout in progress, "Add to workout".
  *
  * "Added to …" (with "Open": [onOpenRoutine] or [onOpenWorkout]) shows only once the state brings
@@ -396,7 +405,7 @@ private fun InfoBody(
             InfoMeta(exercise)
             InfoMuscles(anatomy)
             if (!cues.isNullOrEmpty()) InfoCues(cues)
-            InfoHistory(summary, state.preferences.pounds, onOpenHistory)
+            InfoHistory(exercise, summary, state, onOpenHistory)
             Column(verticalArrangement = Arrangement.spacedBy(space.s3)) {
                 MButton(
                     stringResource(Res.string.exercise_add_routine),
@@ -541,10 +550,14 @@ private fun InfoCues(cues: List<String>) {
 /**
  * "Your history": a card with the last time ("Oct 21 · 80 kg × 8"), the best set (with the record
  * badge when it is the weight record) and the sessions, or "You haven't done this exercise yet.";
- * then "View full history".
+ * then "View progress".
  */
 @Composable
-private fun InfoHistory(summary: HistorySummary, pounds: Boolean, onOpenHistory: () -> Unit) {
+private fun InfoHistory(exercise: ExerciseUi, summary: HistorySummary, state: UiState, onOpenHistory: () -> Unit) {
+    val pounds = state.preferences.pounds
+    // The sparkline needs the progress index; while it loads (or if it failed) the card shows none, never a skeleton.
+    val load = rememberProgressIndex(state.history, state.records, state.loading)
+    val spark = rememberProgressQuery(load, SparklineQuery(SeriesKey(exercise.id, exercise.convention))).valueOrNull
     val space = MTheme.space
     val colors = MTheme.colors
     val shape = RoundedCornerShape(MTheme.radius.lg)
@@ -567,7 +580,11 @@ private fun InfoHistory(summary: HistorySummary, pounds: Boolean, onOpenHistory:
                 )
                 return@Column
             }
-            val lastDate = summary.lastDate?.let { shortDate(it) }
+            // A last time a year or more ago has its year: "Jun 8" alone would read as this June.
+            val lastDate = summary.lastDate?.let {
+                val zone = TimeZone.currentSystemDefault()
+                shortDateAged(it, zone, ScreenDates.localDate(Clock.System.now().toEpochMilliseconds(), zone))
+            }
             val lastSet = setText(summary.lastWeightKg, summary.lastReps, pounds)
             val last = when {
                 lastDate != null && lastSet != null -> stringResource(Res.string.exercise_history_last, lastDate, lastSet)
@@ -584,6 +601,9 @@ private fun InfoHistory(summary: HistorySummary, pounds: Boolean, onOpenHistory:
                 color = colors.textSecondary,
                 modifier = Modifier.testTag(ExerciseInfoTags.HISTORY_SESSIONS),
             )
+            if (spark != null && spark.size >= 2) {
+                Box(Modifier.fillMaxWidth().testTag(ExerciseInfoTags.HISTORY_SPARKLINE)) { MSparkline(spark) }
+            }
         }
         // Without a session there is nothing more to see there (the menu keeps the entry).
         if (summary.sessions > 0) {
@@ -637,7 +657,7 @@ private fun InfoLoading(modifier: Modifier = Modifier) {
     }
 }
 
-/** The detail's menu, a bottom sheet under the exercise's name: "Edit exercise" (custom only) and "View full history". */
+/** The detail's menu, a bottom sheet under the exercise's name: "Edit exercise" (custom only) and "View progress". */
 @Composable
 private fun InfoMenuSheet(exercise: ExerciseUi, onEdit: () -> Unit, onHistory: () -> Unit, onDismiss: () -> Unit) {
     MBottomSheet(onDismiss = onDismiss) {
@@ -653,7 +673,7 @@ private fun InfoMenuSheet(exercise: ExerciseUi, onEdit: () -> Unit, onHistory: (
         if (exercise.custom) {
             MenuItem(MIcons.Pencil, stringResource(Res.string.exercise_edit), ExerciseInfoTags.MENU_EDIT, onClick = onEdit)
         }
-        MenuItem(MIcons.History, stringResource(Res.string.exercise_history_full), ExerciseInfoTags.MENU_HISTORY, onClick = onHistory)
+        MenuItem(MIcons.ChartLine, stringResource(Res.string.exercise_history_full), ExerciseInfoTags.MENU_HISTORY, onClick = onHistory)
         Spacer(Modifier.height(MTheme.space.s4))
     }
 }

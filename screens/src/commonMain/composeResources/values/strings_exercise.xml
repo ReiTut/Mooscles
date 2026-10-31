@@ -31,7 +31,7 @@
         <item quantity="one">%1$d session</item>
         <item quantity="other">%1$d sessions</item>
     </plurals>
-    <string name="exercise_history_full">View full history</string>
+    <string name="exercise_history_full">View progress</string>
     <string name="exercise_edit">Edit exercise</string>
     <string name="exercise_add_routine">Add to routine</string>
     <string name="exercise_add_workout">Add to workout</string>

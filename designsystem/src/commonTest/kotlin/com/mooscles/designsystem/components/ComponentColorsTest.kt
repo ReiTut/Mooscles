@@ -1,5 +1,6 @@
 package com.mooscles.designsystem.components
 
+import com.mooscles.designsystem.charts.ChartColors
 import com.mooscles.designsystem.illustration.bodyMapPalette
 import com.mooscles.designsystem.illustration.figurePalette
 import com.mooscles.designsystem.tokens.Contrast
@@ -167,6 +168,35 @@ class ComponentColorsTest {
         assertEquals(colors.borderStrong, dark.outline)
         for ((what, surface) in listOf("base" to colors.bgBase, "surface" to colors.bgSurface, "overlay" to colors.bgOverlay)) {
             atLeast(3.0, dark.outline!!, surface, "dark lift outline on $what")
+        }
+    }
+
+    /**
+     * Phase 5A (spec D3): what each part of a chart is drawn in. The selection ring is `accent.solid`,
+     * already a 3:1 graphic on `bg.surface` and `bg.raised` (pairs 53 and 54 of `ContrastTokensTest`).
+     */
+    @Test
+    fun chartColorsMapToTheirTokens() {
+        for ((name, colors) in themes) {
+            val chart = ChartColors.of(colors)
+            assertEquals(colors.accentSolid, chart.selection, name)
+            assertEquals(colors.chartLine, chart.line, name)
+            assertEquals(colors.chartPr, chart.record, name)
+            assertEquals(colors.chartGrid, chart.grid, name)
+            assertEquals(colors.textSecondary, chart.label, name)
+        }
+    }
+
+    /**
+     * Phase 5A (spec D3, "chart.line sobre bg.raised se o card for elevado"): `chart.line` is the
+     * `accent.solid` primitive in both themes, so pair 54 covers it on a raised card; the record ring
+     * on a raised card is a new pair.
+     */
+    @Test
+    fun chartLineOnRaised() {
+        for ((name, colors) in themes) {
+            assertEquals(colors.accentSolid, colors.chartLine, "$name: chart.line is accent.solid (pair 54)")
+            atLeast(3.0, colors.chartPr, colors.bgRaised, "$name record ring on a raised card")
         }
     }
 }

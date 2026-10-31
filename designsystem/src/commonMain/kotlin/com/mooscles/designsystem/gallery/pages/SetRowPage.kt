@@ -22,8 +22,8 @@ import com.mooscles.designsystem.components.spokenLoadByReps
 import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.designsystem.format.currentNumberLocale
+import com.mooscles.designsystem.format.spokenWeight
 import com.mooscles.designsystem.resources.Res
-import com.mooscles.designsystem.resources.ds_unit_kg_spoken
 import com.mooscles.designsystem.resources.gallery_restore_set
 import com.mooscles.designsystem.resources.gallery_section_set_rows
 import com.mooscles.designsystem.theme.MTheme
@@ -44,13 +44,13 @@ private class SetSample(
 
 /** The previous set is spoken with its reps, as the spec reads it: "anterior 80 quilos por 6". */
 @Composable
-private fun SetSample.state(index: Int, locale: NumberLocale, spoken: (String) -> String): SetRowState = SetRowState(
+private fun SetSample.state(index: Int, locale: NumberLocale): SetRowState = SetRowState(
     index = index,
     total = TOTAL,
     previous = previousLoad?.let { MoosclesNumbers.setText(it, "kg", reps, locale) },
-    previousSpoken = previousLoad?.let { spokenLoadByReps(spoken(MoosclesNumbers.localize(it, locale)), reps) },
+    previousSpoken = previousLoad?.let { spokenLoadByReps(spokenWeight(it, pounds = false, locale), reps) },
     load = MoosclesNumbers.localize(load, locale),
-    loadSpoken = spoken(MoosclesNumbers.localize(load, locale)),
+    loadSpoken = spokenWeight(load, pounds = false, locale),
     reps = reps,
     type = type,
     status = status,
@@ -67,8 +67,6 @@ private fun SetSample.state(index: Int, locale: NumberLocale, spoken: (String) -
 @Composable
 fun SetRowPage() {
     val locale = currentNumberLocale()
-    val spokenTemplate = stringResource(Res.string.ds_unit_kg_spoken, "%")
-    val spoken: (String) -> String = { spokenTemplate.replace("%", it) }
     var first by remember { mutableStateOf(SetStatus.Pending) }
     var copied by remember { mutableStateOf(false) }
     var removed by remember { mutableStateOf(false) }
@@ -86,7 +84,7 @@ fun SetRowPage() {
             SetSample("20", 8, SetType.Assisted, SetStatus.Pending, "25"),
             SetSample("70", 12, SetType.Drop, SetStatus.Pending, null),
             SetSample("70", 12, SetType.Failure, SetStatus.Pending, "65"),
-        ).mapIndexed { position, sample -> sample.state(position + 1, locale, spoken) }
+        ).mapIndexed { position, sample -> sample.state(position + 1, locale) }
         for ((position, row) in rows.withIndex()) {
             if (position == 0 && removed) {
                 MButton(stringResource(Res.string.gallery_restore_set), onClick = { removed = false }, variant = MButtonVariant.Secondary)

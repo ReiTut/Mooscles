@@ -82,6 +82,25 @@ class SizesTimingElevationTest {
         assertEquals(56.dp, MoosclesSizes().mediaStrip)
     }
 
+    /**
+     * Phase 5A (spec D3, plan Task 1): the chart is 200 dp tall and grows with the font scale up to 1.5
+     * times; the sparkline is 40 dp; the line strokes 2 dp with 3 dp points, a 6 dp record ring and an
+     * 8 dp selection ring; bars are 4 dp apart.
+     */
+    @Test
+    fun chartTokens() {
+        val s = MoosclesSizes()
+        assertEquals(200.dp, s.chartHeight)
+        assertEquals(1.5f, s.chartMaxScale)
+        assertEquals(40.dp, s.sparklineHeight)
+        assertEquals(2.dp, s.chartStroke)
+        assertEquals(3.dp, s.chartPoint)
+        assertEquals(4f, s.chartDotSpacing)
+        assertEquals(6.dp, s.chartRecordRing)
+        assertEquals(8.dp, s.chartSelectionRing)
+        assertEquals(4.dp, s.chartBarGap)
+    }
+
     /** Phase 4B (plan Task 10): a form waits at most 15 s for the echo of its save. */
     @Test
     fun saveEchoWaitIsFifteenSeconds() {
@@ -92,6 +111,12 @@ class SizesTimingElevationTest {
     @Test
     fun formHandoffIsOneAndAHalfSeconds() {
         assertEquals(1_500L, MoosclesTiming().formHandoff)
+    }
+
+    /** Phase 5A (plan decision 9): the progress index is prewarmed half a second after a new history. */
+    @Test
+    fun progressPrewarmDelayIsHalfASecond() {
+        assertEquals(500L, MoosclesTiming().progressPrewarmDelay)
     }
 
     @Test

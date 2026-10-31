@@ -30,7 +30,7 @@
     <string name="workout_col_kg_assisted">kg assist.</string>
     <string name="workout_col_lb_assisted">lb assist.</string>
     <string name="workout_menu_about">About the exercise</string>
-    <string name="workout_menu_history">Exercise history</string>
+    <string name="workout_menu_history">Exercise progress</string>
     <string name="workout_menu_swap">Swap exercise</string>
     <string name="workout_menu_move_up">Move up</string>
     <string name="workout_menu_move_down">Move down</string>

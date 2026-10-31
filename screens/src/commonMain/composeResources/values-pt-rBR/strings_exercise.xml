@@ -29,7 +29,7 @@
         <item quantity="one">%1$d sessão</item>
         <item quantity="other">%1$d sessões</item>
     </plurals>
-    <string name="exercise_history_full">Ver histórico completo</string>
+    <string name="exercise_history_full">Ver progresso</string>
     <string name="exercise_edit">Editar exercício</string>
     <string name="exercise_add_routine">Adicionar à rotina</string>
     <string name="exercise_add_workout">Adicionar ao treino</string>

@@ -104,4 +104,22 @@ data class MoosclesSizes(
     val reorderScrollStep: Dp = 12.dp,
     /** Phase 4B (plan Task 11, 2026-10-30): each thumbnail of a routine card's strip, the same 56 dp as a library row. */
     val mediaStrip: Dp = mediaList,
+    /** Phase 5A (spec D3): the height of a line or bar chart at a font scale of 1; it grows with the scale. */
+    val chartHeight: Dp = 200.dp,
+    /** Phase 5A (spec "Fonte grande"): the most a chart grows with the font scale, 1.5 times [chartHeight]. */
+    val chartMaxScale: Float = 1.5f,
+    /** Phase 5A (spec D3): the sparkline of the exercise detail's history card. */
+    val sparklineHeight: Dp = 40.dp,
+    /** Phase 5A: the line of a chart and of a sparkline, and the rings' stroke. */
+    val chartStroke: Dp = 2.dp,
+    /** Phase 5A: the radius of a chart point. */
+    val chartPoint: Dp = 3.dp,
+    /** Phase 5A: a line chart draws its points as dots while they are, on average, at least this many radii apart. */
+    val chartDotSpacing: Float = 4f,
+    /** Phase 5A: the radius of the ring around a record point. */
+    val chartRecordRing: Dp = 6.dp,
+    /** Phase 5A: the radius of the ring around the selected point or over the selected bar. */
+    val chartSelectionRing: Dp = 8.dp,
+    /** Phase 5A: the space between two bars. */
+    val chartBarGap: Dp = 4.dp,
 )

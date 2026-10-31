@@ -101,13 +101,15 @@ class IconsTest {
             "Settings", "SearchX",
             // Phase 4B: the drag handle, and (Task 19) the routine menus' duplicate, move to folder, top and end.
             "GripVertical", "Copy", "FolderInput", "ArrowUpToLine", "ArrowDownToLine",
+            // Phase 5A (plan decision 14): the chart's "View data" and "View chart".
+            "Table", "ChartLine",
             "Plate", "PlateRecord", "Dumbbell", "Barbell", "Kettlebell", "Bench", "Cable", "Machine",
             "Rope", "Body",
             "DumbbellFilled", "LayoutGridFilled", "HistoryFilled", "PlateRecordFilled",
         )
         assertEquals(expected, MIcons.all.map { it.first })
         for ((name, icon) in MIcons.all) assertEquals(name, icon.name)
-        assertEquals(58, expected.size)
-        assertEquals(58, MIcons.all.map { it.second }.toSet().size)
+        assertEquals(60, expected.size)
+        assertEquals(60, MIcons.all.map { it.second }.toSet().size)
     }
 }

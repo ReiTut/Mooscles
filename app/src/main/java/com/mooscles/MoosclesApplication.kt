@@ -7,6 +7,7 @@ import com.mooscles.data.WorkoutDatabase
 import com.mooscles.data.WorkoutRepository
 import com.mooscles.data.open
 import com.mooscles.photos.AndroidExercisePhotoStore
+import com.mooscles.screens.progress.ProgressIndexCache
 import com.mooscles.timer.RestTimerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,13 @@ class MoosclesApplication : Application() {
     val preferences by lazy { AppPreferences(this) }
     val timer by lazy { RestTimerController(this, appScope) }
     val photos by lazy { AndroidExercisePhotoStore(this) }
+    /**
+     * The one progress index of the process (spec D15, plan 5A decision 9): built off the main thread and shared by the
+     * Records tab, the exercise progress and the detail's sparkline, so leaving and reopening a screen never builds it
+     * again. Handed to the screens by `LocalProgressIndexCache` ([ProvideProgressIndex]). Each build is a trace section
+     * ([ProgressIndexTrace]).
+     */
+    val progressIndex: ProgressIndexCache by lazy { ProgressIndexCache(appScope, build = ProgressIndexTrace::build) }
     val trainingGate = Mutex()
     val updates by lazy { UpdateManager(this, trainingGate, trainingBusy = {
         repository.activeWorkout() != null || UpdatePolicy.restTimerBusy(

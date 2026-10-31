@@ -24,7 +24,9 @@ import org.junit.runner.RunWith
 
 /**
  * Real Room + DataStore + Activity flow, through the new workout and summary (Task 24). The
- * generated routine name isolates repeated runs.
+ * generated routine name isolates repeated runs. The flow expects the rest to start when a set is
+ * checked, so it turns automatic rest on first: the suite installs over whatever app data the
+ * device holds (5A Task 16 found it off there), and the value it found is put back at the end.
  */
 @RunWith(AndroidJUnit4::class)
 class UiFlowTest {
@@ -34,6 +36,15 @@ class UiFlowTest {
     @Test
     fun routineToWorkoutRestSummaryAndHistory() {
         val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
+        val autoRestBefore = runBlocking(Dispatchers.IO) { app.preferences.snapshot().autoRest.also { app.preferences.autoRest(true) } }
+        try {
+            flow(app)
+        } finally {
+            runBlocking(Dispatchers.IO) { app.preferences.autoRest(autoRestBefore) }
+        }
+    }
+
+    private fun flow(app: MoosclesApplication) {
         val name = "Flow test ${System.currentTimeMillis()}"
         compose.waitUntil(30_000) { compose.onAllNodesWithTag("routines-list").fetchSemanticsNodes().isNotEmpty() }
         // The new Train tab and routine editor (plan 4B): the name sheet creates the routine and the editor opens on its echo.

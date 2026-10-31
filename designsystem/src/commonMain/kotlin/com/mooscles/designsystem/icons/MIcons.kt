@@ -6,7 +6,7 @@ import com.mooscles.designsystem.icons.own.*
 
 /**
  * Every icon of the design system, as image vectors on a 24 x 24 grid with a 2 stroke, round
- * caps and joins. 40 are a closed subset of Lucide 1.63.0 (ISC, see the license in resources),
+ * caps and joins. 46 are a closed subset of Lucide 1.63.0 (ISC, see the license in resources),
  * 10 are Mooscles' own equipment icons, and the 4 `*Filled` ones are own solid variants for a
  * selected tab (the only icons with fills). All are drawn in black and tinted by [MIcon].
  */
@@ -55,6 +55,8 @@ object MIcons {
     val FolderInput: ImageVector get() = LucideFolderInput
     val ArrowUpToLine: ImageVector get() = LucideArrowUpToLine
     val ArrowDownToLine: ImageVector get() = LucideArrowDownToLine
+    val Table: ImageVector get() = LucideTable
+    val ChartLine: ImageVector get() = LucideChartLine
 
     val Plate: ImageVector get() = OwnPlate
     val PlateRecord: ImageVector get() = OwnPlateRecord
@@ -72,7 +74,7 @@ object MIcons {
     val HistoryFilled: ImageVector get() = OwnHistoryFilled
     val PlateRecordFilled: ImageVector get() = OwnPlateRecordFilled
 
-    /** Name and icon of all 54: Lucide, own, then the filled variants. Used by the gallery and the tests. */
+    /** Name and icon of all 60: Lucide, own, then the filled variants. Used by the gallery and the tests. */
     val all: List<Pair<String, ImageVector>> by lazy(LazyThreadSafetyMode.NONE) {
         listOf(
             "ArrowLeft" to ArrowLeft,
@@ -119,6 +121,8 @@ object MIcons {
             "FolderInput" to FolderInput,
             "ArrowUpToLine" to ArrowUpToLine,
             "ArrowDownToLine" to ArrowDownToLine,
+            "Table" to Table,
+            "ChartLine" to ChartLine,
             "Plate" to Plate,
             "PlateRecord" to PlateRecord,
             "Dumbbell" to Dumbbell,
