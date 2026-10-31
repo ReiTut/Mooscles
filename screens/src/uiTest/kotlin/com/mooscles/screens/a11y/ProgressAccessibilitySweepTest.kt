@@ -211,13 +211,15 @@ class ProgressAccessibilitySweepTest {
 
     /**
      * One look at a state: [scroll] brings part of it into view (null: as it is), and the tags in [required] must then
-     * be shown; at least [numbers] number texts; with [chart], a progress chart must be shown.
+     * be shown; at least [numbers] number texts; with [chart], a progress chart must be shown; with [badges], a record
+     * row's badge must be shown (so [assertBadgesInsideTheirRows] checks one at least).
      */
     private class Pass(
         val name: String,
         val required: List<String> = emptyList(),
         val numbers: Int = 0,
         val chart: Boolean = false,
+        val badges: Boolean = false,
         val scroll: (ComposeUiTest.() -> Unit)? = null,
     )
 
@@ -257,7 +259,7 @@ class ProgressAccessibilitySweepTest {
                     assertClickablesLabeledAndSized(where)
                     assertNumbersWhole(atLeast = pass.numbers)
                     buttonTexts += assertButtonTextsWhole(where, except = recordBadge)
-                    assertBadgesInsideTheirRows(where)
+                    assertBadgesInsideTheirRows(where, required = pass.badges)
                     assertChartsSpeak(where, required = pass.chart)
                     if (scaled != null) assertDrawnAt(scaled, each.fontScale, where)
                 } catch (failure: AssertionError) {
@@ -277,9 +279,14 @@ class ProgressAccessibilitySweepTest {
      */
     private val recordBadge = hasTestTag(RecordsTags.BADGE) or hasTestTag(RecordsTags.BADGE_FIRST)
 
-    /** Every placed badge has a size and lies whole inside its row (the row's first line wraps rather than cut it), unclipped. */
-    private fun ComposeUiTest.assertBadgesInsideTheirRows(where: String) {
-        for (badge in onAllNodes(recordBadge and isPlaced, useUnmergedTree = true).fetchSemanticsNodes()) {
+    /**
+     * Every placed badge has a size and lies whole inside its row (the row's first line wraps rather than cut it),
+     * unclipped; with [required], there is one at least (a pass over record rows that found none checked nothing).
+     */
+    private fun ComposeUiTest.assertBadgesInsideTheirRows(where: String, required: Boolean) {
+        val badges = onAllNodes(recordBadge and isPlaced, useUnmergedTree = true).fetchSemanticsNodes()
+        if (required) assertTrue(badges.isNotEmpty(), "$where: no record badge shown")
+        for (badge in badges) {
             var row = badge.parent
             while (row != null && row.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(RecordsTags.ROW_PREFIX) != true) row = row.parent
             assertTrue(row != null, "$where: a badge outside a row")
@@ -335,7 +342,7 @@ class ProgressAccessibilitySweepTest {
     }
 
     /** The list at its [index]th item (the month headers are items), which must then be shown. */
-    private fun listAt(name: String, index: Int, tag: String) = Pass(name, listOf(tag)) {
+    private fun listAt(name: String, index: Int, tag: String) = Pass(name, listOf(tag), badges = true) {
         onNodeWithTag(RecordsScreenTag).performScrollToIndex(index)
     }
 
@@ -344,7 +351,7 @@ class ProgressAccessibilitySweepTest {
         val rows = tags.indices.filter { tags[it].startsWith(RecordsTags.ROW_PREFIX) }
         val middle = rows[rows.size / 2]
         return listOf(
-            Pass("top", listOf(RecordsTags.SEARCH, RecordsTags.CURRENT_ONLY, tags[rows.first()])) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
+            Pass("top", listOf(RecordsTags.SEARCH, RecordsTags.CURRENT_ONLY, tags[rows.first()]), badges = true) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
             listAt("middle", middle, tags[middle]),
             listAt("end", rows.last(), tags[rows.last()]),
         )
@@ -363,8 +370,8 @@ class ProgressAccessibilitySweepTest {
         sweep(
             "records current only",
             listOf(
-                Pass("top", listOf(RecordsTags.CURRENT_ONLY)) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
-                Pass("end") { onNodeWithTag(RecordsScreenTag).performScrollToNode(hasTestTag(rows.last())) },
+                Pass("top", listOf(RecordsTags.CURRENT_ONLY), badges = true) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
+                Pass("end", badges = true) { onNodeWithTag(RecordsScreenTag).performScrollToNode(hasTestTag(rows.last())) },
             ),
             reach = {
                 awaitRows()
@@ -382,8 +389,11 @@ class ProgressAccessibilitySweepTest {
         sweep(
             "records search",
             listOf(
-                Pass("top", listOf(benchRows.first())) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
-                Pass("end", listOf(benchRows.last())) { onNodeWithTag(RecordsScreenTag).performScrollToNode(hasTestTag(benchRows.last())) },
+                Pass("top", listOf(benchRows.first()), badges = true) { onNodeWithTag(RecordsScreenTag).performScrollToIndex(0) },
+                Pass("middle", listOf(benchRows[benchRows.size / 2]), badges = true) {
+                    onNodeWithTag(RecordsScreenTag).performScrollToNode(hasTestTag(benchRows[benchRows.size / 2]))
+                },
+                Pass("end", listOf(benchRows.last()), badges = true) { onNodeWithTag(RecordsScreenTag).performScrollToNode(hasTestTag(benchRows.last())) },
             ),
             reach = {
                 awaitRows()
@@ -451,10 +461,14 @@ class ProgressAccessibilitySweepTest {
 
     private val progressTop: ComposeUiTest.() -> Unit = { onNodeWithTag(ExerciseProgressTag).performScrollToIndex(0) }
 
-    /** The top (the name and, with a chart, the highlight), the chart, and the end (the oldest session). */
-    private fun progressPasses(oldest: String, topNumbers: Int, vararg top: String) = listOf(
+    /**
+     * The top (the name and, with a chart, the highlight), the chart, the middle (a session between the newest and the
+     * oldest) and the end (the oldest session).
+     */
+    private fun progressPasses(middle: String, oldest: String, topNumbers: Int, vararg top: String) = listOf(
         Pass("top", listOf(ProgressTags.TITLE) + top, numbers = topNumbers, scroll = progressTop),
         Pass("chart", listOf(ProgressTags.CHART), chart = true) { listTo(ProgressTags.CHART) },
+        Pass("middle", listOf(ProgressTags.session(middle)), numbers = 1) { listTo(ProgressTags.session(middle)) },
         Pass("end", listOf(ProgressTags.session(oldest)), numbers = 1) { listTo(ProgressTags.session(oldest)) },
     )
 
@@ -474,13 +488,13 @@ class ProgressAccessibilitySweepTest {
     /** Pull-ups with added weight: reps first, then the added weight and the volume. */
     @Test
     fun progressAddedWeight() = runComposeUiTest(testTimeout = 8.minutes) {
-        sweep("progress added weight", progressPasses("u0", 0, ProgressTags.CONVENTION_CAPTION), reach = { awaitTag(LineChartTag) }) { Progress(pullUp) }
+        sweep("progress added weight", progressPasses("u1", "u0", 0, ProgressTags.CONVENTION_CAPTION), reach = { awaitTag(LineChartTag) }) { Progress(pullUp) }
     }
 
     /** Assisted pull-ups: reps and assistance, with what less assistance means. */
     @Test
     fun progressAssistance() = runComposeUiTest(testTimeout = 8.minutes) {
-        sweep("progress assistance", progressPasses("a0", 0, ProgressTags.ASSISTANCE_LEGEND), reach = { awaitTag(LineChartTag) }) { Progress(assisted) }
+        sweep("progress assistance", progressPasses("a1", "a0", 0, ProgressTags.ASSISTANCE_LEGEND), reach = { awaitTag(LineChartTag) }) { Progress(assisted) }
     }
 
     /** One session in all: the sentence in the chart's place, then the session. */
@@ -535,13 +549,20 @@ class ProgressAccessibilitySweepTest {
         prepareBodyMap()
     }
 
-    /** The bench's detail at its history card (the sparkline and "View progress") and at its end. */
+    /**
+     * The bench's detail at the top (its name and figure), in the middle (the muscles, between the top and the card), at
+     * its history card (the sparkline and "View progress") and at its end.
+     */
     @Test
     fun historyCardWithSparkline() = runComposeUiTest(testTimeout = 5.minutes) {
         preload()
         sweep(
             "history card",
             listOf(
+                Pass("top", listOf(ExerciseInfoTags.TITLE, ExerciseInfoTags.MEDIA)) {
+                    onNodeWithTag(ExerciseInfoTags.TITLE, useUnmergedTree = true).performScrollTo()
+                },
+                Pass("middle", listOf(ExerciseInfoTags.MUSCLES)) { onNodeWithTag(ExerciseInfoTags.MUSCLES, useUnmergedTree = true).performScrollTo() },
                 Pass("card", listOf(ExerciseInfoTags.HISTORY, ExerciseInfoTags.HISTORY_SPARKLINE, ExerciseInfoTags.HISTORY_FULL), numbers = 1) {
                     onNodeWithTag(ExerciseInfoTags.HISTORY_FULL, useUnmergedTree = true).performScrollTo()
                 },

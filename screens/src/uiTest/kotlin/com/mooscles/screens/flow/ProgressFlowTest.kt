@@ -17,6 +17,8 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import com.mooscles.data.ExerciseCatalog
 import com.mooscles.data.ExerciseNames
 import com.mooscles.designsystem.charts.LineChartTag
+import com.mooscles.designsystem.format.MoosclesNumbers
+import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.screens.LINEAR_TWO_X_FONT_SCALE
 import com.mooscles.screens.assertClickablesLabeledAndSized
@@ -136,7 +138,7 @@ class ProgressFlowTest {
             onNodeWithTag(ProgressTags.metric(ProgressMetric.E1RM)).assertIsSelected()
             sweep(run, "e1rm", numbers = 1)
 
-            // 5. "View data": one row per session, the newest first.
+            // 5. "View data": one row per session, the newest first (row 0 holds the newest workout's set).
             scrollTo(ProgressTags.DATA_TOGGLE)
             onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
             await("the table shows") { runCatching { scrollTo(ProgressTags.tableRow(0)) }.isSuccess }
@@ -146,6 +148,14 @@ class ProgressFlowTest {
                 runCatching { scrollTo(ProgressTags.tableRow(seed.benchWorkouts.size)) }.isFailure,
                 "the table has a row more than the ${seed.benchWorkouts.size} sessions",
             )
+            // Newest first, by what the rows say: on the estimated 1RM, the newest workout's best set is 80 kg × 8
+            // (Epley 101.3 kg, above 85 kg × 5 at 99.2) and the oldest's is 60 kg × 5.
+            val numbers = NumberLocale.from(run.locale)
+            val oldestRow = seed.benchWorkouts.lastIndex
+            scrollTo(ProgressTags.tableRow(oldestRow))
+            assertTrue(MoosclesNumbers.setText("60", "kg", 5, numbers) in tableRowText(oldestRow), "the last row is the oldest: ${tableRowText(oldestRow)}")
+            scrollTo(ProgressTags.tableRow(0))
+            assertTrue(MoosclesNumbers.setText("80", "kg", 8, numbers) in tableRowText(0), "the first row is the newest: ${tableRowText(0)}")
             waitForIdle()
             sweep(run, "table", numbers = 1)
 
@@ -175,6 +185,10 @@ class ProgressFlowTest {
         config.getOrNull(SemanticsProperties.Text).orEmpty().joinToString("") { it.text }
 
     private fun ComposeUiTest.scrollTo(tag: String) = scrollProgressTo(tag)
+
+    /** What table row [index] says (its date, value and set, merged). */
+    private fun ComposeUiTest.tableRowText(index: Int): String =
+        onNodeWithTag(ProgressTags.tableRow(index)).fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text).orEmpty().joinToString(" | ") { it.text }
 
     private fun ComposeUiTest.toTop() {
         onNodeWithTag(ExerciseProgressTag).performScrollToIndex(0)
