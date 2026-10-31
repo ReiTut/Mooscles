@@ -4,7 +4,10 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.designsystem.charts.ChartTableRowData
+import com.mooscles.designsystem.format.pluralCount
 import com.mooscles.screens.format.ScreenDates
+import com.mooscles.screens.resources.Res
+import com.mooscles.screens.resources.progress_view_all_records
 import com.mooscles.screens.format.spokenDate
 import com.mooscles.screens.format.weekOf
 import com.mooscles.screens.withScreen
@@ -284,5 +287,52 @@ class ProgressTextsTest {
         assertEquals("80 kg × 8 · was 6 reps".nb(), en[5])
         assertEquals("80 kg × 8 · was 1 rep".nb(), en[6])
         assertEquals("100 kg × 3 · Sep 12".nb(), en[8])
+    }
+
+    @Test
+    fun viewAllRecordsPluralInBothLanguages() {
+        val texts = inBoth {
+            listOf(
+                pluralCount(Res.plurals.progress_view_all_records, 1),
+                pluralCount(Res.plurals.progress_view_all_records, 5),
+                pluralCount(Res.plurals.progress_view_all_records, 0),
+            )
+        }
+        assertEquals(listOf("Ver todos os 1", "Ver todos os 5", "Ver todos os 0"), texts["pt-BR"])
+        assertEquals(listOf("View all 1", "View all 5", "View all 0"), texts["en"])
+    }
+
+    @Test
+    fun poundsComeFromExactKilosAndSignTheChange() {
+        val first = point(3, 80.0, month = 6)
+        val texts = inBoth {
+            listOf(
+                valueText(point(28, 100.0), ProgressMetric.LOAD, pounds = true),
+                valueText(point(28, 100.0), ProgressMetric.E1RM, pounds = true),
+                valueText(point(28, 100.3), ProgressMetric.E1RM, pounds = true),
+                valueText(point(28, 12.0), ProgressMetric.REPS, pounds = true),
+                sinceText(first, point(28, 100.0), ProgressMetric.LOAD, true, utc),
+                sinceText(first, point(28, 60.0), ProgressMetric.LOAD, true, utc),
+                axisText(220.0, ProgressMetric.E1RM),
+                chartSummary(
+                    chart(listOf(point(3, 100.0), point(12, 100.0)), null), ProgressMetric.E1RM, "Total load",
+                    ExercisePeriod.ALL, true, utc, today,
+                ),
+            )
+        }
+        val pt = texts["pt-BR"]!!
+        val en = texts["en"]!!
+        // 100 kg is 220.46 lb: the 1RM is rounded to the pound in the unit shown, a load keeps its hundredths.
+        assertEquals("220,46 lb".replace(" ", "\u00A0"), pt[0])
+        assertEquals("220 lb".replace(" ", "\u00A0"), pt[1])
+        assertEquals("221 lb".replace(" ", "\u00A0"), pt[2])
+        assertEquals("12 repetições", pt[3])
+        // +20 kg is +44.09 lb, and a drop of 20 kg carries the minus sign (U+2212).
+        assertEquals("+44,09 lb desde 3 jun".replace(" lb", "\u00A0lb"), pt[4])
+        assertEquals("\u221244,09 lb desde 3 jun".replace(" lb", "\u00A0lb"), pt[5])
+        assertEquals("220", pt[6])
+        assertTrue(pt[7].contains("220 libras"), pt[7])
+        assertEquals("220.46 lb".replace(" ", "\u00A0"), en[0])
+        assertTrue(en[7].contains("220 pounds"), en[7])
     }
 }

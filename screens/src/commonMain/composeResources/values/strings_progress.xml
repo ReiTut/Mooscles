@@ -50,7 +50,7 @@
     <string name="progress_records">Records for this exercise</string>
     <plurals name="progress_view_all_records">
         <item quantity="one">View all %1$d</item>
-        <item quantity="other">Ver todos os %1$d</item>
+        <item quantity="other">View all %1$d</item>
     </plurals>
     <string name="progress_sessions">Sessions</string>
     <string name="progress_session_spoken">%1$s, %2$s: %3$s</string>

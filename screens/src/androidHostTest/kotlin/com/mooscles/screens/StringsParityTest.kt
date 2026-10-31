@@ -43,6 +43,18 @@ class StringsParityTest {
         assertEquals(en.keys, pt.keys)
     }
 
+    /** An English text that was pasted from the Portuguese file (a plural item once was) carries its accents or its words. */
+    @Test
+    fun englishTextsHaveNoPortugueseAccentsOrWords() {
+        val accents = Regex("[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]")
+        val words = Regex("\\b(Ver|todos|todas|antes|para|série|séries|treino|treinos|Semana|semana|você)\\b")
+        for (e in en.values) {
+            for (text in texts(e)) {
+                assertTrue(!accents.containsMatchIn(text) && !words.containsMatchIn(text), "English ${e.name} reads as Portuguese: $text")
+            }
+        }
+    }
+
     @Test
     fun pluralsDefineOneAndOtherInBothLanguages() {
         for ((label, map) in listOf("en" to en, "pt" to pt)) {
