@@ -6,12 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.mooscles.screens.records.RecordTimelines
 import com.mooscles.screens.records.RecordsQuery
-import com.mooscles.screens.records.RecordsTimeline
 import com.mooscles.ui.RecordUi
 import com.mooscles.ui.WorkoutUi
 import kotlin.concurrent.Volatile
@@ -35,12 +32,25 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 
 /**
+ * A query over a [ProgressIndex] and its key in the cache's memo: implement it on a data class whose fields name
+ * everything [compute] reads (one class per kind of query: a chart, the records timeline, a sparkline). The class is
+ * part of `equals`, so two kinds never share a result, and [V] comes from the class, never from a call site. Do not
+ * make the class generic: `Foo<A>` and `Foo<B>` could be equal.
+ */
+interface ProgressQuery<V : Any> {
+    /** Pure and quick to call again: it runs off the main thread, once per index and equal query. */
+    fun compute(index: ProgressIndex): V
+}
+
+/**
  * The one [ProgressIndex] of the app and the results of the queries over it (spec D15, plan decision 9). The `:app`
  * keeps one in `MoosclesApplication` (its `appScope`) and hands it to the screens by [LocalProgressIndexCache].
  *
  * **Identity.** An index belongs to one `UiState.history` and one `UiState.records`, as instances (`===`): the
  * presentation reuses both lists while the history does not change, and makes new ones when it does (a workout
- * finished, edited or deleted, an import, kg to lb). An equal list in another instance is another history.
+ * finished, edited or deleted, an import, kg to lb). An equal list in another instance is another history. The cache
+ * does not order histories: the latest is the last one asked for, so callers pass only the current `UiState`'s
+ * lists, never ones a snapshot kept (asking for an older history again makes it the latest and rebuilds it).
  *
  * **Threads.** [build] and every query run in [context] ([Dispatchers.Default]), never on the caller's thread;
  * [peek] and [peekQuery] only read what is already done, so a composition can call them in the same frame. Any
@@ -48,13 +58,16 @@ import kotlinx.datetime.TimeZone
  *
  * **One build per history.** Callers of [get] for the same history wait for the same build. A history that is no
  * longer the latest keeps its build only while someone still waits for it (they get its own index, never a newer
- * one); with nobody waiting it is cancelled, so a build still queued never runs, and a build already running is
- * dropped when it ends. [peek] serves only the latest history's index, once built. Each index is immutable and in
- * kg, so a screen may keep showing the previous one until the next is ready.
+ * one); with nobody waiting it is cancelled, so a build still queued never runs. A build already running cannot be
+ * interrupted ([build] does not suspend): it ends and its index is dropped. [peek] serves only the latest history's
+ * index, once built. Each index is immutable and in kg, so a screen may keep showing the previous one until the
+ * next is ready. A build that throws is forgotten, so the next [get] tries again.
  *
- * **Queries** are memoized per index and key: the [MEMO_SIZE] most recently used, with concurrent callers of the same
- * one sharing its computation. When a new history's index is built, the previous index's results are dropped (they
- * would only keep that whole history in memory); results over an index this cache did not build stay until pushed out.
+ * **Queries** are memoized per index and [ProgressQuery]: the [MEMO_SIZE] most recently used, with concurrent callers
+ * of the same one sharing its computation. Once this cache has built an index, only results over its latest index
+ * are kept (an older one's would keep that whole history in memory): they are dropped when a new index is built,
+ * and a result over another index is still computed for its caller but not kept. Before the first build, results
+ * over any index are kept.
  */
 class ProgressIndexCache(
     private val scope: CoroutineScope,
@@ -62,7 +75,11 @@ class ProgressIndexCache(
     private val prewarmDelayMillis: Long = 500,
     private val build: (List<WorkoutUi>, List<RecordUi>) -> ProgressIndex = ProgressIndex::build,
 ) {
-    /** Where every build, query and prewarm runs: a child of [scope], where one that fails cancels nothing else. */
+    /**
+     * Where every build, query and prewarm runs: a child of [scope] whose children fail alone, so a failed one does
+     * not cancel the others. A build or a query keeps its failure in its `Deferred` for the callers that wait; the
+     * prewarm, which nobody waits for, catches its own ([prewarm]), since an uncaught one would crash the app.
+     */
     private val children = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
 
     private class Ready(val history: List<WorkoutUi>, val records: List<RecordUi>, val index: ProgressIndex)
@@ -89,7 +106,10 @@ class ProgressIndexCache(
     fun peek(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex? =
         ready?.takeIf { it.history === history && it.records === records }?.index
 
-    /** The index of [history] and [records], built once in [context]; concurrent callers wait for the same build. */
+    /**
+     * The index of [history] and [records], built once in [context]; concurrent callers wait for the same build. Throws
+     * what the build threw.
+     */
     suspend fun get(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex {
         peek(history, records)?.let { return it }
         val build = lock.withLock {
@@ -122,18 +142,16 @@ class ProgressIndexCache(
         latest?.let { previous -> if (previous.waiters == 0) previous.index.cancel() else superseded += previous }
         val index = children.async(context) {
             val index = build(history, records)
-            var replaced: ProgressIndex? = null
-            // Only the latest history is published: an older build that ends late never replaces a newer index.
-            val published = lock.withLock {
-                val isLatest = latest?.of(history, records) == true
-                if (isLatest) {
-                    replaced = ready?.index
-                    ready = Ready(history, records, index)
+            // Only the latest history is published: an older build that ends late never replaces a newer index. The
+            // memo is cleared even if this build is cancelled now, so no older index's results outlive the swap.
+            withContext(NonCancellable) {
+                val published = lock.withLock {
+                    val isLatest = latest?.of(history, records) == true
+                    if (isLatest) ready = Ready(history, records, index)
+                    isLatest
                 }
-                isLatest
+                if (published) queryLock.withLock { memo = memo.filter { it.slot.index === index } }
             }
-            val previous = replaced
-            if (published && previous != null) queryLock.withLock { memo = memo.filter { it.slot.index !== previous } }
             index
         }
         return Build(history, records, index).also { latest = it }
@@ -145,23 +163,28 @@ class ProgressIndexCache(
     /**
      * Builds the index of [history] and [records] in the background after [prewarmDelayMillis], and with it the
      * Records tab's default query ([RecordsQuery] in [zone]), so the tabs open with both ready (plan decision 9). A
-     * newer prewarm cancels a pending one; a build that someone else waits for goes on.
+     * newer prewarm cancels a pending one; a build that someone else waits for goes on. It never throws: a build or a
+     * query that fails is dropped here (a screen that opens later tries again and shows its own state), because a
+     * failure nobody waits for would crash the app at every launch.
      */
     @OptIn(ExperimentalAtomicApi::class)
     fun prewarm(history: List<WorkoutUi>, records: List<RecordUi>, zone: TimeZone) {
         val job = children.launch(start = CoroutineStart.LAZY) {
             delay(prewarmDelayMillis)
-            val index = get(history, records)
-            val query = RecordsQuery(zone = zone)
-            // Typed: in a Unit block, an inferred V would be Unit and the memo would keep nothing useful.
-            query<RecordsQuery, RecordsTimeline>(index, query) { RecordTimelines.query(it, query) }
+            try {
+                query(get(history, records), RecordsQuery(zone = zone))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                // Dropped on purpose: see above.
+            }
         }
         prewarming.exchange(job)?.cancel()
         job.start()
     }
 
-    /** A query's place in the memo: the index by identity (it has no `equals` of its own), the key by `equals`. */
-    private data class Slot(val index: ProgressIndex, val key: Any)
+    /** A query's place in the memo: the index by identity (it has no `equals` of its own), the query by `equals`. */
+    private data class Slot(val index: ProgressIndex, val query: ProgressQuery<*>)
 
     private class Memo(val slot: Slot, val value: Any)
 
@@ -174,20 +197,20 @@ class ProgressIndexCache(
     /** The queries being computed (under [queryLock]). */
     private val computing = HashMap<Slot, Deferred<Any>>()
 
-    /** The result of [key] over [index], if it is already computed; never computes. */
-    fun <K : Any, V : Any> peekQuery(index: ProgressIndex, key: K): V? {
-        val slot = Slot(index, key)
+    /** The result of [query] over [index], if it is already computed and kept; never computes. */
+    fun <V : Any> peekQuery(index: ProgressIndex, query: ProgressQuery<V>): V? {
+        val slot = Slot(index, query)
+        // The slot's query class fixes V, so the value stored under it is a V.
         @Suppress("UNCHECKED_CAST")
         return memo.firstOrNull { it.slot == slot }?.value as V?
     }
 
     /**
-     * The result of [key] over [index]: from the memo, or [compute]d once in [context] (concurrent callers of the same
-     * key wait for that one computation, which ends and is kept even if they stop waiting). [key] must be a value
-     * (a data class), equal for the same query; one key always means the same [compute].
+     * The result of [query] over [index]: from the memo, or computed once in [context] (concurrent callers of an
+     * equal query wait for that one computation, which ends even if they stop waiting). Throws what [ProgressQuery.compute] threw.
      */
-    suspend fun <K : Any, V : Any> query(index: ProgressIndex, key: K, compute: (ProgressIndex) -> V): V {
-        val slot = Slot(index, key)
+    suspend fun <V : Any> query(index: ProgressIndex, query: ProgressQuery<V>): V {
+        val slot = Slot(index, query)
         val running = queryLock.withLock {
             val hit = memo.firstOrNull { it.slot == slot }
             if (hit != null) {
@@ -199,12 +222,15 @@ class ProgressIndexCache(
                 children.async(context) {
                     var value: V? = null
                     try {
-                        compute(index).also { value = it }
+                        query.compute(index).also { value = it }
                     } finally {
                         withContext(NonCancellable) {
                             queryLock.withLock {
                                 computing.remove(slot)
-                                value?.let { done -> memo = (listOf(Memo(slot, done)) + memo.filter { it.slot != slot }).take(MEMO_SIZE) }
+                                val kept = ready?.index
+                                value?.takeIf { kept == null || kept === index }?.let { done ->
+                                    memo = (listOf(Memo(slot, done)) + memo.filter { it.slot != slot }).take(MEMO_SIZE)
+                                }
                             }
                         }
                     }
@@ -229,6 +255,10 @@ val LocalProgressIndexCache = staticCompositionLocalOf<ProgressIndexCache?> { nu
  * until the first build (off the main thread) ends. When the history changes, the previous index stays until the new
  * one is ready, so a screen never falls back to its skeleton. Without a [LocalProgressIndexCache], a cache of this
  * composition.
+ *
+ * **Errors** never reach the composition: when the build throws, this keeps returning the previous index, or null if
+ * there is none, and the next history tries again. A screen reads null as "not ready"; Tasks 9 to 11 decide whether a
+ * long null shows as "no data".
  */
 @Composable
 fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex? {
@@ -236,26 +266,37 @@ fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): Pr
     var latest by remember(cache) { mutableStateOf<ProgressIndex?>(null) }
     val ready = cache.peek(history, records)
     LaunchedEffect(cache, history, records) {
-        latest = cache.get(history, records)
+        try {
+            latest = cache.get(history, records)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            // Kept as it was: see Errors above.
+        }
     }
     return ready ?: latest
 }
 
 /**
- * The result of [key] over [index] ([ProgressIndexCache.query]): in the same frame when it is memoized, otherwise
- * null until the first result, computed off the main thread. A new index or key keeps the previous result until the
- * new one is ready. [compute] must not capture state that [key] does not name.
+ * The result of [query] over [index] ([ProgressIndexCache.query]): in the same frame when it is memoized, otherwise
+ * null until the first result, computed off the main thread. A new index or query keeps the previous result until
+ * the new one is ready. **Errors** are kept out of the composition as in [rememberProgressIndex]: the previous
+ * result stays, or null.
  */
 @Composable
-fun <K : Any, V : Any> rememberProgressQuery(index: ProgressIndex?, key: K, compute: (ProgressIndex) -> V): V? {
+fun <V : Any> rememberProgressQuery(index: ProgressIndex?, query: ProgressQuery<V>): V? {
     val cache = progressIndexCache()
-    val currentCompute by rememberUpdatedState(compute)
     var latest by remember(cache) { mutableStateOf<V?>(null) }
-    val ready = index?.let { cache.peekQuery<K, V>(it, key) }
-    LaunchedEffect(cache, index, key) {
+    val ready = index?.let { cache.peekQuery(it, query) }
+    LaunchedEffect(cache, index, query) {
         if (index == null) return@LaunchedEffect
-        val computation = currentCompute
-        latest = cache.query(index, key, computation)
+        try {
+            latest = cache.query(index, query)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            // Kept as it was: see Errors above.
+        }
     }
     return ready ?: latest
 }

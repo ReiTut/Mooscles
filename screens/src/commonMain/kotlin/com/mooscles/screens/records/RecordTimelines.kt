@@ -3,6 +3,7 @@ package com.mooscles.screens.records
 import androidx.compose.runtime.Immutable
 import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.progress.ProgressIndex
+import com.mooscles.screens.progress.ProgressQuery
 import com.mooscles.screens.progress.RecordEvent
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
@@ -16,7 +17,9 @@ data class RecordsQuery(
     val currentOnly: Boolean = false,
     val firstRecords: Boolean = false,
     val zone: TimeZone,
-)
+) : ProgressQuery<RecordsTimeline> {
+    override fun compute(index: ProgressIndex): RecordsTimeline = RecordTimelines.query(index, this)
+}
 
 /** The events of one local month, newest first. */
 @Immutable

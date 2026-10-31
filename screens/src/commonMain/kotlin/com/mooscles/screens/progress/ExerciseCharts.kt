@@ -23,7 +23,14 @@ data class ExerciseChartQuery(
     val today: LocalDate,
     val zone: TimeZone,
     val weekStart: DayOfWeek,
-)
+) : ProgressQuery<ExerciseChart> {
+    override fun compute(index: ProgressIndex): ExerciseChart = ExerciseCharts.query(index, this)
+}
+
+/** The Library card's sparkline of [key] ([ExerciseCharts.sparkline]) as a cache query. */
+data class SparklineQuery(val key: SeriesKey, val last: Int = 12) : ProgressQuery<List<Double>> {
+    override fun compute(index: ProgressIndex): List<Double> = ExerciseCharts.sparkline(index, key, last)
+}
 
 /** Why a chart has no points: no session of the series, a 1RM with no set of up to 10 reps, or nothing of the metric in the period. */
 enum class EmptyReason { NO_SESSIONS, NO_ESTIMATE, NO_POINTS }

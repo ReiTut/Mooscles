@@ -11,6 +11,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -232,9 +233,107 @@ class ProgressIndexCacheTest {
         runCurrent()
 
         val index = assertNotNull(cache.peek(withRecords, current))
-        val timeline = assertNotNull(cache.peekQuery<RecordsQuery, RecordsTimeline>(index, RecordsQuery(zone = zone)))
+        val timeline = assertNotNull(cache.peekQuery(index, RecordsQuery(zone = zone)))
         assertEquals(RecordTimelines.query(index, RecordsQuery(zone = zone)).total, timeline.total)
-        assertNull(cache.peekQuery<RecordsQuery, RecordsTimeline>(index, RecordsQuery(currentOnly = true, zone = zone)))
+        assertNull(cache.peekQuery(index, RecordsQuery(currentOnly = true, zone = zone)))
+    }
+
+    @Test
+    fun aFailingPrewarmStaysQuietAndALaterGetBuildsAgain() = runTest {
+        // A defect in the build must not crash the app 500 ms after every launch; runTest fails on an uncaught one.
+        var calls = 0
+        val cache = ProgressIndexCache(backgroundScope, StandardTestDispatcher(testScheduler), build = { history, records ->
+            calls++
+            if (calls == 1) error("a history the index cannot read")
+            ProgressIndex.build(history, records)
+        })
+        val history = history("a")
+
+        cache.prewarm(history, records, zone)
+        advanceTimeBy(500)
+        runCurrent()
+        assertEquals(1, calls)
+        assertNull(cache.peek(history, records))
+
+        // The failed build was forgotten: a screen that opens later builds again.
+        val index = cache.get(history, records)
+        assertEquals(2, calls)
+        assertSame(index, cache.peek(history, records))
+    }
+
+    @Test
+    fun aNewerPrewarmLeavesABuildSomeoneWaitsFor() = runTest {
+        val counting = CountingBuild()
+        val builds = HeldDispatcher()
+        val cache = cache(counting, builds)
+        val first = history("first")
+        val second = history("second")
+
+        cache.prewarm(first, records, zone)
+        advanceTimeBy(500)
+        runCurrent()
+        // The first prewarm's build is pending, and a screen now waits for it too.
+        val screen = async { cache.get(first, records) }
+        runCurrent()
+        cache.prewarm(second, records, zone)
+        runCurrent()
+        builds.runAll()
+        runCurrent()
+
+        assertSame(first, counting.from[screen.await()])
+        assertEquals(listOf(first), counting.built, "the second prewarm is still waiting its 500 ms")
+    }
+
+    @Test
+    fun aQueuedBuildNobodyWaitsForIsCancelledByTheNextHistory() = runTest {
+        val counting = CountingBuild()
+        val builds = HeldDispatcher()
+        val cache = cache(counting, builds)
+        val old = history("old")
+        val new = history("new")
+
+        // The collector leaves first, so the build is still the latest, with nobody waiting...
+        val oldCollector = launch { cache.get(old, records) }
+        runCurrent()
+        oldCollector.cancel()
+        runCurrent()
+        // ...until the next history arrives and cancels it.
+        val newCollector = async { cache.get(new, records) }
+        runCurrent()
+        builds.runAll()
+        runCurrent()
+
+        assertEquals(listOf(new), counting.built)
+        assertSame(new, counting.from[newCollector.await()])
+    }
+
+    @Test
+    fun aQueryAsTheLastStatementOfALaunchKeepsItsType() = runTest {
+        val cache = cache(CountingBuild())
+        val index = ProgressIndex.build(history("a"), records)
+        val query = RecordsQuery(zone = zone)
+
+        // The block expects Unit; the query's class, not the call site, decides what is stored.
+        launch { cache.query(index, query) }
+        runCurrent()
+
+        assertIs<RecordsTimeline>(cache.peekQuery(index, query))
+    }
+
+    /** Counts its computations; [name] makes queries differ, and the class keeps them apart from other kinds. */
+    private class Counter {
+        var computed = 0
+    }
+
+    private data class Numbered(val name: Any, val counter: Counter) : ProgressQuery<List<Int>> {
+        override fun compute(index: ProgressIndex): List<Int> {
+            counter.computed++
+            return listOf(counter.computed)
+        }
+    }
+
+    private data class Constant(val name: String, val value: Int) : ProgressQuery<Int> {
+        override fun compute(index: ProgressIndex): Int = value
     }
 
     @Test
@@ -242,32 +341,33 @@ class ProgressIndexCacheTest {
         val cache = cache(CountingBuild())
         val one = ProgressIndex.build(history("one"), records)
         val two = ProgressIndex.build(history("two"), records)
-        var computed = 0
-        val compute: (ProgressIndex) -> List<Int> = { computed++; listOf(computed) }
+        val counter = Counter()
 
-        assertNull(cache.peekQuery<String, List<Int>>(one, "a"))
-        val first = cache.query(one, "a", compute)
-        val again = cache.query(one, "a", compute)
+        assertNull(cache.peekQuery(one, Numbered("a", counter)))
+        val first = cache.query(one, Numbered("a", counter))
+        val again = cache.query(one, Numbered("a", counter))
         assertSame(first, again)
-        assertSame(first, cache.peekQuery<String, List<Int>>(one, "a"))
-        assertEquals(1, computed)
+        assertSame(first, cache.peekQuery(one, Numbered("a", counter)))
+        assertEquals(1, counter.computed)
 
-        cache.query(one, "b", compute)
-        assertEquals(2, computed, "another key is another computation")
-        val other = cache.query(two, "a", compute)
-        assertEquals(3, computed, "another index is another computation")
+        cache.query(one, Numbered("b", counter))
+        assertEquals(2, counter.computed, "another key is another computation")
+        val other = cache.query(two, Numbered("a", counter))
+        assertEquals(3, counter.computed, "another index is another computation")
         assertTrue(other !== first)
+        // Another kind of query with the same field is another key, never the same result.
+        assertNull(cache.peekQuery(one, Constant("a", 1)))
     }
 
     @Test
     fun concurrentQueriesShareOneComputation() = runTest {
         val cache = cache(CountingBuild())
         val index = ProgressIndex.build(history("a"), records)
-        var computed = 0
+        val counter = Counter()
 
-        val results = List(3) { async { cache.query(index, "a") { computed++; listOf(computed) } } }.awaitAll()
+        val results = List(3) { async { cache.query(index, Numbered("a", counter)) } }.awaitAll()
 
-        assertEquals(1, computed)
+        assertEquals(1, counter.computed)
         results.forEach { assertSame(results.first(), it) }
     }
 
@@ -275,45 +375,70 @@ class ProgressIndexCacheTest {
     fun memoKeepsAtMostThirtyTwoEntries() = runTest {
         val cache = cache(CountingBuild())
         val index = ProgressIndex.build(history("a"), records)
-        var computed = 0
-        val compute: (ProgressIndex) -> List<Int> = { computed++; listOf(computed) }
+        val counter = Counter()
 
-        repeat(33) { cache.query(index, it, compute) }
+        repeat(33) { cache.query(index, Numbered(it, counter)) }
 
-        assertNull(cache.peekQuery<Int, List<Int>>(index, 0), "the oldest of 33 is dropped")
-        (1..32).forEach { assertNotNull(cache.peekQuery<Int, List<Int>>(index, it), "key $it") }
-        cache.query(index, 0, compute)
-        assertEquals(34, computed)
+        assertNull(cache.peekQuery(index, Numbered(0, counter)), "the oldest of 33 is dropped")
+        (1..32).forEach { assertNotNull(cache.peekQuery(index, Numbered(it, counter)), "key $it") }
+        cache.query(index, Numbered(0, counter))
+        assertEquals(34, counter.computed)
     }
 
     @Test
     fun aQueryUsedAgainIsKeptOverOlderOnes() = runTest {
         val cache = cache(CountingBuild())
         val index = ProgressIndex.build(history("a"), records)
-        val compute: (ProgressIndex) -> Int = { 1 }
 
-        repeat(32) { cache.query(index, it, compute) }
-        cache.query(index, 0, compute)
-        cache.query(index, 32, compute)
+        repeat(32) { cache.query(index, Constant("$it", 1)) }
+        cache.query(index, Constant("0", 1))
+        cache.query(index, Constant("32", 1))
 
-        assertNotNull(cache.peekQuery<Int, Int>(index, 0), "used again, so the most recent")
-        assertNull(cache.peekQuery<Int, Int>(index, 1))
+        assertNotNull(cache.peekQuery(index, Constant("0", 1)), "used again, so the most recent")
+        assertNull(cache.peekQuery(index, Constant("1", 1)))
     }
 
     @Test
-    fun aNewlyBuiltIndexDropsThePreviousIndexQueries() = runTest {
+    fun onlyTheLatestBuiltIndexKeepsQueries() = runTest {
         val cache = cache(CountingBuild())
-        val old = cache.get(history("old"), records)
-        cache.query(old, "chart") { 1 }
         val elsewhere = ProgressIndex.build(history("elsewhere"), records)
-        cache.query(elsewhere, "chart") { 2 }
+        cache.query(elsewhere, Constant("chart", 2))
+        assertEquals(2, cache.peekQuery(elsewhere, Constant("chart", 2)), "kept before the first build")
+        val old = cache.get(history("old"), records)
+        cache.query(old, Constant("chart", 1))
 
         val new = cache.get(history("new"), records)
 
-        // The previous history's results would only keep its whole index alive; one not built here stays.
-        assertNull(cache.peekQuery<String, Int>(old, "chart"))
-        assertEquals(2, cache.peekQuery<String, Int>(elsewhere, "chart"))
-        assertEquals(3, cache.query(new, "chart") { 3 })
+        // An older index's results would only keep its whole history in memory.
+        assertNull(cache.peekQuery(old, Constant("chart", 1)))
+        assertNull(cache.peekQuery(elsewhere, Constant("chart", 2)))
+        assertEquals(1, cache.query(old, Constant("chart", 1)), "still computed for its caller")
+        assertNull(cache.peekQuery(old, Constant("chart", 1)), "but not kept")
+        assertEquals(3, cache.query(new, Constant("chart", 3)))
+        assertEquals(3, cache.peekQuery(new, Constant("chart", 3)))
+    }
+
+    @Test
+    fun aQueryOverTheOldIndexThatEndsAfterTheSwapIsNotKept() = runTest {
+        val builds = HeldDispatcher()
+        val cache = cache(CountingBuild(), builds)
+        val first = async { cache.get(history("old"), records) }
+        runCurrent()
+        builds.runAll()
+        runCurrent()
+        val old = first.await()
+
+        // The new build is queued before the query over the old index, so it publishes while the query is pending.
+        val next = async { cache.get(history("new"), records) }
+        runCurrent()
+        val late = async { cache.query(old, Constant("chart", 1)) }
+        runCurrent()
+        builds.runAll()
+        runCurrent()
+
+        next.await()
+        assertEquals(1, late.await())
+        assertNull(cache.peekQuery(old, Constant("chart", 1)))
     }
 
     @OptIn(ExperimentalAtomicApi::class)

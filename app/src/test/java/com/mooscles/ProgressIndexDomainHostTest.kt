@@ -53,8 +53,9 @@ import org.robolectric.annotation.LooperMode
  * Accepted divergences (pre-flight P12), and only these: `WorkingSets` and the domain skip a completed set with
  * negative reps or a negative or non-finite load, which `WorkoutUi.volumeKg` still multiplies in; and `WorkingSets`
  * also reads an enum name (`ASSISTANCE`) as its convention, which the presentation never passes (it passes labels,
- * checked below). The last hand workout carries such sets (negative reps, a negative load; a non-finite load takes
- * the same filter), so the first divergence is shown and measured to the kilo; everything else must match exactly.
+ * checked below). The last hand workout carries such sets (negative reps and a negative load), and the test sets
+ * apart exactly the completed sets the domain's `validCompleted` rejects, so the first divergence is shown and
+ * measured to the kilo; everything else must match exactly.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -106,7 +107,7 @@ class ProgressIndexDomainHostTest {
             val indexVolume = sessions.sumOf(SessionPoint::volumeKg)
             assertEquals(workout.name, domainVolumes[workout.id] ?: 0.0, indexVolume, 1e-9)
             val ignored = workout.exercises.filter { it.exercise.convention != LoadConvention.ASSISTANCE.label }
-                .flatMap { it.sets }.filter { it.completed && !it.assistance && (it.reps <= 0 || it.weightKg < 0.0) }
+                .flatMap { it.sets }.filter { it.completed && !it.assistance && !(it.reps > 0 && it.weightKg.isFinite() && it.weightKg >= 0.0) }
                 .sumOf { it.weightKg * it.reps }
             if (workout === divergent) assertTrue("the divergent workout has such sets", ignored != 0.0)
             else assertEquals(workout.name, 0.0, ignored, 0.0)
