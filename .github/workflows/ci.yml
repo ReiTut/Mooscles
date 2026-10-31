@@ -657,7 +657,8 @@ jobs:
           # Phase 5A task 8: ProgressNumbersTest 4 (commonTest) and ProgressTextsTest 13 (uiTest). 747 + 17 = 764.
           # Phase 5A task 8 fix round 1: ProgressTextsTest +2 (uiTest: viewAllRecordsPluralInBothLanguages, poundsComeFromExactKilosAndSignTheChange). 764 + 2 = 766.
           # Merged with phase 5A task 7 (same base): 784.
-          MIN_SCREENS_IOS_TESTS: 784
+          # Phase 5A task 9: ExerciseProgressScreenTest 17 and ProgressIndexComposeTest 4 (uiTest). 784 + 21 = 805.
+          MIN_SCREENS_IOS_TESTS: 805
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

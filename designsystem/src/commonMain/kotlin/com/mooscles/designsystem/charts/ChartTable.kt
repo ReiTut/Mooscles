@@ -53,7 +53,8 @@ fun ChartDataButton(showingTable: Boolean, onClick: () -> Unit, modifier: Modifi
 /**
  * One line of a chart's data table: the date (or week) at the start, the value at the end with the
  * set under it, and "Record" with the record icon when [ChartTableRowData.record]. A screen reader
- * reads it as one node: date, value, set, "Record". The text wraps at large font sizes.
+ * reads it as one node: date, value, set, "Record". The value and the set keep their whole width; the date wraps
+ * in the rest at large font sizes.
  */
 @Composable
 fun ChartTableRow(row: ChartTableRowData, modifier: Modifier = Modifier) {
@@ -68,7 +69,8 @@ fun ChartTableRow(row: ChartTableRowData, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MText(row.label, MTheme.type.bodyMd.tabular(), color = MTheme.colors.textPrimary, modifier = Modifier.weight(1f))
-        Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.End) {
+        // The numbers take the width they need first (never cut, at any font size); the date wraps in what is left.
+        Column(horizontalAlignment = Alignment.End) {
             val end = TextAlign.End
             MText(row.value, MTheme.type.labelLg.tabular().copy(textAlign = end), color = MTheme.colors.textPrimary)
             row.detail?.let { MText(it, MTheme.type.caption.tabular().copy(textAlign = end), color = MTheme.colors.textSecondary) }
