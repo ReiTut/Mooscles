@@ -14,6 +14,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
@@ -21,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
+import com.mooscles.screens.progress.LocalProgressIndexCache
 import com.mooscles.timer.RestNotifications
 import com.mooscles.updates.UpdateNotifications
 import com.mooscles.ui.AppThemeBars
@@ -57,8 +60,11 @@ class MainActivity : ComponentActivity(), AppThemeBars {
             // Plan 4A decision 15: the common code reads no platform state; the detail's figure
             // stops while the Activity is not started (in the background).
             val lifecycleState = lifecycle.currentStateAsState()
-            ProvideExercisePhotos(application as MoosclesApplication, this) {
-                MoosclesApp(state.value, vm, timer, workoutRequest.value, foreground = lifecycleState.value.isAtLeast(Lifecycle.State.STARTED))
+            val app = application as MoosclesApplication
+            ProvideExercisePhotos(app, this) {
+                ProvideProgressIndex(app) {
+                    MoosclesApp(state.value, vm, timer, workoutRequest.value, foreground = lifecycleState.value.isAtLeast(Lifecycle.State.STARTED))
+                }
             }
         }
         // Only a fresh launch from a notification asks for its screen: a recreated Activity
@@ -91,4 +97,13 @@ class MainActivity : ComponentActivity(), AppThemeBars {
         }
     }
     override fun onStop() { (application as MoosclesApplication).timer.foreground = false; super.onStop() }
+}
+
+/**
+ * Gives the screens the application's one progress index ([MoosclesApplication.progressIndex], plan 5A decision 9).
+ * Without this, each screen keeps an index of its own composition, built again every time it opens.
+ */
+@Composable
+internal fun ProvideProgressIndex(app: MoosclesApplication, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalProgressIndexCache provides app.progressIndex, content = content)
 }

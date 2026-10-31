@@ -15,6 +15,7 @@ import com.mooscles.designsystem.components.MTabBarTag
 import com.mooscles.screens.exercise.ExerciseInfoScreenTag
 import com.mooscles.screens.library.LibraryScreenTag
 import com.mooscles.screens.library.LibraryTags
+import com.mooscles.screens.progress.ExerciseProgressTag
 import com.mooscles.screens.shell.ShellTabs
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
@@ -76,16 +77,37 @@ class LibraryNavigationHostTest {
         assertEquals(count, countText())
     }
 
-    @Test fun detailFullHistoryOpensTheOldScreenAndBackReturns() {
+    @Test fun detailProgressOpensTheProgressAndBackReturns() {
         show()
         openDetail(incline)
         compose.onNodeWithTag("exercise-info-history-full").performScrollTo().performClick()
-        compose.onNodeWithText("Movement history", substring = true, ignoreCase = true).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("progress-title").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("progress-title").assertTextEquals(incline.name)
         compose.onNodeWithTag(ExerciseInfoScreenTag).assertDoesNotExist()
         tab("library").assertIsSelected()
         back()
         compose.onNodeWithTag(ExerciseInfoScreenTag).assertIsDisplayed()
         compose.onNodeWithTag("exercise-info-title").assertTextEquals(incline.name)
+    }
+
+    /** Spec "Progresso do exercício": "About the exercise" returns to the detail below instead of stacking a second one. */
+    @Test fun progressAboutReturnsToTheDetailBelow() {
+        show()
+        openDetail(incline)
+        compose.onNodeWithTag("exercise-info-history-full").performScrollTo().performClick()
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+        compose.onNodeWithTag("progress-menu").performClick()
+        compose.onNodeWithTag("progress-menu-about").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(ExerciseInfoScreenTag).assertIsDisplayed()
+        compose.onNodeWithTag("exercise-info-title").assertTextEquals(incline.name)
+        compose.onNodeWithTag(ExerciseProgressTag).assertDoesNotExist()
+        // One detail in the stack: Back leaves it for the library, not for a progress under a second detail.
+        back()
+        compose.onNodeWithTag(LibraryScreenTag).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseInfoScreenTag).assertDoesNotExist()
+        compose.onNodeWithTag(ExerciseProgressTag).assertDoesNotExist()
     }
 
     @Test fun workoutMenuAboutOpensTheDetailAndBackReturnsToTheWorkout() {
@@ -239,9 +261,13 @@ class LibraryNavigationHostTest {
             assertTrue(frames.last().newScreen)
             assertEquals(shown.summary, frames.last().loadingOverlay)
         }
-        // Train and the editor are new screens too (plan 4B, Task 15); the history is still an old one.
+        // Train and the editor are new screens too (plan 4B, Task 15), and Records and the progress (plan 5A,
+        // Task 13); the history is still an old one.
         assertTrue(ShownRoute(ShellTabs.TRAIN).newScreen)
         assertTrue(ShownRoute(ROUTINE_ROUTE).newScreen)
+        assertTrue(ShownRoute(ShellTabs.RECORDS).newScreen)
+        assertTrue(ShownRoute(PROGRESS_ROUTE).newScreen)
+        assertFalse(ShownRoute(PROGRESS_ROUTE).loadingOverlay)
         assertFalse(ShownRoute(ShellTabs.HISTORY).newScreen)
     }
 

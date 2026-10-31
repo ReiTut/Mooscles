@@ -298,7 +298,12 @@ jobs:
           # Merged with phase 5A task 7 (same base): 1238.
           # Phase 5A task 10: ProgressSectionsQueryTest 4 (:screens commonTest); ExerciseProgressSectionsTest is uiTest. 1238 + 4 = 1242.
           # Merge of the 5A tap-baseline lane: RecordsTapBaselineHostTest 2 (:app host). 1242 + 2 = 1244.
-          MIN_HOST_TESTS: 1244
+          # Phase 5A task 13 (:app host): ProgressNavigationHostTest 11; ShellNavigationHostTest +3 (progressRouteWithoutMetricOpensTheDefault,
+          # progressRouteWithMetricOpensIt, unknownMetricFallsBackToTheDefault); LibraryNavigationHostTest +1 (progressAboutReturnsToTheDetailBelow;
+          # detailFullHistoryOpensTheOldScreenAndBackReturns renamed detailProgressOpensTheProgressAndBackReturns, +0).
+          # RecordsTapBaselineHostTest -2 retired: the old screens are gone; the numbers stay in the report
+          # (reports/2026-10-31-phase5a-verificacao/tap-baseline-5a.md). 1244 + 15 - 2 = 1257.
+          MIN_HOST_TESTS: 1257
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
