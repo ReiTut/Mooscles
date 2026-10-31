@@ -71,9 +71,12 @@ internal data class ChartColors(
     }
 }
 
-/** The height of a line or bar chart: the token times the font scale, from 1 up to `chartMaxScale`. */
+/**
+ * The height of a line or bar chart: the token times the font scale, from 1 up to `chartMaxScale`. Public so a screen's
+ * placeholder for a chart (a skeleton while it loads) takes exactly the chart's height.
+ */
 @Composable
-internal fun chartHeight(): Dp {
+fun chartHeight(): Dp {
     val sizes = MTheme.sizes
     return sizes.chartHeight * LocalDensity.current.fontScale.coerceIn(1f, sizes.chartMaxScale)
 }

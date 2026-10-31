@@ -209,28 +209,34 @@ fun tableRows(
     zone: TimeZone,
     weekStart: DayOfWeek,
     today: LocalDate = currentDay(zone),
-): List<ChartTableRowData> {
-    val running = if (chart.weekly) {
-        ExerciseCharts.weekStartOf(today, weekStart).atStartOfDayIn(zone).toEpochMilliseconds()
-    } else {
-        null
+): List<ChartTableRowData> = chart.points.indices.map { tableRow(chart, it, metric, pounds, zone, weekStart, today) }
+
+/** Row [newest] of [tableRows] (0 is the newest point), alone: a lazy list formats only the rows it shows. */
+@Composable
+fun tableRow(
+    chart: ExerciseChart,
+    newest: Int,
+    metric: ProgressMetric,
+    pounds: Boolean,
+    zone: TimeZone,
+    weekStart: DayOfWeek,
+    today: LocalDate = currentDay(zone),
+): ChartTableRowData {
+    val point = chart.points[chart.points.size - 1 - newest]
+    val running = chart.weekly && point.startedAt == ExerciseCharts.weekStartOf(today, weekStart).atStartOfDayIn(zone).toEpochMilliseconds()
+    val label = when {
+        !chart.weekly -> shortDate(point.startedAt, zone)
+        running -> stringResource(Res.string.progress_highlight, weekOf(point.startedAt, zone), stringResource(Res.string.progress_this_week))
+        else -> weekOf(point.startedAt, zone)
     }
-    return chart.points.asReversed().map { point ->
-        val label = when {
-            !chart.weekly -> shortDate(point.startedAt, zone)
-            point.startedAt == running ->
-                stringResource(Res.string.progress_highlight, weekOf(point.startedAt, zone), stringResource(Res.string.progress_this_week))
-            else -> weekOf(point.startedAt, zone)
-        }
-        val set = point.set?.takeIf { metric != ProgressMetric.VOLUME }
-        ChartTableRowData(
-            key = point.startedAt.toString(),
-            label = label,
-            value = valueText(point, metric, pounds),
-            detail = set?.let { bestSetText(it.weightKg, it.reps, pounds) },
-            record = point.record,
-        )
-    }
+    val set = point.set?.takeIf { metric != ProgressMetric.VOLUME }
+    return ChartTableRowData(
+        key = point.startedAt.toString(),
+        label = label,
+        value = valueText(point, metric, pounds),
+        detail = set?.let { bestSetText(it.weightKg, it.reps, pounds) },
+        record = point.record,
+    )
 }
 
 /** "outubro de 2026 · 5 recordes": the header of a month of the records timeline. */

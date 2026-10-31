@@ -1,6 +1,7 @@
 package com.mooscles.screens.progress
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -251,19 +252,40 @@ class ProgressIndexCache(
 val LocalProgressIndexCache = staticCompositionLocalOf<ProgressIndexCache?> { null }
 
 /**
- * The [ProgressIndex] of [history] and [records]: in the same frame when the cache already has it, otherwise null
- * until the first build (off the main thread) ends. When the history changes, the previous index stays until the new
- * one is ready, so a screen never falls back to its skeleton. Without a [LocalProgressIndexCache], a cache of this
- * composition.
+ * What a progress computation has given a composition so far ([rememberProgressIndex], [rememberProgressQuery]).
+ * A screen shows its skeleton for [Loading], its value for [Ready] and its no-data state for [Failed]; it never sees the
+ * exception, and never shows a skeleton for a failure.
+ */
+@Immutable
+sealed interface ProgressLoad<out V : Any> {
+    /** Nothing yet: the first build or query is running. */
+    data object Loading : ProgressLoad<Nothing>
+
+    /** The current attempt threw and there is nothing valid to show; the next history or query tries again. */
+    data object Failed : ProgressLoad<Nothing>
+
+    /** A value: the current one, or the previous one while the next is computed. */
+    @Immutable
+    class Ready<out V : Any>(val value: V) : ProgressLoad<V>
+}
+
+/** The value of a [ProgressLoad.Ready], or null while loading or after a failure. */
+val <V : Any> ProgressLoad<V>.valueOrNull: V? get() = (this as? ProgressLoad.Ready<V>)?.value
+
+/**
+ * The [ProgressIndex] of [history] and [records]: [ProgressLoad.Ready] in the same frame when the cache already has
+ * it, otherwise [ProgressLoad.Loading] until the first build (off the main thread) ends. When the history changes, the
+ * previous index stays [ProgressLoad.Ready] until the new one is ready, so a screen never falls back to its skeleton.
+ * Without a [LocalProgressIndexCache], a cache of this composition.
  *
- * **Errors** never reach the composition: when the build throws, this keeps returning the previous index, or null if
- * there is none, and the next history tries again. A screen reads null as "not ready"; Tasks 9 to 11 decide whether a
- * long null shows as "no data".
+ * **Errors** never reach the composition as exceptions. A build that throws keeps the previous index (still valid data)
+ * when there is one, and is [ProgressLoad.Failed] when there is none; the next history goes back to loading.
  */
 @Composable
-fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex? {
+fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): ProgressLoad<ProgressIndex> {
     val cache = progressIndexCache()
     var latest by remember(cache) { mutableStateOf<ProgressIndex?>(null) }
+    var failed by remember(cache, history, records) { mutableStateOf(false) }
     val ready = cache.peek(history, records)
     LaunchedEffect(cache, history, records) {
         try {
@@ -271,34 +293,50 @@ fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): Pr
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Throwable) {
-            // Kept as it was: see Errors above.
+            failed = true
         }
     }
-    return ready ?: latest
+    val value = ready ?: latest
+    return remember(value, failed) { loadOf(value, failed) }
 }
 
 /**
- * The result of [query] over [index] ([ProgressIndexCache.query]): in the same frame when it is memoized, otherwise
- * null until the first result, computed off the main thread. A new index or query keeps the previous result until
- * the new one is ready. **Errors** are kept out of the composition as in [rememberProgressIndex]: the previous
- * result stays, or null.
+ * The result of [query] over [index] ([ProgressIndexCache.query]): [ProgressLoad.Ready] in the same frame when it is
+ * memoized, otherwise [ProgressLoad.Loading] until the first result, computed off the main thread. A new index or
+ * query keeps the previous result [ProgressLoad.Ready] until the new one is ready. A [ProgressLoad.Loading] or
+ * [ProgressLoad.Failed] index passes through. A query that throws is [ProgressLoad.Failed] even with a previous
+ * result, which belongs to another query or index and would disagree with the screen for good.
  */
 @Composable
-fun <V : Any> rememberProgressQuery(index: ProgressIndex?, query: ProgressQuery<V>): V? {
+fun <V : Any> rememberProgressQuery(index: ProgressLoad<ProgressIndex>, query: ProgressQuery<V>): ProgressLoad<V> {
     val cache = progressIndexCache()
+    val built = index.valueOrNull
     var latest by remember(cache) { mutableStateOf<V?>(null) }
-    val ready = index?.let { cache.peekQuery(it, query) }
-    LaunchedEffect(cache, index, query) {
-        if (index == null) return@LaunchedEffect
+    var failed by remember(cache, built, query) { mutableStateOf(false) }
+    val ready = built?.let { cache.peekQuery(it, query) }
+    LaunchedEffect(cache, built, query) {
+        if (built == null) return@LaunchedEffect
         try {
-            latest = cache.query(index, query)
+            latest = cache.query(built, query)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Throwable) {
-            // Kept as it was: see Errors above.
+            failed = true
         }
     }
-    return ready ?: latest
+    // A failed index or query shows nothing of before; a running one keeps the previous result.
+    val gone = index is ProgressLoad.Failed || (built != null && ready == null && failed)
+    val value = when {
+        built == null || gone -> null
+        else -> ready ?: latest
+    }
+    return remember(value, gone) { loadOf(value, gone) }
+}
+
+private fun <V : Any> loadOf(value: V?, failed: Boolean): ProgressLoad<V> = when {
+    value != null -> ProgressLoad.Ready(value)
+    failed -> ProgressLoad.Failed
+    else -> ProgressLoad.Loading
 }
 
 /** The provided cache, or one that lives as long as this composition. */

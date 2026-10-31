@@ -49,9 +49,10 @@ class ProgressIndexComposeTest {
     }
 
     /** The number of sessions of the bench, as a query; [computed] counts its computations. */
-    private data class Sessions(val key: SeriesKey, val computed: AtomicInt) : ProgressQuery<String> {
+    private data class Sessions(val key: SeriesKey, val computed: AtomicInt, val fail: Boolean = false) : ProgressQuery<String> {
         override fun compute(index: ProgressIndex): String {
             computed.incrementAndFetch()
+            check(!fail) { "query failed on purpose" }
             return "sessions:${index.sessions(key).size}"
         }
     }
@@ -80,15 +81,24 @@ class ProgressIndexComposeTest {
         }
     }
 
-    private fun ComposeUiTest.show(history: MutableState<List<WorkoutUi>>, query: Sessions, cache: ProgressIndexCache?) {
+    private fun ComposeUiTest.show(history: MutableState<List<WorkoutUi>>, query: Sessions, cache: ProgressIndexCache?) =
+        show(history, mutableStateOf(query), cache)
+
+    private fun <V : Any> ProgressLoad<V>.text(ready: (V) -> String): String = when (this) {
+        ProgressLoad.Loading -> "loading"
+        ProgressLoad.Failed -> "failed"
+        is ProgressLoad.Ready -> ready(value)
+    }
+
+    private fun ComposeUiTest.show(history: MutableState<List<WorkoutUi>>, query: MutableState<Sessions>, cache: ProgressIndexCache?) {
         val records = emptyList<RecordUi>()
         withScreen {
             CompositionLocalProvider(LocalProgressIndexCache provides cache) {
                 val index = rememberProgressIndex(history.value, records)
-                val value = rememberProgressQuery(index, query)
+                val value = rememberProgressQuery(index, query.value)
                 // Read where the composition reads them: the nodes show what the composables returned.
-                MText(index?.let { "index:${it.sessions(key).size}" } ?: "none", MTheme.type.bodyMd, Modifier.testTag(INDEX))
-                MText(value ?: "none", MTheme.type.bodyMd, Modifier.testTag(QUERY))
+                MText(index.text { "index:${it.sessions(key).size}" }, MTheme.type.bodyMd, Modifier.testTag(INDEX))
+                MText(value.text { it }, MTheme.type.bodyMd, Modifier.testTag(QUERY))
             }
         }
         waitForIdle()
@@ -107,8 +117,8 @@ class ProgressIndexComposeTest {
         try {
             val computed = AtomicInt(0)
             show(mutableStateOf(history(3)), Sessions(key, computed), held.cache)
-            assertEquals("none", text(INDEX))
-            assertEquals("none", text(QUERY))
+            assertEquals("loading", text(INDEX))
+            assertEquals("loading", text(QUERY))
             assertEquals(0, computed.load())
             held.gate?.complete(Unit)
             waitForText(INDEX, "index:3")
@@ -157,16 +167,16 @@ class ProgressIndexComposeTest {
     }
 
     @Test
-    fun aFailingBuildStaysOutOfTheCompositionAndTheNextHistoryTriesAgain() = runComposeUiTest {
+    fun aFailingBuildIsFailedThenTheNextHistoryIsReady() = runComposeUiTest {
         val held = HeldCache().apply { failing = true }
         try {
             val computed = AtomicInt(0)
             val history = mutableStateOf(history(2))
             show(history, Sessions(key, computed), held.cache)
             waitUntil(timeoutMillis = 5_000) { held.builds.load() == 1 }
-            waitForIdle()
-            assertEquals("none", text(INDEX))
-            assertEquals("none", text(QUERY))
+            // Nothing to show and nothing to wait for: failed, never loading for good.
+            waitForText(INDEX, "failed")
+            assertEquals("failed", text(QUERY))
 
             held.failing = false
             history.value = history(4)
@@ -176,6 +186,39 @@ class ProgressIndexComposeTest {
         } finally {
             held.close()
         }
+    }
+
+    @Test
+    fun aFailingBuildKeepsThePreviousIndex() = runComposeUiTest {
+        val held = HeldCache()
+        try {
+            val history = mutableStateOf(history(2))
+            show(history, Sessions(key, AtomicInt(0)), held.cache)
+            waitForText(QUERY, "sessions:2")
+            held.failing = true
+            history.value = history(3)
+            waitUntil(timeoutMillis = 5_000) { held.builds.load() == 2 }
+            waitForIdle()
+            // The previous index is still valid data: kept, not failed.
+            assertEquals("index:2", text(INDEX))
+            assertEquals("sessions:2", text(QUERY))
+        } finally {
+            held.close()
+        }
+    }
+
+    @Test
+    fun aFailingQueryIsFailedNotThePreviousResult() = runComposeUiTest {
+        val computed = AtomicInt(0)
+        val query = mutableStateOf(Sessions(key, computed))
+        show(mutableStateOf(history(2)), query, cache = null)
+        waitForText(QUERY, "sessions:2")
+        query.value = Sessions(key, computed, fail = true)
+        // The previous result belongs to another query: showing it would disagree with the screen for good.
+        waitForText(QUERY, "failed")
+        assertEquals("index:2", text(INDEX))
+        query.value = Sessions(key, computed)
+        waitForText(QUERY, "sessions:2")
     }
 
     private companion object {

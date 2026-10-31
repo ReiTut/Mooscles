@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
@@ -52,6 +53,7 @@ import com.mooscles.designsystem.charts.ChartTableRow
 import com.mooscles.designsystem.charts.LinePoint
 import com.mooscles.designsystem.charts.MChartLegendRecord
 import com.mooscles.designsystem.charts.MLineChart
+import com.mooscles.designsystem.charts.chartHeight
 import com.mooscles.designsystem.components.MBottomSheet
 import com.mooscles.designsystem.components.MChip
 import com.mooscles.designsystem.components.MChipKind
@@ -145,22 +147,39 @@ internal class ProgressSeams(
     }
 }
 
-/** The metrics of a series ([ProgressMetrics.available]), as a cache query: Added weight reads the sessions for them. */
-internal data class ProgressMetricsQuery(val key: SeriesKey) : ProgressQuery<List<ProgressMetric>> {
-    override fun compute(index: ProgressIndex): List<ProgressMetric> =
-        ProgressMetrics.available(key.convention, index.sessions(key))
-}
-
 /**
- * A chart with the query it answers. The cache keeps the previous result while a new one is computed, so a chart that
- * is still the previous metric's or period's is drawn and worded by its own query, never by the chips' new choice.
+ * A chart with the query it answers, the metrics of its series and how many sessions the series has in all. The cache
+ * keeps the previous result while a new one is computed, so a chart that is still the previous metric's or period's
+ * is drawn and worded by its own [query], never by the chips' new choice, and the chips show the [metrics] of the
+ * same result.
  */
 @Immutable
-internal class ShownChart(val query: ExerciseChartQuery, val chart: ExerciseChart)
+internal class ShownChart(
+    val query: ExerciseChartQuery,
+    val metrics: List<ProgressMetric>,
+    val sessions: Int,
+    val chart: ExerciseChart,
+)
 
-/** [chart] as a cache query whose result names it ([ShownChart]). */
-internal data class ShownChartQuery(val chart: ExerciseChartQuery) : ProgressQuery<ShownChart> {
-    override fun compute(index: ProgressIndex): ShownChart = ShownChart(chart, chart.compute(index))
+/**
+ * The chart of [key] as one cache query: the convention's metrics ([ProgressMetrics.available], which on Added weight
+ * read the sessions), the metric to show ([requested] when the convention has it, otherwise the first) and its chart
+ * over [period]. One computation off the main thread, so with the index ready the chart lands on the next frame.
+ */
+internal data class ShownChartQuery(
+    val key: SeriesKey,
+    val requested: ProgressMetric?,
+    val period: ExercisePeriod,
+    val today: LocalDate,
+    val zone: TimeZone,
+    val weekStart: DayOfWeek,
+) : ProgressQuery<ShownChart> {
+    override fun compute(index: ProgressIndex): ShownChart {
+        val sessions = index.sessions(key)
+        val metrics = ProgressMetrics.available(key.convention, sessions)
+        val chart = ExerciseChartQuery(key, ProgressMetrics.initial(requested, metrics), period, today, zone, weekStart)
+        return ShownChart(chart, metrics, sessions.size, chart.compute(index))
+    }
 }
 
 /** "Today" and the zone the chart is read in, taken on entry and at each period change (D8). */
@@ -177,7 +196,8 @@ private class ProgressCalendar(val zone: TimeZone, val today: LocalDate)
  * data", which swaps the chart for its table rows as items of the list. A weekly chart says so under it.
  *
  * The index and the chart come from the cache ([rememberProgressIndex], [rememberProgressQuery]), never computed in
- * composition; until they arrive the chart's place is a skeleton of its height. The metric, the period and "View
+ * composition, the metrics with the chart in one query; until they arrive the chart's place is a skeleton of its
+ * height, and after a failure it says there is nothing to chart. The metric, the period and "View
  * data" are kept per exercise with `rememberSaveable`; the selection is not. Errors of the state show as this screen's
  * toast ([ScreenErrorToast]).
  */
@@ -211,7 +231,8 @@ internal fun ExerciseProgressScreen(
     val host = remember { MToastHostState() }
     ScreenErrorToast(state.errorCode, actions, host)
     var menuOpen by rememberSaveable { mutableStateOf(false) }
-    val index = rememberProgressIndex(state.history, state.records)
+    val load = rememberProgressIndex(state.history, state.records)
+    val index = load.valueOrNull
     val current = state.exercises.firstOrNull { it.id == exerciseId }
     val exercise = current ?: index?.snapshot(exerciseId)
     // The current convention, or, for an exercise that is gone, the one of its latest session.
@@ -222,24 +243,20 @@ internal fun ExerciseProgressScreen(
     var periodName by rememberSaveable(exerciseId) { mutableStateOf(ExercisePeriod.ALL.name) }
     var showTable by rememberSaveable(exerciseId) { mutableStateOf(false) }
     val period = ExercisePeriod.entries.firstOrNull { it.name == periodName } ?: ExercisePeriod.ALL
+    val requested = ProgressMetric.parse(metricChoice)
 
-    val metrics = key?.let { rememberProgressQuery(index, ProgressMetricsQuery(it)) }
-    val chosen = metrics?.let { ProgressMetrics.initial(ProgressMetric.parse(metricChoice), it) }
     val calendar = remember(period) {
         val zone = seams.zone()
         ProgressCalendar(zone, ScreenDates.localDate(seams.nowMillis(), zone))
     }
     val weekStart = seams.weekStart()
-    val query = if (key != null && chosen != null) {
-        ShownChartQuery(ExerciseChartQuery(key, chosen, period, calendar.today, calendar.zone, weekStart))
-    } else {
-        null
-    }
-    val shown = query?.let { rememberProgressQuery(index, it) }
+    val shownLoad = key?.let { rememberProgressQuery(load, ShownChartQuery(it, requested, period, calendar.today, calendar.zone, weekStart)) }
+    val shown = shownLoad?.valueOrNull
     // A new chart (another metric, period or history) starts with nothing selected.
     val selection = remember(shown) { mutableStateOf<Int?>(null) }
     val pounds = state.preferences.pounds
-    val rows = if (showTable && shown != null) tableRows(shown.chart, shown.query.metric, pounds, shown.query.zone, shown.query.weekStart, shown.query.today) else emptyList()
+    // A failure shows that there is nothing to chart, never a skeleton that would wait for good.
+    val failed = load is ProgressLoad.Failed || shownLoad is ProgressLoad.Failed
 
     Box(modifier.fillMaxSize().background(MTheme.colors.bgBase)) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
@@ -264,18 +281,19 @@ internal fun ExerciseProgressScreen(
                     item(key = "convention") { ProgressConvention(convention) }
                 }
                 if (key == null) {
-                    item(key = "skeleton") { ChartSkeleton() }
+                    item(key = "skeleton") { if (failed) ChartMessage(EmptyReason.NO_POINTS) else ChartSkeleton() }
                     return@LazyColumn
                 }
-                if (metrics != null && chosen != null) {
+                if (shown != null && !failed) {
+                    val chosen = ProgressMetrics.initial(requested, shown.metrics)
                     item(key = "metrics") {
-                        MetricChips(metrics, chosen, key.convention) {
+                        MetricChips(shown.metrics, chosen, shown.query.key.convention) {
                             selection.value = null
                             metricChoice = it.route
                         }
                     }
                 }
-                val chart = shown?.chart
+                val chart = shown?.chart?.takeIf { !failed }
                 if (chart?.last != null) {
                     item(key = "highlight") { ProgressHighlight(shown, pounds) }
                 }
@@ -286,11 +304,16 @@ internal fun ExerciseProgressScreen(
                     }
                 }
                 when {
+                    failed -> item(key = "message") { ChartMessage(EmptyReason.NO_POINTS) }
                     shown == null || chart == null -> item(key = "skeleton") { ChartSkeleton() }
                     chart.empty != null -> item(key = "message") { ChartMessage(chart.empty) }
-                    chart.points.size == 1 -> item(key = "message") { ChartMessage(null) }
+                    // One session of the exercise in all; one point of a longer history is still drawn.
+                    shown.sessions == 1 -> item(key = "message") { ChartMessage(null) }
                     else -> {
-                        if (!showTable) item(key = "chart") { ProgressChart(shown, pounds, selection) }
+                        if (!showTable) {
+                            item(key = "readout") { ProgressReadout(shown, pounds, selection) }
+                            item(key = "chart") { ProgressChart(shown, pounds, selection) }
+                        }
                         item(key = "data") {
                             DataToggle(shown, showTable) {
                                 selection.value = null
@@ -298,9 +321,8 @@ internal fun ExerciseProgressScreen(
                             }
                         }
                         if (showTable) {
-                            items(rows.size, key = { "row-${rows[it].key}" }) { i ->
-                                ChartTableRow(rows[i], Modifier.progressItem().testTag(ProgressTags.tableRow(i)))
-                            }
+                            val points = chart.points
+                            items(points.size, key = { "row-${points[points.size - 1 - it].startedAt}" }) { i -> ProgressTableRow(shown, pounds, i) }
                         }
                     }
                 }
@@ -383,13 +405,14 @@ private fun ProgressConvention(convention: String) {
     }
 }
 
-/** One scrolling line of chips, at the list's sides. */
+/** One scrolling line of chips, at the list's sides, announced as one group ("1 of 4"). */
 @Composable
 private fun ChipRow(content: @Composable () -> Unit) {
     Box(Modifier.widthIn(max = MTheme.sizes.contentMaxWidth).fillMaxWidth()) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .selectableGroup()
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = MTheme.space.s4, vertical = MTheme.space.s2),
             horizontalArrangement = Arrangement.spacedBy(MTheme.space.s2),
@@ -478,17 +501,18 @@ private fun fittingNumberStyle(text: String, maxWidth: Int): TextStyle {
     }
 }
 
-/** While the index or the chart is not ready: a skeleton of the chart's height. */
+/** While the index or the chart is not ready: a skeleton of the chart's height ([chartHeight]). */
 @Composable
 private fun ChartSkeleton() {
-    val sizes = MTheme.sizes
-    val height = sizes.chartHeight * LocalDensity.current.fontScale.coerceIn(1f, sizes.chartMaxScale)
     Box(Modifier.progressItem().padding(vertical = MTheme.space.s2)) {
-        Skeleton(Modifier.fillMaxWidth().height(height).testTag(ProgressTags.CHART_SKELETON))
+        Skeleton(Modifier.fillMaxWidth().height(chartHeight()).testTag(ProgressTags.CHART_SKELETON))
     }
 }
 
-/** The sentence in the chart's place: no estimate, nothing in the period, or (with no [reason]) one session only. */
+/**
+ * The sentence in the chart's place: no estimate, nothing in the period (also the state of a failed build or query), or,
+ * with no [reason], an exercise with one session in all.
+ */
 @Composable
 private fun ChartMessage(reason: EmptyReason?) {
     val text = stringResource(
@@ -507,9 +531,28 @@ private fun ChartMessage(reason: EmptyReason?) {
 }
 
 /**
- * The reading of the selected point (not announced: the table is the screen reader's way), the line chart and the
- * record legend when a point has the ring. The line keeps its place without a selection, so the chart never moves
- * under the finger. Only this item reads [selection], so moving it recomposes nothing else.
+ * The reading of the selected point, above the chart (not announced: the table is the screen reader's way). The line
+ * keeps its place without a selection. Its own item, so a drag recomposes this line and the chart's selection only.
+ */
+@Composable
+private fun ProgressReadout(shown: ShownChart, pounds: Boolean, selection: MutableState<Int?>) {
+    val chart = shown.chart
+    val query = shown.query
+    val selected = selection.value?.takeIf { it in chart.points.indices }
+    val readout = selected?.let { readoutText(chart.points[it], query.metric, pounds, query.zone, chart.weekly) }
+    MText(
+        readout.orEmpty(),
+        MTheme.type.labelMd,
+        color = MTheme.colors.textPrimary,
+        modifier = Modifier.progressItem().padding(top = MTheme.space.s2).then(
+            if (readout != null) Modifier.testTag(ProgressTags.READOUT) else Modifier.clearAndSetSemantics {},
+        ),
+    )
+}
+
+/**
+ * The line chart and the record legend when a point has the ring. The values, the axis texts, the dates and the spoken
+ * summary are made here once per chart; only [SelectableLineChart] reads [selection], so moving it rebuilds none of them.
  */
 @Composable
 private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: MutableState<Int?>) {
@@ -531,29 +574,45 @@ private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: Mutable
     val labelIndices = remember(points.size) { ChartScale.labelIndices(points.size) }
     val xLabels = labelIndices.map { AxisLabel(it, shortDate(chart.points[it].startedAt, zone)) }
     val summary = chartSummary(chart, metric, query.key.convention, query.period, pounds, zone, query.today)
-    val selected = selection.value?.takeIf { it in chart.points.indices }
-    val readout = selected?.let { readoutText(chart.points[it], metric, pounds, zone, chart.weekly) }
     Column(Modifier.progressItem().padding(top = MTheme.space.s2), verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
-        MText(
-            readout.orEmpty(),
-            MTheme.type.labelMd,
-            color = MTheme.colors.textPrimary,
-            modifier = Modifier.fillMaxWidth().then(
-                if (readout != null) Modifier.testTag(ProgressTags.READOUT) else Modifier.clearAndSetSemantics {},
-            ),
-        )
-        MLineChart(
-            points = points,
-            summary = summary,
-            yLabel = labels,
-            xLabels = xLabels,
-            selected = selected,
-            onSelect = { selection.value = it },
-            modifier = Modifier.testTag(ProgressTags.CHART).semantics { progressAxisTexts = tickTexts },
+        SelectableLineChart(
+            points, summary, labels, xLabels, selection,
+            Modifier.testTag(ProgressTags.CHART).semantics { progressAxisTexts = tickTexts },
             contentKey = metric to query.period,
         )
         if (chart.points.any(ChartPoint::record)) MChartLegendRecord(Modifier.testTag(ProgressTags.LEGEND_RECORD).semantics(mergeDescendants = true) {})
     }
+}
+
+/** [MLineChart] with the selection read here, the only place a drag recomposes. */
+@Composable
+private fun SelectableLineChart(
+    points: List<LinePoint>,
+    summary: String,
+    labels: (Double) -> String,
+    xLabels: List<AxisLabel>,
+    selection: MutableState<Int?>,
+    modifier: Modifier,
+    contentKey: Any,
+) {
+    MLineChart(
+        points = points,
+        summary = summary,
+        yLabel = labels,
+        xLabels = xLabels,
+        selected = selection.value?.takeIf { it in points.indices },
+        onSelect = { selection.value = it },
+        modifier = modifier,
+        contentKey = contentKey,
+    )
+}
+
+/** Row [newest] of the data table (0 is the newest point), formatted only while the list shows it. */
+@Composable
+private fun ProgressTableRow(shown: ShownChart, pounds: Boolean, newest: Int) {
+    val query = shown.query
+    val row = tableRow(shown.chart, newest, query.metric, pounds, query.zone, query.weekStart, query.today)
+    ChartTableRow(row, Modifier.progressItem().testTag(ProgressTags.tableRow(newest)))
 }
 
 /** "View data" / "View chart", and the weekly note when the chart has one point per week. */

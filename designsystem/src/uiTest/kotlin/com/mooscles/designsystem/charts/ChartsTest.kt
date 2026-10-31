@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import com.mooscles.designsystem.assertShownWhole
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
@@ -183,6 +186,32 @@ class ChartsTest {
         onAllNodesWithText("Record").assertCountEquals(1)
         onAllNodesWithText("28 Oct").assertCountEquals(1)
         onNodeWithText("Record").assert(hasTestTag(chartTableRowTag("r")))
+    }
+
+    @Test
+    fun tableRowStacksALongDateAndKeepsTheValueWhole() = runComposeUiTest {
+        val long = ChartTableRowData("long", "Week of Oct 26 · this week (in progress)", "12 reps", "Bodyweight × 12")
+        val short = ChartTableRowData("short", "28 Oct", "92.5 kg", "85 kg × 3")
+        withTheme(fontScale = 2f) {
+            Box(Modifier.width(288.dp)) { Column { ChartTableRow(long); ChartTableRow(short) } }
+        }
+        waitForIdle()
+        fun bounds(text: String) = onNodeWithText(text, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        fun layout(text: String): TextLayoutResult {
+            val results = mutableListOf<TextLayoutResult>()
+            onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action!!(results)
+            return results.first()
+        }
+        for (text in listOf("12 reps", "Bodyweight × 12", "92.5 kg", "85 kg × 3")) assertShownWhole(layout(text), text)
+        // The long date takes the line and the value goes under it; the short one stays beside its value.
+        assertTrue(bounds("12 reps").top >= bounds(long.label).bottom - 0.5.dp, "the value goes under a long date")
+        assertTrue(bounds("92.5 kg").top < bounds(short.label).bottom, "a short date keeps its value beside it")
+        // No word of the long date is broken: it wraps only at spaces.
+        val label = layout(long.label)
+        for (line in 0 until label.lineCount - 1) {
+            val end = label.getLineEnd(line, visibleEnd = true)
+            assertTrue(end >= long.label.length || long.label[end] == ' ' || long.label[end - 1] == ' ', "line $line breaks a word")
+        }
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.mooscles.designsystem.charts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.layout.Layout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -51,30 +52,53 @@ fun ChartDataButton(showingTable: Boolean, onClick: () -> Unit, modifier: Modifi
 }
 
 /**
- * One line of a chart's data table: the date (or week) at the start, the value at the end with the
- * set under it, and "Record" with the record icon when [ChartTableRowData.record]. A screen reader
- * reads it as one node: date, value, set, "Record". The value and the set keep their whole width; the date wraps
- * in the rest at large font sizes.
+ * One line of a chart's data table: the date (or week) at the start, the value at the end with the set under it, and
+ * "Record" with the record icon when [ChartTableRowData.record]. A screen reader reads it as one node: date, value,
+ * set, "Record". The value and the set always keep their whole width. When the date's longest word and the value do
+ * not fit side by side (large font sizes, a long week label), the date takes the whole line and the value goes under
+ * it, start-aligned, so neither is ever cut or broken mid-word.
  */
 @Composable
 fun ChartTableRow(row: ChartTableRowData, modifier: Modifier = Modifier) {
-    Row(
-        modifier
+    val gap = MTheme.space.s3
+    Layout(
+        content = {
+            MText(row.label, MTheme.type.bodyMd.tabular(), color = MTheme.colors.textPrimary)
+            Column(horizontalAlignment = Alignment.End) {
+                val end = TextAlign.End
+                MText(row.value, MTheme.type.labelLg.tabular().copy(textAlign = end), color = MTheme.colors.textPrimary)
+                row.detail?.let { MText(it, MTheme.type.caption.tabular().copy(textAlign = end), color = MTheme.colors.textSecondary) }
+                if (row.record) RecordMark()
+            }
+        },
+        modifier = modifier
             .fillMaxWidth()
             .testTag(chartTableRowTag(row.key))
             .semantics(mergeDescendants = true) {}
             .heightIn(min = MTheme.targets.min)
             .padding(vertical = MTheme.space.s2),
-        horizontalArrangement = Arrangement.spacedBy(MTheme.space.s3),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MText(row.label, MTheme.type.bodyMd.tabular(), color = MTheme.colors.textPrimary, modifier = Modifier.weight(1f))
-        // The numbers take the width they need first (never cut, at any font size); the date wraps in what is left.
-        Column(horizontalAlignment = Alignment.End) {
-            val end = TextAlign.End
-            MText(row.value, MTheme.type.labelLg.tabular().copy(textAlign = end), color = MTheme.colors.textPrimary)
-            row.detail?.let { MText(it, MTheme.type.caption.tabular().copy(textAlign = end), color = MTheme.colors.textSecondary) }
-            if (row.record) RecordMark()
+    ) { measurables, constraints ->
+        val width = constraints.maxWidth
+        val gapPx = gap.roundToPx()
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val labelMin = measurables[0].minIntrinsicWidth(constraints.maxHeight)
+        val value = measurables[1].measure(loose)
+        val sideBySide = labelMin + gapPx + value.width <= width
+        val label = measurables[0].measure(loose.copy(maxWidth = if (sideBySide) width - gapPx - value.width else width))
+        if (sideBySide) {
+            val height = maxOf(label.height, value.height).coerceIn(constraints.minHeight, constraints.maxHeight)
+            layout(width, height) {
+                label.placeRelative(0, (height - label.height) / 2)
+                value.placeRelative(width - value.width, (height - value.height) / 2)
+            }
+        } else {
+            val content = label.height + value.height
+            val height = content.coerceIn(constraints.minHeight, constraints.maxHeight)
+            val top = (height - content) / 2
+            layout(width, height) {
+                label.placeRelative(0, top)
+                value.placeRelative(0, top + label.height)
+            }
         }
     }
 }

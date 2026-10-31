@@ -47,8 +47,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atTime
+import kotlinx.datetime.minus
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -413,6 +419,89 @@ class ExerciseProgressScreenTest {
             gate.complete(Unit)
             scope.cancel()
         }
+    }
+
+    @Test
+    fun failedBuildShowsNoDataInsteadOfTheSkeleton() = runComposeUiTest {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cache = ProgressIndexCache(scope, build = { _, _ -> error("build failed on purpose") })
+        try {
+            show(mutableStateOf(stateOf(benchHistory())), cache = cache)
+            waitForTag(ProgressTags.CHART_MESSAGE)
+            onNodeWithTag(ProgressTags.CHART_MESSAGE).assertTextEquals("Nenhum treino com essa medida neste período.")
+            assertGone(ProgressTags.CHART_SKELETON)
+            assertGone(LineChartTag)
+            onNodeWithTag(ProgressTags.TITLE).assertTextEquals("Supino reto com barra")
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun chartArrivesOnTheSecondFrameWithTheIndexReady() = runComposeUiTest {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cache = ProgressIndexCache(scope)
+        val state = stateOf(benchHistory())
+        try {
+            val index = runBlocking { cache.get(state.history, state.records) }
+            mainClock.autoAdvance = false
+            show(mutableStateOf(state), cache = cache)
+            if (onAllNodesWithTag(ProgressTags.CHART_SKELETON).fetchSemanticsNodes().isEmpty()) mainClock.advanceTimeByFrame()
+            // Frame 1: the index is there in the same frame; the one chart query (metrics included) starts.
+            onNodeWithTag(ProgressTags.CHART_SKELETON).assertExists()
+            val query = ShownChartQuery(SeriesKey(bench.id, bench.convention), null, ExercisePeriod.ALL, LocalDate(2026, 10, 31), utc, DayOfWeek.MONDAY)
+            runBlocking { withTimeout(5_000) { while (cache.peekQuery(index, query) == null) delay(10) } }
+            waitForIdle()
+            // Frame 2: the chart, with its metric chips, and no second hop.
+            mainClock.advanceTimeByFrame()
+            waitForIdle()
+            onNodeWithTag(LineChartTag).assertExists()
+            onNodeWithTag(ProgressTags.metric(ProgressMetric.LOAD)).assertIsSelected()
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun weeklyChartSaysWeekOfAndShowsTheNote() = runComposeUiTest {
+        // 110 sessions, one every 3 days up to Fri Oct 30: more than 104, so one point per week (weeks from Monday).
+        val history = (0 until 110).map { i ->
+            val day = LocalDate(2026, 10, 30).minus(3 * i, DateTimeUnit.DAY)
+            workout("k$i", day.atTime(9, 0).toInstant(utc).toEpochMilliseconds(), bench, 60.0 + i % 5 to 5)
+        }
+        show(mutableStateOf(stateOf(history)))
+        chartReady()
+        assertTrue(summary().contains("na semana de"), summary())
+        part(ProgressTags.SINCE).assertTextContains("desde a semana de", substring = true)
+        onNodeWithTag(LineChartTag).performTouchInput { click(Offset(width - 1f, height / 2f)) }
+        waitForTag(ProgressTags.READOUT)
+        onNodeWithTag(ProgressTags.READOUT).assertTextContains("Semana de 26 out · ", substring = true)
+        scrollTo(ProgressTags.WEEKLY_NOTE)
+        onNodeWithTag(ProgressTags.WEEKLY_NOTE).assertTextEquals("Um ponto por semana: o melhor da semana.")
+        onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
+        waitAndScrollTo(ProgressTags.tableRow(0))
+        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("Semana de 26 out · esta semana (em andamento)")
+        onNodeWithTag(ProgressTags.WEEKLY_NOTE).assertExists()
+    }
+
+    @Test
+    fun onePointOfALongerHistoryIsStillDrawn() = runComposeUiTest {
+        val history = listOf(
+            workout("w3", at(2026, 10, 28), bench, 92.5 to 5),
+            workout("w2", at(2026, 2, 10), bench, 90.0 to 5),
+            workout("w1", at(2026, 1, 6), bench, 85.0 to 5),
+        )
+        show(mutableStateOf(stateOf(history)))
+        chartReady()
+        onNodeWithTag(ProgressTags.period(ExercisePeriod.THREE_MONTHS)).performClick()
+        waitUntil(timeoutMillis = 5_000) { summary().contains("últimos 3 meses") }
+        // Only "the exercise has one session" says the chart comes later; one point of three is drawn, with its row.
+        assertGone(ProgressTags.CHART_MESSAGE)
+        scrollTo(ProgressTags.DATA_TOGGLE)
+        onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
+        waitAndScrollTo(ProgressTags.tableRow(0))
+        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("28 out")
+        assertGone(ProgressTags.tableRow(1))
     }
 
     @Test
