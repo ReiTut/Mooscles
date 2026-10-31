@@ -95,6 +95,7 @@ class SizesTimingElevationTest {
         assertEquals(40.dp, s.sparklineHeight)
         assertEquals(2.dp, s.chartStroke)
         assertEquals(3.dp, s.chartPoint)
+        assertEquals(4f, s.chartDotSpacing)
         assertEquals(6.dp, s.chartRecordRing)
         assertEquals(8.dp, s.chartSelectionRing)
         assertEquals(4.dp, s.chartBarGap)

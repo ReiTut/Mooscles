@@ -266,6 +266,8 @@ internal fun ChartSurface(
                 drawContent()
                 if (selected != null && selected in plot.xs.indices) drawSelection(selected)
             }
+            // The cached drawing in a layer of its own: moving the selection redraws only the guide and the ring.
+            .graphicsLayer()
             .then(cache),
     )
 }

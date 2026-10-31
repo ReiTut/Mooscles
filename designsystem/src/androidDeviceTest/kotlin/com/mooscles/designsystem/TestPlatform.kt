@@ -35,8 +35,9 @@ internal fun saveChartsCapture(name: String, image: ImageBitmap) {
     val file = File(directory, "$name.png")
     file.outputStream().use { image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }
     // The shell reads the app's external files; the copy is what stays after the APK is gone.
-    ParcelFileDescriptor.AutoCloseInputStream(
-        instrumentation.uiAutomation.executeShellCommand("cp ${file.absolutePath} /data/local/tmp/$name.png"),
-    ).use { it.readBytes() }
-    println("CHARTS capture /data/local/tmp/$name.png")
+    val copy = "cp ${file.absolutePath} /data/local/tmp/$name.png && echo copied"
+    val output = ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(copy))
+        .use { it.readBytes().decodeToString() }
+    // A failed copy does not fail the test, but says so, so a missing PNG is plain in the log.
+    if ("copied" in output) println("CHARTS capture /data/local/tmp/$name.png") else println("CHARTS capture copy failed for $name: $output")
 }

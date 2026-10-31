@@ -176,7 +176,7 @@ class ComponentColorsTest {
      * already a 3:1 graphic on `bg.surface` and `bg.raised` (pairs 53 and 54 of `ContrastTokensTest`).
      */
     @Test
-    fun chartSelectionRingOnSurface() {
+    fun chartColorsMapToTheirTokens() {
         for ((name, colors) in themes) {
             val chart = ChartColors.of(colors)
             assertEquals(colors.accentSolid, chart.selection, name)

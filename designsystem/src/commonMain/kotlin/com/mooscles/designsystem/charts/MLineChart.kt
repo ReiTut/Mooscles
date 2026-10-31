@@ -39,6 +39,12 @@ internal data class LineFrame(
  * itself is in the table [ChartDataButton] swaps in. 200 dp tall, growing with the font scale up to
  * 1.5 times. A new [contentKey] (another period or metric) cross-fades, or swaps at once with
  * reduced motion.
+ *
+ * Keep [selected] as local UI state and write it from [onSelect] synchronously (a `remember`ed state): a selection
+ * that round-trips through a view model can lag the finger, and a pick can be dropped. The chart never calls
+ * `onSelect(null)`; the caller clears the selection when the period or the metric changes (D3). [xLabels] are drawn
+ * as given: up to 5 of them is the caller's choice (`ChartScale.labelIndices`). Dense record rings are thinned so they
+ * never touch (`ChartGeometry.ringIndices`); the table lists every record.
  */
 @Composable
 fun MLineChart(
@@ -73,9 +79,6 @@ private fun LineChartFrame(frame: LineFrame, selected: Int?, onSelect: (Int?) ->
     ChartSurface(LineChartTag, frame.summary, current, plot, selected, onSelect, cache) { drawLineSelection(plot, it, look) }
 }
 
-/** A dot is drawn when the points are at least this many radii apart. */
-private const val DOT_SPACING = 4f
-
 /** Places the points, builds the line and measures the labels; [plot] keeps the positions for the selection. */
 private fun CacheDrawScope.buildLine(frame: LineFrame, look: ChartLook, measurer: TextMeasurer, plot: PlotPositions): DrawResult {
     val sizes = look.sizes
@@ -105,15 +108,14 @@ private fun CacheDrawScope.buildLine(frame: LineFrame, look: ChartLook, measurer
     val pointRadius = sizes.chartPoint.toPx()
     val recordRadius = sizes.chartRecordRing.toPx()
     // Dots only where they stay apart; 300 points on a phone are a line.
-    val dots = xs.size == 1 || (right - left) / (xs.size - 1) >= pointRadius * DOT_SPACING
+    val dots = xs.size == 1 || (right - left) / (xs.size - 1) >= pointRadius * sizes.chartDotSpacing
+    // Rings that would touch the last one kept are skipped, so a run of records never becomes a band.
+    val rings = ChartGeometry.ringIndices(xs, ys, points.map { it.record }, 2 * recordRadius + strokePx)
     return onDrawBehind {
         drawAxes(axes, xLabels, look)
         if (xs.size > 1) drawPath(path, colors.line, style = line)
-        for (i in xs.indices) {
-            val center = Offset(xs[i], ys[i])
-            if (dots) drawCircle(colors.line, pointRadius, center)
-            if (points[i].record) drawCircle(colors.record, recordRadius, center, style = ring)
-        }
+        if (dots) for (i in xs.indices) drawCircle(colors.line, pointRadius, Offset(xs[i], ys[i]))
+        for (i in rings) drawCircle(colors.record, recordRadius, Offset(xs[i], ys[i]), style = ring)
     }
 }
 

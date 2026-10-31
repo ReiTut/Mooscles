@@ -114,6 +114,8 @@ data class MoosclesSizes(
     val chartStroke: Dp = 2.dp,
     /** Phase 5A: the radius of a chart point. */
     val chartPoint: Dp = 3.dp,
+    /** Phase 5A: a line chart draws its points as dots while they are, on average, at least this many radii apart. */
+    val chartDotSpacing: Float = 4f,
     /** Phase 5A: the radius of the ring around a record point. */
     val chartRecordRing: Dp = 6.dp,
     /** Phase 5A: the radius of the ring around the selected point or over the selected bar. */

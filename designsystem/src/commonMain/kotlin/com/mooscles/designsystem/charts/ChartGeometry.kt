@@ -23,6 +23,30 @@ internal object ChartGeometry {
         return best
     }
 
+    /**
+     * The indices of the record rings to draw, oldest first: from the newest record back, a ring whose centre is closer
+     * than [minDistance] to the last ring kept is skipped. Dense records (a beginner's run of them, or many points on a
+     * narrow chart) then stay separate rings instead of piling into one band over the line; the newest record, the one
+     * that still holds, always has its ring, and the data table lists every record.
+     */
+    fun ringIndices(xs: List<Float>, ys: List<Float>, records: List<Boolean>, minDistance: Float): List<Int> {
+        val kept = ArrayList<Int>()
+        var lastX = 0f
+        var lastY = 0f
+        for (i in xs.indices.reversed()) {
+            if (!records[i]) continue
+            val dx = xs[i] - lastX
+            val dy = ys[i] - lastY
+            if (kept.isEmpty() || dx * dx + dy * dy >= minDistance * minDistance) {
+                kept += i
+                lastX = xs[i]
+                lastY = ys[i]
+            }
+        }
+        kept.reverse()
+        return kept
+    }
+
     /** The y pixel of [value] when [range] runs from [bottom] (its min) up to [top] (its max). */
     fun toPx(value: Double, range: ChartRange, top: Float, bottom: Float): Float {
         val span = range.max - range.min
