@@ -292,7 +292,8 @@ class ProgressNavigationHostTest {
 
     /**
      * Plan 5A decision 9: the screens get the application's one cache, and a new history is built in it, after the
-     * prewarm's delay, without any screen asking (Train is in view).
+     * prewarm's delay, without any screen asking (Train is in view). Each new history is built once, through the traced
+     * build ([ProgressIndexTrace], the `Mooscles:progressIndex` section that Task 16 reads on the R8 build), kg to lb too.
      */
     @Test fun progressIndexIsTheApplicationsAndIsPrewarmed() {
         var provided: ProgressIndexCache? = null
@@ -309,11 +310,13 @@ class ProgressNavigationHostTest {
         // A finished workout: a new history and new records, as the presentation makes them.
         val next = listOf(history.first().copy(id = "w-next", name = "Next session", startedAt = now)) + history
         val nextRecords = current.toList()
+        val before = ProgressIndexTrace.builds
         compose.runOnIdle { state.value = state.value.copy(history = next, records = nextRecords) }
         compose.waitForIdle()
         assertNull("Nothing builds before the prewarm's delay", app.progressIndex.peek(next, nextRecords))
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PREWARM_DELAY_MILLIS))
         compose.waitUntil(10_000) { app.progressIndex.peek(next, nextRecords) != null }
+        assertEquals("one traced build for the finished workout's history", before + 1, ProgressIndexTrace.builds)
 
         // kg to lb: the presentation rebuilds the lists, equal but new instances, a new history to the cache (`===`).
         // The prewarm keys on the instances too, so it runs again.
@@ -326,6 +329,7 @@ class ProgressNavigationHostTest {
         assertNull(app.progressIndex.peek(same, sameRecords))
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PREWARM_DELAY_MILLIS))
         compose.waitUntil(10_000) { app.progressIndex.peek(same, sameRecords) != null }
+        assertEquals("kg to lb builds the index once more", before + 2, ProgressIndexTrace.builds)
         compose.onNodeWithTag("routines-list").assertIsDisplayed()
     }
 

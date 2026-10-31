@@ -27,9 +27,10 @@ class MoosclesApplication : Application() {
     /**
      * The one progress index of the process (spec D15, plan 5A decision 9): built off the main thread and shared by the
      * Records tab, the exercise progress and the detail's sparkline, so leaving and reopening a screen never builds it
-     * again. Handed to the screens by `LocalProgressIndexCache` ([ProvideProgressIndex]).
+     * again. Handed to the screens by `LocalProgressIndexCache` ([ProvideProgressIndex]). Each build is a trace section
+     * ([ProgressIndexTrace]).
      */
-    val progressIndex: ProgressIndexCache by lazy { ProgressIndexCache(appScope) }
+    val progressIndex: ProgressIndexCache by lazy { ProgressIndexCache(appScope, build = ProgressIndexTrace::build) }
     val trainingGate = Mutex()
     val updates by lazy { UpdateManager(this, trainingGate, trainingBusy = {
         repository.activeWorkout() != null || UpdatePolicy.restTimerBusy(
