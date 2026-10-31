@@ -238,7 +238,7 @@ internal fun ExerciseProgressScreen(
     ScreenErrorToast(state.errorCode, actions, host)
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     // No index of the loading state's empty lists (a restore): it would say "not found" or "not done yet" for a moment.
-    val load = if (state.loading) ProgressLoad.Loading else rememberProgressIndex(state.history, state.records)
+    val load = rememberProgressIndex(state.history, state.records, state.loading)
     val index = load.valueOrNull
     val current = state.exercises.firstOrNull { it.id == exerciseId }
     val exercise = current ?: index?.snapshot(exerciseId)
@@ -252,7 +252,7 @@ internal fun ExerciseProgressScreen(
     val period = ExercisePeriod.entries.firstOrNull { it.name == periodName } ?: ExercisePeriod.ALL
     val requested = ProgressMetric.parse(metricChoice)
 
-    // Read again at each period change (D8).
+    // Read again at each period change and at midnight (D8).
     val calendar = rememberProgressCalendar(seams, period)
     val weekStart = seams.weekStart()
     val shownLoad = key?.let { rememberProgressQuery(load, ShownChartQuery(it, requested, period, calendar.today, calendar.zone, weekStart)) }

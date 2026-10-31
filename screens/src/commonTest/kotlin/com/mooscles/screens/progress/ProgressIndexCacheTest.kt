@@ -261,6 +261,39 @@ class ProgressIndexCacheTest {
         assertSame(index, cache.peek(history, records))
     }
 
+    /**
+     * Final review of phase 5A (CR-3): the build's only caller (a prewarm a newer one cancelled, a screen that left) is
+     * gone when the build fails, so nobody sees the failure; the build forgets itself, and the next get builds again
+     * instead of getting the old failure.
+     */
+    @Test
+    fun aFailedBuildWhoseOnlyCallerLeftIsForgottenToo() = runTest {
+        var calls = 0
+        val builds = HeldDispatcher()
+        val cache = ProgressIndexCache(backgroundScope, builds, build = { history, records ->
+            calls++
+            if (calls == 1) error("a history the index cannot read")
+            ProgressIndex.build(history, records)
+        })
+        val history = history("a")
+
+        val caller = launch { cache.get(history, records) }
+        runCurrent()
+        caller.cancel()
+        runCurrent()
+        // Still the latest history, so the build is not cancelled: it runs, with nobody waiting, and throws.
+        builds.runAll()
+        runCurrent()
+        assertEquals(1, calls)
+
+        val index = async { cache.get(history, records) }
+        runCurrent()
+        builds.runAll()
+        runCurrent()
+        assertEquals(2, calls, "the next get builds again")
+        assertSame(index.await(), cache.peek(history, records))
+    }
+
     @Test
     fun aNewerPrewarmLeavesABuildSomeoneWaitsFor() = runTest {
         val counting = CountingBuild()

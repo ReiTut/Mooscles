@@ -73,4 +73,9 @@ data class MoosclesTiming(
      * does not move on.
      */
     val formHandoff: Long = 1_500,
+    /**
+     * Phase 5A (plan decision 9): how long after a new history the app waits before it builds the progress index in the
+     * background (the prewarm); a newer history within it replaces the pending build.
+     */
+    val progressPrewarmDelay: Long = 500,
 )

@@ -146,7 +146,7 @@ internal object RecordsTags {
  *
  * The timeline comes from the progress cache ([rememberProgressIndex], [rememberProgressQuery] with a [RecordsQuery]),
  * never computed in composition, in the zone and "today" of [rememberProgressCalendar] (the clock is the spoken
- * dates' year). While [UiState.loading], the index or the query is on its way, the list is a
+ * dates' year), read again at midnight. While [UiState.loading], the index or the query is on its way, the list is a
  * skeleton; with no record at all, an empty state; with only first records and nothing asked for, an empty state whose
  * button turns "First records" on; otherwise, with none that fits, "No records found". A failed build or query shows
  * "No records found" too, never a skeleton that would wait for good. The search, the chips, the open
@@ -188,9 +188,7 @@ internal fun RecordsScreen(
     val calendar = rememberProgressCalendar(seams)
 
     val text = search.text.trim()
-    // No index of the loading state's empty lists: kept as the previous index, it would show "no records" until the
-    // real one is built.
-    val index = if (state.loading) ProgressLoad.Loading else rememberProgressIndex(state.history, state.records)
+    val index = rememberProgressIndex(state.history, state.records, state.loading)
     val timeline = rememberProgressQuery(index, RecordsQuery(text, currentOnly, firstRecords, calendar.zone))
 
     // The callbacks are read when a row is tapped, so a host's new lambdas never recompose the rows.

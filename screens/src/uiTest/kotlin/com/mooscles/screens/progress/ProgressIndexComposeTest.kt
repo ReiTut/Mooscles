@@ -90,11 +90,16 @@ class ProgressIndexComposeTest {
         is ProgressLoad.Ready -> ready(value)
     }
 
-    private fun ComposeUiTest.show(history: MutableState<List<WorkoutUi>>, query: MutableState<Sessions>, cache: ProgressIndexCache?) {
+    private fun ComposeUiTest.show(
+        history: MutableState<List<WorkoutUi>>,
+        query: MutableState<Sessions>,
+        cache: ProgressIndexCache?,
+        loading: MutableState<Boolean> = mutableStateOf(false),
+    ) {
         val records = emptyList<RecordUi>()
         withScreen {
             CompositionLocalProvider(LocalProgressIndexCache provides cache) {
-                val index = rememberProgressIndex(history.value, records)
+                val index = rememberProgressIndex(history.value, records, loading.value)
                 val value = rememberProgressQuery(index, query.value)
                 // Read where the composition reads them: the nodes show what the composables returned.
                 MText(index.text { "index:${it.sessions(key).size}" }, MTheme.type.bodyMd, Modifier.testTag(INDEX))
@@ -126,6 +131,31 @@ class ProgressIndexComposeTest {
             waitForIdle()
             assertEquals(1, held.builds.load())
             assertEquals(1, computed.load())
+        } finally {
+            held.close()
+        }
+    }
+
+    /**
+     * Final review of phase 5A (CR-6): the screens' guard lives in [rememberProgressIndex]. While the state loads, its
+     * lists are a restore's empty ones: loading, and the cache is not asked to build them.
+     */
+    @Test
+    fun whileTheStateLoadsTheCacheBuildsNothing() = runComposeUiTest {
+        val held = HeldCache()
+        try {
+            val computed = AtomicInt(0)
+            val loading = mutableStateOf(true)
+            show(mutableStateOf(history(3)), mutableStateOf(Sessions(key, computed)), held.cache, loading)
+            waitForIdle()
+            assertEquals("loading", text(INDEX))
+            assertEquals("loading", text(QUERY))
+            assertEquals(0, held.builds.load())
+
+            loading.value = false
+            waitForText(INDEX, "index:3")
+            waitForText(QUERY, "sessions:3")
+            assertEquals(1, held.builds.load())
         } finally {
             held.close()
         }

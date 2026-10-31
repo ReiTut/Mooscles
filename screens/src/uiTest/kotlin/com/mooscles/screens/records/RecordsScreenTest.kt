@@ -165,6 +165,7 @@ class RecordsScreenTest {
         cache: ProgressIndexCache? = null,
         locale: String? = "pt-BR",
         probe: ((String) -> Unit)? = null,
+        seams: ProgressSeams = this@RecordsScreenTest.seams,
     ): Calls {
         val calls = Calls()
         withScreen(locale = locale, reducedMotion = true, fontScale = fontScale, size = size, restoration = restoration, probe = probe) {
@@ -648,6 +649,21 @@ class RecordsScreenTest {
                 block.run()
             })
         }
+    }
+
+    /** Final review of phase 5A (CR-4): the tab left open over midnight reads its dates in the new day. */
+    @Test
+    fun midnightMovesTodayForTheSpokenDates() = runComposeUiTest {
+        val midnight = LocalDateTime(2027, 1, 1, 0, 0).toInstant(utc).toEpochMilliseconds()
+        var clock = midnight - 1_000
+        show(seams = ProgressSeams(nowMillis = { clock }, zone = { utc }))
+        waitForRows()
+        // Still 2026: a date of this year is read without its year.
+        assertTrue(spoken(benchW875).endsWith("28 de outubro, Atual"), spoken(benchW875))
+
+        clock = midnight + 1_000
+        mainClock.advanceTimeBy(1_500)
+        waitUntil(timeoutMillis = 5_000) { spoken(benchW875).endsWith("28 de outubro de 2026, Atual") }
     }
 
     @Test

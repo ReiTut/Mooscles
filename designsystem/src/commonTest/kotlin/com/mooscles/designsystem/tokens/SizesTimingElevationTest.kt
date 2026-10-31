@@ -113,6 +113,12 @@ class SizesTimingElevationTest {
         assertEquals(1_500L, MoosclesTiming().formHandoff)
     }
 
+    /** Phase 5A (plan decision 9): the progress index is prewarmed half a second after a new history. */
+    @Test
+    fun progressPrewarmDelayIsHalfASecond() {
+        assertEquals(500L, MoosclesTiming().progressPrewarmDelay)
+    }
+
     @Test
     fun timerAnnounceHoldIsOneAndAHalfSeconds() {
         assertEquals(1_500L, MoosclesTiming().timerAnnounceHold)

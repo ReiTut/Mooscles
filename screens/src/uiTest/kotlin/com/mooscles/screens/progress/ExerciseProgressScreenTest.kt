@@ -127,6 +127,7 @@ class ExerciseProgressScreenTest {
         restoration: ScreenRestoration? = null,
         cache: ProgressIndexCache? = null,
         locale: String? = "pt-BR",
+        seams: ProgressSeams = this@ExerciseProgressScreenTest.seams,
     ) {
         withScreen(locale = locale, reducedMotion = true, fontScale = fontScale, size = size, restoration = restoration) {
             CompositionLocalProvider(LocalProgressIndexCache provides cache) {
@@ -360,6 +361,32 @@ class ExerciseProgressScreenTest {
         }
         assertTrue(rows.any { "92,5 kg × 5".nb() in it } && rows.any { "90 kg × 5".nb() in it }, "$rows")
         assertGone(ProgressTags.tableRow(2))
+    }
+
+    /** Final review of phase 5A (CR-4): the screen left open over midnight moves the period's start to the new day. */
+    @Test
+    fun midnightMovesThePeriodsStart() = runComposeUiTest {
+        val midnight = LocalDateTime(2026, 11, 2, 0, 0).toInstant(utc).toEpochMilliseconds()
+        var clock = midnight - 1_000
+        val history = listOf(
+            workout("w3", at(2026, 10, 28), bench, 92.5 to 5),
+            workout("w2", at(2026, 9, 12), bench, 95.0 to 3),
+            workout("w1", at(2026, 8, 1), bench, 80.0 to 5),
+        )
+        show(mutableStateOf(stateOf(history)), seams = ProgressSeams(nowMillis = { clock }, zone = { utc }, weekStart = { DayOfWeek.MONDAY }))
+        chartReady()
+        onNodeWithTag(ProgressTags.period(ExercisePeriod.THREE_MONTHS)).performClick()
+        waitUntil(timeoutMillis = 5_000) { summary().contains("últimos 3 meses") }
+        // On November 1 the last 3 months start on August 1: its session is in.
+        part(ProgressTags.SINCE).assertTextEquals("+12,5 kg desde 1\u00A0ago".nb())
+
+        clock = midnight + 1_000
+        mainClock.advanceTimeBy(1_500)
+        // On November 2 they start on August 2.
+        waitUntil(timeoutMillis = 5_000) {
+            part(ProgressTags.SINCE).fetchSemanticsNode().config[SemanticsProperties.Text].joinToString("") { it.text } ==
+                "−2,5 kg desde 12\u00A0set".nb()
+        }
     }
 
     @Test

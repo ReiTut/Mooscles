@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.mooscles.designsystem.tokens.MoosclesTiming
 import com.mooscles.screens.records.RecordsQuery
 import com.mooscles.ui.RecordUi
 import com.mooscles.ui.WorkoutUi
@@ -73,7 +74,7 @@ interface ProgressQuery<V : Any> {
 class ProgressIndexCache(
     private val scope: CoroutineScope,
     private val context: CoroutineContext = Dispatchers.Default,
-    private val prewarmDelayMillis: Long = 500,
+    private val prewarmDelayMillis: Long = MoosclesTiming().progressPrewarmDelay,
     private val build: (List<WorkoutUi>, List<RecordUi>) -> ProgressIndex = ProgressIndex::build,
 ) {
     /**
@@ -117,13 +118,8 @@ class ProgressIndexCache(
             val found = latest?.takeIf { it.of(history, records) } ?: superseded.firstOrNull { it.of(history, records) }
             (found ?: start(history, records)).also { it.waiters++ }
         }
-        var failed = false
         try {
             return build.index.await()
-        } catch (error: Throwable) {
-            // A build that threw is forgotten, so the next call tries again; a cancelled caller is not a failure.
-            failed = error !is CancellationException
-            throw error
         } finally {
             withContext(NonCancellable) {
                 lock.withLock {
@@ -132,17 +128,28 @@ class ProgressIndexCache(
                         build.index.cancel()
                         superseded.remove(build)
                     }
-                    if (failed && build === latest) latest = null
                 }
             }
         }
     }
 
-    /** Under [lock]: makes [history] the latest, cancelling the previous build unless someone still waits for it. */
+    /**
+     * Under [lock]: makes [history] the latest, cancelling the previous build unless someone still waits for it. A build
+     * that throws forgets itself when it ends, whether or not anyone waits for it (a prewarm whose only caller was
+     * cancelled leaves nobody to see the failure), so the next [get] builds again instead of getting the old failure.
+     */
     private fun start(history: List<WorkoutUi>, records: List<RecordUi>): Build {
         latest?.let { previous -> if (previous.waiters == 0) previous.index.cancel() else superseded += previous }
-        val index = children.async(context) {
-            val index = build(history, records)
+        lateinit var self: Build
+        val index = children.async(context, start = CoroutineStart.LAZY) {
+            val index = try {
+                build(history, records)
+            } catch (error: Throwable) {
+                if (error !is CancellationException) {
+                    withContext(NonCancellable) { lock.withLock { if (latest === self) latest = null } }
+                }
+                throw error
+            }
             // Only the latest history is published: an older build that ends late never replaces a newer index. The
             // memo is cleared even if this build is cancelled now, so no older index's results outlive the swap.
             withContext(NonCancellable) {
@@ -155,7 +162,11 @@ class ProgressIndexCache(
             }
             index
         }
-        return Build(history, records, index).also { latest = it }
+        self = Build(history, records, index)
+        latest = self
+        // Started once it is the latest, so its failure always finds itself there.
+        index.start()
+        return self
     }
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -278,16 +289,21 @@ val <V : Any> ProgressLoad<V>.valueOrNull: V? get() = (this as? ProgressLoad.Rea
  * previous index stays [ProgressLoad.Ready] until the new one is ready, so a screen never falls back to its skeleton.
  * Without a [LocalProgressIndexCache], a cache of this composition.
  *
+ * While [loading] (`UiState.loading`: the state's lists are the empty ones of a restore, not the history) it is
+ * [ProgressLoad.Loading] and asks the cache for nothing: an index of those lists would become the cache's latest
+ * history and say "no records" or "not done yet" until the real one is built.
+ *
  * **Errors** never reach the composition as exceptions. A build that throws keeps the previous index (still valid data)
  * when there is one, and is [ProgressLoad.Failed] when there is none; the next history goes back to loading.
  */
 @Composable
-fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): ProgressLoad<ProgressIndex> {
+fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>, loading: Boolean): ProgressLoad<ProgressIndex> {
     val cache = progressIndexCache()
     var latest by remember(cache) { mutableStateOf<ProgressIndex?>(null) }
     var failed by remember(cache, history, records) { mutableStateOf(false) }
-    val ready = cache.peek(history, records)
-    LaunchedEffect(cache, history, records) {
+    val ready = if (loading) null else cache.peek(history, records)
+    LaunchedEffect(cache, history, records, loading) {
+        if (loading) return@LaunchedEffect
         try {
             latest = cache.get(history, records)
         } catch (cancelled: CancellationException) {
@@ -296,6 +312,7 @@ fun rememberProgressIndex(history: List<WorkoutUi>, records: List<RecordUi>): Pr
             failed = true
         }
     }
+    if (loading) return ProgressLoad.Loading
     val value = ready ?: latest
     return remember(value, failed) { loadOf(value, failed) }
 }

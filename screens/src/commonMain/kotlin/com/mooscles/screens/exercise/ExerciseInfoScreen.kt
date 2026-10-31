@@ -85,7 +85,6 @@ import com.mooscles.screens.format.equipmentLabel
 import com.mooscles.screens.format.exerciseName
 import com.mooscles.screens.format.muscleLabel
 import com.mooscles.screens.format.shortDateAged
-import com.mooscles.screens.progress.ProgressLoad
 import com.mooscles.screens.progress.SeriesKey
 import com.mooscles.screens.progress.SparklineQuery
 import com.mooscles.screens.progress.rememberProgressIndex
@@ -557,8 +556,7 @@ private fun InfoCues(cues: List<String>) {
 private fun InfoHistory(exercise: ExerciseUi, summary: HistorySummary, state: UiState, onOpenHistory: () -> Unit) {
     val pounds = state.preferences.pounds
     // The sparkline needs the progress index; while it loads (or if it failed) the card shows none, never a skeleton.
-    // No index of the loading state's empty lists: it would become the cache's latest history until the real one.
-    val load = if (state.loading) ProgressLoad.Loading else rememberProgressIndex(state.history, state.records)
+    val load = rememberProgressIndex(state.history, state.records, state.loading)
     val spark = rememberProgressQuery(load, SparklineQuery(SeriesKey(exercise.id, exercise.convention))).valueOrNull
     val space = MTheme.space
     val colors = MTheme.colors
