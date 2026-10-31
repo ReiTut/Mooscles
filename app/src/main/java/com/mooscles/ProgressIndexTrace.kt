@@ -1,6 +1,7 @@
 package com.mooscles
 
 import android.os.Trace
+import androidx.annotation.VisibleForTesting
 import com.mooscles.screens.progress.ProgressIndex
 import com.mooscles.ui.RecordUi
 import com.mooscles.ui.WorkoutUi
@@ -18,7 +19,8 @@ object ProgressIndexTrace {
     private val ended = AtomicInteger()
 
     /** Builds that ended (returned or threw) in this process. */
-    val builds: Int get() = ended.get()
+    @VisibleForTesting
+    internal val builds: Int get() = ended.get()
 
     fun build(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex {
         Trace.beginSection(SECTION)

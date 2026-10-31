@@ -110,6 +110,17 @@ private fun NavHostController.aboutFromProgress(id: String) {
 }
 
 /**
+ * The detail's "View progress": back to the progress under it when that is the same exercise's (the progress's "About
+ * the exercise" opened the detail), so progresses never stack, as [aboutFromProgress] keeps details from stacking;
+ * otherwise the progress opens over the detail.
+ */
+private fun NavHostController.progressFromInfo(id: String) {
+    val below = previousBackStackEntry
+    if (below?.destination?.route == PROGRESS_ROUTE && below.arguments?.getString("id") == id) popBackStack()
+    else openProgress(id)
+}
+
+/**
  * The routes of the new screens that show their own placeholders while the state loads (decision
  * 17, pre-flight F21) and their own errors (decision 19, plan 4A decision 14). The one list both
  * the snackbar and the loading overlay read.
@@ -173,9 +184,7 @@ internal fun rememberShownRoute(entryRoute: String?, entrySummary: Boolean): Sho
  * [timerState] is the ticking rest timer, read only by the workout bar and the workout's timer;
  * without it they read [UiState.timer]. [foreground] is whether the app is in the foreground (the
  * Activity's lifecycle, plan decision 15): the detail's figure stops while it is not.
- * [navController] is the graph's controller; tests pass their own to open a route directly.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoosclesApp(
     state: UiState,
@@ -183,7 +192,20 @@ fun MoosclesApp(
     timerState: State<TimerUi>? = null,
     workoutRequest: Long = 0L,
     foreground: Boolean = true,
-    navController: NavHostController = rememberNavController(),
+) {
+    MoosclesApp(state, actions, timerState, workoutRequest, foreground, navController = rememberNavController())
+}
+
+/** [MoosclesApp] on [navController], the graph's controller: the host tests pass their own to open a route directly. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun MoosclesApp(
+    state: UiState,
+    actions: MoosclesActions,
+    timerState: State<TimerUi>? = null,
+    workoutRequest: Long = 0L,
+    foreground: Boolean = true,
+    navController: NavHostController,
 ) {
     MoosclesTheme(state.preferences.theme) {
         val nav = navController
@@ -353,7 +375,7 @@ fun MoosclesApp(
                             state = state,
                             actions = hosted,
                             onBack = { nav.popBackStack() },
-                            onOpenHistory = { nav.openProgress(it) },
+                            onOpenHistory = { nav.progressFromInfo(it) },
                             onOpenRoutine = { nav.openRoutine(it) },
                             onOpenWorkout = ::openWorkout,
                             foreground = foreground,

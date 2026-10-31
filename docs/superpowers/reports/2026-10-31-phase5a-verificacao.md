@@ -35,7 +35,7 @@
 | Host dos quatro módulos | CI, run [41232962795](https://github.com/pedroyuuki/Mooscles/actions/runs/41232962795), `096ec3c` (Push 2) | **1258** testes, 0 falhas |
 | `:shared`, `:designsystem` e `:screens` no simulador iOS | o mesmo run | **280**, **405** e **877**, 0 falhas |
 | Os mesmos conjuntos no Push 1 | run [41215063507](https://github.com/pedroyuuki/Mooscles/actions/runs/41215063507), `fe6cf43` | host 1212, iOS 280, 404 e 747, tudo verde |
-| Mínimos do `ci.yml` em `dbe4d04` | `.github/workflows/ci.yml` | host **1260**, `:shared` iOS 280, `:designsystem` iOS **411**, `:screens` iOS **886**. **Esses mínimos ainda não passaram por um run:** os commits depois de `096ec3c` não foram ao CI |
+| Mínimos do `ci.yml` em `dbe4d04` | `.github/workflows/ci.yml` | host **1260**, `:shared` iOS 280, `:designsystem` iOS **411**, `:screens` iOS **886**. **Esses mínimos ainda não passaram por um run:** os commits depois de `096ec3c` não foram ao CI. A [rodada final de correções](#rodada-final-de-correções-nota-de-2026-10-31) os subiu para 1264, 414 e 892 |
 | `:designsystem:connectedAndroidDeviceTest` | emulador, `a0eab5f` | **405** testes (67 classes), 0 falhas |
 | `:screens:connectedAndroidDeviceTest` | emulador, `a0eab5f` | **881** testes (82 classes), 0 falhas, 1 pulado (`PilotSheetCaptureTest`, opt-in) |
 | `:app:connectedDebugAndroidTest` | emulador, `a0eab5f` | 25 testes (9 classes); 1 falha de teste (`UiFlowTest`, dependia do descanso automático ligado nos dados que já estavam no emulador), corrigida em `3b07456` e provada em 1 execução |
@@ -140,6 +140,20 @@ Estão como notas datadas na [spec](../specs/2026-10-31-phase5-progress-history-
 - o orçamento de toques de "ver o recorde atual" é 2 (Task 14);
 - "recorde → gráfico em até 2 quadros" conta da rota (Task 16);
 - veredito do S1 (Tasks 1 e 18).
+
+## Rodada final de correções (nota de 2026-10-31)
+
+Depois deste relatório, a revisão final da branch (Opus) e o `/code-review` acharam 13 itens; todos foram corrigidos, menos o FR-M3 (o ano no eixo x), que o controlador deixou como está. O que mudou de comportamento:
+
+- **Recordes:** um chip ou uma busca nova sobe a lista ao topo quando o resultado novo aparece, não antes (antes, um mês mais novo acrescentado ficava acima da tela). O `RecordsTimeline` leva a consulta que responde.
+- **Tabela "Ver dados":** cada linha tem a chave do treino (`ChartPoint.rowKey`), e a semana pela data de início; dois treinos que começam no mesmo milissegundo não derrubam mais a lista.
+- **Gráfico de linha:** valores iguais a menos de ruído de ponto flutuante (relativo 1e-9, kg para lb) são uma linha plana, sem marcas "100" repetidas. O `MLineChart` recebe o rótulo como `@Composable (Double) -> String` e escreve as próprias marcas; os textos ficam no nó como `ChartAxisTexts` (o `ProgressAxisTexts` da tela saiu).
+- **Índice:** uma construção que falha se esquece sozinha, mesmo sem ninguém esperando, e o próximo `get` constrói de novo. A guarda de `UiState.loading` passou para dentro do `rememberProgressIndex` (parâmetro `loading`). O atraso do prewarm virou o token `MoosclesTiming.progressPrewarmDelay` (500 ms).
+- **Datas:** o progresso e os Recordes leem "hoje" e o fuso por um `ProgressCalendar` só (`rememberProgressCalendar`, com um `ProgressSeams` só), que se lê de novo à meia-noite local.
+- **Navegação:** "Ver progresso" no detalhe aberto por cima do progresso do mesmo exercício volta a esse progresso, em vez de empilhar outro. `MoosclesApp(navController = …)` e `ProgressIndexTrace.builds` agora são `internal`.
+- **Código só de teste:** `tableRows`, `recordLine` e `weekOf` saíram; os testes passaram para `tableRow`, `recordWasText` e `chartWeekOf`.
+
+Provado: host dos quatro módulos, **1264** testes, 0 falhas (`:app` 551, `:shared` 300, `:designsystem` 120, `:screens` 293); `lintDebug`, `assembleDebug`, a compilação dos testes iOS do `:screens` e do `:designsystem`, o `check-design-tokens.ps1` e o orçamento do APK (**+284.907** sobre a base, 68 bytes a mais que antes, num build limpo). No emulador, pelo gate: `RecordsScreenTest`, `ExerciseProgressScreenTest`, `ExerciseProgressSectionsTest`, `ExerciseInfoScreenTest`, `ProgressTextsTest`, `ProgressIndexComposeTest` e `ProgressAccessibilitySweepTest` (138 testes), depois o `RecordsScreenTest` de novo (24), e `ChartsTest` com `GallerySmokeTest` (27), todos verdes. Os testes novos de comportamento falharam no código sem a correção (rodados nele de propósito), menos o da guarda de carregamento, que é uma mudança de lugar. Mínimos novos no `ci.yml`: host **1264**, `:designsystem` iOS **414**, `:screens` iOS **892**, ainda sem run de CI. As suítes inteiras de aparelho não foram refeitas, e nada disso rodou num iPhone nem no simulador iOS.
 
 ## Pendências que não bloqueiam o merge
 

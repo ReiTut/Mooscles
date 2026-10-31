@@ -306,7 +306,11 @@ jobs:
           # Phase 5A task 13 fix round 1 (:app host): ProgressNavigationHostTest +1 (aDoubleTapOnARecordOpensOneProgress). 1257 + 1 = 1258.
           # Phase 5A task 16 round 2: WeekStartTest +1 (:screens commonTest: aRegionlessLanguageTakesTheDeviceRegion). 1258 + 1 = 1259.
           # Phase 5A task 17 (critique): ChartGeometryTest +1 (:designsystem commonTest: ringsThatWouldTouchAreSkippedKeepingTheNewest). 1259 + 1 = 1260.
-          MIN_HOST_TESTS: 1260
+          # Phase 5A final fixes: ChartScaleTest +1 (floatNoiseIsAFlatLine) and SizesTimingElevationTest +1
+          # (progressPrewarmDelayIsHalfASecond), :designsystem commonTest; ProgressIndexCacheTest +1
+          # (aFailedBuildWhoseOnlyCallerLeftIsForgottenToo, :screens commonTest); ProgressNavigationHostTest +1
+          # (viewProgressFromTheDetailOverTheProgressReturnsToIt, :app host). No test retired. 1260 + 4 = 1264.
+          MIN_HOST_TESTS: 1264
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -536,7 +540,10 @@ jobs:
           # PrBadgeTest +2 (uiTest: customLabelIsDrawnAndSpoken, customLabelAloneKeepsTheSpokenDefault); SpokenWeightTest 2 (uiTest:
           # portugueseIsSingularAtOneOnly, englishIsSingularAtOneOnly); ChartsTest +1 (uiTest: verticalSwipeScrollsAndHorizontalSwipeSelects).
           # 405 + 6 = 411.
-          MIN_DS_IOS_TESTS: 411
+          # Phase 5A final fixes: ChartScaleTest +1 (commonTest: floatNoiseIsAFlatLine); SizesTimingElevationTest +1
+          # (commonTest: progressPrewarmDelayIsHalfASecond); ChartsTest +1 (uiTest: lineChartWritesItsOwnTicksWithTheComposableLabel).
+          # 411 + 3 = 414.
+          MIN_DS_IOS_TESTS: 414
         run: |
           $files = @(Get-ChildItem -Path 'designsystem/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
@@ -702,7 +709,13 @@ jobs:
           # noSparklineNorSkeletonWhileTheIndexBuildsOrAfterItFails, anOldLastTimeHasItsYear); ExerciseProgressSectionsTest +2
           # (uiTest: assistanceRepsRecordsSayAssistance, firstWorkoutNeverFlashesTheEmptyState); ExerciseProgressScreenTest +1
           # (uiTest: repsHighlightDoesNotRepeatTheMetric). CurrentWeekStartDeviceTest is androidDeviceTest only. 878 + 8 = 886.
-          MIN_SCREENS_IOS_TESTS: 886
+          # Phase 5A final fixes: ProgressIndexCacheTest +1 (commonTest: aFailedBuildWhoseOnlyCallerLeftIsForgottenToo);
+          # ProgressIndexComposeTest +1 (uiTest: whileTheStateLoadsTheCacheBuildsNothing); RecordsScreenTest +2 (uiTest:
+          # aChipThatAddsANewerMonthShowsItOnTop, midnightMovesTodayForTheSpokenDates); ExerciseProgressScreenTest +2 (uiTest:
+          # twoWorkoutsStartedTogetherAreTwoRowsOfTheTable, midnightMovesThePeriodsStart). ProgressTextsTest moved its
+          # assertions off tableRows, weekOf and recordLine (deleted, unused by the screens) onto tableRow, chartWeekOf and
+          # recordWasText: no test retired. 886 + 6 = 892.
+          MIN_SCREENS_IOS_TESTS: 892
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

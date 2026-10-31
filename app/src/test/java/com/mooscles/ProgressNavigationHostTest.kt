@@ -237,6 +237,31 @@ class ProgressNavigationHostTest {
         compose.onNodeWithTag(RecordsScreenTag).assertIsDisplayed()
     }
 
+    /**
+     * Final review of phase 5A (CR-5): the detail opened over the progress ("About the exercise") goes back to that
+     * progress with "View progress", instead of stacking a second progress over it; Back then leaves for Records.
+     */
+    @Test fun viewProgressFromTheDetailOverTheProgressReturnsToIt() {
+        show()
+        openRecords()
+        compose.onNodeWithTag(lastWeightRow).performClick()
+        assertMetricSelected("load")
+        compose.onNodeWithTag("progress-menu").performClick()
+        compose.onNodeWithTag("progress-menu-about").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(ExerciseInfoScreenTag).assertIsDisplayed()
+        compose.onNodeWithTag("exercise-info-history-full").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseInfoScreenTag).assertDoesNotExist()
+        // The same progress, with its metric: the route the record opened.
+        assertRouteMetric("load")
+        back()
+        compose.onNodeWithTag(RecordsScreenTag).assertIsDisplayed()
+        compose.onNodeWithTag(ExerciseProgressTag).assertDoesNotExist()
+        compose.onNodeWithTag(ExerciseInfoScreenTag).assertDoesNotExist()
+    }
+
     @Test fun deletedExerciseWithHistoryOpensWithTheSnapshotName() {
         show()
         openRoute("exercise/${gone.id}")
