@@ -42,7 +42,9 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
@@ -64,7 +66,17 @@ import com.mooscles.designsystem.components.TimerPlusTag
 import com.mooscles.designsystem.components.TimerSkipTag
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.domain.currentTimeMillis
+import com.mooscles.screens.flow.BACK_SQUAT
+import com.mooscles.screens.flow.BENCH_PRESS
+import com.mooscles.screens.flow.BenchSeed
 import com.mooscles.screens.flow.FlowApp
+import com.mooscles.screens.flow.ProgressFlowApp
+import com.mooscles.screens.flow.ProgressScreens
+import com.mooscles.screens.flow.awaitProgressChart
+import com.mooscles.screens.flow.recordRowTag
+import com.mooscles.screens.flow.scrollProgressTo
+import com.mooscles.screens.flow.seedBenchProgress
+import com.mooscles.screens.flow.topRecordRow
 import com.mooscles.screens.flow.RoutinesFlowApp
 import com.mooscles.screens.flow.RoutinesScreens
 import com.mooscles.screens.flow.FlowHarness
@@ -77,7 +89,12 @@ import com.mooscles.screens.flow.field
 import com.mooscles.screens.flow.row
 import com.mooscles.screens.flow.scrollToRow
 import com.mooscles.screens.flow.set
+import com.mooscles.screens.progress.ProgressMetric
+import com.mooscles.screens.progress.ProgressTags
+import com.mooscles.screens.records.RecordsTags
 import com.mooscles.screens.withScreen
+import com.mooscles.ui.RecordKind
+import com.mooscles.ui.RecordUi
 import com.mooscles.screens.workout.ActiveWorkoutTags
 import com.mooscles.screens.workout.ExercisePickerAddTag
 import com.mooscles.screens.workout.ExercisePickerListTag
@@ -119,6 +136,13 @@ import kotlin.time.Duration.Companion.minutes
  * marking a planned set as a warm-up, and starting a workout from a routine's card. Each is held to the spec's "Novo"
  * ([RoutinesNew]) and to today's count on the old screens ([RoutinesToday]); typed text does not count (the default
  * name is kept), and neither does scrolling to a control.
+ *
+ * And the phase 5A records' three flows of its spec table (docs/superpowers/specs/2026-10-31-phase5-progress-history-design.md,
+ * "Orçamento de toques"), over the same stack with six bench press workouts and the Records tab, the exercise progress
+ * and the tab bar hosted as the app does ([ProgressFlowApp]), each from the Train tab: seeing the current record of an
+ * exercise, going from a record to the exercise's progress with its chart, and seeing the bench's estimated 1RM. Each
+ * is held to [RecordsNew] and to today's count on the old records screens ([RecordsToday]); focusing the search field
+ * is a tap, as it was when today's count was measured, and only the typed text is free.
  */
 @OptIn(ExperimentalTestApi::class)
 class TapBudgetTest {
@@ -192,6 +216,28 @@ class TapBudgetTest {
         const val ADD_PLANNED_SET = 1
         const val MARK_WARMUP = 2
         const val START_FROM_ROUTINE = 1
+    }
+
+    /**
+     * Today's counts on the old records screens (phase 5A Task 13, at `2cbca45`, before the Records tab and the
+     * progress were hosted): docs/superpowers/reports/2026-10-31-phase5a-verificacao/tap-baseline-5a.md. Focusing the
+     * search field counted there as a tap (only the typed name did not). The estimated 1RM has no baseline (the old
+     * screens had none), so it is held to [RecordsNew] only.
+     */
+    private object RecordsToday {
+        const val CURRENT_RECORD = 2
+        const val RECORD_TO_PROGRESS = 2
+    }
+
+    /**
+     * The spec's "Novo" column (docs/superpowers/specs/2026-10-31-phase5-progress-history-design.md, "Orçamento de
+     * toques"), counted as the baseline was (controller, 2026-10-31): the spec's "1 + typing" for the current record is
+     * the tab and the search field's focus, 2, the same as today.
+     */
+    private object RecordsNew {
+        const val CURRENT_RECORD = 2
+        const val RECORD_TO_PROGRESS = 2
+        const val ESTIMATED_ONE_REP_MAX = 3
     }
 
     /** The user's touches: a tap or a gesture counts 1. Each waits for the screen to settle. */
@@ -510,6 +556,68 @@ class TapBudgetTest {
         assertWithin("startAWorkoutFromARoutine", taps, RoutinesNew.START_FROM_ROUTINE, RoutinesToday.START_FROM_ROUTINE)
     }
 
+    // --- The records' flows (phase 5A) -----------------------------------------------------------
+
+    /**
+     * From the Train tab, with the squat's record the newest of all (on top without a search): the Records tab and
+     * the search field (its focus); "bench" is typed (not counted) and the bench's current load record, with
+     * "Current", is the timeline's first row. 2 touches, as today.
+     */
+    @Test
+    fun seeTheCurrentRecordOfAnExercise() = progressBudget(squat = true) { vm, seed, _ ->
+        val bench = newestRecord(vm, seed, BENCH_PRESS)
+        val taps = Taps(this)
+        taps.tap(onNodeWithTag(tabTag(ShellTabs.RECORDS)))
+        await("the timeline is built") { topRecordRow() != null }
+        assertEquals(recordRowTag(newestRecord(vm, seed, BACK_SQUAT)), topRecordRow(), "without a search the squat is on top")
+        val search = onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag(RecordsTags.SEARCH)))
+        taps.tap(search)
+        search.performTextInput("bench")
+        waitForIdle()
+        await("the bench's record is on top") { topRecordRow() == recordRowTag(bench) }
+        assertTrue(exists(hasTestTag(RecordsTags.ROW_CURRENT) and hasAnyAncestor(hasTestTag(recordRowTag(bench))), unmerged = true), "the top row says it is current")
+        assertWithin("seeTheCurrentRecordOfAnExercise", taps, RecordsNew.CURRENT_RECORD, RecordsToday.CURRENT_RECORD)
+    }
+
+    /**
+     * From the Train tab, with the bench's load record the newest (the timeline's first row, as the baseline's first
+     * card): the Records tab and the row; the progress opens on the load, with its chart. 2 touches, as today.
+     */
+    @Test
+    fun fromARecordToTheExerciseProgress() = progressBudget(squat = false) { vm, seed, screen ->
+        val row = recordRowTag(newestRecord(vm, seed, BENCH_PRESS))
+        val taps = Taps(this)
+        taps.tap(onNodeWithTag(tabTag(ShellTabs.RECORDS)))
+        await("the bench's record is on top") { topRecordRow() == row }
+        taps.tap(onNodeWithTag(row))
+        await("the progress opens on the load") { screen.value == ProgressScreens.progress(BENCH_PRESS, ProgressMetric.LOAD.route) }
+        awaitProgressChart("Load")
+        assertWithin("fromARecordToTheExerciseProgress", taps, RecordsNew.RECORD_TO_PROGRESS, RecordsToday.RECORD_TO_PROGRESS)
+    }
+
+    /** From the Train tab: the Records tab, the bench's row and the "Estimated 1RM" chip; its chart is drawn. 3 touches (no baseline). */
+    @Test
+    fun seeTheEstimatedOneRepMaxOfTheBench() = progressBudget(squat = false) { vm, seed, _ ->
+        val row = recordRowTag(newestRecord(vm, seed, BENCH_PRESS))
+        val taps = Taps(this)
+        taps.tap(onNodeWithTag(tabTag(ShellTabs.RECORDS)))
+        await("the bench's record is on top") { topRecordRow() == row }
+        taps.tap(onNodeWithTag(row))
+        val chip = ProgressTags.metric(ProgressMetric.E1RM)
+        await("the metrics show") { exists(hasTestTag(chip)) }
+        scrollProgressTo(chip)
+        taps.tap(onNodeWithTag(chip))
+        awaitProgressChart("Estimated 1RM")
+        scrollProgressTo(chip)
+        onNodeWithTag(chip).assertIsSelected()
+        assertWithin("seeTheEstimatedOneRepMaxOfTheBench", taps, RecordsNew.ESTIMATED_ONE_REP_MAX)
+    }
+
+    /** The load record of [exerciseId] in the newest of the seeded workouts. */
+    private fun newestRecord(vm: FlowViewModel, seed: BenchSeed, exerciseId: String): RecordUi =
+        vm.contentUi.value.history.single { it.id == seed.benchWorkouts.last() }.records
+            .single { it.exercise.id == exerciseId && it.kind == RecordKind.WEIGHT }
+
     /** The picker's "All" row of [id], once its list is built (off the main thread) and scrolled to; the scroll is not a touch. */
     private fun ComposeUiTest.pickerRow(id: String): SemanticsNodeInteraction {
         val tag = exercisePickerRowTag(id, recent = false)
@@ -574,6 +682,30 @@ class TapBudgetTest {
             await("the routine loads") { !vm.contentUi.value.loading && vm.contentUi.value.routines.any { it.id == routineId } }
             waitForIdle()
             flow(vm, routineId, screen)
+        } finally {
+            runOnUiThread { harness.close() }
+        }
+    }
+
+    /**
+     * The records' stack: six bench press workouts, with the back squat in the last two when [squat]
+     * ([seedBenchProgress]), and the app's screens ([ProgressFlowApp]) in English at 1.0 on the Train tab. Runs [flow]
+     * with the view model, what was seeded and the screen.
+     */
+    private fun progressBudget(
+        squat: Boolean,
+        flow: suspend ComposeUiTest.(vm: FlowViewModel, seed: BenchSeed, screen: MutableState<String>) -> Unit,
+    ) = runComposeUiTest(testTimeout = 3.minutes) {
+        val harness = FlowHarness()
+        try {
+            val seed = seedBenchProgress(harness.repository, squat)
+            val vm = harness.createViewModel()
+            val screen = mutableStateOf(ProgressScreens.TRAIN)
+            withScreen(locale = "en") { ProgressFlowApp(vm, screen) }
+            waitForIdle()
+            await("the history loads") { !vm.contentUi.value.loading && vm.contentUi.value.history.size == seed.benchWorkouts.size }
+            waitForIdle()
+            flow(vm, seed, screen)
         } finally {
             runOnUiThread { harness.close() }
         }
