@@ -297,7 +297,8 @@ jobs:
           # Phase 5A task 8 fix round 1: StringsParityTest.englishTextsHaveNoPortugueseAccentsOrWords +1 (:screens androidHostTest). 1216 + 1 = 1217.
           # Merged with phase 5A task 7 (same base): 1238.
           # Phase 5A task 10: ProgressSectionsQueryTest 4 (:screens commonTest); ExerciseProgressSectionsTest is uiTest. 1238 + 4 = 1242.
-          MIN_HOST_TESTS: 1242
+          # Merge of the 5A tap-baseline lane: RecordsTapBaselineHostTest 2 (:app host). 1242 + 2 = 1244.
+          MIN_HOST_TESTS: 1244
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
