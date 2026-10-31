@@ -287,7 +287,13 @@ jobs:
           # Phase 5A task 6 fix round 1: RecordTimelinesTest +5 (search order, fallback order, current-only search, deleted workout,
           # two years). 1194 + 5 = 1199.
           # Merged with phase 5A task 1 (+13 above, on the same 1112 base): 1199 + 13 = 1212.
-          MIN_HOST_TESTS: 1212
+          # Phase 5A task 7: ProgressIndexCacheTest 13 (:screens commonTest), ProgressIndexTimingTest 1 (:screens
+          # androidHostTest), ProgressIndexDomainHostTest 2 (:app). 1212 + 16 = 1228.
+          # Phase 5A task 7 fix round 1 (:screens commonTest): ProgressIndexCacheTest +5 (aFailingPrewarmStaysQuietAndALaterGetBuildsAgain,
+          # aNewerPrewarmLeavesABuildSomeoneWaitsFor, aQueuedBuildNobodyWaitsForIsCancelledByTheNextHistory,
+          # aQueryAsTheLastStatementOfALaunchKeepsItsType, aQueryOverTheOldIndexThatEndsAfterTheSwapIsNotKept);
+          # aNewlyBuiltIndexDropsThePreviousIndexQueries became onlyTheLatestBuiltIndexKeepsQueries (+0). 1228 + 5 = 1233.
+          MIN_HOST_TESTS: 1233
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -643,7 +649,9 @@ jobs:
           # Phase 5A task 5 fix round 1: ExerciseChartsTest +4 (commonTest). 729 + 4 = 733.
           # Phase 5A task 6: RecordTimelinesTest 9 (commonTest). 733 + 9 = 742.
           # Phase 5A task 6 fix round 1: RecordTimelinesTest +5 (commonTest). 742 + 5 = 747.
-          MIN_SCREENS_IOS_TESTS: 747
+          # Phase 5A task 7: ProgressIndexCacheTest 13 (commonTest; the timing test is androidHostTest, host only). 747 + 13 = 760.
+          # Phase 5A task 7 fix round 1: ProgressIndexCacheTest +5 (commonTest; one test renamed, +0). 760 + 5 = 765.
+          MIN_SCREENS_IOS_TESTS: 765
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
