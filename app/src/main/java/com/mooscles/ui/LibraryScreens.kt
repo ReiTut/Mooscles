@@ -4,8 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -63,25 +61,4 @@ fun ExercisePicker(exercises: List<ExerciseUi>, onDismiss: () -> Unit, onSelect:
             }
         }
     }
-}
-
-@Composable
-fun CustomExerciseDialog(exercise: ExerciseUi?, exercises: List<ExerciseUi>, actions: MoosclesActions, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf(exercise?.name ?: "") }
-    val muscles = exercises.map { it.muscle }.distinct().sorted()
-    val equipmentOptions = exercises.map { it.equipment }.distinct().sorted()
-    val conventions = exercises.map { it.convention }.distinct().sorted()
-    var muscle by remember { mutableStateOf(exercise?.muscle ?: muscles.firstOrNull().orEmpty()) }
-    var equipment by remember { mutableStateOf(exercise?.equipment ?: equipmentOptions.firstOrNull().orEmpty()) }
-    var convention by remember { mutableStateOf(exercise?.convention ?: conventions.firstOrNull().orEmpty()) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (exercise == null) "Your own movement" else "Edit exercise") }, text = {
-        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(name, { name = it }, label = { Text("Exercise name") }, singleLine = true, isError = name.length > 100, modifier = Modifier.fillMaxWidth())
-            ChoiceFilter("Muscle", muscle, muscles, { muscle = it }, allowAll = false)
-            ChoiceFilter("Equipment", equipment, equipmentOptions, { equipment = it }, allowAll = false)
-            Text("Logging convention", style = MaterialTheme.typography.titleSmall)
-            ChoiceFilter("Convention", convention, conventions, { convention = it }, allowAll = false)
-            Text("Use the load and reps exactly as logged. Dumbbells use load per hand; unilateral sets use reps per side. No silent doubling. Renaming preserves this exercise’s identity and history.", style = MaterialTheme.typography.bodySmall)
-        }
-    }, confirmButton = { TextButton(onClick = { actions.saveCustomExercise(exercise?.id, name.trim(), muscle, equipment, convention); onDismiss() }, enabled = name.trim().isNotEmpty() && name.length <= 100 && muscle.isNotEmpty() && equipment.isNotEmpty() && convention.isNotEmpty()) { Text("Save exercise") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }

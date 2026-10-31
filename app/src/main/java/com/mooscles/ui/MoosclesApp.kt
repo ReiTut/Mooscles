@@ -19,10 +19,15 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.TimeZone
 import com.mooscles.designsystem.licenses.LicensesScreen
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.exercise.ExerciseInfoRoute
 import com.mooscles.screens.library.LibraryRoute
+import com.mooscles.screens.progress.ExerciseProgressRoute
+import com.mooscles.screens.progress.LocalProgressIndexCache
+import com.mooscles.screens.progress.ProgressMetric
+import com.mooscles.screens.records.RecordsRoute
 import com.mooscles.screens.routines.RoutineEditorRoute
 import com.mooscles.screens.routines.TrainRoute
 import com.mooscles.screens.shell.AppShellBottom
@@ -71,11 +76,46 @@ private fun NavHostController.openExerciseInfo(id: String) = navigate("exerciseI
 }
 
 /**
+ * The exercise progress ([ExerciseProgressRoute], spec D2): the base route `exercise/{id}` of before, with an optional
+ * `metric` (`load`, `reps`, `e1rm` or `volume`; a missing or unknown one opens the convention's first).
+ */
+internal const val PROGRESS_ROUTE = "exercise/{id}?metric={metric}"
+private const val METRIC_ARG = "metric"
+
+private fun progressRoute(id: String, metric: ProgressMetric? = null) =
+    if (metric == null) "exercise/$id" else "exercise/$id?$METRIC_ARG=${metric.route}"
+
+/** Opens the progress; a second tap before the first one lands opens no second progress over it. */
+private fun NavHostController.openProgress(id: String, metric: ProgressMetric? = null) = navigate(progressRoute(id, metric)) {
+    launchSingleTop = true
+}
+
+/**
+ * The prewarm's key: the history and the records as instances, as the cache keys its index (`===`). New lists equal
+ * to the old ones (kg to lb) are a new history to the cache, so they must prewarm again; `equals` would say no.
+ */
+private class HistoryIdentity(val history: List<WorkoutUi>, val records: List<RecordUi>) {
+    override fun equals(other: Any?) = other is HistoryIdentity && other.history === history && other.records === records
+    override fun hashCode() = 31 * System.identityHashCode(history) + System.identityHashCode(records)
+}
+
+/**
+ * The progress's "About the exercise": back to the detail under it when that is the same exercise's (the detail's
+ * "View progress"), so details never stack; otherwise the detail opens over the progress.
+ */
+private fun NavHostController.aboutFromProgress(id: String) {
+    val below = previousBackStackEntry
+    if (below?.destination?.route == EXERCISE_INFO_ROUTE && below.arguments?.getString("id") == id) popBackStack()
+    else openExerciseInfo(id)
+}
+
+/**
  * The routes of the new screens that show their own placeholders while the state loads (decision
  * 17, pre-flight F21) and their own errors (decision 19, plan 4A decision 14). The one list both
  * the snackbar and the loading overlay read.
  */
-private val OWN_PLACEHOLDER_ROUTES = setOf(WORKOUT_ROUTE, ShellTabs.TRAIN, ROUTINE_ROUTE, ShellTabs.LIBRARY, EXERCISE_INFO_ROUTE)
+private val OWN_PLACEHOLDER_ROUTES =
+    setOf(WORKOUT_ROUTE, ShellTabs.TRAIN, ROUTINE_ROUTE, ShellTabs.LIBRARY, EXERCISE_INFO_ROUTE, ShellTabs.RECORDS, PROGRESS_ROUTE)
 
 /** The route the app's frame is drawn for, and [summary] when it is the end-of-workout summary. */
 internal data class ShownRoute(val route: String, val summary: Boolean = false) {
@@ -109,7 +149,8 @@ internal fun rememberShownRoute(entryRoute: String?, entrySummary: Boolean): Sho
  * The app: the old screens and, from `:screens`, the Train tab ([TrainRoute]), the routine editor
  * ([RoutineEditorRoute], [ROUTINE_ROUTE]), the active workout ([ActiveWorkoutRoute]), the
  * end-of-workout summary ([WorkoutSummaryScreen]), the library tab ([LibraryRoute]), the exercise
- * detail ([ExerciseInfoRoute], [EXERCISE_INFO_ROUTE]) and the shell's bottom ([AppShellBottom]).
+ * detail ([ExerciseInfoRoute], [EXERCISE_INFO_ROUTE]), the Records tab ([RecordsRoute]), the exercise
+ * progress ([ExerciseProgressRoute], [PROGRESS_ROUTE]) and the shell's bottom ([AppShellBottom]).
  *
  * Every route but [WORKOUT_ROUTE] has the shell: the workout bar while a workout is active and the
  * four tabs. The selected tab is the root of the stack in view, kept across recreation; tapping it
@@ -122,11 +163,17 @@ internal fun rememberShownRoute(entryRoute: String?, entrySummary: Boolean): Sho
  * snackbar waits until they are left) and their own placeholders while the state loads (the
  * spinner overlay is only the old screens'). Train and the library open Settings from their
  * shortcut; Train opens the editor, whose "Open" on a copy replaces it, and whose deleted routine
- * returns to Train ([leaveRoutineEditor]); the detail opens the old exercise history, the editor and the workout.
+ * returns to Train ([leaveRoutineEditor]); the detail opens the progress, the editor and the workout. A record opens
+ * the progress on its metric; the progress's sessions and a record's "Open workout" open the workout's detail.
+ *
+ * With the application's progress index provided ([LocalProgressIndexCache]), each new history (and its records) is
+ * prewarmed once the state has loaded: built off the main thread after a short delay, with the Records tab's query,
+ * so the tab and the progress open on a ready index (plan 5A decision 9).
  *
  * [timerState] is the ticking rest timer, read only by the workout bar and the workout's timer;
  * without it they read [UiState.timer]. [foreground] is whether the app is in the foreground (the
  * Activity's lifecycle, plan decision 15): the detail's figure stops while it is not.
+ * [navController] is the graph's controller; tests pass their own to open a route directly.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,9 +183,10 @@ fun MoosclesApp(
     timerState: State<TimerUi>? = null,
     workoutRequest: Long = 0L,
     foreground: Boolean = true,
+    navController: NavHostController = rememberNavController(),
 ) {
     MoosclesTheme(state.preferences.theme) {
-        val nav = rememberNavController()
+        val nav = navController
         val entry by nav.currentBackStackEntryAsState()
         val entryRoute = entry?.destination?.route
         val shown = rememberShownRoute(entryRoute, entryRoute == DETAIL_ROUTE && entry?.arguments?.getBoolean(SUMMARY_ARG) == true)
@@ -198,6 +246,13 @@ fun MoosclesApp(
         SideEffect { workoutScreenFor = workoutScreenKey }
         val workoutScreen = rememberActiveWorkoutScreenState(workoutScreenKey)
 
+        // Plan 5A decision 9: the next history's index is on its way before a screen asks for it. Never while
+        // loading, whose empty lists are not the history. The prewarm never throws (a failure waits for a screen).
+        val progressIndex = LocalProgressIndexCache.current
+        LaunchedEffect(progressIndex, HistoryIdentity(state.history, state.records), state.loading) {
+            if (progressIndex != null && !state.loading) progressIndex.prewarm(state.history, state.records, TimeZone.currentSystemDefault())
+        }
+
         var handledDiscard by rememberSaveable { mutableLongStateOf(0L) }
         LaunchedEffect(state.discardNavigationRequest, state.loading) {
             if (!state.loading && state.discardNavigationRequest == 0L) {
@@ -247,8 +302,8 @@ fun MoosclesApp(
         }
 
         // Decision 19 (and plan 4A decision 14): the new screens show their own localized error and
-        // clear it; the global snackbar waits until the workout, the summary, the library or the
-        // exercise detail is left.
+        // clear it; the global snackbar waits until the workout, the summary, the library, the
+        // exercise detail, the Records tab or the exercise progress is left.
         val snack = remember { SnackbarHostState() }
         val newScreen = shown.newScreen
         LaunchedEffect(state.error, newScreen) {
@@ -298,7 +353,7 @@ fun MoosclesApp(
                             state = state,
                             actions = hosted,
                             onBack = { nav.popBackStack() },
-                            onOpenHistory = { nav.navigate("exercise/$it") },
+                            onOpenHistory = { nav.openProgress(it) },
                             onOpenRoutine = { nav.openRoutine(it) },
                             onOpenWorkout = ::openWorkout,
                             foreground = foreground,
@@ -312,15 +367,30 @@ fun MoosclesApp(
                             workout == null -> MissingScreen("Workout unavailable")
                             asSummary -> SummaryRoute(workout, state, hosted, onDone = { selectTab(ShellTabs.TRAIN) },
                                 onDetails = { nav.navigate(detailRoute(workout.id, summary = false)) })
-                            else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.navigate("exercise/$it") })
+                            else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.openProgress(it) })
                         }
                     }
-                    composable("exercise/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { page ->
-                        val exercise = state.exercises.find { it.id == page.arguments?.getString("id") }
-                        if (exercise != null) ExerciseHistoryScreen(exercise, state, hosted, onWorkout = { nav.navigate(detailRoute(it, summary = false)) })
-                        else MissingScreen("Exercise unavailable")
+                    composable(PROGRESS_ROUTE, arguments = listOf(
+                        navArgument("id") { type = NavType.StringType },
+                        navArgument(METRIC_ARG) { type = NavType.StringType; nullable = true; defaultValue = null },
+                    )) { page ->
+                        val id = page.arguments?.getString("id").orEmpty()
+                        ExerciseProgressRoute(
+                            exerciseId = id,
+                            metric = page.arguments?.getString(METRIC_ARG),
+                            state = state,
+                            actions = hosted,
+                            onBack = { nav.popBackStack() },
+                            onAbout = { nav.aboutFromProgress(id) },
+                            onOpenWorkout = { nav.navigate(detailRoute(it, summary = false)) },
+                        )
                     }
-                    composable(ShellTabs.RECORDS) { RecordsScreen(state, onExercise = { nav.navigate("exercise/$it") }) }
+                    composable(ShellTabs.RECORDS) {
+                        RecordsRoute(state, hosted,
+                            onOpenProgress = { id, metric -> nav.openProgress(id, metric) },
+                            onOpenWorkout = { nav.navigate(detailRoute(it, summary = false)) },
+                            onOpenSettings = { nav.navigate(SettingsRoutes.settings()) { launchSingleTop = true } })
+                    }
                     composable(SettingsRoutes.SETTINGS, arguments = listOf(navArgument(SettingsRoutes.SECTION_ARG) { type = NavType.StringType; defaultValue = "" })) { page ->
                         SettingsScreen(state, hosted, section = page.arguments?.getString(SettingsRoutes.SECTION_ARG).orEmpty(),
                             onOpenLicenses = { nav.navigate(SettingsRoutes.LICENSES) },
@@ -401,7 +471,7 @@ private fun WorkoutRoute(
         actions = actions,
         onMinimize = minimize,
         onOpenSummary = { id -> nav.navigate(detailRoute(id, summary = true)) { popUpTo(WORKOUT_ROUTE) { inclusive = true } } },
-        onExerciseHistory = { nav.navigate("exercise/$it") },
+        onExerciseHistory = { nav.openProgress(it) },
         onChooseRoutine = onChooseRoutine,
         onExerciseInfo = { nav.openExerciseInfo(it) },
         skeletonCards = skeletonCards,
