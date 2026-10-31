@@ -7,7 +7,7 @@ import com.mooscles.ui.*
 import java.util.Locale
 
 /** Owned by the sequential presentation flow; never called from composition. */
-internal class WorkoutPresentation {
+internal class WorkoutPresentation(private val recoveryCache: WorkoutRecoveryCache? = null) {
     private var historySource: AppData? = null
     private var historicalAnalysis = WorkoutCalculations.historicalAnalysis(AppData())
     private var historyPounds = false
@@ -21,8 +21,12 @@ internal class WorkoutPresentation {
     private var previousActive: WorkoutUi? = null
     private var lastUi = UiState()
 
-    /** Start-only path. No historical cache is consulted or invalidated by a partial snapshot. */
+    /** Essential Start/recovery path. A partial snapshot never invalidates historical caches. */
     fun presentEssential(snapshot: ActiveWorkoutSnapshot, prefs: PreferencesUi): UiState {
+        recoveryCache?.getValidated(snapshot)?.let { cached ->
+            previousActive = cached
+            return lastUi.copy(active = cached, preferences = prefs, secondaryLoading = true).also { lastUi = it }
+        }
         val old = previousActive?.takeIf { it.id == snapshot.workout.id }
         val oldEntries = old?.exercises?.associateBy { it.id }.orEmpty()
         val metadata = snapshot.exercises.associateBy { it.id }
@@ -46,6 +50,7 @@ internal class WorkoutPresentation {
         val active = WorkoutUi(saved.id, saved.name, saved.startedAt, saved.endedAt, entries,
             sourceRoutineId = saved.sourceRoutineId)
         previousActive = old?.takeIf { it == active } ?: active
+        recoveryCache?.put(snapshot, requireNotNull(previousActive))
         return lastUi.copy(active = previousActive, preferences = prefs, secondaryLoading = true).also { lastUi = it }
     }
 

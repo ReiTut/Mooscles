@@ -142,7 +142,8 @@ fun MoosclesApp(state: UiState, actions: MoosclesActions, timerState: State<Time
                     composable("records") { RecordsScreen(state, onExercise = { nav.navigate("exercise/$it") }) }
                     composable("settings") { SettingsScreen(state, actions) }
                 }
-                if (state.loading) Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                if (state.loading && !(route == "workout" && state.active != null))
+                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).testTag("app-loading"), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             }
         }
         // Draw last, outside Scaffold/NavHost, at full opacity on its first frame.

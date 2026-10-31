@@ -19,6 +19,7 @@ class MoosclesApplication : Application() {
     val preferences by lazy { AppPreferences(this) }
     val timer by lazy { RestTimerController(this, appScope) }
     val trainingGate = Mutex()
+    internal val workoutRecoveryCache = WorkoutRecoveryCache()
     val updates by lazy { UpdateManager(this, trainingGate, trainingBusy = {
         repository.activeWorkout() != null || UpdatePolicy.restTimerBusy(
             RestTimerPersistence(moosclesStore).snapshot(), System.currentTimeMillis())
