@@ -93,7 +93,7 @@ fun ChartsPage() {
         )) {
             ChartSample(name, points.map { it.y }, points.map { it.record }, Res.string.gallery_sample_chart_workout, kg, set) { selected, onSelect ->
                 val labels = remember(points) { ChartScale.labelIndices(points.size).map { AxisLabel(it, (it + 1).toString()) } }
-                MLineChart(points, stringResource(summary), kg, labels, selected, onSelect)
+                MLineChart(points, stringResource(summary), { kg(it) }, labels, selected, onSelect)
                 if (points.any { it.record }) MChartLegendRecord()
             }
         }

@@ -373,7 +373,7 @@ class ChartsTest {
             runComposeUiTest {
                 withTheme(fontScale = scale) {
                     Column {
-                        MLineChart(ChartSamples.line, summary, ::kilograms, emptyList(), null, {})
+                        MLineChart(ChartSamples.line, summary, { kilograms(it) }, emptyList(), null, {})
                         MBarChart(ChartSamples.bars, summary, ::kilograms, emptyList(), null, {})
                     }
                 }
@@ -382,6 +382,26 @@ class ChartsTest {
                 assertDp(expected, onNodeWithTag(BarChartTag).getUnclippedBoundsInRoot().height, "bars at $scale")
             }
         }
+    }
+
+    /**
+     * Final review of phase 5A (CR-9): the line chart writes its own marks with the label it is given, a composable one
+     * (a screen's reads string resources), so a screen never computes the scale a second time to match texts to ticks.
+     */
+    @Test
+    fun lineChartWritesItsOwnTicksWithTheComposableLabel() = runComposeUiTest {
+        var points by mutableStateOf(ChartSamples.line)
+        withTheme {
+            MLineChart(points, summary, { kilograms(it) }, emptyList(), null, {})
+        }
+        waitForIdle()
+        fun texts() = onNodeWithTag(LineChartTag).fetchSemanticsNode().config[ChartAxisTexts]
+        fun expected() = ChartScale.line(points.map { it.y }).ticks.map(::kilograms)
+        assertEquals(expected(), texts())
+        assertTrue(texts().size in 2..4, "${texts()}")
+        points = ChartSamples.flat
+        waitForIdle()
+        assertEquals(expected(), texts())
     }
 
     @Test
@@ -393,7 +413,7 @@ class ChartsTest {
                     MLineChart(
                         if (key == "a") ChartSamples.line else ChartSamples.flat,
                         "summary $key",
-                        ::kilograms,
+                        { kilograms(it) },
                         emptyList(),
                         null,
                         {},
@@ -441,7 +461,7 @@ class ChartsTest {
                             ) {
                                 Box(Modifier.fillMaxWidth()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        MLineChart(ChartSamples.line, summary, ::kilograms, ChartScale.labelIndices(8).map { AxisLabel(it, "${it + 1} Oct") }, 5, {})
+                                        MLineChart(ChartSamples.line, summary, { kilograms(it) }, ChartScale.labelIndices(8).map { AxisLabel(it, "${it + 1} Oct") }, 5, {})
                                         MChartLegendRecord()
                                     }
                                 }

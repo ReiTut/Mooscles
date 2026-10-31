@@ -30,8 +30,10 @@ internal data class LineFrame(
 
 /**
  * A progression line (spec D3 and D4): [points] placed by their `x` across the width and by their
- * `y` on an axis that does not start at zero (10% padding, up to 4 round marks, labelled by
- * [yLabel]), with [xLabels] under the plot where they fit. A record point gets a `chart.pr` ring.
+ * `y` on an axis that does not start at zero (10% padding, up to 4 round marks, each written by
+ * [yLabel] in composition, so it may read string resources), with [xLabels] under the plot where
+ * they fit. A record point gets a `chart.pr` ring. The marks' texts are on the chart's node as
+ * [ChartAxisTexts].
  *
  * Tap or drag picks the nearest point ([onSelect]); [selected] gets an `accent.solid` ring and a
  * guide. The line and labels are built once per data and size; moving the selection only redraws
@@ -50,7 +52,7 @@ internal data class LineFrame(
 fun MLineChart(
     points: List<LinePoint>,
     summary: String,
-    yLabel: (Double) -> String,
+    yLabel: @Composable (Double) -> String,
     xLabels: List<AxisLabel>,
     selected: Int?,
     onSelect: (Int?) -> Unit,
@@ -58,7 +60,7 @@ fun MLineChart(
     contentKey: Any? = null,
 ) {
     val range = remember(points) { ChartScale.line(points.map { it.y }) }
-    val frame = LineFrame(points, range, range.ticks.map(yLabel), xLabels, summary)
+    val frame = LineFrame(points, range, range.ticks.map { yLabel(it) }, xLabels, summary)
     ChartCrossfade(contentKey, frame, modifier.fillMaxWidth().height(chartHeight())) { shown, current ->
         LineChartFrame(shown, if (current) selected else null, onSelect, current)
     }
@@ -76,7 +78,7 @@ private fun LineChartFrame(frame: LineFrame, selected: Int?, onSelect: (Int?) ->
             buildLine(frame, look, measurer, plot)
         }
     }
-    ChartSurface(LineChartTag, frame.summary, current, plot, selected, onSelect, cache) { drawLineSelection(plot, it, look) }
+    ChartSurface(LineChartTag, frame.summary, frame.tickTexts, current, plot, selected, onSelect, cache) { drawLineSelection(plot, it, look) }
 }
 
 /** Places the points, builds the line and measures the labels; [plot] keeps the positions for the selection. */

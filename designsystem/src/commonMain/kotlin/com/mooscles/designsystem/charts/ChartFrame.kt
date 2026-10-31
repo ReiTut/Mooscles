@@ -8,6 +8,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -47,6 +49,13 @@ const val LineChartTag = "chart-line"
 
 /** The tag of a bar chart's node (the one with the summary). */
 const val BarChartTag = "chart-bar"
+
+/**
+ * The value axis's texts of the current chart, in tick order, on its [LineChartTag] or [BarChartTag] node: what a
+ * test reads to see the marks a chart drew (they are drawn, not text nodes). A screen reader does not read it.
+ */
+val ChartAxisTexts = SemanticsPropertyKey<List<String>>("ChartAxisTexts")
+private var SemanticsPropertyReceiver.chartAxisTexts by ChartAxisTexts
 
 /** The tag of a chart that is fading out after its content key changed; it has no semantics. */
 const val ChartFadingTag = "chart-fading"
@@ -233,13 +242,14 @@ internal fun chartLook(): ChartLook = ChartLook(
 /**
  * The node a chart draws in: [cache] (built only when the data or the size change), then the
  * selection on top ([drawSelection], redrawn alone when [selected] moves). The current chart is one
- * image node read as [summary] under [tag], and takes taps and drags; a chart that is fading out
- * ([current] false) is silent and takes nothing.
+ * image node read as [summary] under [tag], with its [axisTexts] ([ChartAxisTexts]), and takes taps and drags; a
+ * chart that is fading out ([current] false) is silent and takes nothing.
  */
 @Composable
 internal fun ChartSurface(
     tag: String,
     summary: String,
+    axisTexts: List<String>,
     current: Boolean,
     plot: PlotPositions,
     selected: Int?,
@@ -254,6 +264,7 @@ internal fun ChartSurface(
         Modifier.testTag(tag).clearAndSetSemantics {
             contentDescription = summary
             role = Role.Image
+            chartAxisTexts = axisTexts
         }.chartSelection(plot, tracker, onSelectState)
     } else {
         Modifier.testTag(ChartFadingTag).clearAndSetSemantics {}

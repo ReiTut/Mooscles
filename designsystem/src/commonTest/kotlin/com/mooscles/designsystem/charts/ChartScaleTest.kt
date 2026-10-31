@@ -5,6 +5,7 @@ import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.round
+import kotlin.math.ulp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -53,6 +54,23 @@ class ChartScaleTest {
         assertTrue(100.0 > range.min && 100.0 < range.max, "the value is inside: $range")
         assertTicksOnTheStep(range, "one value")
         assertTrue(range.ticks.size <= 4)
+    }
+
+    /**
+     * Final review of phase 5A (CR-2): values equal up to floating point noise (a kg to lb round trip) are one value, not
+     * a full-height change with repeated "100" ticks.
+     */
+    @Test
+    fun floatNoiseIsAFlatLine() {
+        val noisy = 100.0 + 100.0.ulp
+        assertTrue(noisy > 100.0)
+        val range = ChartScale.line(listOf(100.0, noisy, 100.0))
+        assertEquals(ChartScale.line(listOf(100.0)), range)
+        assertEquals(range.ticks.distinct(), range.ticks, "no repeated tick")
+        assertTicksOnTheStep(range, "noise")
+        // A real change, however small next to the value, is still a range of its own.
+        val real = ChartScale.line(listOf(100.0, 100.5))
+        assertTrue(real.min > 99.0 && real.max < 101.5, "$real")
     }
 
     /** Plan decision 15: the charts get display units, so a pound axis gets round pound ticks. */

@@ -25,16 +25,24 @@ object ChartScale {
     private const val EPSILON = 1e-9
 
     /**
+     * A span this small next to the values is unit noise, not a change: 100 lb and 100.00000000000001 lb (a kg to lb
+     * round trip) are one value. Far under what a label can show (two decimals) and over the domain's 4 ulp.
+     */
+    private const val FLAT_RELATIVE = 1e-9
+
+    /**
      * The range of a progression line: the data's own span, never forced to zero, with 10% of it
      * added on each side, and up to 4 round ticks (1, 2, 2.5 or 5 times a power of ten) inside it.
-     * One value (or all equal) still gets a range around it. Values that are all zero or more never
-     * get a range below zero.
+     * One value (or all equal, up to floating point noise: [FLAT_RELATIVE]) still gets a range around it. Values
+     * that are all zero or more never get a range below zero.
      */
     fun line(values: List<Double>): ChartRange {
         val finite = values.filter { it.isFinite() }
         if (finite.isEmpty()) return ChartRange(0.0, 1.0, ticksInside(0.0, 1.0))
         val low = finite.min()
-        val high = finite.max()
+        var high = finite.max()
+        // Noise between equal values would be drawn as a full-height change with repeated "100" ticks.
+        if (high - low <= max(abs(low), abs(high)) * FLAT_RELATIVE) high = low
         val span = high - low
         val padding = if (span > 0) span * PADDING else max(abs(low) * PADDING, 1.0)
         var min = low - padding

@@ -68,7 +68,7 @@ private fun BarChartFrame(frame: BarFrame, selected: Int?, onSelect: (Int?) -> U
             buildBars(frame, look, measurer, plot)
         }
     }
-    ChartSurface(BarChartTag, frame.summary, current, plot, selected, onSelect, cache) { drawBarSelection(plot, it, look) }
+    ChartSurface(BarChartTag, frame.summary, frame.tickTexts, current, plot, selected, onSelect, cache) { drawBarSelection(plot, it, look) }
 }
 
 /** Places the bars, builds them as one path and measures the labels; [plot] keeps the bar centers and tops. */

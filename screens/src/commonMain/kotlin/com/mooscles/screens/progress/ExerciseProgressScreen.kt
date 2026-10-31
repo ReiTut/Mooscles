@@ -37,8 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.SemanticsPropertyKey
-import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -62,8 +60,6 @@ import com.mooscles.designsystem.components.MToastHost
 import com.mooscles.designsystem.components.MToastHostState
 import com.mooscles.designsystem.components.Skeleton
 import com.mooscles.designsystem.components.TopBar
-import com.mooscles.designsystem.format.MoosclesNumbers
-import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.format.ScreenDates
@@ -155,10 +151,6 @@ internal object ProgressProbe {
     const val SCREEN = "progress-screen"
     const val CHART = "progress-chart-probe"
 }
-
-/** The axis texts the chart was given, in tick order: what a test reads to see that the marks are round. */
-internal val ProgressAxisTexts = SemanticsPropertyKey<List<String>>("ProgressAxisTexts")
-private var SemanticsPropertyReceiver.progressAxisTexts by ProgressAxisTexts
 
 /**
  * What the screen reads from the world (spec D8): the clock and the zone, read on entry and at each period change, and
@@ -605,8 +597,9 @@ private fun ProgressReadout(shown: ShownChart, pounds: Boolean, selection: Mutab
 }
 
 /**
- * The line chart and the record legend when a point has the ring. The values, the axis texts, the dates and the spoken
- * summary are made here once per chart; only [SelectableLineChart] reads [selection], so moving it rebuilds none of them.
+ * The line chart and the record legend when a point has the ring. The values, the dates and the spoken summary are
+ * made here once per chart, and the chart writes its own axis texts ([axisText]); only [SelectableLineChart] reads
+ * [selection], so moving it rebuilds none of them.
  */
 @Composable
 private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: MutableState<Int?>) {
@@ -618,21 +611,14 @@ private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: Mutable
     val points = remember(chart, metric, pounds) {
         chart.points.map { LinePoint(it.startedAt.toDouble(), ProgressNumbers.displayValue(it.value, metric, pounds), it.record) }
     }
-    val range = remember(points) { ChartScale.line(points.map { it.y }) }
-    val tickTexts = range.ticks.map { axisText(it, metric) }
-    val locale = currentNumberLocale()
-    val labels = remember(range, tickTexts, locale) {
-        val byTick = range.ticks.zip(tickTexts).toMap()
-        val label: (Double) -> String = { byTick[it] ?: MoosclesNumbers.localize(MoosclesNumbers.plain(it), locale) }
-        label
-    }
+    val labels: @Composable (Double) -> String = { axisText(it, metric) }
     val labelIndices = remember(points.size) { ChartScale.labelIndices(points.size) }
     val xLabels = labelIndices.map { AxisLabel(it, shortDate(chart.points[it].startedAt, zone)) }
     val summary = chartSummary(chart, metric, query.key.convention, query.period, pounds, zone, query.today)
     Column(Modifier.progressItem().padding(top = MTheme.space.s2), verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
         SelectableLineChart(
             points, summary, labels, xLabels, selection,
-            Modifier.testTag(ProgressTags.CHART).semantics { progressAxisTexts = tickTexts },
+            Modifier.testTag(ProgressTags.CHART),
             contentKey = metric to query.period,
         )
         if (chart.points.any(ChartPoint::record)) MChartLegendRecord(Modifier.testTag(ProgressTags.LEGEND_RECORD).semantics(mergeDescendants = true) {})
@@ -644,7 +630,7 @@ private fun ProgressChart(shown: ShownChart, pounds: Boolean, selection: Mutable
 private fun SelectableLineChart(
     points: List<LinePoint>,
     summary: String,
-    labels: (Double) -> String,
+    labels: @Composable (Double) -> String,
     xLabels: List<AxisLabel>,
     selection: MutableState<Int?>,
     modifier: Modifier,

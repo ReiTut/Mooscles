@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.mooscles.data.ExerciseCatalog
 import com.mooscles.data.ExerciseNames
+import com.mooscles.designsystem.charts.ChartAxisTexts
 import com.mooscles.designsystem.charts.LineChartTag
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.screens.LINEAR_TWO_X_FONT_SCALE
@@ -398,7 +399,7 @@ class ExerciseProgressScreenTest {
         val state = mutableStateOf(stateOf(history))
         show(state)
         chartReady()
-        fun ticks() = onNodeWithTag(ProgressTags.CHART).fetchSemanticsNode().config[ProgressAxisTexts]
+        fun ticks() = onNodeWithTag(LineChartTag).fetchSemanticsNode().config[ChartAxisTexts]
         assertEquals(listOf("80", "90", "100"), ticks())
         state.value = stateOf(history, pounds = true)
         waitUntil(timeoutMillis = 5_000) { ticks() != listOf("80", "90", "100") }

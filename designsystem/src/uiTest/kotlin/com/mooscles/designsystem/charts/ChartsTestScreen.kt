@@ -80,7 +80,7 @@ internal fun ChartsTestScreen(
                 is ChartsTestChart.Line -> MLineChart(
                     chart.points,
                     summary,
-                    ::kilograms,
+                    { kilograms(it) },
                     ChartScale.labelIndices(chart.points.size).map { AxisLabel(it, (it + 1).toString()) },
                     selected,
                     select,
