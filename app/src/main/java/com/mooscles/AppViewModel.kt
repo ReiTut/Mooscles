@@ -10,37 +10,83 @@ import com.mooscles.data.*
 import com.mooscles.ui.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 
 class AppViewModel(application: Application) : AndroidViewModel(application), MoosclesActions {
     private val app = application as MoosclesApplication
     private val repo = app.repository
     private val error = MutableStateFlow<String?>(null)
     private val initialized = MutableStateFlow(false)
+    private val sourceReadFailed = MutableStateFlow(false)
+    private val recoveredWorkout = MutableStateFlow<ActiveWorkoutSnapshot?>(null)
     private val startingWorkout = MutableStateFlow(false)
+    /** Accepted-Start feedback must not wait for the prepared screen-state pipeline. */
+    val workoutOpening = startingWorkout.asStateFlow()
+    private val startupHandoff = MutableStateFlow<WorkoutStartHandoff?>(null)
+    private val endedWorkouts = MutableStateFlow<Set<String>>(emptySet())
+    private var nextStartToken = 0L
     private val discardingWorkout = MutableStateFlow(false)
     private val discardNavigationRequest = MutableStateFlow(0L)
-    private val presenter = WorkoutPresentation()
+    private val presenter = WorkoutPresentation(app.workoutRecoveryCache)
     private val settingsRequest = MutableStateFlow(0L)
     private val installLaunches = Channel<Intent>(Channel.BUFFERED)
     val installIntents = installLaunches.receiveAsFlow()
     fun openUpdateSettings() { settingsRequest.value += 1 }
     private val commands = Channel<suspend () -> Unit>(Channel.UNLIMITED)
-    private val source = repo.data.catch { error.value = "Unable to open local data: ${it.message}"; emit(AppData()) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, AppData())
-    // Collected by contentUi in viewModelScope: prepare card details on the UI thread.
-    private val presentation = combine(source, app.preferences.flow) { data, prefs -> data to prefs }
-        .map { (data, prefs) ->
-            Trace.beginSection("Mooscles:present")
-            try { presenter.present(data, prefs) } finally { Trace.endSection() }
+    // Null means the first authoritative archive read has not arrived. It must
+    // not be confused with a successful read containing no active workout.
+    private val source: StateFlow<AppData?> = flow<AppData?> {
+        initialized.first { it }
+        emitAll(repo.data)
+    }.catch {
+        sourceReadFailed.value = true
+        error.value = "Unable to open local data: ${it.message}"
+        // Keep the last valid editor; a failed read is not a persisted deletion.
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    // One sequential worker owns the mutable presentation caches. UI publication stays on Main.
+    private val presentation = combine(source, app.preferences.flow, startupHandoff, recoveredWorkout) { data, prefs, handoff, recovery ->
+            val essential = handoff?.takeIf { it.editing || data == null || !it.snapshot.matches(data) }?.snapshot
+                ?: recovery?.takeIf { data == null }
+            val trace = when {
+                essential != null -> "Mooscles:presentEssential"
+                data != null -> "Mooscles:present"
+                else -> null
+            }
+            if (trace != null) Trace.beginSection(trace)
+            try {
+                val ui = when {
+                    essential != null -> presenter.presentEssential(essential, prefs)
+                    data != null -> presenter.present(data, prefs)
+                    else -> UiState(preferences = prefs)
+                }
+                PreparedWorkoutContent(data, handoff, ui, recovery)
+            } finally { if (trace != null) Trace.endSection() }
         }
+        .flowOn(Dispatchers.Default)
+    private val presentedUi = combine(presentation, source, startupHandoff, endedWorkouts, recoveredWorkout) { prepared, data, handoff, ended, recovery ->
+        WorkoutContentPublication(prepared, data, handoff, ended, recovery)
+    }.scan(UiState()) { previous, next ->
+        currentWorkoutContent(previous, next.prepared, next.source, next.handoff, next.ended, next.recovery)
+    }.onEach { ui ->
+        val handoff = startupHandoff.value
+        if (handoff != null && !handoff.editing && !ui.secondaryLoading &&
+            ui.active?.id == handoff.snapshot.workout.id && source.value?.let(handoff.snapshot::matches) == true)
+            startupHandoff.compareAndSet(handoff, null)
+        val recovery = recoveredWorkout.value
+        if (recovery != null && source.value != null && !ui.loading && !ui.secondaryLoading)
+            recoveredWorkout.compareAndSet(recovery, null)
+    }
     private val problems = combine(error, app.preferences.error, app.timer.error) { action, prefs, timer -> action ?: prefs ?: timer }
-    private val baseUi = combine(presentation, problems, initialized, app.updates.ui, startingWorkout) { base, problem, ready, updates, starting ->
-        base.copy(error = problem, loading = !ready, updates = updates, startingWorkout = starting)
+    private val baseUi = combine(presentedUi, problems, initialized, app.updates.ui, startingWorkout) { base, problem, ready, updates, starting ->
+        base.copy(error = problem, loading = !ready || base.loading, updates = updates, startingWorkout = starting)
+    }.combine(sourceReadFailed) { base, failed ->
+        if (failed) base.copy(loading = false) else base
     }.catch { emit(UiState(loading = false, error = "Unable to read local preferences: ${it.message}")) }
     /** Screens do not observe countdown ticks. Only the dock collects [timerUi]. */
     val contentUi = combine(baseUi, settingsRequest, discardingWorkout, discardNavigationRequest) { base, request, discarding, discarded ->
@@ -59,6 +105,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
             }
         }
         viewModelScope.launch {
+            try {
+                // Recovery is a read, never a Start command. It is deliberately
+                // ahead of archive repair/history preparation and validates any
+                // process-local editor cache against actual saved rows.
+                val snapshot = withContext(Dispatchers.Default) { repo.activeSnapshot() }
+                if (snapshot == null) app.workoutRecoveryCache.clear()
+                recoveredWorkout.value = snapshot
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { error.value = "Unable to restore the saved workout: ${e.message}" }
+            // Preserve catalog/target reconciliation after history corrections.
+            // The recovered editor is already available while this work finishes.
             try { repo.initialize() } catch (e: CancellationException) { throw e }
             catch (e: Exception) { error.value = "Unable to initialize local data: ${e.message}" }
             initialized.value = true
@@ -67,6 +124,45 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         }
     }
     private fun act(block: suspend () -> Unit) { commands.trySend(block) }
+
+    /** Protect brief startup/recovery edits; ordinary edits keep the original single full flow. */
+    private fun changeSession(refresh: Boolean = true, block: suspend () -> Unit) = act {
+        val before = startupHandoff.value ?: recoveredWorkout.value?.let { snapshot ->
+            WorkoutStartHandoff(++nextStartToken, snapshot).also { startupHandoff.value = it }
+        }
+        if (before == null) { block(); return@act }
+        startupHandoff.value = before.copy(editing = true, revision = before.revision + 1)
+        var succeeded = false
+        try { block(); succeeded = true }
+        finally {
+            val current = startupHandoff.value
+            if (current != null && current.token == before.token) {
+                try {
+                    // Structural edits during this one handoff need a fresh atomic working state.
+                    // Weight/repetition/rest edits patch their already-saved rows without a read.
+                    val snapshot = if (succeeded && refresh) repo.activeSnapshot() else current.snapshot
+                    startupHandoff.value = snapshot?.takeIf { it.workout.id == current.snapshot.workout.id }
+                        ?.let { current.copy(snapshot = it, editing = false, revision = current.revision + 1) }
+                } catch (failure: Exception) {
+                    startupHandoff.value = null
+                    throw failure
+                }
+            }
+        }
+    }
+
+    private fun savedStartingSet(item: WorkoutSet) {
+        startupHandoff.value?.let { current ->
+            startupHandoff.value = current.copy(snapshot = current.snapshot.withSet(item), revision = current.revision + 1)
+        }
+    }
+
+    private fun endedSession(id: String) {
+        endedWorkouts.value = endedWorkouts.value + id
+        app.workoutRecoveryCache.clear(id)
+        recoveredWorkout.value?.takeIf { it.workout.id == id }?.let { recoveredWorkout.compareAndSet(it, null) }
+        startupHandoff.value?.takeIf { it.snapshot.workout.id == id }?.let { startupHandoff.compareAndSet(it, null) }
+    }
     override fun clearError() { error.value = null; app.preferences.clearError(); app.timer.clearError() }
     override fun createRoutine(name: String) = act {
         val savedFolder = app.preferences.snapshot().selectedRoutineFolderId
@@ -117,13 +213,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
             val traceCookie = System.identityHashCode(this)
             if (Build.VERSION.SDK_INT >= 29) Trace.beginAsyncSection("Mooscles:startSession", traceCookie)
             try {
-                val id = app.trainingGate.withLock {
+                val saved = app.trainingGate.withLock {
                     app.updates.assertTrainingMayStart()
                     if (repo.activeWorkout() == null) app.timer.clear()
                     val prefs = app.preferences.snapshot()
-                    if (routineId == null) repo.startEmpty(defaultRestSeconds = prefs.defaultRestSeconds)
-                    else repo.startRoutine(routineId, prefs.defaultRestSeconds)
+                    if (routineId == null) repo.startEmptySnapshot(defaultRestSeconds = prefs.defaultRestSeconds)
+                    else repo.startRoutineSnapshot(routineId, prefs.defaultRestSeconds)
                 }
+                val id = saved.workout.id
+                // Measurement control: only the early handoff differs.
+                if (contentUi.value.active?.id != id || contentUi.value.secondaryLoading)
+                    startupHandoff.value = WorkoutStartHandoff(++nextStartToken, saved)
                 // Keep loading visible until saved data reaches the editor, also on resume.
                 try {
                     withTimeout(30_000) { contentUi.first { it.active?.id == id } }
@@ -136,19 +236,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
             }
         }
     }
-    override fun renameWorkout(id: String, name: String) = act { repo.renameWorkout(id, name) }
-    override fun addWorkoutExercise(workoutId: String, exerciseId: String) = act { repo.addWorkoutExercise(workoutId, exerciseId, app.preferences.snapshot().defaultRestSeconds) }
-    override fun replaceWorkoutExercise(entryId: String, exerciseId: String) = act { repo.replaceWorkoutExercise(entryId, exerciseId) }
-    override fun removeWorkoutExercise(entryId: String) = act { repo.removeWorkoutExercise(entryId) }
-    override fun moveWorkoutExercise(entryId: String, direction: Int) = act { repo.moveWorkoutExercise(entryId, direction) }
-    override fun updateWorkoutExerciseRest(entryId: String, seconds: Int) = act { repo.updateWorkoutExerciseRest(entryId, seconds) }
-    override fun addSet(entryId: String) = act { repo.addSet(entryId) }
-    override fun removeSet(setId: String) = act { repo.removeSet(setId) }
-    override fun updateSet(setId: String, reps: Int, weightKg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) = act {
+    override fun renameWorkout(id: String, name: String) = changeSession { repo.renameWorkout(id, name) }
+    override fun addWorkoutExercise(workoutId: String, exerciseId: String) = changeSession { repo.addWorkoutExercise(workoutId, exerciseId, app.preferences.snapshot().defaultRestSeconds) }
+    override fun replaceWorkoutExercise(entryId: String, exerciseId: String) = changeSession { repo.replaceWorkoutExercise(entryId, exerciseId) }
+    override fun removeWorkoutExercise(entryId: String) = changeSession { repo.removeWorkoutExercise(entryId) }
+    override fun moveWorkoutExercise(entryId: String, direction: Int) = changeSession { repo.moveWorkoutExercise(entryId, direction) }
+    override fun updateWorkoutExerciseRest(entryId: String, seconds: Int) = changeSession(refresh = false) {
+        repo.updateWorkoutExerciseRest(entryId, seconds)
+        startupHandoff.value?.let { current ->
+            startupHandoff.value = current.copy(snapshot = current.snapshot.withRest(entryId, seconds), revision = current.revision + 1)
+        }
+    }
+    override fun addSet(entryId: String) = changeSession { repo.addSet(entryId) }
+    override fun removeSet(setId: String) = changeSession { repo.removeSet(setId) }
+    override fun updateSet(setId: String, reps: Int, weightKg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) = changeSession(refresh = false) {
         app.trainingGate.withLock {
         app.updates.assertTrainingMayStart()
         val item = requireNotNull(repo.workoutSet(setId)) { "Set unavailable" }
-        repo.updateSet(item.copy(reps = reps, weightKg = weightKg, completed = completed, warmup = warmup, assistance = assistance))
+        val saved = item.copy(reps = reps, weightKg = weightKg, completed = completed, warmup = warmup, assistance = assistance)
+        repo.updateSet(saved)
+        savedStartingSet(saved)
         if (completed && !item.completed && app.preferences.snapshot().autoRest) {
             val entry = requireNotNull(repo.workoutExercise(item.workoutExerciseId)) { "Workout exercise unavailable" }
             if (repo.workout(entry.workoutId)?.status == WorkoutStatus.ACTIVE)
@@ -156,9 +263,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         }
         }
     }
-    override fun finishWorkout() = act {
-        val active = repo.activeWorkout() ?: return@act
-        if (repo.finishWorkout(active.id)) app.timer.clear()
+    override fun finishWorkout() = changeSession(refresh = false) {
+        val active = repo.activeWorkout() ?: return@changeSession
+        if (repo.finishWorkout(active.id)) {
+            app.timer.clear()
+            try {
+                withTimeout(30_000) { source.first { data -> data?.workouts?.any { it.id == active.id && it.status == WorkoutStatus.FINISHED } == true } }
+            } finally { endedSession(active.id) }
+        }
         app.updates.onTrainingChanged()
     }
     override fun discardWorkout() {
@@ -166,10 +278,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
         error.value = null
         act {
             try {
-                app.trainingGate.withLock {
-                    repo.activeWorkout()?.let { repo.discardWorkout(it.id) }
-                    // Unlike clear(), this propagates storage failures instead of reporting success.
-                    app.timer.clearForSessionEnd()
+                var discarded: String? = null
+                try {
+                    app.trainingGate.withLock {
+                        repo.activeWorkout()?.let { repo.discardWorkout(it.id); discarded = it.id }
+                        // Unlike clear(), this propagates storage failures instead of reporting success.
+                        app.timer.clearForSessionEnd()
+                    }
+                } finally {
+                    // Timer persistence may fail after deletion committed. Never revive that session.
+                    discarded?.let(::endedSession)
                 }
                 // Cards and navigation must observe the durable deletion together.
                 withTimeout(30_000) { contentUi.first { it.active == null } }
@@ -180,7 +298,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application), Mo
             app.updates.onTrainingChanged()
         }
     }
-    override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id) }
+    override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id); endedSession(id) }
     override fun setPounds(pounds: Boolean) = act { app.preferences.pounds(pounds) }
     override fun setTheme(theme: String) = act { app.preferences.theme(theme.lowercase()) }
     override fun setAutoRest(enabled: Boolean) = act { app.preferences.autoRest(enabled) }

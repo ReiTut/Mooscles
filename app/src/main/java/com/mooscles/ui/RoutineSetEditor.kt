@@ -1,8 +1,6 @@
 package com.mooscles.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Timer
@@ -12,12 +10,10 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mooscles.domain.RestDuration
@@ -239,14 +235,7 @@ internal fun RoutineTargetRow(
 private fun RoutineTargetField(value: String, onChange: (String) -> Unit, description: String, error: Boolean,
     modifier: Modifier = Modifier, decimal: Boolean = false,
 ) {
-    TextField(value, onChange, singleLine = true, isError = error,
-        modifier = modifier.heightIn(min = 56.dp).semantics { contentDescription = description },
-        shape = RoundedCornerShape(12.dp), textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-        keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-        ))
+    LightweightNumberField(value, onChange, isError = error,
+        modifier = modifier.semantics { contentDescription = description },
+        decimal = decimal, cornerRadius = 12.dp, textAlign = TextAlign.Center)
 }

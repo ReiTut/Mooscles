@@ -344,13 +344,22 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     }
 
     /** Returning the existing active id makes double taps and process recreation idempotent. */
-    suspend fun startEmpty(name: String = "Workout", defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): String = db.withTransaction {
+    suspend fun startEmpty(name: String = "Workout", defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): String =
+        startEmptySnapshot(name, defaultRestSeconds, now).workout.id
+
+    suspend fun startEmptySnapshot(name: String = "Workout", defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): ActiveWorkoutSnapshot = db.withTransaction {
         require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
-        dao.activeWorkout()?.id ?: Workout(name = checkedName(name), startedAt = now).also { dao.insertWorkout(it) }.id
+        dao.activeWorkout()?.let { return@withTransaction activeSnapshot(it) }
+        val workout = Workout(name = checkedName(name), startedAt = now)
+        dao.insertWorkout(workout)
+        ActiveWorkoutSnapshot(workout, emptyList(), emptyList(), emptyList())
     }
 
-    suspend fun startRoutine(routineId: String, defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): String = db.withTransaction {
-        dao.activeWorkout()?.let { return@withTransaction it.id }
+    suspend fun startRoutine(routineId: String, defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): String =
+        startRoutineSnapshot(routineId, defaultRestSeconds, now).workout.id
+
+    suspend fun startRoutineSnapshot(routineId: String, defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS, now: Long = System.currentTimeMillis()): ActiveWorkoutSnapshot = db.withTransaction {
+        dao.activeWorkout()?.let { return@withTransaction activeSnapshot(it) }
         require(defaultRestSeconds in 0..RestDuration.MAX_SECONDS) { "Rest must be between 0:00 and 5:00." }
         val routine = requireNotNull(dao.routine(routineId)) { "Routine not found." }
         val workout = Workout(name = routine.name, startedAt = now, sourceRoutineId = routine.id)
@@ -382,8 +391,17 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         dao.insertWorkout(workout)
         dao.insertWorkoutExercises(entries)
         dao.insertSets(sets)
-        workout.id
+        // These are exactly the rows inserted by this transaction. Returning them here avoids
+        // waiting behind the invalidation observer's full archive read after the commit.
+        ActiveWorkoutSnapshot(workout, exercises.values.toList(), entries.toList(), sets.toList())
     }
+
+    suspend fun activeSnapshot(): ActiveWorkoutSnapshot? = db.withTransaction {
+        dao.activeWorkout()?.let { activeSnapshot(it) }
+    }
+
+    private suspend fun activeSnapshot(workout: Workout) = ActiveWorkoutSnapshot(
+        workout, dao.workoutMovements(workout.id), dao.workoutItems(workout.id), dao.workoutSets(workout.id))
 
     suspend fun renameWorkout(id: String, name: String) = db.withTransaction {
         val item = requireNotNull(dao.workout(id)) { "Workout not found." }

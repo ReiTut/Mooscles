@@ -46,11 +46,8 @@ fun TrainingNumberField(
     value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
     isError: Boolean = false, help: String? = null, decimal: Boolean = false,
 ) {
-    TextField(value, onValueChange, label = { Text(label) }, singleLine = true, isError = isError,
-        modifier = modifier, shape = RoundedCornerShape(14.dp),
-        supportingText = help?.let { { Text(it) } },
-        keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
-        colors = trainingFieldColors())
+    LightweightNumberField(value, onValueChange, label = label, isError = isError,
+        modifier = modifier, help = help, decimal = decimal, cornerRadius = 14.dp)
 }
 
 @Composable

@@ -31,7 +31,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state = vm.contentUi.collectAsStateWithLifecycle()
             val timer = vm.timerUi.collectAsStateWithLifecycle()
-            MoosclesApp(state.value, vm, timer)
+            val opening = vm.workoutOpening.collectAsStateWithLifecycle()
+            MoosclesApp(state.value, vm, timer, opening)
         }
         if (intent?.action == UpdateNotifications.OPEN_UPDATES) vm.openUpdateSettings()
         lifecycleScope.launch {
