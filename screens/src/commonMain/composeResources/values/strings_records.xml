@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Records tab texts (English). Every key also exists in the other language with the same arguments. -->
+<resources>
+    <string name="records_title">Records</string>
+    <string name="records_settings">Settings</string>
+    <string name="records_rules">How we count records</string>
+    <string name="records_rule_weight">Load: your heaviest working set.</string>
+    <string name="records_rule_reps">Reps: more reps at the same load, bodyweight included.</string>
+    <string name="records_rule_excluded">Warm-ups and incomplete sets don't count.</string>
+    <string name="records_rule_assistance">Assisted sets have records of their own.</string>
+    <string name="records_search">Search exercise</string>
+    <string name="records_current_only">Current only</string>
+    <string name="records_first">First records</string>
+    <string name="records_month">%1$s · %2$s</string>
+    <plurals name="records_count">
+        <item quantity="one">%1$d record</item>
+        <item quantity="other">%1$d records</item>
+    </plurals>
+    <string name="records_kind_weight">Load</string>
+    <string name="records_kind_reps">Reps</string>
+    <string name="records_was_load">%1$s · was %2$s</string>
+    <plurals name="records_was_reps">
+        <item quantity="one">%1$s · was %2$d rep</item>
+        <item quantity="other">%1$s · was %2$d reps</item>
+    </plurals>
+    <string name="records_spoken_was_load">was %1$s</string>
+    <plurals name="records_spoken_was_reps">
+        <item quantity="one">was %1$d rep</item>
+        <item quantity="other">was %1$d reps</item>
+    </plurals>
+    <string name="records_spoken">%1$s, %2$s: %3$s, %4$s</string>
+    <string name="records_spoken_join">%1$s, %2$s</string>
+    <string name="records_current">Current</string>
+    <string name="records_first_badge">First record</string>
+    <string name="records_open_workout">Open workout</string>
+    <string name="records_empty_title">Your first record shows up here</string>
+    <string name="records_empty_body">Complete working sets to set load and rep records.</string>
+    <string name="records_none_found">No records found</string>
+</resources>

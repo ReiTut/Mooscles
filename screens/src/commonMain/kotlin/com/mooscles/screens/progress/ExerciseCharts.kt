@@ -119,7 +119,7 @@ object ExerciseCharts {
     private fun lowerIsBetter(key: SeriesKey, metric: ProgressMetric) =
         metric == ProgressMetric.LOAD && WorkingSets.convention(key.convention) == LoadConvention.ASSISTANCE
 
-    private fun weekStartOf(date: LocalDate, first: DayOfWeek): LocalDate =
+    internal fun weekStartOf(date: LocalDate, first: DayOfWeek): LocalDate =
         date.minus((date.dayOfWeek.isoDayNumber - first.isoDayNumber + 7) % 7, DateTimeUnit.DAY)
 
     /**
