@@ -26,4 +26,20 @@
     <string name="duration_hours_minutes">%1$d h %2$d min</string>
     <string name="duration_under_minute">&lt; 1 min</string>
     <string name="duration_hours">%1$d h</string>
+    <!-- Full month names and spoken dates ("October 2026", "June 3"), read by the progress and records screens. -->
+    <string name="date_month_full_jan">January</string>
+    <string name="date_month_full_feb">February</string>
+    <string name="date_month_full_mar">March</string>
+    <string name="date_month_full_apr">April</string>
+    <string name="date_month_full_may">May</string>
+    <string name="date_month_full_jun">June</string>
+    <string name="date_month_full_jul">July</string>
+    <string name="date_month_full_aug">August</string>
+    <string name="date_month_full_sep">September</string>
+    <string name="date_month_full_oct">October</string>
+    <string name="date_month_full_nov">November</string>
+    <string name="date_month_full_dec">December</string>
+    <string name="date_month_year">%1$s %2$s</string>
+    <string name="date_spoken">%2$s %1$d</string>
+    <string name="date_spoken_year">%2$s %1$d, %3$d</string>
 </resources>

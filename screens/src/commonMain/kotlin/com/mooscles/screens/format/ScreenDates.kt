@@ -10,6 +10,22 @@ import com.mooscles.screens.resources.date_day_thu
 import com.mooscles.screens.resources.date_day_tue
 import com.mooscles.screens.resources.date_day_wed
 import com.mooscles.screens.resources.date_month_apr
+import com.mooscles.screens.resources.date_month_full_apr
+import com.mooscles.screens.resources.date_month_full_aug
+import com.mooscles.screens.resources.date_month_full_dec
+import com.mooscles.screens.resources.date_month_full_feb
+import com.mooscles.screens.resources.date_month_full_jan
+import com.mooscles.screens.resources.date_month_full_jul
+import com.mooscles.screens.resources.date_month_full_jun
+import com.mooscles.screens.resources.date_month_full_mar
+import com.mooscles.screens.resources.date_month_full_may
+import com.mooscles.screens.resources.date_month_full_nov
+import com.mooscles.screens.resources.date_month_full_oct
+import com.mooscles.screens.resources.date_month_full_sep
+import com.mooscles.screens.resources.date_month_year
+import com.mooscles.screens.resources.date_spoken
+import com.mooscles.screens.resources.date_spoken_year
+import com.mooscles.screens.resources.progress_week_of
 import com.mooscles.screens.resources.date_month_aug
 import com.mooscles.screens.resources.date_month_dec
 import com.mooscles.screens.resources.date_month_feb
@@ -33,6 +49,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
@@ -62,7 +79,19 @@ object ScreenDates {
             day >= first && day <= today
         }
     }
+
+    /** `outubro de 2026` / `October 2026`: the header of a month. */
+    @Composable
+    fun monthYear(year: Int, month: Month): String =
+        stringResource(Res.string.date_month_year, stringResource(fullMonthNames[month.number - 1]), year.toString())
 }
+
+private val fullMonthNames: List<StringResource> = listOf(
+    Res.string.date_month_full_jan, Res.string.date_month_full_feb, Res.string.date_month_full_mar,
+    Res.string.date_month_full_apr, Res.string.date_month_full_may, Res.string.date_month_full_jun,
+    Res.string.date_month_full_jul, Res.string.date_month_full_aug, Res.string.date_month_full_sep,
+    Res.string.date_month_full_oct, Res.string.date_month_full_nov, Res.string.date_month_full_dec,
+)
 
 private val monthNames: List<StringResource> = listOf(
     Res.string.date_month_jan, Res.string.date_month_feb, Res.string.date_month_mar,
@@ -84,9 +113,29 @@ private fun weekdayName(day: DayOfWeek): StringResource = when (day) {
 /** `21 out` / `Oct 21`. */
 @Composable
 fun shortDate(epochMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {
-    val date = ScreenDates.localDateTime(epochMillis, zone).date
+    val date = ScreenDates.localDate(epochMillis, zone)
     return stringResource(Res.string.date_short_format, date.day, stringResource(monthNames[date.month.number - 1]))
 }
+
+/**
+ * A date to be read aloud, in full: `3 de junho` / `June 3`, with the year (`3 de junho de 2025`) only when it is not
+ * the year of [today].
+ */
+@Composable
+fun spokenDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
+    val date = ScreenDates.localDate(epochMillis, zone)
+    val month = stringResource(fullMonthNames[date.month.number - 1])
+    return if (date.year == today.year) {
+        stringResource(Res.string.date_spoken, date.day, month)
+    } else {
+        stringResource(Res.string.date_spoken_year, date.day, month, date.year)
+    }
+}
+
+/** `Semana de 6 out` / `Week of Oct 6`: a weekly point is dated at the start of its week (P25), and always reads like this. */
+@Composable
+fun weekOf(weekStartMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
+    stringResource(Res.string.progress_week_of, shortDate(weekStartMillis, zone))
 
 /** `ter., 29 out · 18:02–18:44` / `Tue, Oct 29 · 18:02–18:44` (24 h clock in both languages). */
 @Composable

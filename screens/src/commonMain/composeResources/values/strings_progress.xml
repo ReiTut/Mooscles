@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exercise progress texts (English). Every key also exists in the other language with the same arguments. -->
+<resources>
+    <string name="progress_title">Exercise progress</string>
+    <string name="progress_more">Exercise options</string>
+    <string name="progress_about">About the exercise</string>
+    <string name="progress_metric_load">Load</string>
+    <string name="progress_metric_added">Added weight</string>
+    <string name="progress_metric_assistance">Assistance</string>
+    <string name="progress_metric_e1rm">Estimated 1RM</string>
+    <string name="progress_metric_volume">Volume</string>
+    <string name="progress_metric_reps">Reps</string>
+    <string name="progress_period_3m">3 months</string>
+    <string name="progress_period_6m">6 months</string>
+    <string name="progress_period_1y">1 year</string>
+    <string name="progress_period_all">All</string>
+    <string name="progress_period_spoken_3m">last 3 months</string>
+    <string name="progress_period_spoken_6m">last 6 months</string>
+    <string name="progress_period_spoken_1y">last year</string>
+    <string name="progress_period_spoken_all">all time</string>
+    <string name="progress_highlight">%1$s · %2$s</string>
+    <string name="progress_since">%1$s since %2$s</string>
+    <string name="progress_since_week">%1$s since the week of %2$s</string>
+    <string name="progress_readout">%1$s · %2$s · %3$s</string>
+    <string name="progress_summary">%1$s, %2$s: from %3$s on %4$s to %5$s on %6$s; highest %7$s on %8$s</string>
+    <string name="progress_summary_lowest">%1$s, %2$s: from %3$s on %4$s to %5$s on %6$s; lowest %7$s on %8$s</string>
+    <string name="progress_summary_weekly">%1$s, %2$s: from %3$s in the week of %4$s to %5$s in the week of %6$s; highest %7$s in the week of %8$s</string>
+    <string name="progress_summary_lowest_weekly">%1$s, %2$s: from %3$s in the week of %4$s to %5$s in the week of %6$s; lowest %7$s in the week of %8$s</string>
+    <string name="progress_summary_part">%1$s; %2$s</string>
+    <string name="progress_trend_up">trending up</string>
+    <string name="progress_trend_down">trending down</string>
+    <string name="progress_trend_flat">steady</string>
+    <plurals name="progress_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <plurals name="progress_reps_count">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <string name="progress_week_of">Week of %1$s</string>
+    <string name="progress_weekly_note">One point per week: the week's best.</string>
+    <string name="progress_weekly_note_volume">One point per week: the week's best workout, not the sum.</string>
+    <string name="progress_this_week">this week (in progress)</string>
+    <string name="progress_one_session">The chart appears after 2 workouts.</string>
+    <string name="progress_no_estimate">No sets of 10 reps or fewer to estimate a 1RM in this period.</string>
+    <string name="progress_no_points">No workouts with this measure in this period.</string>
+    <string name="progress_assistance_legend">Less assistance, less help from the machine.</string>
+    <string name="progress_other_convention">Workouts logged as %1$s are not in this chart.</string>
+    <string name="progress_records">Records for this exercise</string>
+    <plurals name="progress_view_all_records">
+        <item quantity="one">View all %1$d</item>
+        <item quantity="other">View all %1$d</item>
+    </plurals>
+    <string name="progress_sessions">Sessions</string>
+    <string name="progress_session_spoken">%1$s, %2$s: %3$s</string>
+    <string name="progress_empty_title">You haven't done this exercise yet.</string>
+    <string name="progress_empty_action">View in the library</string>
+    <string name="progress_missing">Exercise not found</string>
+    <string name="progress_short_thousands">%1$sk</string>
+</resources>

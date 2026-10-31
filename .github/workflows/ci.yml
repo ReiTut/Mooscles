@@ -293,7 +293,10 @@ jobs:
           # aNewerPrewarmLeavesABuildSomeoneWaitsFor, aQueuedBuildNobodyWaitsForIsCancelledByTheNextHistory,
           # aQueryAsTheLastStatementOfALaunchKeepsItsType, aQueryOverTheOldIndexThatEndsAfterTheSwapIsNotKept);
           # aNewlyBuiltIndexDropsThePreviousIndexQueries became onlyTheLatestBuiltIndexKeepsQueries (+0). 1228 + 5 = 1233.
-          MIN_HOST_TESTS: 1233
+          # Phase 5A task 8: ProgressNumbersTest 4 (:screens commonTest); ProgressTextsTest is uiTest and does not run on the host. 1212 + 4 = 1216.
+          # Phase 5A task 8 fix round 1: StringsParityTest.englishTextsHaveNoPortugueseAccentsOrWords +1 (:screens androidHostTest). 1216 + 1 = 1217.
+          # Merged with phase 5A task 7 (same base): 1238.
+          MIN_HOST_TESTS: 1238
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -651,7 +654,10 @@ jobs:
           # Phase 5A task 6 fix round 1: RecordTimelinesTest +5 (commonTest). 742 + 5 = 747.
           # Phase 5A task 7: ProgressIndexCacheTest 13 (commonTest; the timing test is androidHostTest, host only). 747 + 13 = 760.
           # Phase 5A task 7 fix round 1: ProgressIndexCacheTest +5 (commonTest; one test renamed, +0). 760 + 5 = 765.
-          MIN_SCREENS_IOS_TESTS: 765
+          # Phase 5A task 8: ProgressNumbersTest 4 (commonTest) and ProgressTextsTest 13 (uiTest). 747 + 17 = 764.
+          # Phase 5A task 8 fix round 1: ProgressTextsTest +2 (uiTest: viewAllRecordsPluralInBothLanguages, poundsComeFromExactKilosAndSignTheChange). 764 + 2 = 766.
+          # Merged with phase 5A task 7 (same base): 784.
+          MIN_SCREENS_IOS_TESTS: 784
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
