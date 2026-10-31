@@ -71,7 +71,13 @@ import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.format.pluralCount
 import com.mooscles.designsystem.icons.MIcon
+import com.mooscles.designsystem.charts.MSparkline
 import com.mooscles.designsystem.icons.MIcons
+import com.mooscles.screens.progress.SeriesKey
+import com.mooscles.screens.progress.SparklineQuery
+import com.mooscles.screens.progress.rememberProgressIndex
+import com.mooscles.screens.progress.rememberProgressQuery
+import com.mooscles.screens.progress.valueOrNull
 import com.mooscles.designsystem.illustration.AnimatedExerciseFigure
 import com.mooscles.designsystem.illustration.BodyMap
 import com.mooscles.designsystem.illustration.BodyMapLegend
@@ -139,6 +145,7 @@ internal object ExerciseInfoTags {
     const val HISTORY_BEST = "exercise-info-history-best"
     const val HISTORY_SESSIONS = "exercise-info-history-sessions"
     const val HISTORY_FULL = "exercise-info-history-full"
+    const val HISTORY_SPARKLINE = "exercise-history-sparkline"
     const val ADD_ROUTINE = "exercise-info-add-routine"
     const val ADD_WORKOUT = "exercise-info-add-workout"
     const val MENU_EDIT = "exercise-info-menu-edit"
@@ -166,7 +173,7 @@ internal data class PendingAdd(val targetId: String, val before: Int, val failur
 
 /**
  * The exercise detail (spec "Detalhe do exercício", route `exerciseInfo/{id}`), from the top: back
- * and the menu ("Edit exercise" for a custom exercise, "View full history") in the fixed bar; then,
+ * and the menu ("Edit exercise" for a custom exercise, "View progress") in the fixed bar; then,
  * scrolling, the name (`title.md`, a heading, whole at any length: in the fixed bar a long custom
  * name at a large text size would push the rest off the screen); the media,
  * a 1:1 frame as wide as the content up to `sizes.mediaDetailMax`, centered, with the alternating
@@ -175,7 +182,7 @@ internal data class PendingAdd(val targetId: String, val before: Int, val failur
  * with the convention's one-line caption when it is not the total load; the body map with its
  * legend and its text equivalent under it; the numbered cues ("How to do it"), when there are any;
  * "Your history" ([ExerciseHistorySummaries]: the last time, the best set or the record, the
- * sessions), with "View full history" ([onOpenHistory], the old screen); and "Add to routine"
+ * sessions), with "View progress" ([onOpenHistory], the old screen); and "Add to routine"
  * ([AddToRoutineSheet]) and, with a workout in progress, "Add to workout".
  *
  * "Added to …" (with "Open": [onOpenRoutine] or [onOpenWorkout]) shows only once the state brings
@@ -396,7 +403,7 @@ private fun InfoBody(
             InfoMeta(exercise)
             InfoMuscles(anatomy)
             if (!cues.isNullOrEmpty()) InfoCues(cues)
-            InfoHistory(summary, state.preferences.pounds, onOpenHistory)
+            InfoHistory(exercise, summary, state, onOpenHistory)
             Column(verticalArrangement = Arrangement.spacedBy(space.s3)) {
                 MButton(
                     stringResource(Res.string.exercise_add_routine),
@@ -541,10 +548,14 @@ private fun InfoCues(cues: List<String>) {
 /**
  * "Your history": a card with the last time ("Oct 21 · 80 kg × 8"), the best set (with the record
  * badge when it is the weight record) and the sessions, or "You haven't done this exercise yet.";
- * then "View full history".
+ * then "View progress".
  */
 @Composable
-private fun InfoHistory(summary: HistorySummary, pounds: Boolean, onOpenHistory: () -> Unit) {
+private fun InfoHistory(exercise: ExerciseUi, summary: HistorySummary, state: UiState, onOpenHistory: () -> Unit) {
+    val pounds = state.preferences.pounds
+    // The sparkline needs the progress index; while it loads (or if it failed) the card shows none, never a skeleton.
+    val load = rememberProgressIndex(state.history, state.records)
+    val spark = rememberProgressQuery(load, SparklineQuery(SeriesKey(exercise.id, exercise.convention))).valueOrNull
     val space = MTheme.space
     val colors = MTheme.colors
     val shape = RoundedCornerShape(MTheme.radius.lg)
@@ -584,6 +595,9 @@ private fun InfoHistory(summary: HistorySummary, pounds: Boolean, onOpenHistory:
                 color = colors.textSecondary,
                 modifier = Modifier.testTag(ExerciseInfoTags.HISTORY_SESSIONS),
             )
+            if (spark != null && spark.size >= 2) {
+                Box(Modifier.fillMaxWidth().testTag(ExerciseInfoTags.HISTORY_SPARKLINE)) { MSparkline(spark) }
+            }
         }
         // Without a session there is nothing more to see there (the menu keeps the entry).
         if (summary.sessions > 0) {
@@ -637,7 +651,7 @@ private fun InfoLoading(modifier: Modifier = Modifier) {
     }
 }
 
-/** The detail's menu, a bottom sheet under the exercise's name: "Edit exercise" (custom only) and "View full history". */
+/** The detail's menu, a bottom sheet under the exercise's name: "Edit exercise" (custom only) and "View progress". */
 @Composable
 private fun InfoMenuSheet(exercise: ExerciseUi, onEdit: () -> Unit, onHistory: () -> Unit, onDismiss: () -> Unit) {
     MBottomSheet(onDismiss = onDismiss) {
@@ -653,7 +667,7 @@ private fun InfoMenuSheet(exercise: ExerciseUi, onEdit: () -> Unit, onHistory: (
         if (exercise.custom) {
             MenuItem(MIcons.Pencil, stringResource(Res.string.exercise_edit), ExerciseInfoTags.MENU_EDIT, onClick = onEdit)
         }
-        MenuItem(MIcons.History, stringResource(Res.string.exercise_history_full), ExerciseInfoTags.MENU_HISTORY, onClick = onHistory)
+        MenuItem(MIcons.ChartLine, stringResource(Res.string.exercise_history_full), ExerciseInfoTags.MENU_HISTORY, onClick = onHistory)
         Spacer(Modifier.height(MTheme.space.s4))
     }
 }

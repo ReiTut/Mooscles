@@ -675,7 +675,9 @@ jobs:
           # onlyFirstRecordsOffersTheChip; failedBuildShowsTheEmptyStateNotTheSkeleton renamed
           # failedBuildShowsNoneFoundNotTheSkeleton, +0). 829 + 2 = 831.
           # Merge of the task 10 and task 11 lanes: 833 + 20 (task 11 and its fix round) = 853.
-          MIN_SCREENS_IOS_TESTS: 853
+          # Task 12 (ExerciseInfoScreenTest: historyCardShowsASparklineFromTwoSessions, noSparklineWithOneSession;
+          # fullHistoryOpensTheOldScreen renamed viewProgressFromTheCardAndTheMenu, +0). 853 + 2 = 855.
+          MIN_SCREENS_IOS_TESTS: 855
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

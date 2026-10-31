@@ -418,9 +418,29 @@ class ExerciseInfoScreenTest {
     }
 
     @Test
-    fun fullHistoryOpensTheOldScreen() = runComposeUiTest {
+    fun historyCardShowsASparklineFromTwoSessions() = runComposeUiTest {
+        val history = listOf(
+            workout("w2", OCT_21, bench, SetUi("s2", reps = 8, weightKg = 80.0, completed = true)),
+            workout("w1", OCT_14, bench, SetUi("s1", reps = 8, weightKg = 70.0, completed = true)),
+        )
+        show(state = stateOf(history = history))
+        waitUntil(timeoutMillis = 5_000) { exists(ExerciseInfoTags.HISTORY_SPARKLINE) }
+        val node = onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals(emptyList(), node.children.filter { it.config.contains(SemanticsProperties.Text) || it.config.contains(SemanticsProperties.ContentDescription) })
+        assertEquals("2 sessões", textOf(onNodeWithTag(ExerciseInfoTags.HISTORY_SESSIONS)))
+    }
+
+    @Test
+    fun noSparklineWithOneSession() = runComposeUiTest {
+        show(state = stateOf(history = listOf(workout("w1", OCT_14, bench, SetUi("s1", reps = 8, weightKg = 60.0, completed = true)))))
+        waitForIdle()
+        onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun viewProgressFromTheCardAndTheMenu() = runComposeUiTest {
         val requests = show(state = stateOf(history = listOf(workout("w1", OCT_14, bench, SetUi("s1", reps = 8, weightKg = 60.0, completed = true)))))
-        onNodeWithTag(ExerciseInfoTags.HISTORY_FULL).assertTextEquals("Ver histórico completo")
+        onNodeWithTag(ExerciseInfoTags.HISTORY_FULL).assertTextEquals("Ver progresso")
         tap(ExerciseInfoTags.HISTORY_FULL)
         assertEquals(listOf(bench.id), requests.history)
         // The menu has it too, and closes.

@@ -565,7 +565,7 @@ class ExerciseListTest {
         showList(exercises, Actions(exercises))
         openMenu("e1")
         val labels = listOf(
-            "Sobre o exercício", "Histórico do exercício", "Trocar exercício", "Mover para cima", "Mover para baixo", "Como registrar", "Remover exercício",
+            "Sobre o exercício", "Progresso do exercício", "Trocar exercício", "Mover para cima", "Mover para baixo", "Como registrar", "Remover exercício",
         )
         val tops = ExerciseMenuTags.all.mapIndexed { i, tag ->
             val item = onNodeWithTag(tag)
