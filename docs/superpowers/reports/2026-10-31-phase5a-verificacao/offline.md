@@ -16,12 +16,12 @@ Task 16, Step 3. Feito em 2026-10-31 no `emulator-5558`, numa instalação nova:
 
 Não houve nenhum `FATAL EXCEPTION` no logcat.
 
-Observação, sem correção nesta task: em inglês, o início da semana veio segunda-feira ("week of Nov 13", 13 nov 2023 é uma segunda). Na atualização, em pt-BR, ele veio domingo ("semana de 12 nov").
+Observação, corrigida depois, na rodada 2 desta task (`8bddc89`): em inglês, o início da semana veio segunda-feira ("week of Nov 13", 13 nov 2023 é uma segunda). Na atualização, em pt-BR, ele veio domingo ("semana de 12 nov").
 
 - O aparelho está em `en-US`, cuja semana começa no domingo.
 - O `currentWeekStart()` lê o `Locale.current` do app, e o `cmd locale set-app-locales … en` dá um idioma sem região. Sem região, o CLDR manda começar na segunda.
 - A spec (D8) diz "a semana começa no primeiro dia da região do aparelho".
-- Com um idioma do app sem região, a região do sistema se perde. Se isso é o esperado é uma decisão de spec, e fica para o controlador. Pela tela de idiomas do Android, normalmente se escolhe um idioma com região, como "English (United States)".
+- Com um idioma do app sem região, a região do sistema se perdia. O controlador decidiu que isso é um defeito. Agora, quando o idioma do app não tem região, vale a região do aparelho (`deviceRegion()`), e o `CurrentWeekStartDeviceTest` prova, no emulador `en-US` com o idioma do app em `en`, que a semana começa no domingo. Ver a nota sob o D8 na spec.
 
 ## Código de rede na branch
 

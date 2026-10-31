@@ -2,24 +2,62 @@
 
 Task 16, Step 4. Medido em 2026-10-31 no `emulator-5558` (AVD `Mooscles_Pixel8_API35`, Android 15, `sdk_gphone64_arm64`, 1080 × 2400 a 60 Hz, GPU do host, Mac M4), com a rede desligada, animações na escala 1, inglês, libras e tema escuro (as preferências da base). **Tudo aqui é emulador.** Nenhum número vale como medida de aparelho físico (ver o [PERFORMANCE.md](../../../../PERFORMANCE.md)).
 
+Há duas rodadas:
+
+- **Rodada 1, contaminada** (17:28 às 17:58): o emulador zumbi `emulator-5556` estava vivo, gastando quase três núcleos.
+- **Rodada 2, limpa** (18:10 às 18:30), pedida pelo controlador depois que ele encerrou o zumbi e os daemons do Gradle. O swap do Mac continuou quase cheio, por outros apps: de 17,5 a 18,3 GB usados de 18,4 a 19,5 GB, anotado ao lado de cada número.
+
+Nas linhas do resumo em que as duas existem, a decisão vale pela rodada limpa ([abaixo](#rodada-2-limpa)).
+
 ## Resumo contra os orçamentos da spec
 
 | Medida (spec, "Desempenho") | Orçamento | Resultado | Situação |
 | --- | --- | --- | --- |
 | Construir o `ProgressIndex`, base grande, **build R8** (seção `Mooscles:progressIndex`) | mediana ≤ 60 ms, p95 ≤ 120 ms | 12 construções: **mediana 3,9 ms**. Nas 9 da troca kg/lb, p95 70,4 ms (pela regra do teste, a 8ª de 9), com máximo de 129,9 ms na primeira depois da abertura | passou (um caso único acima de 120 ms, ver abaixo) |
-| O mesmo, no APK de teste depurável (`ProgressIndexDeviceTimingTest`, `LargeProgressHistory`, 9 rodadas) | o mesmo; o teste confere um limite folgado de 4 × | mediana **109 ms**, p95 346 ms sozinho; 126 / 168 ms na suíte inteira | acima da meta, no APK depurável (ver abaixo) |
-| Consulta de gráfico, APK depurável | mediana ≤ 4 ms, p95 ≤ 8 ms | mediana 0,94 a 0,98 ms, p95 2,2 a 3,2 ms (180 consultas) | passou |
-| Consulta da linha do tempo, APK depurável | o mesmo | mediana 3,2 ms; p95 8,7 ms sozinho e 13,9 ms na suíte | mediana passou, p95 acima (no APK depurável) |
-| Teclas de "supino" na busca dos Recordes, APK depurável | o mesmo | mediana 3,0 a 3,1 ms; p95 7,6 ms sozinho e 14,8 ms na suíte (54 teclas) | sozinho passou; na suíte, p95 acima |
+| O mesmo, no APK de teste depurável (`ProgressIndexDeviceTimingTest`, `LargeProgressHistory`, 9 rodadas) | o mesmo; o teste confere um limite folgado de 4 × | **Limpa** (sozinho, 3 execuções): mediana 202 / **37,5** / **31,9** ms e p95 330 / 121 / 51 ms. A primeira execução oscilou com o swap cheio. **Contaminada:** mediana 109 ms sozinho e 126 ms na suíte | limpa: 2 de 3 execuções dentro da meta, mesmo no APK depurável |
+| Consulta de gráfico, APK depurável | mediana ≤ 4 ms, p95 ≤ 8 ms | **Limpa:** mediana 0,47 a 0,50 ms e p95 1,4 a 1,6 ms (3 × 180). Contaminada: mediana ~1 ms e p95 2,2 a 3,2 ms | passou |
+| Consulta da linha do tempo, APK depurável | o mesmo | **Limpa:** mediana 0,98 a 1,01 ms e **p95 2,4 a 2,6 ms** (3 × 180). Contaminada: p95 8,7 ms sozinho e 13,9 ms na suíte | passou |
+| Teclas de "supino" na busca dos Recordes, APK depurável | o mesmo | **Limpa:** mediana 0,91 a 0,96 ms e **p95 2,1 a 2,3 ms** (3 × 54). Contaminada: p95 7,6 ms sozinho e 14,8 ms na suíte | passou |
 | Tocar na aba Recordes até a lista | o segundo quadro, com o índice pronto | Rota composta no **2º quadro** depois do toque, que termina 42 a 65 ms depois dele (mediana 48). Nenhuma construção do índice depois do toque: ele veio pronto do prewarm | passou (pelo trace) |
 | Tocar num recorde até o gráfico | ≤ 2 quadros com o índice pronto | A rota é composta no 2º quadro depois do toque (fim a 27 a 102 ms), e o gráfico entra no quadro seguinte, o 2º da rota (fim a 51 a 108 ms) | passou contando da rota; 3 quadros contando do toque (ver abaixo) |
-| Rolagem rápida da linha do tempo com "Só atuais" | janky ≤ 5% | **3,69% a 4,42%** (mediana 3,90%), 5 execuções | passou |
-| Rolagem com o gráfico na tela (S1, parte c) | sem orçamento próprio (registro) | **3,58% a 3,88%** numa janela limpa; 5,14% a 6,52% numa janela que piorava | registrado |
+| Rolagem rápida da linha do tempo com "Só atuais" | janky ≤ 5% | **Limpa:** 3,21% a 3,70% (mediana 3,33%), 5 execuções, com o controle a 1,75% a 2,30%. Contaminada: 3,69% a 4,42% | passou |
+| Rolagem com o gráfico na tela (S1, parte c) | sem orçamento próprio (registro) | **Limpa:** 4,03% a 5,40% (mediana 4,46%), com 3,44% e 4,55% no controle do mesmo gesto. Rodada 1: 3,58% a 3,88% no trecho limpo e 5,14% a 6,52% no trecho que piorava | registrado; perto do controle do mesmo gesto |
 | Trocar kg/lb | o índice refeito uma vez, com o tempo | 9 trocas, **9 construções** (uma por troca), de 2,95 a 129,9 ms | passou |
 | `present()` completo da base grande (pendência da 4B) | sem mudança | Na abertura a frio, **77,9 / 93,1 / 93,7 ms**. Na troca kg/lb, 27,7 a 478,4 ms (mediana 46,8) | registrado (ver abaixo) |
 | Treino ativo sem piora contra a fase 3 | nada desta fase durante uma série | Concluir duas séries: 2 `present()` (18,4 e 11,4 ms) e **nenhuma** construção do índice. A rolagem não é comparável com a da fase 3 | passou na parte que a fase toca; rolagem sem comparação |
 
-## O ambiente
+## Rodada 2 (limpa)
+
+Feita em 2026-10-31, das 18:10 às 18:30, depois que o controlador encerrou o `emulator-5556` (o `qemu` e o `crashpad`) e todos os daemons do Gradle.
+
+- **O Mac.** `top -l 1` às 18:09: carga de 4,8, CPU 70% ociosa. O swap estava em **17,5 a 18,3 GB usados de 18,4 a 19,5 GB**, quase cheio por outros apps, e cada arquivo de `perf/clean/` registra o swap, a hora e a carga. Nenhum processo de emulador além do `emulator-5558`.
+- **Build.** O `:app:assemblePerformance` foi refeito em `8bddc89` (com a correção do D8): 3.446.765 bytes, SHA-256 `5c243254…`. Ele foi instalado com `install -r` sobre os mesmos dados (o `perf-fixture.json`), seguido de `cmd package compile -m speed -f` e 30 s depois de abrir o app. A rede ficou desligada.
+- **Treino ativo.** O "Drag 10x5" que tinha sobrado da rodada 1 foi descartado antes, para que o relógio da barra do treino não entrasse nas rolagens.
+- **Método.** O mesmo da rodada 1 (`local/gfx_run.sh` e `local/gfx_alt.sh`). O teste de tempo rodou sozinho, sem o Gradle: o APK de teste foi instalado com `adb install -t`, e o teste foi chamado com `am instrument -e class …ProgressIndexDeviceTimingTest`, três vezes seguidas (`local/timing-clean.txt`).
+
+| Medida | Execuções: janky (quadros) | p50 / p95 | Swap usado |
+| --- | --- | --- | --- |
+| Controle: biblioteca, 30 + 30 arrastos rápidos, y 1900 ↔ 550 em 100 ms | **1,92%** (1.305), **1,75%** (1.311), **2,06%** (1.309), **1,91%** (1.306), **2,06%** (1.308); no fim, 2,30% (1.304) | 17 / 18 a 22 ms | 18,1 → 17,5 GB |
+| "Só atuais", 20 + 20 arrastos rápidos, y 1900 ↔ 700 | **3,21%** (840), **3,21%** (842), **3,70%** (838), **3,33%** (842), **3,46%** (839) | 17 / 18 a 21 ms | 17,8 → 17,7 GB |
+| Progresso do supino, gráfico na tela, 12 pares de ida e volta, y 1700 ↔ 1100 em 250 ms | **4,03%** (819), **4,46%** (808), **4,42%** (792), **5,40%** (796), **4,81%** (790) | 17 / 19 a 20 ms | 17,7 → 17,5 GB |
+| Controle do mesmo gesto, na biblioteca | 3,44% (843), 4,55% (836) | 17 / 20 a 21 ms | 17,5 GB |
+
+| `ProgressIndexDeviceTimingTest`, sozinho | Construção (9): mediana / p95 / máx. | Gráfico (180): mediana / p95 | Linha do tempo (180): mediana / p95 | Teclas (54): mediana / p95 |
+| --- | --- | --- | --- | --- |
+| 1ª execução (18:10, swap 17,5 GB) | 202,4 / 329,7 / 342,4 ms | 0,47 / 1,60 ms | 0,98 / **2,42** ms | 0,91 / **2,05** ms |
+| 2ª | **37,5** / 120,7 / 136,6 ms | 0,50 / 1,42 ms | 1,01 / **2,59** ms | 0,96 / **2,25** ms |
+| 3ª | **31,9** / 51,3 / 125,6 ms | 0,48 / 1,46 ms | 1,00 / **2,55** ms | 0,92 / **2,15** ms |
+
+- **Consultas e teclas:** na rodada limpa, todas ficaram dentro de **p95 ≤ 8 ms** (no máximo 2,6 ms), mesmo no APK depurável. Os p95 acima de 8 ms da rodada 1 eram da contaminação, e por isso não acrescentei uma seção de trace para a consulta dos Recordes no R8 (o item 3 do controlador só pedia isso se o depurável continuasse acima).
+- **Construção no APK depurável:** a 2ª e a 3ª execuções ficaram dentro da meta de mediana (37,5 e 31,9 ms). A 1ª oscilou, com rodadas de 52 a 342 ms, provavelmente pela troca de páginas com o swap cheio (isso não foi provado). A medida que vale para o orçamento é a do R8, que continua a da rodada 1: mediana de 3,9 ms.
+- **O controle contra a 4A.** Deu de 1,75% a 2,30%, contra 0,50% a 1,47% (mediana de 0,61%) na 4A.
+  - Em números absolutos, os quadros com jank (23 a 30) estão perto dos da 4A (9 a 26). Os quadros totais são menos (cerca de 1.307 contra 1.790), porque o arrasto termina em y = 550 e não em 400: em 400 está o campo de busca, onde a volta não rola a lista.
+  - O `git diff main...HEAD -- screens/src/commonMain/kotlin/com/mooscles/screens/library` está **vazio**. Em `designsystem/src/commonMain`, a 5A só acrescentou coisas: o pacote `charts/`, dois ícones Lucide, tokens dos gráficos, o `label`/`spoken` opcional do `PrBadge`, a página da galeria e o `deviceRegion`. Nada disso aparece numa linha da biblioteca, que não usa gráfico nem `PrBadge`.
+  - **Não achei causa na 5A.** A diferença que sobra é compatível com o gesto mais curto e com o swap quase cheio, mas isso é uma suposição, não uma medida.
+- **"Só atuais":** de 3,2% a 3,7%, dentro de 5%, com o controle a cerca de 2%.
+- **Gráfico na tela (S1 c):** de 4,0% a 5,4% (mediana de 4,5%), contra 3,4% a 4,6% no controle do mesmo gesto. O gesto lento de ida e volta dá mais jank que o arrasto rápido em qualquer lista. Com ele, o gráfico fica perto do controle, um pouco acima (cerca de +0,5 ponto na mediana), e uma execução passou de 5% (5,40%). Não há orçamento próprio para isso. Fica registrado para medir no aparelho físico.
+
+## O ambiente (rodada 1, contaminada)
 
 - **O que rodava ao lado.**
   - Durante toda a medida, o `crashpad_handler` do emulador zumbi `emulator-5556` gastou de 266% a 287% de CPU, ou seja, quase três núcleos. Ele não é desta lane, e a task mandou ignorar esse emulador, então não o encerrei.
@@ -123,9 +161,9 @@ Arquivos: `perf/*.gfxinfo.txt`, cada um com a hora, a carga e o swap.
 
 ## O que ficou só no emulador ou sem medir
 
-- Todo número é do emulador, no Mac com o zumbi da `5556` gastando quase três núcleos e o swap quase cheio. Nada foi medido em aparelho físico.
+- Todo número é do emulador. Na rodada 1, o zumbi da `5556` gastava quase três núcleos; nas duas rodadas, o swap estava quase cheio. Nada foi medido em aparelho físico.
 - O teste de tempo do índice roda no APK de teste depurável do `:screens`, não no R8. O R8 foi medido só pela seção de trace do índice.
-- As consultas e as teclas da busca dos Recordes **não** foram medidas no R8 (o `simpleperf` da 4A não foi repetido).
+- As consultas e as teclas da busca dos Recordes **não** foram medidas no R8 (o `simpleperf` da 4A não foi repetido). Na rodada limpa, elas ficaram dentro da meta já no APK depurável (p95 de até 2,6 ms).
 - "O quadro da rota mostra a lista" e "o quadro seguinte mostra o gráfico" não foram vistos na tela; a prova é o trace.
 - A rolagem do treino contra a fase 3 não tem comparação válida.
 - Memória (PSS): não medida.
