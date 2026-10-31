@@ -41,11 +41,13 @@ import com.mooscles.designsystem.format.pluralCount
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.interaction.mFocusRing
 import com.mooscles.designsystem.resources.ds_pr_spoken
+import com.mooscles.designsystem.resources.ds_set_type_assisted_short
+import com.mooscles.designsystem.resources.ds_set_type_assisted_spoken
 import com.mooscles.designsystem.resources.ds_set_type_warmup_short
 import com.mooscles.designsystem.resources.ds_set_type_warmup_spoken
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.format.conventionLabel
-import com.mooscles.screens.format.shortDate
+import com.mooscles.screens.format.shortDateAged
 import com.mooscles.screens.records.RecordTimelines
 import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.exercise_not_found_body
@@ -56,11 +58,13 @@ import com.mooscles.screens.resources.progress_highlight
 import com.mooscles.screens.resources.progress_missing
 import com.mooscles.screens.resources.progress_other_convention
 import com.mooscles.screens.resources.progress_records
+import com.mooscles.screens.resources.progress_records_reps_assisted
 import com.mooscles.screens.resources.progress_reps_count
 import com.mooscles.screens.resources.progress_sessions
 import com.mooscles.screens.resources.progress_view_all_records
 import com.mooscles.screens.resources.records_spoken_join
 import com.mooscles.screens.workout.RecompositionProbe
+import com.mooscles.screens.workout.bestSetText
 import com.mooscles.screens.workout.loadSpoken
 import com.mooscles.screens.workout.loadText
 import com.mooscles.ui.RecordKind
@@ -88,13 +92,15 @@ internal class ProgressSession(val point: SessionPoint, val convention: String) 
  * What the screen shows under the chart, for one exercise in its chart's [convention][ProgressSectionsQuery.convention]:
  * [weight], the current load record; [reps], the current reps records of the convention's group (unassisted, or
  * assisted on Assistance), the highest load first (on Assistance the lowest assistance first: less help is the
- * progress); [sessions], every session of the exercise in any convention, the newest first; and [otherConventions],
- * the conventions it has sessions in besides the chart's, the latest first.
+ * progress); [assisted], outside Assistance, the reps records of its assisted sets, the lowest assistance first (the
+ * old screen listed them too, D19); [sessions], every session of the exercise in any convention, the newest first; and
+ * [otherConventions], the conventions it has sessions in besides the chart's, the latest first.
  */
 @Immutable
 internal class ProgressSections(
     val weight: RecordEvent?,
     val reps: List<RecordEvent>,
+    val assisted: List<RecordEvent>,
     val sessions: List<ProgressSession>,
     val otherConventions: List<String>,
 )
@@ -111,19 +117,23 @@ internal data class ProgressSectionsQuery(val exerciseId: String, val convention
         val weight = mine.filter { it.record.kind == RecordKind.WEIGHT }.maxByOrNull { it.record.weightKg }
         val group = mine.filter { it.record.kind == RecordKind.REPS && it.record.assistance == assistance }
         val reps = if (assistance) group.sortedBy { it.record.weightKg } else group.sortedByDescending { it.record.weightKg }
+        val assisted = if (assistance) emptyList() else mine
+            .filter { it.record.kind == RecordKind.REPS && it.record.assistance }
+            .sortedBy { it.record.weightKg }
         val conventions = index.conventionsOf(exerciseId)
         val sessions = (if (convention in conventions) conventions else listOf(convention) + conventions)
             .flatMap { c -> index.sessions(SeriesKey(exerciseId, c)).map { ProgressSession(it, c) } }
             .sortedWith(compareByDescending<ProgressSession> { it.point.startedAt }.thenByDescending { it.point.workoutId })
-        return ProgressSections(weight, reps, sessions, conventions.filter { it != convention })
+        return ProgressSections(weight, reps, assisted, sessions, conventions.filter { it != convention })
     }
 }
 
 /**
  * The records of the exercise and its sessions, under the chart: "Records for this exercise" with the current load
- * record and the reps records by load (up to [SHOWN_REPS_RECORDS], then "View all N", which [onAllRecords] expands in
- * place), then "Sessions", the newest first, each one row that opens its workout ([onOpenWorkout]). A section with
- * nothing in it is left out.
+ * record, the reps records by load and, apart, the assisted reps records (each group up to [SHOWN_REPS_RECORDS], then
+ * one "View all N", which [onAllRecords] expands in place), then "Sessions", the newest first, each one row that opens
+ * its workout ([onOpenWorkout]); a session of another convention than the chart's says which. A section with nothing
+ * in it is left out.
  */
 internal fun LazyListScope.progressSections(
     sections: ProgressSections,
@@ -137,7 +147,8 @@ internal fun LazyListScope.progressSections(
 ) {
     val weight = sections.weight
     val reps = sections.reps
-    if (weight != null || reps.isNotEmpty()) {
+    val assisted = sections.assisted
+    if (weight != null || reps.isNotEmpty() || assisted.isNotEmpty()) {
         item(key = "records-title") { SectionHeading(stringResource(Res.string.progress_records), ProgressTags.RECORDS) }
         if (weight != null) {
             item(key = "records-weight-label") {
@@ -155,15 +166,25 @@ internal fun LazyListScope.progressSections(
             itemsIndexed(shown, key = { _, it -> "record|${RecordTimelines.key(it)}" }) { i, event ->
                 RecordRow(event, exerciseName, pounds, calendar, ProgressTags.recordReps(i))
             }
-            if (shown.size < reps.size) {
-                item(key = "records-all") { ViewAllRecords(reps.size, onAllRecords) }
+        }
+        if (assisted.isNotEmpty()) {
+            item(key = "records-reps-assisted-label") {
+                RecordCaption(stringResource(Res.string.progress_records_reps_assisted), ProgressTags.RECORD_ASSISTED_LABEL)
             }
+            val shown = if (allRecords) assisted else assisted.take(SHOWN_REPS_RECORDS)
+            itemsIndexed(shown, key = { _, it -> "record|${RecordTimelines.key(it)}" }) { i, event ->
+                RecordRow(event, exerciseName, pounds, calendar, ProgressTags.recordAssisted(i))
+            }
+        }
+        // One "View all" for both groups, after the last.
+        if (!allRecords && (reps.size > SHOWN_REPS_RECORDS || assisted.size > SHOWN_REPS_RECORDS)) {
+            item(key = "records-all") { ViewAllRecords(reps.size + assisted.size, onAllRecords) }
         }
     }
     if (sections.sessions.isNotEmpty()) {
         item(key = "sessions-title") { SectionHeading(stringResource(Res.string.progress_sessions), ProgressTags.SESSIONS) }
         items(sections.sessions.size, key = { sections.sessions[it].key }) { i ->
-            SessionRow(sections.sessions[i], pounds, calendar, onOpenWorkout)
+            SessionRow(sections.sessions[i], convention, pounds, calendar, onOpenWorkout)
         }
     }
 }
@@ -196,25 +217,26 @@ private fun RecordCaption(text: String, tag: String) {
 
 /**
  * A current record: "100 kg × 3 · 12 set", and with the value it beat, "100 kg × 3 · antes 95 kg · 12 set" (the
- * history's event of the record carries it). One node, read with the unit in full ([recordSpoken]).
+ * history's event of the record carries it); a date a year or more ago has its year ([shortDateAged]). One node, read
+ * with the unit in full ([recordSpoken]), and an assisted set's record says so.
  */
 @Composable
 private fun RecordRow(event: RecordEvent, exerciseName: String, pounds: Boolean, calendar: ProgressCalendar, tag: String) {
     RecompositionProbe(tag)
     val record = event.record
-    val text = if (record.firstRecord) {
-        recordLine(record.weightKg, record.reps, record.date, pounds, calendar.zone)
+    val set = if (record.firstRecord) {
+        bestSetText(record.weightKg, record.reps, pounds)
     } else {
-        stringResource(
-            Res.string.progress_highlight,
-            recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds),
-            shortDate(record.date, calendar.zone),
-        )
+        recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds)
     }
-    val spoken = recordSpoken(
+    val text = stringResource(Res.string.progress_highlight, set, shortDateAged(record.date, calendar.zone, calendar.today))
+    var spoken = recordSpoken(
         exerciseName, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
         record.date, calendar.zone, calendar.today, current = false, first = false,
     )
+    if (record.kind == RecordKind.REPS && record.assistance && WorkingSets.convention(record.exercise.convention) != LoadConvention.ASSISTANCE) {
+        spoken = stringResource(Res.string.records_spoken_join, spoken, stringResource(DsRes.string.ds_set_type_assisted_spoken))
+    }
     MText(
         text,
         MTheme.type.bodyLg,
@@ -240,17 +262,36 @@ private fun ViewAllRecords(count: Int, onClick: () -> Unit) {
     }
 }
 
-/** One set as a session row writes it: "80 × 8", "A 40 × 10" for a warm-up (the set row's letter). No unit, as the board. */
+/**
+ * One set as a session row writes it: "80 × 8", "A 40 × 10" for a warm-up and "AS 40 × 12" for an assisted set
+ * outside the Assistance convention (the set row's letters), and "Peso corporal × 12" without a load, as the record
+ * rows above. No unit otherwise, as the board.
+ */
 @Composable
-private fun setToken(set: SetUi, pounds: Boolean): String {
-    val text = "${loadText(set.weightKg, pounds)} × ${set.reps}"
-    return if (set.warmup) "${stringResource(DsRes.string.ds_set_type_warmup_short)} $text" else text
+private fun setToken(set: SetUi, pounds: Boolean, marksAssistance: Boolean): String {
+    val text = if (set.weightKg == 0.0 && !set.assistance) {
+        bestSetText(0.0, set.reps, pounds)
+    } else {
+        "${loadText(set.weightKg, pounds)} × ${set.reps}"
+    }
+    val letter = when {
+        set.warmup -> stringResource(DsRes.string.ds_set_type_warmup_short)
+        set.assistance && marksAssistance -> stringResource(DsRes.string.ds_set_type_assisted_short)
+        else -> null
+    }
+    return if (letter != null) "$letter\u00A0$text" else text
 }
 
-/** One set read aloud: "aquecimento, 40 quilos por 10", "12 repetições" without a load, then "recorde pessoal" on a record set. */
+/**
+ * One set read aloud: "aquecimento, 40 quilos por 10", "série assistida, 40 quilos por 12" (outside Assistance), "12
+ * repetições" without a load, then "recorde pessoal" on a record set.
+ */
 @Composable
-private fun setSpoken(set: SetUi, pounds: Boolean): String {
+private fun setSpoken(set: SetUi, pounds: Boolean, marksAssistance: Boolean): String {
     var text = if (set.weightKg == 0.0) pluralCount(Res.plurals.progress_reps_count, set.reps) else spokenLoadByReps(loadSpoken(set.weightKg, pounds), set.reps)
+    if (set.assistance && marksAssistance) {
+        text = stringResource(Res.string.records_spoken_join, stringResource(DsRes.string.ds_set_type_assisted_spoken), text)
+    }
     if (set.warmup) text = stringResource(Res.string.records_spoken_join, stringResource(DsRes.string.ds_set_type_warmup_spoken), text)
     if (set.record != null) text = stringResource(Res.string.records_spoken_join, text, stringResource(DsRes.string.ds_pr_spoken))
     return text
@@ -258,22 +299,35 @@ private fun setSpoken(set: SetUi, pounds: Boolean): String {
 
 /**
  * A session: its date, the workout's name and its completed sets in a line ("A 40 × 10 · 80 × 8 · 82,5 × 6"), with
- * the record badge on the set the domain gave the record (`SetUi.record`). One button for the reader, read as
- * [sessionSpoken]; a tap opens the workout.
+ * the record badge on the set the domain gave the record (`SetUi.record`). A session logged in another convention than
+ * the chart's ([chartConvention]) says which on its date line ("12 set · Por mão"), as the old screen's "Logged as". One
+ * button for the reader, read as [sessionSpoken]; a tap opens the workout.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionRow(session: ProgressSession, pounds: Boolean, calendar: ProgressCalendar, onOpenWorkout: (String) -> Unit) {
+private fun SessionRow(
+    session: ProgressSession,
+    chartConvention: String,
+    pounds: Boolean,
+    calendar: ProgressCalendar,
+    onOpenWorkout: (String) -> Unit,
+) {
     val point = session.point
     val tag = ProgressTags.session(point.workoutId)
     RecompositionProbe(tag)
     val colors = MTheme.colors
+    // On Assistance the convention already says every set is assisted.
+    val marksAssistance = WorkingSets.convention(session.convention) != LoadConvention.ASSISTANCE
     var setsSpoken = ""
     point.sets.forEachIndexed { i, set ->
-        val one = setSpoken(set, pounds)
+        val one = setSpoken(set, pounds, marksAssistance)
         setsSpoken = if (i == 0) one else stringResource(Res.string.records_spoken_join, setsSpoken, one)
     }
-    val spoken = sessionSpoken(point.startedAt, point.workoutName, setsSpoken, calendar.zone, calendar.today)
+    val other = if (session.convention != chartConvention) conventionLabel(session.convention) else null
+    val date = shortDateAged(point.startedAt, calendar.zone, calendar.today)
+    val dateLine = if (other != null) stringResource(Res.string.progress_highlight, date, other) else date
+    val named = if (other != null) stringResource(Res.string.records_spoken_join, point.workoutName, other) else point.workoutName
+    val spoken = sessionSpoken(point.startedAt, named, setsSpoken, calendar.zone, calendar.today)
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val shape = RoundedCornerShape(MTheme.radius.md)
@@ -289,7 +343,7 @@ private fun SessionRow(session: ProgressSession, pounds: Boolean, calendar: Prog
                 .padding(horizontal = MTheme.space.s2, vertical = MTheme.space.s3),
             verticalArrangement = Arrangement.spacedBy(MTheme.space.s1),
         ) {
-            MText(shortDate(point.startedAt, calendar.zone), MTheme.type.labelMd, color = colors.textSecondary)
+            MText(dateLine, MTheme.type.labelMd, color = colors.textSecondary)
             MText(point.workoutName, MTheme.type.titleSm, color = colors.textPrimary)
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(MTheme.space.s1),
@@ -299,7 +353,7 @@ private fun SessionRow(session: ProgressSession, pounds: Boolean, calendar: Prog
                 val last = point.sets.lastIndex
                 point.sets.forEachIndexed { i, set ->
                     Row(horizontalArrangement = Arrangement.spacedBy(MTheme.space.s1), verticalAlignment = Alignment.CenterVertically) {
-                        MText(setToken(set, pounds), MTheme.type.bodyMd, color = colors.textPrimary)
+                        MText(setToken(set, pounds, marksAssistance), MTheme.type.bodyMd, color = colors.textPrimary)
                         if (set.record != null) {
                             // The row says "personal record" after the set; the badge adds nothing to the reading.
                             Box(Modifier.clearAndSetSemantics { testTag = ProgressTags.SESSION_RECORD }) { PrBadge(soft = true) }

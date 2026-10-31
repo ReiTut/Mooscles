@@ -21,6 +21,7 @@
     <string name="date_day_fri">sex.</string>
     <string name="date_day_sat">sáb.</string>
     <string name="date_short_format">%1$d %2$s</string>
+    <string name="date_short_year_format">%1$d %2$s %3$d</string>
     <string name="date_range_format">%1$s, %2$s · %3$s–%4$s</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_hours_minutes">%1$d h %2$d min</string>

@@ -126,6 +126,7 @@ internal object ProgressTags {
     const val RECORD_WEIGHT_LABEL = "progress-record-weight-label"
     const val RECORD_WEIGHT = "progress-record-weight"
     const val RECORD_REPS_LABEL = "progress-record-reps-label"
+    const val RECORD_ASSISTED_LABEL = "progress-record-assisted-label"
 
     /** The sessions' heading; every tag of the section starts with `progress-session`. */
     const val SESSIONS = "progress-sessions"
@@ -141,6 +142,9 @@ internal object ProgressTags {
 
     /** The [index]th reps record shown, the highest load first (from 0). */
     fun recordReps(index: Int) = "progress-record-reps-$index"
+
+    /** The [index]th assisted reps record shown, the lowest assistance first (from 0). */
+    fun recordAssisted(index: Int) = "progress-record-assisted-$index"
 
     /** The row of the session of [workoutId]. */
     fun session(workoutId: String) = "progress-session-$workoutId"
@@ -289,11 +293,12 @@ internal fun ExerciseProgressScreen(
     val pounds = state.preferences.pounds
     // A failure shows that there is nothing to chart, never a skeleton that would wait for good.
     val failed = load is ProgressLoad.Failed || shownLoad is ProgressLoad.Failed
+    // The sections stand on their own query: a failed chart query leaves them, a failed sections query hides them.
     val sections = key?.let { rememberProgressQuery(load, ProgressSectionsQuery(exerciseId, it.convention)) }?.valueOrNull
     var allRecords by rememberSaveable(exerciseId) { mutableStateOf(false) }
     val showAllRecords: () -> Unit = { allRecords = true }
     val name = exercise?.let { exerciseName(it) }.orEmpty()
-    val otherConventions = sections?.otherConventions?.takeIf { it.isNotEmpty() && !failed }
+    val otherConventions = sections?.otherConventions?.takeIf { it.isNotEmpty() }
 
     Box(modifier.fillMaxSize().background(MTheme.colors.bgBase)) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
@@ -381,7 +386,7 @@ internal fun ExerciseProgressScreen(
                         }
                     }
                 }
-                if (sections != null && !failed) {
+                if (sections != null) {
                     progressSections(sections, name, key.convention, pounds, calendar, allRecords, showAllRecords, onOpenWorkout)
                 }
             }

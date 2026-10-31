@@ -39,6 +39,7 @@ import com.mooscles.screens.resources.date_month_oct
 import com.mooscles.screens.resources.date_month_sep
 import com.mooscles.screens.resources.date_range_format
 import com.mooscles.screens.resources.date_short_format
+import com.mooscles.screens.resources.date_short_year_format
 import com.mooscles.screens.resources.duration_hours
 import com.mooscles.screens.resources.duration_hours_minutes
 import com.mooscles.screens.resources.duration_under_minute
@@ -115,6 +116,17 @@ private fun weekdayName(day: DayOfWeek): StringResource = when (day) {
 fun shortDate(epochMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {
     val date = ScreenDates.localDate(epochMillis, zone)
     return stringResource(Res.string.date_short_format, date.day, stringResource(monthNames[date.month.number - 1]))
+}
+
+/**
+ * [shortDate], with the year for a date a year or more before [today] (`12 set 2025` / `Sep 12, 2025`), which the day
+ * and month alone would read as recent; a date of the last twelve months has one place on the calendar and stays short.
+ */
+@Composable
+fun shortDateAged(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
+    val date = ScreenDates.localDate(epochMillis, zone)
+    if (date > today.minus(DatePeriod(years = 1))) return shortDate(epochMillis, zone)
+    return stringResource(Res.string.date_short_year_format, date.day, stringResource(monthNames[date.month.number - 1]), date.year)
 }
 
 /**

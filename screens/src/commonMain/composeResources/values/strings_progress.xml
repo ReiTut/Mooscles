@@ -48,6 +48,7 @@
     <string name="progress_assistance_legend">Less assistance, less help from the machine.</string>
     <string name="progress_other_convention">Workouts logged as %1$s are not in this chart.</string>
     <string name="progress_records">Records for this exercise</string>
+    <string name="progress_records_reps_assisted">Assisted reps</string>
     <plurals name="progress_view_all_records">
         <item quantity="one">View all %1$d</item>
         <item quantity="other">View all %1$d</item>

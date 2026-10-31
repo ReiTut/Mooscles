@@ -30,6 +30,8 @@ import com.mooscles.data.ExerciseNames
 import com.mooscles.designsystem.charts.LineChartTag
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.screens.RecordingActions
+import com.mooscles.screens.ScreenRestoration
+import com.mooscles.screens.screenRestoration
 import com.mooscles.screens.library.TopAnchored
 import com.mooscles.screens.screenReaderOrder
 import com.mooscles.screens.spokenLabel
@@ -86,6 +88,7 @@ class ExerciseProgressSectionsTest {
     private val bench = catalog("barbell_bench_flat")
     private val row = ExerciseUi("custom-row", "Remada do Pedro", bench.muscle, bench.equipment, "Total load", custom = true)
     private val rowPerHand = row.copy(convention = "Per hand")
+    private val assistedPullUp = catalog("selectorized_assisted_pull_up")
 
     /** A finished workout of one exercise: its [sets] as given, and the history's records of it. */
     private fun workout(id: String, startedAt: Long, exercise: ExerciseUi, sets: List<SetUi>, records: List<RecordUi> = emptyList()) =
@@ -125,8 +128,10 @@ class ExerciseProgressSectionsTest {
         calls: Calls = Calls(),
         cache: ProgressIndexCache? = null,
         tall: Dp? = null,
+        restoration: ScreenRestoration? = null,
+        locale: String? = "pt-BR",
     ): Calls {
-        withScreen(locale = "pt-BR", reducedMotion = true, probe = { calls.probe += it }) {
+        withScreen(locale = locale, reducedMotion = true, probe = { calls.probe += it }, restoration = restoration) {
             TopAnchored(tall) {
                 CompositionLocalProvider(LocalProgressIndexCache provides cache) {
                     ExerciseProgressScreen(
@@ -370,6 +375,7 @@ class ExerciseProgressSectionsTest {
         waitForTag(ProgressTags.READOUT)
         waitForIdle()
         assertEquals(emptyList(), rows(), "the selection recomposed the rows")
+        assertTrue(ProgressProbe.SCREEN !in calls.probe, "the selection recomposed the screen: ${calls.probe}")
         assertTrue(ProgressProbe.CHART !in calls.probe, "the selection recomposed the whole chart: ${calls.probe}")
 
         // A state emission that changes nothing they show: the screen runs again, the chart and the rows skip.
@@ -524,6 +530,117 @@ class ExerciseProgressSectionsTest {
             read,
         )
         assertEquals(name, spokenLabel(order.first { region(it) == "name" }))
+    }
+
+    @Test
+    fun assistedRepsRecordsAreTheirOwnGroupLowestAssistanceFirst() = runComposeUiTest {
+        // A load exercise with one unassisted reps record and six assisted ones (a band), 10 to 35 kg of help.
+        val plain = record("p", at(2026, 8, 20), 80.0, 8, RecordKind.REPS)
+        val helps = listOf(35.0, 30.0, 25.0, 20.0, 15.0, 10.0)
+        val assisted = helps.mapIndexed { i, kg ->
+            val event = RecordUi(bench, kg, 10 + i, workoutId = "a$i", date = at(2026, 9, 1 + i), kind = RecordKind.REPS, assistance = true)
+            event to event
+        }
+        val history = helps.indices.map { i ->
+            workout("a$i", at(2026, 9, 1 + i), bench, listOf(SetUi("s-a$i", 10 + i, helps[i], completed = true, assistance = true)),
+                records = listOf(assisted[i].first))
+        } + workout("p", at(2026, 8, 20), bench, sets("p", 80.0 to 8), records = listOf(plain.first))
+        show(mutableStateOf(stateOf(history, records = listOf(plain.second) + assisted.map { it.second })), tall = tall)
+        waitForTag(ProgressTags.RECORD_ASSISTED_LABEL)
+        onNodeWithTag(ProgressTags.recordReps(0)).assertTextEquals("80 kg × 8 · 20 ago".nb())
+        assertGone(ProgressTags.recordReps(1))
+        onNodeWithTag(ProgressTags.RECORD_ASSISTED_LABEL).assertTextEquals("Repetições assistidas")
+        assertTrue(top(ProgressTags.recordReps(0)) < top(ProgressTags.RECORD_ASSISTED_LABEL))
+        // The least help first, and the reading says the set was assisted.
+        onNodeWithTag(ProgressTags.recordAssisted(0)).assertTextEquals("10 kg × 15 · 6 set".nb())
+        onNodeWithTag(ProgressTags.recordAssisted(4)).assertTextEquals("30 kg × 11 · 2 set".nb())
+        assertTrue(contentDescription(ProgressTags.recordAssisted(0)).endsWith("6 de setembro, série assistida"), contentDescription(ProgressTags.recordAssisted(0)))
+        assertGone(ProgressTags.recordAssisted(5))
+        // One "View all" for both groups.
+        onNodeWithTag(ProgressTags.RECORDS_ALL).assertTextContains("Ver todos os 7").performClick()
+        waitForTag(ProgressTags.recordAssisted(5))
+        onNodeWithTag(ProgressTags.recordAssisted(5)).assertTextEquals("35 kg × 10 · 1 set".nb())
+        assertGone(ProgressTags.RECORDS_ALL)
+    }
+
+    @Test
+    fun sessionOfAnotherConventionSaysItsConvention() = runComposeUiTest {
+        val history = listOf(
+            workout("c4", at(2026, 10, 20), row, sets("c4", 70.0 to 6)),
+            workout("c2", at(2026, 7, 10), rowPerHand, sets("c2", 30.0 to 8)),
+        )
+        show(mutableStateOf(stateOf(history)), exerciseId = row.id, tall = tall)
+        waitForTag(ProgressTags.session("c2"))
+        onNodeWithTag(ProgressTags.session("c2")).assertTextEquals("10 jul · Por mão", "Treino c2", "30 × 8")
+        assertTrue(contentDescription(ProgressTags.session("c2")).startsWith("10 de julho, Treino c2, Por mão: 30 quilos por 8"))
+        // The chart's own convention says nothing more.
+        onNodeWithTag(ProgressTags.session("c4")).assertTextEquals("20 out", "Treino c4", "70 × 6")
+        assertTrue(!contentDescription(ProgressTags.session("c4")).contains("Por mão"))
+    }
+
+    @Test
+    fun assistedSetAndZeroLoadSayWhatTheyAre() = runComposeUiTest {
+        val history = listOf(
+            workout("b1", at(2026, 10, 20), bench, listOf(
+                SetUi("x", 12, 40.0, completed = true, assistance = true),
+                SetUi("y", 12, 0.0, completed = true),
+            )),
+            // On Assistance every set is assisted, and the convention already says so: no letter.
+            workout("h1", at(2026, 10, 21), assistedPullUp, listOf(SetUi("z", 8, 30.0, completed = true, assistance = true))),
+        )
+        show(mutableStateOf(stateOf(history, exercises = listOf(bench, assistedPullUp))), tall = tall)
+        waitForTag(ProgressTags.session("b1"))
+        onNodeWithTag(ProgressTags.session("b1")).assertTextEquals("20 out", "Treino b1", "AS 40 × 12", "·", "Peso corporal × 12")
+        assertTrue(
+            contentDescription(ProgressTags.session("b1")).startsWith("20 de outubro, Treino b1: série assistida, 40 quilos por 12, 12 repetições"),
+            contentDescription(ProgressTags.session("b1")),
+        )
+    }
+
+    @Test
+    fun assistanceSessionsHaveNoAssistedLetter() = runComposeUiTest {
+        val history = listOf(
+            workout("h2", at(2026, 10, 22), assistedPullUp, listOf(SetUi("z2", 8, 25.0, completed = true, assistance = true))),
+            workout("h1", at(2026, 10, 21), assistedPullUp, listOf(SetUi("z", 8, 30.0, completed = true, assistance = true))),
+        )
+        show(mutableStateOf(stateOf(history, exercises = listOf(bench, assistedPullUp))), exerciseId = assistedPullUp.id, tall = tall)
+        waitForTag(ProgressTags.session("h1"))
+        onNodeWithTag(ProgressTags.session("h1")).assertTextEquals("21 out", "Treino h1", "30 × 8")
+        assertTrue(!contentDescription(ProgressTags.session("h1")).contains("série assistida"))
+    }
+
+    @Test
+    fun datesAYearOrMoreAgoShowTheYear() = runComposeUiTest {
+        // Today is Oct 31, 2026: Sep 12, 2025 is more than a year ago; Nov 5, 2025 is not.
+        val old = record("w0", at(2025, 9, 12), 100.0, 3)
+        val history = listOf(
+            workout("w1", at(2025, 11, 5), bench, sets("w1", 90.0 to 5)),
+            workout("w0", at(2025, 9, 12), bench, sets("w0", 100.0 to 3), records = listOf(old.first)),
+        )
+        show(mutableStateOf(stateOf(history, records = listOf(old.second))), tall = tall)
+        waitForTag(ProgressTags.session("w0"))
+        onNodeWithTag(ProgressTags.RECORD_WEIGHT).assertTextEquals("100 kg × 3 · 12 set 2025".nb())
+        onNodeWithTag(ProgressTags.session("w0")).assertTextContains("12 set 2025")
+        onNodeWithTag(ProgressTags.session("w1")).assertTextContains("5 nov")
+        onNodeWithTag(ProgressTags.session("w1")).assertTextEquals("5 nov", "Treino w1", "90 × 5")
+    }
+
+    @Test
+    fun viewAllSurvivesRecreation() = runComposeUiTest {
+        val loads = listOf(40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0)
+        val reps = loads.mapIndexed { i, kg -> record("r$i", at(2026, 8, 1 + i), kg, 12 - i, RecordKind.REPS) }
+        val history = loads.indices.map { i ->
+            workout("r$i", at(2026, 8, 1 + i), bench, sets("r$i", loads[i] to 12 - i), records = listOf(reps[i].first))
+        }
+        val restoration = screenRestoration()
+        // In the system language, as the screen's other recreation test (LocaleEpoch).
+        show(mutableStateOf(stateOf(history, records = reps.map { it.second })), tall = tall, restoration = restoration, locale = null)
+        waitForTag(ProgressTags.RECORDS_ALL)
+        onNodeWithTag(ProgressTags.RECORDS_ALL).performClick()
+        waitForTag(ProgressTags.recordReps(6))
+        restoration.emulateSaveAndRestore()
+        waitForTag(ProgressTags.recordReps(6))
+        assertGone(ProgressTags.RECORDS_ALL)
     }
 
     private fun assertNotNullRegion(region: String?, read: String): String {

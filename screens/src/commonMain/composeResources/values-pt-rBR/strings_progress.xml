@@ -48,6 +48,7 @@
     <string name="progress_assistance_legend">Menos assistência, menos ajuda da máquina.</string>
     <string name="progress_other_convention">Os treinos registrados como %1$s não entram neste gráfico.</string>
     <string name="progress_records">Recordes deste exercício</string>
+    <string name="progress_records_reps_assisted">Repetições assistidas</string>
     <plurals name="progress_view_all_records">
         <item quantity="one">Ver todos os %1$d</item>
         <item quantity="other">Ver todos os %1$d</item>

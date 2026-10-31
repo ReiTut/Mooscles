@@ -32,8 +32,9 @@ class ProgressSectionsQueryTest {
         )
         val history = listOf(w.copy(records = records))
         val sections = ProgressSectionsQuery(bench.id, bench.convention).compute(ProgressIndex.build(history, records.map(::currentOf)))
-        // The assisted record is the other group's, as on the chart.
+        // The assisted record is the other group's, as on the chart, and has its own list (D19: the old screen showed it).
         assertEquals(listOf(80.0, 60.0), sections.reps.map { it.record.weightKg })
+        assertEquals(listOf(40.0), sections.assisted.map { it.record.weightKg })
         assertNull(sections.weight)
     }
 
@@ -48,6 +49,8 @@ class ProgressSectionsQueryTest {
         val sections = ProgressSectionsQuery(assistedDip.id, assistedDip.convention)
             .compute(ProgressIndex.build(history, records.map(::currentOf)))
         assertEquals(listOf(20.0, 30.0), sections.reps.map { it.record.weightKg })
+        // On Assistance every record is assisted: no second group.
+        assertEquals(emptyList(), sections.assisted)
     }
 
     @Test
