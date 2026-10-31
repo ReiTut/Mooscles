@@ -10,9 +10,10 @@ import com.mooscles.designsystem.format.pluralCount
 import com.mooscles.designsystem.format.spokenWeight
 import com.mooscles.domain.WeightUnits
 import com.mooscles.screens.format.ScreenDates
+import com.mooscles.screens.format.chartDate
+import com.mooscles.screens.format.chartWeekOf
 import com.mooscles.screens.format.shortDate
 import com.mooscles.screens.format.spokenDate
-import com.mooscles.screens.format.weekOf
 import com.mooscles.screens.resources.*
 import com.mooscles.screens.workout.bestSetText
 import com.mooscles.screens.workout.loadSpoken
@@ -112,7 +113,15 @@ fun axisText(value: Double, metric: ProgressMetric): String {
  * On a [weekly] chart the first point is a week's start, so it reads "desde a semana de 3 jun" (P25).
  */
 @Composable
-fun sinceText(first: ChartPoint, last: ChartPoint, metric: ProgressMetric, pounds: Boolean, zone: TimeZone, weekly: Boolean = false): String {
+fun sinceText(
+    first: ChartPoint,
+    last: ChartPoint,
+    metric: ProgressMetric,
+    pounds: Boolean,
+    zone: TimeZone,
+    weekly: Boolean = false,
+    today: LocalDate = currentDay(zone),
+): String {
     val change = ProgressNumbers.displayValue(last.value, metric, pounds) - ProgressNumbers.displayValue(first.value, metric, pounds)
     // The sign follows what is shown: a change under half a hundredth is 0.
     val magnitude = MoosclesNumbers.plain(abs(change))
@@ -125,14 +134,24 @@ fun sinceText(first: ChartPoint, last: ChartPoint, metric: ProgressMetric, pound
     return stringResource(
         if (weekly) Res.string.progress_since_week else Res.string.progress_since,
         sign + amount,
-        shortDate(first.startedAt, zone),
+        chartDate(first.startedAt, zone, today),
     )
 }
 
-/** The reading of a selected point: "28 out · 92,5 kg · 85 kg × 3"; a weekly point says "Semana de 6 out" (P25). */
+/**
+ * The reading of a selected point: "28 out · 92,5 kg · 85 kg × 3"; a weekly point says "Semana de 6 out" (P25). A date a
+ * year or more before [today] has its year ([chartDate]).
+ */
 @Composable
-fun readoutText(point: ChartPoint, metric: ProgressMetric, pounds: Boolean, zone: TimeZone, weekly: Boolean = false): String {
-    val date = if (weekly) weekOf(point.startedAt, zone) else shortDate(point.startedAt, zone)
+fun readoutText(
+    point: ChartPoint,
+    metric: ProgressMetric,
+    pounds: Boolean,
+    zone: TimeZone,
+    weekly: Boolean = false,
+    today: LocalDate = currentDay(zone),
+): String {
+    val date = if (weekly) chartWeekOf(point.startedAt, zone, today) else chartDate(point.startedAt, zone, today)
     val value = valueText(point, metric, pounds)
     val set = point.set?.takeIf { metric != ProgressMetric.VOLUME }
         ?: return stringResource(Res.string.progress_highlight, date, value)
@@ -222,9 +241,9 @@ fun tableRow(
     val point = chart.points[chart.points.size - 1 - newest]
     val running = chart.weekly && point.startedAt == ExerciseCharts.weekStartOf(today, weekStart).atStartOfDayIn(zone).toEpochMilliseconds()
     val label = when {
-        !chart.weekly -> shortDate(point.startedAt, zone)
-        running -> stringResource(Res.string.progress_highlight, weekOf(point.startedAt, zone), stringResource(Res.string.progress_this_week))
-        else -> weekOf(point.startedAt, zone)
+        !chart.weekly -> chartDate(point.startedAt, zone, today)
+        running -> stringResource(Res.string.progress_highlight, chartWeekOf(point.startedAt, zone, today), stringResource(Res.string.progress_this_week))
+        else -> chartWeekOf(point.startedAt, zone, today)
     }
     val set = point.set?.takeIf { metric != ProgressMetric.VOLUME }
     return ChartTableRowData(
@@ -241,10 +260,15 @@ fun tableRow(
 fun recordsMonthHeader(year: Int, month: Month, count: Int): String =
     stringResource(Res.string.records_month, ScreenDates.monthYear(year, month), pluralCount(Res.plurals.records_count, count))
 
-/** "Carga" or "Repetições". */
+/**
+ * "Carga" or "Repetições"; a load record of an Added weight exercise ([convention]) says "Peso adicional", the name its
+ * chart and its convention use, since its number is the weight added to the body, not the load.
+ */
 @Composable
-fun recordKindLabel(kind: RecordKind): String =
-    stringResource(if (kind == RecordKind.WEIGHT) Res.string.records_kind_weight else Res.string.records_kind_reps)
+fun recordKindLabel(kind: RecordKind, convention: String = ""): String = when {
+    kind == RecordKind.WEIGHT && WorkingSets.convention(convention) == LoadConvention.BODYWEIGHT -> metricLabel(ProgressMetric.LOAD, convention)
+    else -> stringResource(if (kind == RecordKind.WEIGHT) Res.string.records_kind_weight else Res.string.records_kind_reps)
+}
 
 /**
  * A record's set: "87,5 kg × 6", "Peso corporal × 12", and for an [assistance] reps record (an assisted set, or any
@@ -252,7 +276,8 @@ fun recordKindLabel(kind: RecordKind): String =
  */
 @Composable
 private fun recordSetText(kind: RecordKind, weightKg: Double, reps: Int, pounds: Boolean, assistance: Boolean): String =
-    if (kind == RecordKind.REPS && assistance) {
+    // An assisted set with no assistance logged is a bodyweight set: "Peso corporal × 8", never "0 kg de assistência".
+    if (kind == RecordKind.REPS && assistance && weightKg != 0.0) {
         stringResource(Res.string.records_assisted_set, loadString(WeightUnits.fromKg(weightKg, pounds), pounds), reps)
     } else {
         bestSetText(weightKg, reps, pounds)
@@ -299,18 +324,20 @@ fun recordLine(
 ): String =
     stringResource(Res.string.progress_highlight, recordSetText(kind, weightKg, reps, pounds, assistance), shortDate(epochMillis, zone))
 
+/** A record's set read aloud: "87,5 quilos por 6", "peso corporal por 12", "30 quilos de assistência por 8". */
 @Composable
 private fun spokenSet(kind: RecordKind, weightKg: Double, reps: Int, pounds: Boolean, assistance: Boolean): String = when {
+    // No load (and no assistance): the body's weight, read with "by" like every other set, never as "×".
+    weightKg == 0.0 -> spokenLoadByReps(stringResource(Res.string.records_spoken_bodyweight), reps)
     kind == RecordKind.REPS && assistance ->
         spokenLoadByReps(stringResource(Res.string.records_spoken_assistance, loadSpoken(weightKg, pounds)), reps)
-    weightKg == 0.0 -> bestSetText(weightKg, reps, pounds)
     else -> spokenLoadByReps(loadSpoken(weightKg, pounds), reps)
 }
 
 /**
  * A record row read aloud, without the visual dot: "Supino, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro,
  * Atual". [current] adds "Atual"; [first] adds "Primeiro registro"; an [assistance] reps record reads its set as
- * "30 quilos de assistência por 8".
+ * "30 quilos de assistência por 8". The kind follows the record's [convention] ([recordKindLabel]).
  */
 @Composable
 fun recordSpoken(
@@ -327,6 +354,7 @@ fun recordSpoken(
     current: Boolean,
     first: Boolean,
     assistance: Boolean = false,
+    convention: String = "",
 ): String {
     var detail = spokenSet(kind, weightKg, reps, pounds, assistance)
     val was = when {
@@ -335,7 +363,7 @@ fun recordSpoken(
         else -> null
     }
     if (was != null) detail = stringResource(Res.string.records_spoken_join, detail, was)
-    var text = stringResource(Res.string.records_spoken, exerciseName, recordKindLabel(kind), detail, spokenDate(epochMillis, zone, today))
+    var text = stringResource(Res.string.records_spoken, exerciseName, recordKindLabel(kind, convention), detail, spokenDate(epochMillis, zone, today))
     if (current) text = stringResource(Res.string.records_spoken_join, text, stringResource(Res.string.records_current))
     if (first) text = stringResource(Res.string.records_spoken_join, text, stringResource(Res.string.records_first_badge))
     return text

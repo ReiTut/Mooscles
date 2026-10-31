@@ -151,14 +151,49 @@ class ProgressTextsTest {
         }
         assertEquals(
             listOf(
-                "+12,5 kg desde 3 jun".nb(), "−5 kg desde 3 jun".nb(), "0 kg desde 3 jun".nb(), "+3 repetições desde 3 jun",
-                "+12,5 kg desde a semana de 3 jun".nb(),
+                "+12,5 kg desde 3\u00A0jun".nb(), "−5 kg desde 3\u00A0jun".nb(), "0 kg desde 3\u00A0jun".nb(), "+3 repetições desde 3\u00A0jun",
+                "+12,5 kg desde a semana de 3\u00A0jun".nb(),
             ),
             texts["pt-BR"],
         )
-        assertEquals("+12.5 kg since Jun 3".nb(), texts["en"]!![0])
-        assertEquals("−5 kg since Jun 3".nb(), texts["en"]!![1])
-        assertEquals("+12.5 kg since the week of Jun 3".nb(), texts["en"]!![4])
+        assertEquals("+12.5 kg since Jun\u00A03".nb(), texts["en"]!![0])
+        assertEquals("−5 kg since Jun\u00A03".nb(), texts["en"]!![1])
+        assertEquals("+12.5 kg since the week of Jun\u00A03".nb(), texts["en"]!![4])
+    }
+
+    /**
+     * Critique of phase 5A: a date a year or more ago carries its year in "since", the reading and the table (a 2024 point
+     * read "since Jun 3"), and a date never breaks between its day and month (no-break spaces).
+     */
+    @Test
+    fun datesAYearOrMoreAgoCarryTheYearAndDoNotBreak() {
+        val old = ChartPoint(at(2024, 6, 3), 80.0, SetValue(80.0, 80.0, 5), false, "w-old")
+        val texts = inBoth {
+            listOf(
+                sinceText(old, point(28, 92.5), ProgressMetric.LOAD, false, utc, today = today),
+                readoutText(old, ProgressMetric.LOAD, false, utc, today = today),
+                readoutText(old, ProgressMetric.LOAD, false, utc, weekly = true, today = today),
+                tableRows(chart(listOf(old, point(28, 92.5)), null), ProgressMetric.LOAD, false, utc, DayOfWeek.MONDAY, today)[1].label,
+            )
+        }
+        assertEquals(
+            listOf(
+                "+12,5 kg desde 3 jun 2024".nb(),
+                "3 jun 2024 · 80 kg · 80 kg × 5".nb(),
+                "Semana de 3 jun 2024 · 80 kg · 80 kg × 5".nb(),
+                "3 jun 2024",
+            ),
+            texts["pt-BR"],
+        )
+        assertEquals(
+            listOf(
+                "+12.5 kg since Jun 3, 2024".nb(),
+                "Jun 3, 2024 · 80 kg · 80 kg × 5".nb(),
+                "Week of Jun 3, 2024 · 80 kg · 80 kg × 5".nb(),
+                "Jun 3, 2024",
+            ),
+            texts["en"],
+        )
     }
 
     @Test
@@ -172,11 +207,11 @@ class ProgressTextsTest {
                 readoutText(weekly, ProgressMetric.E1RM, false, utc, weekly = true),
             )
         }
-        assertEquals("28 out · 92,5 kg · 85 kg × 3".nb(), texts["pt-BR"]!![0])
-        assertEquals("28 out · 9.800 kg".nb(), texts["pt-BR"]!![1])
-        assertEquals("Semana de 6 out · 92,5 kg · 85 kg × 3".nb(), texts["pt-BR"]!![2])
-        assertEquals("Oct 28 · 92.5 kg · 85 kg × 3".nb(), texts["en"]!![0])
-        assertEquals("Week of Oct 6 · 92.5 kg · 85 kg × 3".nb(), texts["en"]!![2])
+        assertEquals("28\u00A0out · 92,5 kg · 85 kg × 3".nb(), texts["pt-BR"]!![0])
+        assertEquals("28\u00A0out · 9.800 kg".nb(), texts["pt-BR"]!![1])
+        assertEquals("Semana de 6\u00A0out · 92,5 kg · 85 kg × 3".nb(), texts["pt-BR"]!![2])
+        assertEquals("Oct\u00A028 · 92.5 kg · 85 kg × 3".nb(), texts["en"]!![0])
+        assertEquals("Week of Oct\u00A06 · 92.5 kg · 85 kg × 3".nb(), texts["en"]!![2])
     }
 
     @Test
@@ -194,9 +229,9 @@ class ProgressTextsTest {
             assertFalse(rows[0].record, locale)
             assertTrue(rows[1].record, locale)
         }
-        assertEquals("30 out", texts["pt-BR"]!![0].label)
+        assertEquals("30\u00A0out", texts["pt-BR"]!![0].label)
         assertEquals("92,5 kg".nb(), texts["pt-BR"]!![0].value)
-        assertEquals("Oct 28", texts["en"]!![1].label)
+        assertEquals("Oct\u00A028", texts["en"]!![1].label)
     }
 
     @Test
@@ -208,10 +243,10 @@ class ProgressTextsTest {
         val texts = inBoth {
             tableRows(chart(weeks, null, weekly = true), ProgressMetric.VOLUME, false, utc, DayOfWeek.MONDAY, today)
         }
-        assertEquals("Semana de 26 out · esta semana (em andamento)", texts["pt-BR"]!![0].label)
-        assertEquals("Semana de 6 out", texts["pt-BR"]!![1].label)
-        assertEquals("Week of Oct 26 · this week (in progress)", texts["en"]!![0].label)
-        assertEquals("Week of Oct 6", texts["en"]!![1].label)
+        assertEquals("Semana de 26\u00A0out · esta semana (em andamento)", texts["pt-BR"]!![0].label)
+        assertEquals("Semana de 6\u00A0out", texts["pt-BR"]!![1].label)
+        assertEquals("Week of Oct\u00A026 · this week (in progress)", texts["en"]!![0].label)
+        assertEquals("Week of Oct\u00A06", texts["en"]!![1].label)
     }
 
     @Test
@@ -223,7 +258,7 @@ class ProgressTextsTest {
                 metricLabel(ProgressMetric.REPS, "Added weight"), metricLabel(ProgressMetric.VOLUME, "Per hand"),
             )
         }
-        assertEquals(listOf("Carga adicional", "Assistência", "Carga", "1RM estimado", "Repetições", "Volume"), texts["pt-BR"])
+        assertEquals(listOf("Peso adicional", "Assistência", "Carga", "1RM estimado", "Repetições", "Volume"), texts["pt-BR"])
         assertEquals(listOf("Added weight", "Assistance", "Load", "Estimated 1RM", "Reps", "Volume"), texts["en"])
     }
 
@@ -289,6 +324,61 @@ class ProgressTextsTest {
         assertEquals("100 kg × 3 · Sep 12".nb(), en[8])
     }
 
+    /**
+     * Critique of phase 5A and carries: a weight is spoken in the singular only at 1 ("1 quilo"); a set without load is read
+     * "peso corporal por 12"; an Added weight load record is "Peso adicional", the name of its chart; an assisted set
+     * with no assistance logged reads as bodyweight, never "0 kg de assistência".
+     */
+    @Test
+    fun spokenWeightsAddedWeightAndBodyweightRecords() {
+        val texts = inBoth {
+            listOf(
+                recordSpoken(
+                    "Barra", RecordKind.WEIGHT, 1.0, 5, previousKg = null, previousReps = null, pounds = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, convention = "Added weight",
+                ),
+                recordSpoken(
+                    "Barra", RecordKind.WEIGHT, 2.0, 5, previousKg = null, previousReps = null, pounds = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, convention = "Added weight",
+                ),
+                recordKindLabel(RecordKind.WEIGHT, "Added weight"),
+                recordKindLabel(RecordKind.WEIGHT, "Total load"),
+                recordKindLabel(RecordKind.REPS, "Added weight"),
+                recordSpoken(
+                    "Barra", RecordKind.REPS, 0.0, 12, previousKg = null, previousReps = 11, pounds = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false,
+                ),
+                recordWasText(RecordKind.REPS, 0.0, 8, previousKg = null, previousReps = 6, pounds = false, assistance = true),
+                recordSpoken(
+                    "Barra", RecordKind.REPS, 0.0, 8, previousKg = null, previousReps = 6, pounds = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, assistance = true,
+                ),
+            )
+        }
+        assertEquals(
+            listOf(
+                "Barra, Peso adicional: 1 quilo por 5, 28 de outubro",
+                "Barra, Peso adicional: 2 quilos por 5, 28 de outubro",
+                "Peso adicional", "Carga", "Repetições",
+                "Barra, Repetições: peso corporal por 12, antes 11 repetições, 28 de outubro",
+                "Peso corporal × 8 · antes 6 repetições",
+                "Barra, Repetições: peso corporal por 8, antes 6 repetições, 28 de outubro",
+            ),
+            texts["pt-BR"],
+        )
+        assertEquals(
+            listOf(
+                "Barra, Added weight: 1 kilogram by 5, October 28",
+                "Barra, Added weight: 2 kilograms by 5, October 28",
+                "Added weight", "Load", "Reps",
+                "Barra, Reps: bodyweight by 12, was 11 reps, October 28",
+                "Bodyweight × 8 · was 6 reps",
+                "Barra, Reps: bodyweight by 8, was 6 reps, October 28",
+            ),
+            texts["en"],
+        )
+    }
+
     @Test
     fun viewAllRecordsPluralInBothLanguages() {
         val texts = inBoth {
@@ -328,8 +418,8 @@ class ProgressTextsTest {
         assertEquals("221 lb".replace(" ", "\u00A0"), pt[2])
         assertEquals("12 repetições", pt[3])
         // +20 kg is +44.09 lb, and a drop of 20 kg carries the minus sign (U+2212).
-        assertEquals("+44,09 lb desde 3 jun".replace(" lb", "\u00A0lb"), pt[4])
-        assertEquals("\u221244,09 lb desde 3 jun".replace(" lb", "\u00A0lb"), pt[5])
+        assertEquals("+44,09 lb desde 3\u00A0jun".replace(" lb", "\u00A0lb"), pt[4])
+        assertEquals("\u221244,09 lb desde 3\u00A0jun".replace(" lb", "\u00A0lb"), pt[5])
         assertEquals("220", pt[6])
         assertTrue(pt[7].contains("220 libras"), pt[7])
         assertEquals("220.46 lb".replace(" ", "\u00A0"), en[0])

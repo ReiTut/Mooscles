@@ -149,6 +149,22 @@ fun spokenDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String {
 fun weekOf(weekStartMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String =
     stringResource(Res.string.progress_week_of, shortDate(weekStartMillis, zone))
 
+/**
+ * A date of the progress screen's texts ("since", the reading of a point, the data table): [shortDateAged], whose
+ * year shows for a date a year or more before [today], with no-break spaces, so a narrow line or a large font moves
+ * the whole date down instead of leaving "26" on one line and "mai" on the next.
+ */
+@Composable
+fun chartDate(epochMillis: Long, zone: TimeZone, today: LocalDate): String = unbroken(shortDateAged(epochMillis, zone, today))
+
+/** `Semana de 6 out` / `Week of Oct 6` with the date as [chartDate] writes it (the year when it is a year or more ago). */
+@Composable
+fun chartWeekOf(weekStartMillis: Long, zone: TimeZone, today: LocalDate): String =
+    stringResource(Res.string.progress_week_of, chartDate(weekStartMillis, zone, today))
+
+/** [text] with its spaces made no-break spaces (U+00A0). */
+internal fun unbroken(text: String): String = text.replace(' ', '\u00A0')
+
 /** `ter., 29 out · 18:02–18:44` / `Tue, Oct 29 · 18:02–18:44` (24 h clock in both languages). */
 @Composable
 fun summaryDateRange(startMillis: Long, endMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {

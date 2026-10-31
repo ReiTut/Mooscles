@@ -221,7 +221,7 @@ class ExerciseProgressScreenTest {
         id.value = pullUp.id
         waitForIdle()
         expect(
-            mapOf(ProgressMetric.REPS to "Repetições", ProgressMetric.LOAD to "Carga adicional", ProgressMetric.VOLUME to "Volume"),
+            mapOf(ProgressMetric.REPS to "Repetições", ProgressMetric.LOAD to "Peso adicional", ProgressMetric.VOLUME to "Volume"),
             "Peso adicional",
         )
 
@@ -257,9 +257,9 @@ class ExerciseProgressScreenTest {
             show(mutableStateOf(stateOf(benchHistory())))
             waitForTag(ProgressTags.HIGHLIGHT_VALUE)
             part(ProgressTags.HIGHLIGHT_VALUE).assertTextEquals("92,5 kg".nb())
-            part(ProgressTags.SINCE).assertTextEquals("+12,5 kg desde 3 jun".nb())
+            part(ProgressTags.SINCE).assertTextEquals("+12,5 kg desde 3\u00A0jun".nb())
             // One node: the value, the metric and the change.
-            onNodeWithTag(ProgressTags.HIGHLIGHT).assertTextEquals("92,5 kg".nb(), "Carga", "+12,5 kg desde 3 jun".nb())
+            onNodeWithTag(ProgressTags.HIGHLIGHT).assertTextEquals("92,5 kg".nb(), "Carga", "+12,5 kg desde 3\u00A0jun".nb())
         }
         LocalAppLocale.restore()
         // A drop is said the same way, with the minus sign and no other mark.
@@ -267,8 +267,20 @@ class ExerciseProgressScreenTest {
         runComposeUiTest {
             show(mutableStateOf(stateOf(lower)))
             waitForTag(ProgressTags.SINCE)
-            part(ProgressTags.SINCE).assertTextEquals("\u22125 kg desde 3 jun".nb())
+            part(ProgressTags.SINCE).assertTextEquals("\u22125 kg desde 3\u00A0jun".nb())
         }
+    }
+
+    /** Critique of phase 5A: "12 repetições" already names the metric, so the highlight does not add "Repetições". */
+    @Test
+    fun repsHighlightDoesNotRepeatTheMetric() = runComposeUiTest {
+        val history = listOf(
+            workout("p2", at(2026, 10, 10), pullUp, 0.0 to 12),
+            workout("p1", at(2026, 9, 3), pullUp, 0.0 to 8),
+        )
+        show(mutableStateOf(stateOf(history)), exerciseId = mutableStateOf(pullUp.id))
+        waitForTag(ProgressTags.SINCE)
+        onNodeWithTag(ProgressTags.HIGHLIGHT).assertTextEquals("12 repetições", "+4 repetições desde 3 set")
     }
 
     @Test
@@ -291,7 +303,7 @@ class ExerciseProgressScreenTest {
         )
         assertGone(ProgressTags.READOUT)
         part(ProgressTags.HIGHLIGHT_VALUE).assertTextEquals("92,5 kg".nb())
-        part(ProgressTags.SINCE).assertTextEquals("−2,5 kg desde 12 set".nb())
+        part(ProgressTags.SINCE).assertTextEquals("−2,5 kg desde 12\u00A0set".nb())
     }
 
     @Test
@@ -320,7 +332,7 @@ class ExerciseProgressScreenTest {
         waitForTag(ProgressTags.tableRow(0))
         assertGone(LineChartTag)
         onNodeWithTag(ProgressTags.DATA_TOGGLE).assertTextContains("Ver gráfico")
-        val expected = listOf("28 out" to "92,5 kg × 5", "12 set" to "95 kg × 3", "3 jun" to "80 kg × 5")
+        val expected = listOf("28\u00A0out" to "92,5 kg × 5", "12\u00A0set" to "95 kg × 3", "3\u00A0jun" to "80 kg × 5")
         for ((i, row) in expected.withIndex()) {
             scrollTo(ProgressTags.tableRow(i))
             onNodeWithTag(ProgressTags.tableRow(i)).assertTextContains(row.first).assertTextContains(row.second.nb())
@@ -339,11 +351,11 @@ class ExerciseProgressScreenTest {
         assertGone(ProgressTags.READOUT)
         onNodeWithTag(LineChartTag).performTouchInput { click(Offset(width - 1f, height / 2f)) }
         waitForTag(ProgressTags.READOUT)
-        onNodeWithTag(ProgressTags.READOUT).assertTextEquals("28 out · 92,5 kg · 92,5 kg × 5".nb())
+        onNodeWithTag(ProgressTags.READOUT).assertTextEquals("28\u00A0out · 92,5 kg · 92,5 kg × 5".nb())
         onNodeWithTag(LineChartTag).performTouchInput { click(Offset(1f, height / 2f)) }
         waitUntil(timeoutMillis = 5_000) {
             onAllNodesWithTag(ProgressTags.READOUT).fetchSemanticsNodes().singleOrNull()
-                ?.config?.get(SemanticsProperties.Text)?.joinToString("") { it.text } == "3 jun · 80 kg · 80 kg × 5".nb()
+                ?.config?.get(SemanticsProperties.Text)?.joinToString("") { it.text } == "3\u00A0jun · 80 kg · 80 kg × 5".nb()
         }
     }
 
@@ -475,12 +487,12 @@ class ExerciseProgressScreenTest {
         part(ProgressTags.SINCE).assertTextContains("desde a semana de", substring = true)
         onNodeWithTag(LineChartTag).performTouchInput { click(Offset(width - 1f, height / 2f)) }
         waitForTag(ProgressTags.READOUT)
-        onNodeWithTag(ProgressTags.READOUT).assertTextContains("Semana de 26 out · ", substring = true)
+        onNodeWithTag(ProgressTags.READOUT).assertTextContains("Semana de 26\u00A0out · ", substring = true)
         scrollTo(ProgressTags.WEEKLY_NOTE)
         onNodeWithTag(ProgressTags.WEEKLY_NOTE).assertTextEquals("Um ponto por semana: o melhor da semana.")
         onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
         waitAndScrollTo(ProgressTags.tableRow(0))
-        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("Semana de 26 out · esta semana (em andamento)")
+        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("Semana de 26\u00A0out · esta semana (em andamento)")
         onNodeWithTag(ProgressTags.WEEKLY_NOTE).assertExists()
     }
 
@@ -500,7 +512,7 @@ class ExerciseProgressScreenTest {
         scrollTo(ProgressTags.DATA_TOGGLE)
         onNodeWithTag(ProgressTags.DATA_TOGGLE).performClick()
         waitAndScrollTo(ProgressTags.tableRow(0))
-        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("28 out")
+        onNodeWithTag(ProgressTags.tableRow(0)).assertTextContains("28\u00A0out")
         assertGone(ProgressTags.tableRow(1))
     }
 

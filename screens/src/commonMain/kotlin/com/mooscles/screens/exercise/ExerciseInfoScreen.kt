@@ -1,5 +1,6 @@
 package com.mooscles.screens.exercise
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,8 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,32 +26,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.compose.runtime.collectAsState
-import com.mooscles.screens.exercise.photo.rememberStoredPhoto
-import com.mooscles.screens.exercise.photo.PhotoSource
-import com.mooscles.screens.exercise.photo.LocalExercisePhotos
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.Image
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.mooscles.data.Anatomy
 import com.mooscles.data.ExerciseAnatomy
 import com.mooscles.data.MuscleRegion
+import com.mooscles.designsystem.charts.MSparkline
 import com.mooscles.designsystem.components.EmptyState
 import com.mooscles.designsystem.components.ExerciseEquipmentIconTag
 import com.mooscles.designsystem.components.MBottomSheet
@@ -71,27 +67,30 @@ import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.format.pluralCount
 import com.mooscles.designsystem.icons.MIcon
-import com.mooscles.designsystem.charts.MSparkline
 import com.mooscles.designsystem.icons.MIcons
-import com.mooscles.screens.progress.ProgressLoad
-import com.mooscles.screens.progress.SeriesKey
-import com.mooscles.screens.progress.SparklineQuery
-import com.mooscles.screens.progress.rememberProgressIndex
-import com.mooscles.screens.progress.rememberProgressQuery
-import com.mooscles.screens.progress.valueOrNull
 import com.mooscles.designsystem.illustration.AnimatedExerciseFigure
 import com.mooscles.designsystem.illustration.BodyMap
 import com.mooscles.designsystem.illustration.BodyMapLegend
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.exercise.figures.ExerciseFigures
 import com.mooscles.screens.exercise.figures.FigureHighlights
+import com.mooscles.screens.exercise.photo.LocalExercisePhotos
+import com.mooscles.screens.exercise.photo.PhotoSource
+import com.mooscles.screens.exercise.photo.rememberStoredPhoto
+import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.format.anatomySentence
 import com.mooscles.screens.format.conventionCaption
 import com.mooscles.screens.format.conventionLabel
 import com.mooscles.screens.format.equipmentLabel
 import com.mooscles.screens.format.exerciseName
 import com.mooscles.screens.format.muscleLabel
-import com.mooscles.screens.format.shortDate
+import com.mooscles.screens.format.shortDateAged
+import com.mooscles.screens.progress.ProgressLoad
+import com.mooscles.screens.progress.SeriesKey
+import com.mooscles.screens.progress.SparklineQuery
+import com.mooscles.screens.progress.rememberProgressIndex
+import com.mooscles.screens.progress.rememberProgressQuery
+import com.mooscles.screens.progress.valueOrNull
 import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.exercise_add_routine
 import com.mooscles.screens.resources.exercise_add_workout
@@ -122,7 +121,10 @@ import com.mooscles.screens.workout.bestSetText
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
 import com.mooscles.ui.UiState
+import kotlin.time.Clock
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 
 /** The tag of the exercise detail route's root. */
@@ -580,7 +582,11 @@ private fun InfoHistory(exercise: ExerciseUi, summary: HistorySummary, state: Ui
                 )
                 return@Column
             }
-            val lastDate = summary.lastDate?.let { shortDate(it) }
+            // A last time a year or more ago has its year: "Jun 8" alone would read as this June.
+            val lastDate = summary.lastDate?.let {
+                val zone = TimeZone.currentSystemDefault()
+                shortDateAged(it, zone, ScreenDates.localDate(Clock.System.now().toEpochMilliseconds(), zone))
+            }
             val lastSet = setText(summary.lastWeightKg, summary.lastReps, pounds)
             val last = when {
                 lastDate != null && lastSet != null -> stringResource(Res.string.exercise_history_last, lastDate, lastSet)

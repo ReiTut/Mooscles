@@ -305,7 +305,8 @@ jobs:
           # (reports/2026-10-31-phase5a-verificacao/tap-baseline-5a.md). 1244 + 15 - 2 = 1257.
           # Phase 5A task 13 fix round 1 (:app host): ProgressNavigationHostTest +1 (aDoubleTapOnARecordOpensOneProgress). 1257 + 1 = 1258.
           # Phase 5A task 16 round 2: WeekStartTest +1 (:screens commonTest: aRegionlessLanguageTakesTheDeviceRegion). 1258 + 1 = 1259.
-          MIN_HOST_TESTS: 1259
+          # Phase 5A task 17 (critique): ChartGeometryTest +1 (:designsystem commonTest: ringsThatWouldTouchAreSkippedKeepingTheNewest). 1259 + 1 = 1260.
+          MIN_HOST_TESTS: 1260
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -531,7 +532,11 @@ jobs:
           # Phase 5A task 1: ChartScaleTest 7, ChartGeometryTest 3, SizesTimingElevationTest +1, ComponentColorsTest +2 (commonTest);
           # ChartsTest 11 (uiTest). 380 + 24 = 404.
           # Phase 5A task 9 fix round 1: ChartsTest +1 (uiTest: tableRowStacksALongDateAndKeepsTheValueWhole). 404 + 1 = 405.
-          MIN_DS_IOS_TESTS: 405
+          # Phase 5A task 17 (critique): ChartGeometryTest +1 (commonTest: ringsThatWouldTouchAreSkippedKeepingTheNewest);
+          # PrBadgeTest +2 (uiTest: customLabelIsDrawnAndSpoken, customLabelAloneKeepsTheSpokenDefault); SpokenWeightTest 2 (uiTest:
+          # portugueseIsSingularAtOneOnly, englishIsSingularAtOneOnly); ChartsTest +1 (uiTest: verticalSwipeScrollsAndHorizontalSwipeSelects).
+          # 405 + 6 = 411.
+          MIN_DS_IOS_TESTS: 411
         run: |
           $files = @(Get-ChildItem -Path 'designsystem/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
@@ -692,7 +697,12 @@ jobs:
           # progress states, the history card, recordsReadingOrder, progressReadingOrder). 857 + 18 = 875.
           # Merge of the task 13 and tasks 14-15 lanes (same base, 855): 855 + 2 + 20 = 877.
           # Phase 5A task 16 round 2: WeekStartTest +1 (commonTest: aRegionlessLanguageTakesTheDeviceRegion). 877 + 1 = 878.
-          MIN_SCREENS_IOS_TESTS: 878
+          # Phase 5A task 17 (critique): ProgressTextsTest +2 (uiTest: datesAYearOrMoreAgoCarryTheYearAndDoNotBreak,
+          # spokenWeightsAddedWeightAndBodyweightRecords); ExerciseInfoScreenTest +3 (uiTest: noSparklineForSessionsOfAnotherConvention,
+          # noSparklineNorSkeletonWhileTheIndexBuildsOrAfterItFails, anOldLastTimeHasItsYear); ExerciseProgressSectionsTest +2
+          # (uiTest: assistanceRepsRecordsSayAssistance, firstWorkoutNeverFlashesTheEmptyState); ExerciseProgressScreenTest +1
+          # (uiTest: repsHighlightDoesNotRepeatTheMetric). CurrentWeekStartDeviceTest is androidDeviceTest only. 878 + 8 = 886.
+          MIN_SCREENS_IOS_TESTS: 886
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
@@ -716,7 +726,9 @@ jobs:
 
       # The PNGs ActiveWorkoutFlowTest writes on the simulator, one per state of each run, and (phase 5A
       # spike S1) the chart captures of the design system's ChartsTest (none when captureToImage is
-      # unsupported there). Uploaded whatever the outcome, to look at the iOS screens.
+      # unsupported there). Uploaded whatever the outcome, to look at the iOS screens. With two paths the
+      # artifact keeps their common parent: the screens PNGs are under screens/build/ios-captures/ and the
+      # charts under designsystem/build/ios-captures/, not at the artifact's root.
       - name: Upload iOS flow captures
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

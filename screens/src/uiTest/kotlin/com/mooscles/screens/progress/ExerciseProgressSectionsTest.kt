@@ -435,6 +435,40 @@ class ExerciseProgressSectionsTest {
         }
     }
 
+    /**
+     * Carry from Task 10 (Minor 4): right after the first workout of an exercise, its progress waits for the new index
+     * under the skeleton; the previous index, which has no session of it, never shows "Você ainda não fez".
+     */
+    @Test
+    fun firstWorkoutNeverFlashesTheEmptyState() = runComposeUiTest {
+        val first = listOf(workout("c1", at(2026, 9, 15), row, sets("c1", 60.0 to 8)))
+        val second = listOf(workout("w4", at(2026, 10, 30), bench, sets("w4", 97.5 to 3))) + first
+        val gate = CompletableDeferred<Unit>()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cache = ProgressIndexCache(scope, build = { history, records ->
+            if (history === second) runBlocking { gate.await() }
+            ProgressIndex.build(history, records)
+        })
+        try {
+            val state = mutableStateOf(stateOf(first))
+            show(state, cache = cache, tall = tall)
+            waitForTag(ProgressTags.EMPTY)
+
+            state.value = stateOf(second)
+            waitForIdle()
+            assertGone(ProgressTags.EMPTY)
+            onNodeWithTag(ProgressTags.CHART_SKELETON).assertExists()
+
+            gate.complete(Unit)
+            waitForTag(ProgressTags.session("w4"))
+            assertGone(ProgressTags.EMPTY)
+            assertGone(ProgressTags.CHART_SKELETON)
+        } finally {
+            gate.complete(Unit)
+            scope.cancel()
+        }
+    }
+
     @Test
     fun poundsSwitchFormatsInTheNewUnit() = runComposeUiTest {
         // The app's switch makes a new history list: its index is held, and the previous one is shown in pounds.
@@ -609,16 +643,39 @@ class ExerciseProgressSectionsTest {
         assertTrue(!contentDescription(ProgressTags.session("h1")).contains("série assistida"))
     }
 
+    /**
+     * Critique of phase 5A: on an Assistance exercise a reps record's number is help, so it reads "22,5 kg de assistência
+     * × 10", in writing and aloud, as the Records tab writes it; never "22,5 kg × 10", which reads as load.
+     */
+    @Test
+    fun assistanceRepsRecordsSayAssistance() = runComposeUiTest {
+        val event = RecordUi(assistedPullUp, 22.5, 10, null, "h2", at(2026, 10, 22), RecordKind.REPS, previousReps = 9, assistance = true)
+        val history = listOf(
+            workout("h2", at(2026, 10, 22), assistedPullUp, listOf(SetUi("z2", 10, 22.5, completed = true, assistance = true)), records = listOf(event)),
+            workout("h1", at(2026, 10, 21), assistedPullUp, listOf(SetUi("z", 9, 22.5, completed = true, assistance = true))),
+        )
+        val current = event.copy(previousReps = null)
+        show(mutableStateOf(stateOf(history, records = listOf(current), exercises = listOf(bench, assistedPullUp))), exerciseId = assistedPullUp.id, tall = tall)
+        waitForTag(ProgressTags.recordReps(0))
+        onNodeWithTag(ProgressTags.recordReps(0)).assertTextEquals("22,5 kg de assistência × 10 · antes 9 repetições · 22 out".nb())
+        assertTrue(contentDescription(ProgressTags.recordReps(0)).contains("22,5 quilos de assistência por 10"), contentDescription(ProgressTags.recordReps(0)))
+    }
+
     @Test
     fun datesAYearOrMoreAgoShowTheYear() = runComposeUiTest {
         // Today is Oct 31, 2026: Sep 12, 2025 is more than a year ago; Nov 5, 2025 is not.
         val old = record("w0", at(2025, 9, 12), 100.0, 3)
         val history = listOf(
             workout("w1", at(2025, 11, 5), bench, sets("w1", 90.0 to 5)),
+            // The boundary (carry from Task 10): exactly a year ago has the year, the next day does not.
+            workout("w3", at(2025, 11, 1), bench, sets("w3", 85.0 to 5)),
+            workout("w2", at(2025, 10, 31), bench, sets("w2", 85.0 to 4)),
             workout("w0", at(2025, 9, 12), bench, sets("w0", 100.0 to 3), records = listOf(old.first)),
         )
         show(mutableStateOf(stateOf(history, records = listOf(old.second))), tall = tall)
         waitForTag(ProgressTags.session("w0"))
+        onNodeWithTag(ProgressTags.session("w2")).assertTextEquals("31 out 2025", "Treino w2", "85 × 4")
+        onNodeWithTag(ProgressTags.session("w3")).assertTextEquals("1 nov", "Treino w3", "85 × 5")
         onNodeWithTag(ProgressTags.RECORD_WEIGHT).assertTextEquals("100 kg × 3 · 12 set 2025".nb())
         onNodeWithTag(ProgressTags.session("w0")).assertTextContains("12 set 2025")
         onNodeWithTag(ProgressTags.session("w1")).assertTextContains("5 nov")

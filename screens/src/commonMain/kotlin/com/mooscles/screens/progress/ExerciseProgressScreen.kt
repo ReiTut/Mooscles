@@ -333,7 +333,9 @@ internal fun ExerciseProgressScreen(
                     return@LazyColumn
                 }
                 if (index != null && !failed && index.conventionsOf(exerciseId).isEmpty()) {
-                    item(key = "empty") { ProgressEmpty(onAbout) }
+                    // A previous index (a new history is building) cannot tell that the exercise has no session: its
+                    // first workout may be the new one. Wait for this history's own index, under the skeleton.
+                    if (index.isOf(state.history, state.records)) item(key = "empty") { ProgressEmpty(onAbout) } else item(key = "skeleton") { ChartSkeleton() }
                     return@LazyColumn
                 }
                 // Under the chart (or its sentence), before "View data".
@@ -504,7 +506,7 @@ private fun PeriodChips(selected: ExercisePeriod, onSelect: (ExercisePeriod) -> 
 
 /**
  * The last value in `num.lg` (or the largest number style that fits the width, so it is never cut) with the metric's
- * name, and the change since the period's first point, as a fact in `text.secondary`: no danger color, no arrow. One
+ * name (not for reps, whose value already says "repetições"), and the change since the period's first point, as a fact in `text.secondary`: no danger color, no arrow. One
  * point has no change to tell.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -516,7 +518,7 @@ private fun ProgressHighlight(shown: ShownChart, pounds: Boolean) {
     val metric = shown.query.metric
     val value = valueText(last, metric, pounds)
     val since = if (first != null && chart.points.size > 1) {
-        sinceText(first, last, metric, pounds, shown.query.zone, chart.weekly)
+        sinceText(first, last, metric, pounds, shown.query.zone, chart.weekly, shown.query.today)
     } else {
         null
     }
@@ -528,7 +530,10 @@ private fun ProgressHighlight(shown: ShownChart, pounds: Boolean) {
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 MText(value, style, color = MTheme.colors.textPrimary, softWrap = false, modifier = Modifier.testTag(ProgressTags.HIGHLIGHT_VALUE))
-                MText(metricLabel(metric, shown.query.key.convention), MTheme.type.bodyMd, color = MTheme.colors.textSecondary)
+                // "12 repetições" already names the metric; "Repetições" beside it would say it twice.
+                if (metric != ProgressMetric.REPS) {
+                    MText(metricLabel(metric, shown.query.key.convention), MTheme.type.bodyMd, color = MTheme.colors.textSecondary)
+                }
             }
             if (since != null) {
                 MText(since, MTheme.type.bodyMd, color = MTheme.colors.textSecondary, modifier = Modifier.testTag(ProgressTags.SINCE))
@@ -588,7 +593,7 @@ private fun ProgressReadout(shown: ShownChart, pounds: Boolean, selection: Mutab
     val chart = shown.chart
     val query = shown.query
     val selected = selection.value?.takeIf { it in chart.points.indices }
-    val readout = selected?.let { readoutText(chart.points[it], query.metric, pounds, query.zone, chart.weekly) }
+    val readout = selected?.let { readoutText(chart.points[it], query.metric, pounds, query.zone, chart.weekly, query.today) }
     MText(
         readout.orEmpty(),
         MTheme.type.labelMd,

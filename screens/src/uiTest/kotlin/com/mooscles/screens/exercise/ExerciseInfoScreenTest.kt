@@ -1,5 +1,6 @@
 package com.mooscles.screens.exercise
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import com.mooscles.screens.exercise.figures.ExerciseFigures
 import com.mooscles.data.NameRule
 import com.mooscles.designsystem.components.ExerciseEquipmentIconTag
 import com.mooscles.designsystem.components.PrBadgeTag
+import com.mooscles.designsystem.components.SkeletonAlpha
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.designsystem.illustration.AnimatedFigureTag
 import com.mooscles.designsystem.illustration.BodyMapLegendTag
@@ -46,6 +48,10 @@ import com.mooscles.designsystem.tokens.MoosclesTiming
 import com.mooscles.screens.LINEAR_TWO_X_FONT_SCALE
 import com.mooscles.screens.RecordingActions
 import com.mooscles.screens.assertTextNotCut
+import com.mooscles.screens.progress.LocalProgressIndexCache
+import com.mooscles.screens.progress.ProgressIndexCache
+import com.mooscles.screens.progress.SeriesKey
+import com.mooscles.screens.progress.SparklineQuery
 import com.mooscles.screens.withScreen
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
@@ -57,10 +63,16 @@ import com.mooscles.ui.UiError
 import com.mooscles.ui.UiState
 import com.mooscles.ui.WorkoutExerciseUi
 import com.mooscles.ui.WorkoutUi
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** The exercise detail (spec "Detalhe do exercício"), in pt-BR. */
@@ -131,6 +143,7 @@ class ExerciseInfoScreenTest {
         fake: Fake = Fake(state),
         exerciseId: String = exercise.id,
         photos: FakeExercisePhotos? = null,
+        cache: ProgressIndexCache? = null,
     ): Requests {
         val requests = Requests()
         withScreen(locale = "pt-BR", reducedMotion = reducedMotion, fontScale = fontScale, size = size, probe = probe) {
@@ -147,7 +160,9 @@ class ExerciseInfoScreenTest {
                     foreground = foreground.value,
                 )
             }
-            if (photos != null) photos.Provide(route) else route()
+            CompositionLocalProvider(LocalProgressIndexCache provides cache) {
+                if (photos != null) photos.Provide(route) else route()
+            }
         }
         if (idle) waitForIdle()
         return requests
@@ -427,7 +442,80 @@ class ExerciseInfoScreenTest {
         waitUntil(timeoutMillis = 5_000) { exists(ExerciseInfoTags.HISTORY_SPARKLINE) }
         val node = onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).fetchSemanticsNode()
         assertEquals(emptyList(), node.children.filter { it.config.contains(SemanticsProperties.Text) || it.config.contains(SemanticsProperties.ContentDescription) })
+        // The wrapper itself says nothing either: no text, no description, no role, and no child node at all.
+        assertFalse(node.config.contains(SemanticsProperties.Text), "the sparkline's wrapper has a text")
+        assertFalse(node.config.contains(SemanticsProperties.ContentDescription), "the sparkline's wrapper has a description")
+        assertFalse(node.config.contains(SemanticsProperties.Role), "the sparkline's wrapper has a role")
+        assertEquals(emptyList(), node.children.map { it.config.toString() }, "the sparkline has semantic children")
         assertEquals("2 sessões", textOf(onNodeWithTag(ExerciseInfoTags.HISTORY_SESSIONS)))
+    }
+
+    /** Carry from Task 12: the sparkline is the exercise's current convention's; sessions logged in another have none. */
+    @Test
+    fun noSparklineForSessionsOfAnotherConvention() = runComposeUiTest {
+        val perHand = bench.copy(convention = "Per hand")
+        val history = listOf(
+            workout("w2", OCT_21, perHand, SetUi("s2", reps = 8, weightKg = 40.0, completed = true)),
+            workout("w1", OCT_14, perHand, SetUi("s1", reps = 8, weightKg = 35.0, completed = true)),
+        )
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cache = ProgressIndexCache(scope)
+        try {
+            val state = stateOf(history = history)
+            val index = runBlocking { cache.get(state.value.history, state.value.records) }
+            show(state = state, cache = cache)
+            // The index is ready and its query answered: what the card shows now is final.
+            waitUntil(timeoutMillis = 5_000) { cache.peekQuery(index, SparklineQuery(SeriesKey(bench.id, bench.convention))) != null }
+            waitForIdle()
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SESSIONS).assertExists()
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).assertDoesNotExist()
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    /** Carry from Task 12: while the index builds, and after it fails, the card has no sparkline and no skeleton. */
+    @Test
+    fun noSparklineNorSkeletonWhileTheIndexBuildsOrAfterItFails() = runComposeUiTest {
+        val history = listOf(
+            workout("w2", OCT_21, bench, SetUi("s2", reps = 8, weightKg = 80.0, completed = true)),
+            workout("w1", OCT_14, bench, SetUi("s1", reps = 8, weightKg = 70.0, completed = true)),
+        )
+        val gate = CompletableDeferred<Unit>()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cache = ProgressIndexCache(scope, build = { _, _ ->
+            runBlocking { gate.await() }
+            error("build failed on purpose")
+        })
+        try {
+            show(state = stateOf(history = history), cache = cache)
+            fun skeletons() = onAllNodes(
+                SemanticsMatcher.keyIsDefined(SkeletonAlpha) and hasAnyAncestor(hasTestTag(ExerciseInfoTags.HISTORY)),
+                useUnmergedTree = true,
+            ).fetchSemanticsNodes().size
+            // Building: the card is there with its text, without the sparkline or a placeholder for it.
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SESSIONS).assertExists()
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).assertDoesNotExist()
+            assertEquals(0, skeletons(), "a skeleton in the history card while the index builds")
+            gate.complete(Unit)
+            mainClock.advanceTimeBy(500)
+            waitForIdle()
+            // Failed: the same.
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SESSIONS).assertExists()
+            onNodeWithTag(ExerciseInfoTags.HISTORY_SPARKLINE, useUnmergedTree = true).assertDoesNotExist()
+            assertEquals(0, skeletons(), "a skeleton in the history card after the build failed")
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    /** Critique of phase 5A: a last time a year or more ago has its year ("Jun 8" alone reads as this June). */
+    @Test
+    fun anOldLastTimeHasItsYear() = runComposeUiTest {
+        val history = listOf(workout("w1", JUN_8_2024, bench, SetUi("s1", reps = 8, weightKg = 80.0, completed = true)))
+        show(state = stateOf(history = history))
+        onNodeWithTag(ExerciseInfoTags.HISTORY_LAST).performScrollTo()
+        assertEquals("Última vez 8 jun 2024 · 80 kg × 8", mergedText(ExerciseInfoTags.HISTORY_LAST))
     }
 
     @Test
@@ -730,5 +818,6 @@ class ExerciseInfoScreenTest {
         /** Noon UTC, the same day in every time zone a test device runs in. */
         const val OCT_21 = 1_792_584_000_000L
         const val OCT_14 = 1_791_979_200_000L
+        const val JUN_8_2024 = 1_717_848_000_000L
     }
 }

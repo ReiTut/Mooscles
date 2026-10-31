@@ -290,7 +290,8 @@ class RecordsScreenTest {
         part(pushR12, RecordsTags.ROW_VALUE).assertTextEquals("Peso corporal × 12 · antes 10 repetições")
         part(pushR12, RecordsTags.ROW_KIND).assertTextEquals("Repetições")
         part(pushR12, RecordsTags.ROW_DATE).assertTextEquals("20 out")
-        assertTrue(spoken(pushR12).contains("Peso corporal × 12, antes 10 repetições"), spoken(pushR12))
+        // Read with "por" like every other set, never "×" (critique of phase 5A).
+        assertTrue(spoken(pushR12).contains("Repetições: peso corporal por 12, antes 10 repetições"), spoken(pushR12))
     }
 
     @Test

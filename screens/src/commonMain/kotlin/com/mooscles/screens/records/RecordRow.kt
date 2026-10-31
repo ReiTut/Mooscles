@@ -79,12 +79,13 @@ internal fun RecordRow(
     val colors = MTheme.colors
     val name = displayName(record.exercise, portuguese)
     val first = record.firstRecord
-    val kind = recordKindLabel(record.kind)
+    val kind = recordKindLabel(record.kind, record.exercise.convention)
     val value = recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds, record.assistance)
     val date = shortDate(record.date, zone)
     val spoken = recordSpoken(
         name, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
         record.date, zone, today, current = event.current, first = first, assistance = record.assistance,
+        convention = record.exercise.convention,
     )
     // A first record's badge says so in words ("Primeiro"), never by its quieter fill alone.
     val badgeLabel = if (first) stringResource(Res.string.records_first_short) else stringResource(DsRes.string.ds_pr_label)

@@ -224,15 +224,19 @@ private fun RecordCaption(text: String, tag: String) {
 private fun RecordRow(event: RecordEvent, exerciseName: String, pounds: Boolean, calendar: ProgressCalendar, tag: String) {
     RecompositionProbe(tag)
     val record = event.record
-    val set = if (record.firstRecord) {
-        bestSetText(record.weightKg, record.reps, pounds)
-    } else {
-        recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds)
-    }
+    // On an Assistance exercise the number is help, not load: "22,5 kg de assistência × 10", as the Records tab writes
+    // it. Assisted sets of other exercises keep their own caption ("Repetições assistidas") and "série assistida".
+    val assistanceWording = record.kind == RecordKind.REPS && record.assistance &&
+        WorkingSets.convention(record.exercise.convention) == LoadConvention.ASSISTANCE
+    val set = recordWasText(
+        record.kind, record.weightKg, record.reps,
+        record.previousKg.takeIf { !record.firstRecord }, record.previousReps.takeIf { !record.firstRecord }, pounds, assistanceWording,
+    )
     val text = stringResource(Res.string.progress_highlight, set, shortDateAged(record.date, calendar.zone, calendar.today))
     var spoken = recordSpoken(
         exerciseName, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
-        record.date, calendar.zone, calendar.today, current = false, first = false,
+        record.date, calendar.zone, calendar.today, current = false, first = false, assistance = assistanceWording,
+        convention = record.exercise.convention,
     )
     if (record.kind == RecordKind.REPS && record.assistance && WorkingSets.convention(record.exercise.convention) != LoadConvention.ASSISTANCE) {
         spoken = stringResource(Res.string.records_spoken_join, spoken, stringResource(DsRes.string.ds_set_type_assisted_spoken))

@@ -38,6 +38,7 @@
     <string name="records_none_found">Nenhum recorde encontrado</string>
     <string name="records_assisted_set">%1$s de assistência × %2$d</string>
     <string name="records_spoken_assistance">%1$s de assistência</string>
+    <string name="records_spoken_bodyweight">peso corporal</string>
     <string name="records_first_short">Primeiro</string>
     <string name="records_only_first_title">Nenhum recorde batido ainda</string>
     <string name="records_only_first_body">Seus primeiros registros ficam em “Primeiros registros”.</string>

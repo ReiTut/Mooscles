@@ -38,6 +38,7 @@
     <string name="records_none_found">No records found</string>
     <string name="records_assisted_set">%1$s assistance × %2$d</string>
     <string name="records_spoken_assistance">%1$s of assistance</string>
+    <string name="records_spoken_bodyweight">bodyweight</string>
     <string name="records_first_short">First</string>
     <string name="records_only_first_title">No records beaten yet</string>
     <string name="records_only_first_body">Your first records are under “First records”.</string>

@@ -70,7 +70,16 @@ class ProgressIndex private constructor(
     private val search: ExerciseSearchIndex,
     /** The order of [events]: a record outside them (a current fallback) takes its place by sorting with this. */
     val eventOrder: Comparator<RecordEvent>,
+    private val history: List<WorkoutUi>,
+    private val records: List<RecordUi>,
 ) {
+    /**
+     * Whether this index was built from these very lists (identity, as the cache keys it). While a new history builds,
+     * a screen keeps the previous index; it may draw from it, but must not conclude from it that something is absent,
+     * such as "no session of this exercise" right after its first workout.
+     */
+    fun isOf(history: List<WorkoutUi>, records: List<RecordUi>): Boolean = this.history === history && this.records === records
+
     /** The sessions of [key], oldest first; empty for a series without one. */
     fun sessions(key: SeriesKey): List<SessionPoint> = series[key].orEmpty()
 
@@ -122,7 +131,7 @@ class ProgressIndex private constructor(
                 .filterNot(RecordUi::firstRecord).groupBy(::markOf)
             val series = Series(history, beaten)
             return ProgressIndex(series.points, series.conventions(), series.snapshots, events, currentRecords,
-                searchIndex(events, currentRecords), eventOrder)
+                searchIndex(events, currentRecords), eventOrder, history, records)
         }
 
         /** D18: the same exercise, convention, kind, assistance and workout, and the same load. */
