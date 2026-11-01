@@ -1,0 +1,9 @@
+// Fixture for tools/check-design-tokens.ps1: each line below breaks one rule (8 in all).
+val a = Color(0xFF000000)
+val b = Color.White
+val c = 16.dp
+val d = 14.sp
+val e = tween(200)
+val f = spring(stiffness = 300f)
+val g = delay(4000)
+val h = Primitives.ferro19

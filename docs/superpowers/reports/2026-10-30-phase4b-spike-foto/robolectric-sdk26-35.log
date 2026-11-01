@@ -1,0 +1,60 @@
+SPIKE robolectric sdk=26 case=jpeg-o6 path=legacy out=810x1080 bytes=236849 ms=741 upright=true
+SPIKE robolectric sdk=26 case=jpeg-o6 path=process out=810x1080 bytes=236849 ms=201 upright=true
+SPIKE robolectric sdk=26 case=png path=legacy out=1080x810 bytes=221836 ms=355 upright=true
+SPIKE robolectric sdk=26 case=png path=process out=1080x810 bytes=221836 ms=330 upright=true
+SPIKE robolectric sdk=26 o=1 path=legacy detail=legacy(sample=2,exif=0) out=1080x810 bytes=220565 thumb=14135 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=1 path=process detail=legacy(sample=2,exif=0) out=1080x810 bytes=220565 thumb=14135 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=2 path=legacy detail=legacy(sample=2,exif=2) out=1080x810 bytes=221180 thumb=14293 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=2 path=process detail=legacy(sample=2,exif=2) out=1080x810 bytes=221180 thumb=14293 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=3 path=legacy detail=legacy(sample=2,exif=3) out=1080x810 bytes=219143 thumb=14216 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=3 path=process detail=legacy(sample=2,exif=3) out=1080x810 bytes=219143 thumb=14216 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=4 path=legacy detail=legacy(sample=2,exif=4) out=1080x810 bytes=218229 thumb=14109 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=4 path=process detail=legacy(sample=2,exif=4) out=1080x810 bytes=218229 thumb=14109 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=5 path=legacy detail=legacy(sample=2,exif=5) out=810x1080 bytes=222901 thumb=14405 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=5 path=process detail=legacy(sample=2,exif=5) out=810x1080 bytes=222901 thumb=14405 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=6 path=legacy detail=legacy(sample=2,exif=6) out=810x1080 bytes=221632 thumb=14431 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=6 path=process detail=legacy(sample=2,exif=6) out=810x1080 bytes=221632 thumb=14431 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=7 path=legacy detail=legacy(sample=2,exif=7) out=810x1080 bytes=220214 thumb=14209 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=7 path=process detail=legacy(sample=2,exif=7) out=810x1080 bytes=220214 thumb=14209 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=8 path=legacy detail=legacy(sample=2,exif=8) out=810x1080 bytes=222975 thumb=14227 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=26 o=8 path=process detail=legacy(sample=2,exif=8) out=810x1080 bytes=222975 thumb=14227 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 case=jpeg-o6 path=legacy out=810x1080 bytes=236768 ms=111 upright=true
+SPIKE robolectric sdk=35 case=jpeg-o6 path=decoder out=810x1080 bytes=236717 ms=120 upright=true
+SPIKE robolectric sdk=35 case=jpeg-o6 path=decoderDirect out=810x1080 bytes=230776 ms=94 upright=true
+SPIKE robolectric sdk=35 case=jpeg-o6 path=process out=810x1080 bytes=236768 ms=87 upright=true
+SPIKE robolectric sdk=35 case=png path=legacy out=1080x810 bytes=221762 ms=288 upright=true
+SPIKE robolectric sdk=35 case=png path=decoder out=1080x810 bytes=221762 ms=303 upright=true
+SPIKE robolectric sdk=35 case=png path=decoderDirect out=1080x810 bytes=212288 ms=304 upright=true
+SPIKE robolectric sdk=35 case=png path=process out=1080x810 bytes=221762 ms=297 upright=true
+SPIKE robolectric sdk=35 o=1 path=legacy detail=legacy(sample=2,exif=0) out=1080x810 bytes=220468 thumb=14057 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=1 path=decoder detail=decoder(header=2400x1800,sample=2) out=1080x810 bytes=220468 thumb=14057 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=1 path=decoderDirect detail=decoderDirect(header=2400x1800) out=1080x810 bytes=219528 thumb=14055 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=1 path=process detail=legacy(sample=2,exif=0) out=1080x810 bytes=220468 thumb=14057 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=2 path=legacy detail=legacy(sample=2,exif=2) out=1080x810 bytes=221093 thumb=14227 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=2 path=decoder detail=decoder(header=2400x1800,sample=2) out=1080x810 bytes=220994 thumb=14237 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=2 path=decoderDirect detail=decoderDirect(header=2400x1800) out=1080x810 bytes=220095 thumb=14225 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=2 path=process detail=legacy(sample=2,exif=2) out=1080x810 bytes=221093 thumb=14227 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=3 path=legacy detail=legacy(sample=2,exif=3) out=1080x810 bytes=219078 thumb=14117 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=3 path=decoder detail=decoder(header=2400x1800,sample=2) out=1080x810 bytes=218899 thumb=14099 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=3 path=decoderDirect detail=decoderDirect(header=2400x1800) out=1080x810 bytes=218030 thumb=14110 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=3 path=process detail=legacy(sample=2,exif=3) out=1080x810 bytes=219078 thumb=14117 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=4 path=legacy detail=legacy(sample=2,exif=4) out=1080x810 bytes=218193 thumb=14008 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=4 path=decoder detail=decoder(header=2400x1800,sample=2) out=1080x810 bytes=218178 thumb=14016 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=4 path=decoderDirect detail=decoderDirect(header=2400x1800) out=1080x810 bytes=217283 thumb=13993 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=4 path=process detail=legacy(sample=2,exif=4) out=1080x810 bytes=218193 thumb=14008 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=5 path=legacy detail=legacy(sample=2,exif=5) out=810x1080 bytes=222843 thumb=14329 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=5 path=decoder detail=decoder(header=1800x2400,sample=2) out=810x1080 bytes=222843 thumb=14329 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=5 path=decoderDirect detail=decoderDirect(header=1800x2400) out=810x1080 bytes=221903 thumb=14312 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=5 path=process detail=legacy(sample=2,exif=5) out=810x1080 bytes=222843 thumb=14329 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=6 path=legacy detail=legacy(sample=2,exif=6) out=810x1080 bytes=221586 thumb=14352 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=6 path=decoder detail=decoder(header=1800x2400,sample=2) out=810x1080 bytes=221529 thumb=14353 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=6 path=decoderDirect detail=decoderDirect(header=1800x2400) out=810x1080 bytes=220744 thumb=14352 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=6 path=process detail=legacy(sample=2,exif=6) out=810x1080 bytes=221586 thumb=14352 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=7 path=legacy detail=legacy(sample=2,exif=7) out=810x1080 bytes=220130 thumb=14126 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=7 path=decoder detail=decoder(header=1800x2400,sample=2) out=810x1080 bytes=220044 thumb=14116 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=7 path=decoderDirect detail=decoderDirect(header=1800x2400) out=810x1080 bytes=219030 thumb=14111 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=7 path=process detail=legacy(sample=2,exif=7) out=810x1080 bytes=220130 thumb=14126 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=8 path=legacy detail=legacy(sample=2,exif=8) out=810x1080 bytes=222840 thumb=14143 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=8 path=decoder detail=decoder(header=1800x2400,sample=2) out=810x1080 bytes=222873 thumb=14168 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=8 path=decoderDirect detail=decoderDirect(header=1800x2400) out=810x1080 bytes=221940 thumb=14140 quadrants=red/green/blue/yellow
+SPIKE robolectric sdk=35 o=8 path=process detail=legacy(sample=2,exif=8) out=810x1080 bytes=222840 thumb=14143 quadrants=red/green/blue/yellow

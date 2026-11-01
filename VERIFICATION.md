@@ -1,5 +1,29 @@
 # Verification — 2026-10-25
 
+## Release 1.5.0 / Build 21
+
+Version name **1.5.0**, version code **21**, above the 1.4.6 stable release (Build 17) and the 1.4.7 prereleases (Builds 18-20, beta.3 on 2026-10-31). It brings the whole redesign from the fork, phases 0 to 5A:
+
+- Phases 0-1: export/import, records off the main thread, portable build scripts and CI, new toolchain (Room 2.8 with the SQLite driver) and the `:shared` Kotlin Multiplatform module: [1A](docs/superpowers/reports/2026-10-27-phase1a-verificacao.md), [1B](docs/superpowers/reports/2026-10-27-phase1b-verificacao.md), [export/import](docs/superpowers/reports/2026-10-27-export-import-verificacao.md), [macOS build](docs/superpowers/reports/2026-10-27-macos-build-ci-verificacao.md).
+- Phase 2: the `:designsystem` module and Settings in Portuguese: [report](docs/superpowers/reports/2026-10-28-phase2-verificacao.md).
+- Phase 3: active workout, summary, share card and app shell (`:screens`): [report](docs/superpowers/reports/2026-10-29-phase3-verificacao.md).
+- Phase 4A: exercise library, detail, body map and custom exercise form: [report](docs/superpowers/reports/2026-10-30-phase4a-verificacao.md).
+- Phase 4B: routines, folders, editor, photos: [report](docs/superpowers/reports/2026-10-30-phase4b-verificacao.md); and the exercise figures (20-exercise pilot to 285 of 287): [final](docs/superpowers/reports/2026-10-31-phase4-figuras-final.md).
+- Phase 5A: charts, exercise progress and the Records timeline: [report](docs/superpowers/reports/2026-10-31-phase5a-verificacao.md).
+
+Compatibility: Room goes from schema 5 to **6** through the additive `MIGRATION_5_6` (`routine_sets.warmup`, `INTEGER NOT NULL DEFAULT 0`), covered by host and iOS migration tests. No DataStore key changed. The `applicationId` (`com.mooscles`), the signing identity and the `update.json` contract are the same. The 1.4.7 beta features are not included.
+
+Latest CI: run 41253719805 on the fork `main` at `1aa69bd`: host 1264 tests; iOS simulator `:shared` 280, `:designsystem` 414 and `:screens` 892.
+
+Not verified:
+
+- Anything on a physical phone: TalkBack, haptics, 120 Hz behaviour and the Samsung keyboard.
+- Anything on an iPhone; iOS was only compiled and tested on the CI simulator.
+- Performance was measured on the emulator only.
+- The final release APK, signed with the original key, has not been installed over a real 1.4.6.
+
+Release preparation results: see below (filled at publish time).
+
 ## Release 1.4.6 / Build 17
 
 This release skips historical PR baseline work for active sessions without eligible
@@ -32,6 +56,142 @@ bytes, then publishes with `draft=false`, `prerelease=false` and Latest status.
 Final build/public-delivery results belong under ignored `.tooling/release-v146*`.
 The previously retained local release backup is outside the repository and is
 not a release asset. Earlier verification sections remain historical records.
+
+## Phase 5A charts, progress and Records (unreleased, fork branch) — 2026-10-31
+
+Branch `feat/phase5a-progress` in the fork, not in a published release. It adds the chart components in `:designsystem` (own drawing, no library), the exercise progress screen (route `exercise/{id}?metric=`), the new Records tab as a timeline, the sparkline on the exercise detail's history card, and one shared progress index built off the main thread. The old Records and exercise history screens are gone. No data change: Room stays at version 6, no DataStore key changed, `versionCode` 16 and `versionName` 1.4.5 are the same. Full report: `docs/superpowers/reports/2026-10-31-phase5a-verificacao.md`.
+
+Verified:
+
+- Host and iOS simulator tests on CI: run 41232962795 at `096ec3c` (Push 2): host 1258, `:shared` 280, `:designsystem` 405 and `:screens` 877 on the iOS simulator, all passing (Push 1, run 41215063507 at `fe6cf43`: 1212, 280, 404 and 747). The current minimums in `ci.yml` (host 1260, `:designsystem` 411, `:screens` 886) come from the later commits (`8bddc89`, `d704237` to `4d5c529`), which have **not** been through CI yet.
+- Android 15 emulator, full suites once (`a0eab5f`): `:designsystem` 405, `:screens` 881 (one opt-in skipped) and `:app` 25. One `UiFlowTest` failure (it assumed automatic rest was on in the data already on the emulator) was fixed in test code only and rerun. After that only the touched classes were rerun.
+- Spike S1 (own charts instead of a library): approved on the emulator and on the iOS simulator (chart components 58,084 bytes of dex, under the 60 KiB limit); the scroll check with a chart on screen gave 4.0-5.4% janky frames against 3.4-4.6% for the same gesture without one.
+- Touch budget (emulator, real view model and database): see the current record of an exercise 2 taps (the focus on the search field counts as a tap, as in the baseline measured on the old screens), from the record to the progress screen 2, see the estimated 1RM 3.
+- Upgrade in place on the emulator from the fork's main (`596c5bd`, database v6) with network off: `user_version` 6 before and after, same schema, byte-identical preferences file (same MD5), the running rest kept its deadline, the same 208 workouts and 12,688 sets, 480 record events and 246 current records, and the export after matched the export before except `exportedAt`.
+- Offline: on a fresh install with the network off and the large history imported, the Records tab, search, chips, every metric and period of the progress screen, "View data" and the history card sparkline worked; the branch adds no network call and no manifest change.
+- Debug APK size (local build, CI base `e6ada6a`): +284,839 bytes. That is inside the limit for 5A and 5B together (524,288), and **22,695 bytes over the 5A-only goal** (262,144); 5B keeps 239,449. Measured before the Task 17 fixes and not measured again. No new dependency (the dependency tree diff is empty).
+- Performance on the emulator (R8 build for the index): building the index on the large history took a median of 3.9 ms; the Records timeline with "Current only" scrolled with 3.2-3.7% janky frames (budget 5%). Queries and keystrokes were measured only on the debuggable test APK (p95 under 2.6 ms).
+- Screen critique (Task 17): one high finding (the week started on Monday under a per-app language without a region) and seven medium ones fixed; the high one with a device test that failed on the old code. The Added weight measure is now called "Peso adicional" everywhere in Portuguese.
+- The compatibility paths (`data/`, `timer/`, `shared/src/androidMain`, `updates/`, both `AppPreferences.kt`, both `build.gradle.kts`, `shared/schemas`) have an empty `git diff --stat` against main, so the `compat-reviewer` was not needed.
+
+Not verified:
+
+- The Library scroll used as the control measured 1.75-2.3% janky frames, against about 1% in phase 4A. It is **not attributable to 5A**: the Library code is unchanged, and the gesture had to move off the search field while the Mac was almost out of memory. It needs a recheck on the preview build on the S23.
+- The chart was **not measured again** after Task 17 put its drawing in a `graphicsLayer`. The layer only avoids re-recording the drawing, but that is not a frame measurement.
+- The queries and search keystrokes on the R8 build (only the index was measured there).
+- The label drawn inside the "PR" and "First" badges cannot be measured for clipping; it was checked only in the 200% font captures.
+- The first day of the week now comes from `LocaleManager.getSystemLocales()` on Android 13 and newer. The path below Android 13 (`Resources.getSystem()`) was not run, and the iOS path (`NSLocale`) was only compiled.
+- The large test history uses ids that are not catalog ids, so some captures show the stored English names in Portuguese. That is the specified behaviour for such exercises, not a defect.
+- Anything on an iPhone: VoiceOver reading the chart summaries and table rows, dragging on a chart, performance.
+- Anything on a physical Android phone: a real TalkBack session, dragging the chart selection with a finger, 120 Hz, performance on the S23 Ultra, Android 8 to 14.
+- Whether the charts motivate people to come back, and how good the estimated 1RM is for people who train.
+- The full device suites after `a0eab5f` (only touched classes were rerun) and the whole `:app` host suite after Task 17: CI does that on the next push.
+- The upgrade from a published APK signed with the original key: the key is not on this Mac, and v1.5.0 is not published. The rest notification in the background after the upgrade was not checked either.
+
+## Phase 4B routines (unreleased, fork branch) — 2026-10-30
+
+Branch `feat/phase4b-routines` in the fork, not in a published release. It adds the new Train tab (folders, routine cards), the routine editor (drag and drop, planned sets with warm-ups, per-exercise rest), the target line on the active workout card, the custom exercise photo (gallery or camera, Android only) and the multi-select exercise picker, in the `:screens` module (English and Brazilian Portuguese), the reorder component in `:designsystem`, and the routine commands in `:shared`. The old Train and routine screens are gone. Room moved from version 5 to **6** (`routine_sets.warmup`, `INTEGER NOT NULL DEFAULT 0`, additive `MIGRATION_5_6`; `6.json` is KSP-generated); the backup gains an optional `warmup` field and keeps format version 1. versionCode 16 and versionName 1.4.5 are unchanged; no DataStore key, updater contract or signing change. Full report, in Portuguese: [docs/superpowers/reports/2026-10-30-phase4b-verificacao.md](docs/superpowers/reports/2026-10-30-phase4b-verificacao.md).
+
+Verified:
+
+- Host tests: 1086 on CI (run 41169992244, `a855a9e`), 0 failures; on the iOS simulator `:shared` 275 (including the 7 entry-point tests and the real v5 to v6 migration on the bundled SQLite driver), `:designsystem` 375 and `:screens` 641, all passing, including the routines end-to-end flow test. On run 41157443080 (`41a727a`) the first attempt of the host job hit the 45-minute job limit inside `:app:testDebugUnitTest` with no failure logged; the rerun passed in about 6 minutes. If it recurs, take a thread dump before guessing.
+- Android 15 emulator, full suites once (`4694edc`): `:designsystem` 373, `:screens` 640 and `:app` 25. One harness-timing failure in the photo form tests and one race in `UiFlowTest` were fixed in test code only and rerun (8 consecutive green runs of the photo class, against 1 failure in 4 before); evidence, not certainty. Two merges landed after these runs (the iOS drag fix and the copper equipment color); only the affected classes were rerun (drag classes 80 of 80, figure test 10 of 10).
+- Touch budget (emulator, real view model and database): build a 5-exercise routine 9 taps (13 on the old screens), move the 5th exercise to the top 2 (4), add a set like the one above 1 (1), mark a planned set as warm-up 2 (new), start a workout from a routine 1 (1).
+- Upgrade in place on the emulator from the fork's main (`2359ab6`, database v5) with network off: `user_version` 6, none of the 21 planned sets became a warm-up, byte-identical preferences file (same MD5), the running rest kept its deadline, and the export after matched the export before except `exportedAt` and the new `"warmup": false`. Gallery and camera photo both worked without any permission prompt.
+- Offline: on a fresh install with the network off, folders, the editor, the multi-select picker, the target line and a custom exercise with a gallery photo worked; the branch adds no network call, and the manifest gains only a `<queries>` entry for the camera intent (no new permission).
+- Drag and drop (spike S2): the reorder component passed on the emulator and on the iOS simulator on CI, with the gesture cancellation covered on Android only. Photo pipeline (spike S4): upright, under 300 KB, about 16 MB native peak and no permission on emulators with API 26, 28 and 35.
+- Debug APK size (local build, CI base `739a800`): phases 4A and 4B together +734,829 bytes (limit 1,048,576; 4B alone +284,661). No new dependency (the dependency tree diff is empty).
+- Accessibility sweep in tests: labels, 48 dp targets, no clipped number or button text and the reorder actions on the handle, at font scales 1.0, 1.3, 2.0 and 2.01, at 320 and 412 dp, in both themes.
+- The detail figure no longer asks for frames while it holds a pose (about 0.3 frame callbacks per second during pauses, 60 before; emulator).
+
+Not verified:
+
+- Performance is **not proven**. The Task 18 measurements ran while the Mac was under heavy load (the Library, which this phase did not touch, went from 0.5-1.5% janky in phase 4A to 36-62%), so the jank of dragging in the editor and of scrolling the workout cards cannot approve or fail the phase. Two clean runs of the Train tab scroll with 30 routines gave 2.83% and 4.35% (budget 5%), which is not a stable repetition. The Task 19 re-run (2026-10-31) was contaminated too: the control scroll measured 34.3-52.4% janky under a load average of 3.3-6.2 and 15.2 GB of swap, so the frame budgets stay unproven until a free machine or a physical phone measures them. Saving the new order after a drag is proven (Task 18).
+- Anything on an iPhone: VoiceOver, dragging with a finger, the figure, performance. The photo picker and camera do not exist on iOS.
+- Anything on a physical Android phone: a real TalkBack session for the reorder actions (the announcement was proved through the live region, not heard), the real camera, the One UI photo picker, photo orientation from other manufacturers, 120 Hz dragging, battery of the detail figure, Android 8 to 14.
+- A HEIC photo on Android 9 (API 28) can come out sideways, and on Android 8 (API 26) it does not decode (the app shows the photo failure message). Accepted risk, measured only on emulators.
+- Whether the figures, cues and names are good for people who train; the owner approved the 20 pilot figures (gate G1) on 2026-10-30, with the equipment drawn in copper, but the other figures depend on the batches that come next.
+- The rest notification in the background after the upgrade, and the "Upgrade record" routine in the editor after the upgrade (only "Upgrade custom" was opened).
+- The `present()` timing of the whole large history after this phase (the samples are one set or one order), and the full device suites after the last two merges.
+- The release path from a published APK signed with the original key: the key is not on this Mac, and v1.5.0 is not published.
+- Screen critique (Task 19): one high finding (the name sheet hid behind the keyboard) and three medium ones fixed, each with a test that failed first; device run of the 14 touched `:screens` classes 254/255, then the fixed class 23/23. Deferred: the editor list jumping about 40 dp when the first card is lifted (needs a real finger) and the grey system bars of sheets and dialogs in the light theme (their icons are right).
+- The final whole-branch review found that the custom exercise form could reopen with the previous exercise after the save hand-over (the new exercise was then never created). Reproduced by `LibraryScreenTest.nextFormAfterTheHandOverStartsAfresh` (red before the fix) and fixed in `a855a9e`; the five touched classes passed 91/91 on the emulator.
+
+## Phase 4A exercise library (unreleased, fork branch) — 2026-10-30
+
+Branch `feat/phase4a-library` in the fork, not in a published release. It adds the new Library tab, exercise detail, custom exercise form and exercise picker (in the `:screens` module, English and Brazilian Portuguese), the figure renderer and body map in `:designsystem`, and the exercise data in `:shared` (anatomy, pt-BR names, aliases, bilingual search index and the `createCustomExercise` action) for all 287 catalog exercises, with figures for a pilot of 20. versionCode 16 and versionName 1.4.5 are unchanged; no Room schema, DataStore key, updater contract or signing change. Full report, in Portuguese: [docs/superpowers/reports/2026-10-30-phase4a-verificacao.md](docs/superpowers/reports/2026-10-30-phase4a-verificacao.md).
+
+Verified:
+
+- Host tests: 935 on CI (run 41046481599, `2784ed1`, the merged phase 4A head), 0 failures; on iOS simulator `:shared` 259, `:designsystem` 340 and `:screens` 433, all passing on the first attempt, including the end-to-end library flow test with its screenshots.
+- Android 15 emulator, full suites once: `:designsystem` 339 (one order-dependent test failure, fixed in test code and rerun), `:screens` 430 of 430 (1 opt-in capture skipped) and `:app` 25 with 0 failures (2 opt-in fixtures skipped); the classes touched afterwards were rerun.
+- Touch budget: finding an exercise by muscle and opening it takes 3 taps (4 on the old screen); creating a custom exercise takes 4 taps plus typing (6 plus typing before).
+- Upgrade in place on the emulator from the fork's main (`739a800`), with network off: database still version 5, byte-identical preferences file (same MD5), the running rest kept its deadline, and the export after matched the export before.
+- Offline: on a fresh install with the network off, the library, search (Portuguese on an English screen), filters, detail (figure, map, cues), form and picker worked, and the branch adds no network call.
+- Performance on the emulator (R8 build, catalog plus 300 custom exercises): a search keystroke median 0.50 ms and p95 1.25 ms (budget 4 and 8 ms); fast scroll of the whole library with figures 0.61% janky (budget 5%); the detail figure stops drawing frames in the background. Opening a tab or a detail is composed on the second frame after the tap, as on every route of the app shell (History behaves the same), not the next.
+- Debug APK size (local build, CI base `739a800`): +450,168 bytes (limit 629,146). No new dependency (the dependency tree is identical).
+- Accessibility sweep in tests: labels on every clickable node, 48 dp targets, no clipped number or button text, at font scales 1.0, 1.3, 2.0 and 2.01, at 320 and 412 dp, in both themes and both languages.
+- Fixed along the way (pre-existing): after a recreation (language, theme, font size or density change) on a screen above another tab's root, the bottom bar marked Train.
+
+Not verified:
+
+- Anything on an iPhone: VoiceOver, the figure and the map on a device, performance, the real keyboard. The end-to-end library flow test on the iOS simulator had not run on CI when this was written.
+- Anything on a physical Android phone: a real TalkBack session (the reading order comes from the accessibility tree and tests), 120 Hz, Android 8 to 14. The detail figure keeps the frame callbacks running at about 60 Hz while it holds a frame (13 draws per second); its battery cost was not measured.
+- Whether the figures, cues and names are good for people who train, beyond the screen critique and the content review. Gate G1 (the owner approving the 20 pilot figures) is pending; the sheet was delivered on 2026-10-30.
+- The `MSearchField` (and the phase 2 item #11, the field reading its value before its name) with a real TalkBack.
+- The name shown by the automatic-rest timer and its notification stays the stored name (English), until the view-model messages are localized.
+- The release path from a published APK signed with the original key: the key is not on this Mac, and v1.5.0 is not published.
+
+## Phase 3 active workout redesign (unreleased, fork branch) — 2026-10-29
+
+Branch `feat/phase3-active-workout` in the fork, not in a published release. It adds the `:screens` module (the new active workout, end-of-workout summary, share card and app shell, in shared Compose Multiplatform code, English and Brazilian Portuguese), the ongoing rest notification with actions, a new launcher icon and a side-by-side `preview` build. versionCode 16 and versionName 1.4.5 are unchanged; no Room schema, DataStore key, updater contract or signing change. Full report, in Portuguese: [docs/superpowers/reports/2026-10-29-phase3-verificacao.md](docs/superpowers/reports/2026-10-29-phase3-verificacao.md).
+
+Verified:
+
+- Host tests: 815 in 137 classes on CI (run 40958575207, `f646dfd`, the merged phase 3 head), 0 failures. One earlier CI host run failed only on the known wall-clock timing test `WorkoutCalculationsBatchTimingTest` (see the phase 2 notes).
+- Shared screen and design system UI tests on the Android 15 emulator (Pixel 8 profile), full suites once at the end of the phase: `:screens` 294 of 294 and `:designsystem` 295 of 295; `:app` instrumented tests 25 with 0 failures (2 opt-in fixtures skipped) — `UiFlowTest` timed out once at the routine-save wait right after an emulator restart and passed when rerun alone.
+- iOS simulator (CI, run 40958575207): `:shared` 224, `:screens` 293 and `:designsystem` 295, all passing, including an end-to-end active workout test over the real view model, Room database and DataStore, which also saves screenshots of each state. The expanded timer's ring now picks the largest type that fits its circle, so iOS-sized 200% text no longer reaches the ring (it failed once on CI before that fix).
+- Tap budget: no measured flow takes more taps than the old workout screen (for example, completing a set equal to last week's: 6 → 1; one load step up: 8 → 3).
+- Accessibility sweep in tests: labels on every clickable node, 48 dp targets (56 dp for workout actions), no clipped number or button text, at font scales 1.0, 1.3, 2.0 and 2.01, at 320 and 412 dp, in both themes.
+- Upgrade in place on the emulator from the fork's main (`4f2911c`), in Portuguese and pounds, with an active workout and a running rest: same sets, byte-identical preferences file (same MD5), the rest ended at its saved deadline, the ongoing notification appeared in the background with its three actions, and the export after matched the export before except for the finished workout.
+- The `preview` build installed beside the debug app: separate launcher entry and empty data, the real app's preferences file unchanged, and no update work scheduled.
+- Performance on the emulator (R8 build, 208-workout history): the set check fills on the next frame with no database or presentation work on the main thread; timer ticks recompose no card, row or tab; fast-scroll p95 25 ms against 26 ms on main. Start to editable workout: median 306 ms against 252 ms on main, within this emulator's noise but in the slower direction.
+- Debug APK size (CI clean build): +532,492 bytes over the post-phase-2 main (limit 1 MiB). Only new dependency: `kotlinx-datetime` 0.8.0.
+- Fixed along the way (pre-existing): the status and navigation bar icons turned dark over the dark theme after rotating between the two landscape orientations.
+
+Not verified:
+
+- Anything on a physical Android phone: a real TalkBack session (none of the 11 spec items was heard with TalkBack; the reading order comes from the accessibility tree and tests), haptics, 60 fps on a reference device, the notification on the lock screen, Android 8 to 14. The owner has not yet installed the `preview` build.
+- The timer's hidden announcement node holding no text between announcements was checked only at the semantics level, not with real TalkBack or `AccessibilityNodeInfo`.
+- Start to editable workout on a real device (+54 ms median on the emulator, within noise).
+- On a cold start, the system bars follow the system theme for about 1–2 seconds until preferences load (pre-existing).
+- Anything on an iPhone: VoiceOver, haptics, the real keyboard (the simulator does not open one; tests inject insets), the back gesture, performance and a visual review.
+- The release path from a published APK signed with the original key: the key is not on this Mac, and v1.5.0 is not published.
+- Exercise names, the old screens (Train, routines, library, history, records), the old share preview and the updater and backup messages stay in English on a Portuguese phone, as decided.
+
+## Phase 2 design system and Settings (unreleased, fork branch) — 2026-10-28
+
+Branch `feat/phase2-design-system` in the fork, not in a published release. It adds the `:designsystem` module (tokens, components, fonts, icons, English and Brazilian Portuguese strings, a hidden component gallery and an open-source licenses screen) and rebuilds Settings with it. versionCode 16 and versionName 1.4.5 are unchanged; no Room, DataStore, updater or signing change. Full report, in Portuguese: [docs/superpowers/reports/2026-10-28-phase2-verificacao.md](docs/superpowers/reports/2026-10-28-phase2-verificacao.md).
+
+Verified:
+
+- Host tests: `:app` 377, `:designsystem` 66, all passing. The last green CI host run before the final critique fixes ran 611 tests (`:app`, `:shared` and `:designsystem`).
+- Design system UI and common tests on the Android 15 emulator (Pixel 8 profile): 189 of 189.
+- Contrast: all 50 text and non-text pairs of the spec meet WCAG 2.2 AA in both themes, computed from the tokens by `ContrastTokensTest`; the component combinations changed by the screen critique by `ComponentColorsTest`.
+- Fonts: tabular figures in Barlow Condensed and the Inter weight axis measured on the emulator and the iOS simulator (CI) in the font spike; `TnumRegressionTest` and a HarfBuzz check keep them in CI.
+- Debug APK size (clean build): +1,323,135 bytes over the post-1B base (limit 1.5 MiB); fonts 645,546 bytes compressed (limit 900 KiB); fonts and icons 835,411 bytes (limit 1 MiB).
+- Dependencies: no existing `:app` runtime dependency changed version; Compose Multiplatform 1.12.2 resolves to the Jetpack Compose 1.12.1 the app already used.
+- Upgrade in place on the emulator, from the fork's main (`4f698a8`) to this branch, with an active workout and a running rest timer: the preferences file stayed byte-identical, the workout resumed and the timer kept its deadline.
+- Settings in English and Portuguese, light and dark, at 200% font scale; the gallery's pages in both themes and at 200%; reduced motion turning springs into fades. Screenshots are in the report folder.
+- Fixed along the way: rotating the screen after opening the app from the update notification crashed with "Navigation graph has not been set" (pre-existing).
+
+Not verified:
+
+- A real TalkBack session: the emulator could not be driven with TalkBack, so reading order comes from the accessibility node tree and tests.
+- VoiceOver, haptics and rendering on a real iPhone; haptics on a physical Android phone; contrast under bright gym lighting; spring motion at 60 fps on a reference device.
+- Visual review of the gallery on iOS (there is no iOS app yet); the iOS CI job for the design system tests is pending its final run.
+- Updater and backup messages in Portuguese: they still come in English from the shared view-model until phase 6, as decided.
+- The release path from a published APK signed with the original key to this build.
 
 ## Release 1.4.5 / Build 16
 

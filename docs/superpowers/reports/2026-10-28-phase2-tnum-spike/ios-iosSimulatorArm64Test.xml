@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-28T13:18:11.871Z" hostname="iad20-fj921-375e7953-e994-4036-8f9c-1a7e06ca824a-B6D2FDBA1F7A.local" time="5.356">
+  <properties/>
+  <testcase name="interWithoutTnumIsProportional[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="5.351"/>
+  <testcase name="barlowIsReallyLoaded[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.001"/>
+  <testcase name="interWithTnumIsTabular[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.0"/>
+  <testcase name="barlowWithTnumIsTabular[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.001"/>
+  <testcase name="barlowTimerKeepsWidthWithTnum[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.0"/>
+  <testcase name="barlowDefaultFiguresAreRecorded[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.001"/>
+  <testcase name="interWeightAxisApplies[iosSimulatorArm64]" classname="iosSimulatorArm64Test.com.mooscles.fontspike.TnumSpikeTest" time="0.0"/>
+  <system-out><![CDATA[SPIKE interWithoutTnumIsProportional: inter400 1111=157.0 8888=238.0
+SPIKE barlowIsReallyLoaded: 8888 barlow600=167.0 inter600=246.0 default600=259.0
+SPIKE interWithTnumIsTabular: inter400 tnum 1111=249.0 8888=249.0
+SPIKE interWithTnumIsTabular: inter600 tnum 1111=249.0 8888=249.0
+SPIKE interWithTnumIsTabular: inter700 tnum 1111=249.0 8888=249.0
+SPIKE barlowWithTnumIsTabular: barlow500 tnum 1111=176.0 8888=176.0
+SPIKE barlowWithTnumIsTabular: barlow600 tnum 1111=183.0 8888=183.0
+SPIKE barlowWithTnumIsTabular: barlow700 tnum 1111=192.0 8888=192.0
+SPIKE barlowTimerKeepsWidthWithTnum: barlow600 tnum 0:00=161.0 9:59=161.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow500 no-tnum 1111=98.0 8888=165.0 0:00=152.0 9:59=143.0 0=43.0 1=26.0 2=40.0 3=41.0 4=43.0 5=41.0 6=41.0 7=37.0 8=42.0 9=40.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow600 no-tnum 1111=102.0 8888=167.0 0:00=154.0 9:59=147.0 0=44.0 1=27.0 2=41.0 3=41.0 4=45.0 5=42.0 6=42.0 7=38.0 8=42.0 9=41.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow700 no-tnum 1111=107.0 8888=169.0 0:00=157.0 9:59=153.0 0=44.0 1=28.0 2=43.0 3=42.0 4=47.0 5=43.0 6=43.0 7=40.0 8=43.0 9=42.0
+SPIKE interWeightAxisApplies: inter 8888 w400=238.0 w700=251.0
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

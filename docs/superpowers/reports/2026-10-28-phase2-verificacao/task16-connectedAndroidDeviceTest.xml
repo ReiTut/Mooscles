@@ -1,0 +1,462 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="158" failures="0" errors="0" skipped="0" time="346.722" timestamp="2026-10-28T19:25:31" hostname="localhost">
+  <testsuite name="com.mooscles.designsystem.ThemeTest" tests="2" failures="0" errors="0" skipped="0" time="6.723" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="darkAndLightProvideTheirColorSets" classname="com.mooscles.designsystem.ThemeTest" time="3.65" />
+    <testcase name="reducedMotionOverrideIsVisible" classname="com.mooscles.designsystem.ThemeTest" time="3.073" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.TnumRegressionTest" tests="6" failures="0" errors="0" skipped="0" time="7.472" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="interWithoutTnumIsProportional" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.91" />
+    <testcase name="interWeightAxisApplies" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.561" />
+    <testcase name="barlowTimerKeepsWidthWithTnum" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.876" />
+    <testcase name="barlowIsReallyLoaded" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.529" />
+    <testcase name="interWithTnumIsTabular" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.598" />
+    <testcase name="barlowWithTnumIsTabular" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.998" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.ExerciseCardTest" tests="5" failures="0" errors="0" skipped="0" time="7.055" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="collapsedHidesTheSets" classname="com.mooscles.designsystem.components.ExerciseCardTest" time="1.324" />
+    <testcase name="noMediaShowsOnlyTheEquipmentIcon" classname="com.mooscles.designsystem.components.ExerciseCardTest" time="1.065" />
+    <testcase name="offlineMediaShowsTheIconAndText" classname="com.mooscles.designsystem.components.ExerciseCardTest" time="1.737" />
+    <testcase name="addSetMeetsTheWorkoutTarget" classname="com.mooscles.designsystem.components.ExerciseCardTest" time="1.65" />
+    <testcase name="menuIsLabelled" classname="com.mooscles.designsystem.components.ExerciseCardTest" time="1.279" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.FeedbackTest" tests="5" failures="0" errors="0" skipped="0" time="6.554" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="skeletonIsStillWithReducedMotion" classname="com.mooscles.designsystem.components.FeedbackTest" time="0.692" />
+    <testcase name="skeletonPulsesWithoutReducedMotion" classname="com.mooscles.designsystem.components.FeedbackTest" time="1.27" />
+    <testcase name="errorBannerIsAPoliteLiveRegionWithIcon" classname="com.mooscles.designsystem.components.FeedbackTest" time="2.014" />
+    <testcase name="errorBannerActionIsClickableAndHasAFullTouchTarget" classname="com.mooscles.designsystem.components.FeedbackTest" time="1.27" />
+    <testcase name="emptyStateHasOnePrimaryAction" classname="com.mooscles.designsystem.components.FeedbackTest" time="1.308" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MBottomSheetTest" tests="2" failures="0" errors="0" skipped="0" time="3.468" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="scrimTapAndBackClose" classname="com.mooscles.designsystem.components.MBottomSheetTest" time="2.164" />
+    <testcase name="heightIsCappedAtNinetyPercent" classname="com.mooscles.designsystem.components.MBottomSheetTest" time="1.304" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MButtonTest" tests="4" failures="0" errors="0" skipped="0" time="11.592" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="labelNeverOverflowsAtTwoHundredPercentOn320dp" classname="com.mooscles.designsystem.components.MButtonTest" time="1.224" />
+    <testcase name="disabledIsNotEnabled" classname="com.mooscles.designsystem.components.MButtonTest" time="1.248" />
+    <testcase name="loadingKeepsWidthIsNotClickableAndSaysLoading" classname="com.mooscles.designsystem.components.MButtonTest" time="1.769" />
+    <testcase name="everySizeHasAtLeastTheMinimumTarget" classname="com.mooscles.designsystem.components.MButtonTest" time="7.351" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MChipTest" tests="2" failures="0" errors="0" skipped="0" time="4.185" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="everyKindExposesItsRoleAndState" classname="com.mooscles.designsystem.components.MChipTest" time="1.652" />
+    <testcase name="selectedShowsACheckIconNotOnlyColor" classname="com.mooscles.designsystem.components.MChipTest" time="2.533" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MDialogTest" tests="4" failures="0" errors="0" skipped="0" time="6.957" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="focusMovesIntoTheDialog" classname="com.mooscles.designsystem.components.MDialogTest" time="1.272" />
+    <testcase name="destructiveUsesTheFilledDangerButton" classname="com.mooscles.designsystem.components.MDialogTest" time="1.617" />
+    <testcase name="confirmIsTheLastActionAndCallsConfirm" classname="com.mooscles.designsystem.components.MDialogTest" time="1.736" />
+    <testcase name="backAndScrimDismiss" classname="com.mooscles.designsystem.components.MDialogTest" time="2.332" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MIconButtonTest" tests="2" failures="0" errors="0" skipped="0" time="2.594" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="toggledExposesToggleState" classname="com.mooscles.designsystem.components.MIconButtonTest" time="1.369" />
+    <testcase name="hasTheGivenLabel" classname="com.mooscles.designsystem.components.MIconButtonTest" time="1.225" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MProgressBarTest" tests="3" failures="0" errors="0" skipped="0" time="5.124" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="indeterminateExposesIndeterminate" classname="com.mooscles.designsystem.components.MProgressBarTest" time="2.445" />
+    <testcase name="determinateExposesRange" classname="com.mooscles.designsystem.components.MProgressBarTest" time="1.206" />
+    <testcase name="indeterminateHasADescription" classname="com.mooscles.designsystem.components.MProgressBarTest" time="1.473" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MRadioTest" tests="1" failures="0" errors="0" skipped="0" time="1.52" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="standaloneRadioIsASelectableRadioButtonWithAFortyEightTarget" classname="com.mooscles.designsystem.components.MRadioTest" time="1.52" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MSwitchTest" tests="2" failures="0" errors="0" skipped="0" time="2.61" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="standaloneSwitchIsALabelledSwitchWithToggleHaptics" classname="com.mooscles.designsystem.components.MSwitchTest" time="1.391" />
+    <testcase name="standaloneSwitchHasAFortyEightTarget" classname="com.mooscles.designsystem.components.MSwitchTest" time="1.219" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MTextFieldTest" tests="7" failures="0" errors="0" skipped="0" time="8.638" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="suffixIsDrawnInsideTheBoxAndReadWithTheField" classname="com.mooscles.designsystem.components.MTextFieldTest" time="0.736" />
+    <testcase name="typedValueIsTheEditableTextAndErrorIsReported" classname="com.mooscles.designsystem.components.MTextFieldTest" time="1.268" />
+    <testcase name="errorShowsIconAndMessageNotOnlyColor" classname="com.mooscles.designsystem.components.MTextFieldTest" time="2.3" />
+    <testcase name="disabledIsNotEditable" classname="com.mooscles.designsystem.components.MTextFieldTest" time="1.488" />
+    <testcase name="focusCallbackDoesNotFireOnFirstComposition" classname="com.mooscles.designsystem.components.MTextFieldTest" time="0.894" />
+    <testcase name="labelAndHelpAreReadWithTheField" classname="com.mooscles.designsystem.components.MTextFieldTest" time="0.973" />
+    <testcase name="grownHeightAtTwoHundredPercentWithoutClipping" classname="com.mooscles.designsystem.components.MTextFieldTest" time="0.979" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MTextTest" tests="2" failures="0" errors="0" skipped="0" time="4.876" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="explicitCapsSurvivesAStyleCopy" classname="com.mooscles.designsystem.components.MTextTest" time="1.552" />
+    <testcase name="capsIsVisualOnlyAndSemanticsKeepTheOriginalText" classname="com.mooscles.designsystem.components.MTextTest" time="3.324" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.MToastTest" tests="4" failures="0" errors="0" skipped="0" time="6.166" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="errorToastStaysUntilClosed" classname="com.mooscles.designsystem.components.MToastTest" time="1.563" />
+    <testcase name="toastIsAPoliteLiveRegionWithTheMessage" classname="com.mooscles.designsystem.components.MToastTest" time="1.252" />
+    <testcase name="infoDismissesAfterFourSeconds" classname="com.mooscles.designsystem.components.MToastTest" time="1.263" />
+    <testcase name="actionToastLastsSixSecondsAndReportsAction" classname="com.mooscles.designsystem.components.MToastTest" time="2.088" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.NumericFieldTest" tests="3" failures="0" errors="0" skipped="0" time="3.78" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="targetIsFiftySixAndTheBoxSeventyTwoByFortyEight" classname="com.mooscles.designsystem.components.NumericFieldTest" time="1.216" />
+    <testcase name="onlyTextThatCanBecomeANumberIsPassedOn" classname="com.mooscles.designsystem.components.NumericFieldTest" time="1.849" />
+    <testcase name="isLabelledAndReportsItsErrorOnItsOwnNode" classname="com.mooscles.designsystem.components.NumericFieldTest" time="0.715" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.NumericInputTest" tests="4" failures="0" errors="0" skipped="0" time="0.017" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="parsesIntegers" classname="com.mooscles.designsystem.components.NumericInputTest" time="0.002" />
+    <testcase name="rejectsInvalid" classname="com.mooscles.designsystem.components.NumericInputTest" time="0.004" />
+    <testcase name="parsesBothSeparators" classname="com.mooscles.designsystem.components.NumericInputTest" time="0.006" />
+    <testcase name="typingAllowsPartialNumbersOnly" classname="com.mooscles.designsystem.components.NumericInputTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.PrBadgeTest" tests="1" failures="0" errors="0" skipped="0" time="0.914" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="isReadAsPersonalRecord" classname="com.mooscles.designsystem.components.PrBadgeTest" time="0.914" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.PrToastTest" tests="3" failures="0" errors="0" skipped="0" time="3.709" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="reducedMotionUsesFade" classname="com.mooscles.designsystem.components.PrToastTest" time="1.027" />
+    <testcase name="movingMotionUsesSpring" classname="com.mooscles.designsystem.components.PrToastTest" time="1.015" />
+    <testcase name="dismissesAfterFourSecondsWithoutAction" classname="com.mooscles.designsystem.components.PrToastTest" time="1.667" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.RestTimerDockTest" tests="8" failures="0" errors="0" skipped="0" time="20.574" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="finishFiresRestFinishedOnce" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="1.064" />
+    <testcase name="announcementChangesOnlyOnStartAdjustAndFinish" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="1.325" />
+    <testcase name="buttonsStackAtOneAndAHalf" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="3.138" />
+    <testcase name="actionsMeetTheWorkoutTarget" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="0.966" />
+    <testcase name="plusAndMinusTick" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="1.542" />
+    <testcase name="timeIsTabularAndNeverEllipsized" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="1.252" />
+    <testcase name="timeNeverWrapsOrClipsAtAnyScaleOrWidth" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="10.337" />
+    <testcase name="visibleLabelsAreInTheAccessibleNames" classname="com.mooscles.designsystem.components.RestTimerDockTest" time="0.95" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.RestTimerExpandedTest" tests="5" failures="0" errors="0" skipped="0" time="10.417" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="showsUpNextWhenGiven" classname="com.mooscles.designsystem.components.RestTimerExpandedTest" time="1.563" />
+    <testcase name="hidesUpNextWhenAbsent" classname="com.mooscles.designsystem.components.RestTimerExpandedTest" time="1.482" />
+    <testcase name="timeFitsInsideTheRingAtTwoHundredPercent" classname="com.mooscles.designsystem.components.RestTimerExpandedTest" time="4.328" />
+    <testcase name="plusAndMinusTick" classname="com.mooscles.designsystem.components.RestTimerExpandedTest" time="1.776" />
+    <testcase name="discsAreEightyAndLabelled" classname="com.mooscles.designsystem.components.RestTimerExpandedTest" time="1.268" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.RestTimerRingMathTest" tests="3" failures="0" errors="0" skipped="0" time="0.006" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="progressIsLinear" classname="com.mooscles.designsystem.components.RestTimerRingMathTest" time="0.002" />
+    <testcase name="sixtyTicksSixDegreesApart" classname="com.mooscles.designsystem.components.RestTimerRingMathTest" time="0.002" />
+    <testcase name="reducedMotionStepsBySecond" classname="com.mooscles.designsystem.components.RestTimerRingMathTest" time="0.002" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.RowsTest" tests="5" failures="0" errors="0" skipped="0" time="7.532" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="sectionHeaderIsAHeading" classname="com.mooscles.designsystem.components.RowsTest" time="1.205" />
+    <testcase name="radioRowIsASelectableRadioButton" classname="com.mooscles.designsystem.components.RowsTest" time="0.715" />
+    <testcase name="rowsAreAtLeastFiftySixTallAtEveryScale" classname="com.mooscles.designsystem.components.RowsTest" time="3.262" />
+    <testcase name="topBarBackIsLabelledAndCallsBack" classname="com.mooscles.designsystem.components.RowsTest" time="1.533" />
+    <testcase name="switchRowTogglesFromTheWholeRowAndFiresToggleHaptics" classname="com.mooscles.designsystem.components.RowsTest" time="0.817" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.SetCheckTest" tests="3" failures="0" errors="0" skipped="0" time="3.894" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="checkAndUncheckFireTheirHaptics" classname="com.mooscles.designsystem.components.SetCheckTest" time="1.297" />
+    <testcase name="isAToggleWithTheSetNumber" classname="com.mooscles.designsystem.components.SetCheckTest" time="1.326" />
+    <testcase name="targetIsFiftySix" classname="com.mooscles.designsystem.components.SetCheckTest" time="1.271" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.SetRowTest" tests="11" failures="0" errors="0" skipped="0" time="30.067" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="recordShowsTheBadgeAndFiresTheRecordHaptic" classname="com.mooscles.designsystem.components.SetRowTest" time="1.321" />
+    <testcase name="exposesFiveCustomActionsThatCallBack" classname="com.mooscles.designsystem.components.SetRowTest" time="1.219" />
+    <testcase name="typeIsALetterNotOnlyColor" classname="com.mooscles.designsystem.components.SetRowTest" time="7.462" />
+    <testcase name="readsAsOneNodeWithTheSpecLabel" classname="com.mooscles.designsystem.components.SetRowTest" time="3.106" />
+    <testcase name="readsWithoutPrevious" classname="com.mooscles.designsystem.components.SetRowTest" time="1.451" />
+    <testcase name="splitsIntoTwoLinesAtOneAndAHalf" classname="com.mooscles.designsystem.components.SetRowTest" time="2.416" />
+    <testcase name="editableFieldsStayReachableForScreenReaders" classname="com.mooscles.designsystem.components.SetRowTest" time="2.698" />
+    <testcase name="completeActionFollowsTheState" classname="com.mooscles.designsystem.components.SetRowTest" time="2.007" />
+    <testcase name="numbersNeverEllipsizeAtTwoHundredPercentOn320dp" classname="com.mooscles.designsystem.components.SetRowTest" time="1.568" />
+    <testcase name="recordBadgeFinishesItsEntranceInsideARow" classname="com.mooscles.designsystem.components.SetRowTest" time="5.729" />
+    <testcase name="recordReplacesTheCompleteHaptic" classname="com.mooscles.designsystem.components.SetRowTest" time="1.09" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.components.StepperTest" tests="6" failures="0" errors="0" skipped="0" time="9.716" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="buttonsAreLabelledWithTheStep" classname="com.mooscles.designsystem.components.StepperTest" time="1.486" />
+    <testcase name="buttonsMeetTheWorkoutTarget" classname="com.mooscles.designsystem.components.StepperTest" time="0.881" />
+    <testcase name="stepChangesValueAndTicks" classname="com.mooscles.designsystem.components.StepperTest" time="1.648" />
+    <testcase name="keyboardActivatesTheFocusedButton" classname="com.mooscles.designsystem.components.StepperTest" time="1.766" />
+    <testcase name="holdRepeatsAfterFourHundredThenEveryEighty" classname="com.mooscles.designsystem.components.StepperTest" time="2.217" />
+    <testcase name="minimumDisablesDecrease" classname="com.mooscles.designsystem.components.StepperTest" time="1.718" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.format.MoosclesNumbersTest" tests="7" failures="0" errors="0" skipped="0" time="0.038" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="setTextUsesTheMultiplicationSign" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.003" />
+    <testcase name="rejectsNonPlainInput" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.002" />
+    <testcase name="localizesEnglish" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.007" />
+    <testcase name="weightUsesNoBreakSpace" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.006" />
+    <testcase name="localeFromTag" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.006" />
+    <testcase name="clockPadsSeconds" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.007" />
+    <testcase name="localizesPortuguese" classname="com.mooscles.designsystem.format.MoosclesNumbersTest" time="0.007" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.format.PluralCountTest" tests="2" failures="0" errors="0" skipped="0" time="7.654" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="englishUsesOneAndOther" classname="com.mooscles.designsystem.format.PluralCountTest" time="4.771" />
+    <testcase name="zeroStaysPluralInPortuguese" classname="com.mooscles.designsystem.format.PluralCountTest" time="2.883" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.gallery.GallerySmokeTest" tests="7" failures="0" errors="0" skipped="0" time="123.593" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="everyPageRendersInBothThemes" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="37.28" />
+    <testcase name="theListShowsEveryTitleAndOpensAPage" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="1.887" />
+    <testcase name="everyClickableNodeHasALabel" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="15.324" />
+    <testcase name="everyClickableTargetIsAtLeastTheMinimum" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="31.822" />
+    <testcase name="fontScaleControlChangesTheDensityOfThePage" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="1.724" />
+    <testcase name="everyPageRendersInBothThemesAtTwoHundredPercent" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="33.849" />
+    <testcase name="languageControlTranslatesTheGalleryAndLeavingRestoresTheSystemLanguage" classname="com.mooscles.designsystem.gallery.GallerySmokeTest" time="1.707" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.i18n.AppLocaleTest" tests="3" failures="0" errors="0" skipped="0" time="8.825" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="providingPortugueseResolvesPortugueseStrings" classname="com.mooscles.designsystem.i18n.AppLocaleTest" time="1.23" />
+    <testcase name="providingNullRestoresTheSystemLanguage" classname="com.mooscles.designsystem.i18n.AppLocaleTest" time="3.746" />
+    <testcase name="leavingCompositionRestoresTheSystemLanguage" classname="com.mooscles.designsystem.i18n.AppLocaleTest" time="3.849" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.icons.IconsTest" tests="4" failures="0" errors="0" skipped="0" time="0.021" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="everyIconIsOnTheTwentyFourGrid" classname="com.mooscles.designsystem.icons.IconsTest" time="0.006" />
+    <testcase name="iconListIsExactly" classname="com.mooscles.designsystem.icons.IconsTest" time="0.006" />
+    <testcase name="everyPathStrokesTwoWithRoundCapsAndJoinsAndNeverFills" classname="com.mooscles.designsystem.icons.IconsTest" time="0.004" />
+    <testcase name="everyIconIsTintable" classname="com.mooscles.designsystem.icons.IconsTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.interaction.FocusRingTest" tests="1" failures="0" errors="0" skipped="0" time="1.593" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="focusedControlShowsTheRingAndBlurredDoesNot" classname="com.mooscles.designsystem.interaction.FocusRingTest" time="1.593" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.interaction.HapticsMappingTest" tests="3" failures="0" errors="0" skipped="0" time="0.017" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="iosMappingMatchesTheSpecTable" classname="com.mooscles.designsystem.interaction.HapticsMappingTest" time="0.005" />
+    <testcase name="androidPlanMatchesTheSpecTable" classname="com.mooscles.designsystem.interaction.HapticsMappingTest" time="0.006" />
+    <testcase name="recordConfirmsTwiceEightyMsApart" classname="com.mooscles.designsystem.interaction.HapticsMappingTest" time="0.006" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.interaction.MotionPolicyTest" tests="3" failures="0" errors="0" skipped="0" time="0.014" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="disabledNeverScalesOnPress" classname="com.mooscles.designsystem.interaction.MotionPolicyTest" time="0.004" />
+    <testcase name="keyMomentsUseTheirSprings" classname="com.mooscles.designsystem.interaction.MotionPolicyTest" time="0.005" />
+    <testcase name="reducedMotionTurnsEverythingIntoAFastFade" classname="com.mooscles.designsystem.interaction.MotionPolicyTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.ContrastMathTest" tests="3" failures="0" errors="0" skipped="0" time="0.038" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="theOrderOfTheColorsDoesNotMatter" classname="com.mooscles.designsystem.tokens.ContrastMathTest" time="0.005" />
+    <testcase name="knownRatios" classname="com.mooscles.designsystem.tokens.ContrastMathTest" time="0.005" />
+    <testcase name="translucentColorsAreRejected" classname="com.mooscles.designsystem.tokens.ContrastMathTest" time="0.028" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.ContrastTokensTest" tests="5" failures="0" errors="0" skipped="0" time="0.022" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="everyTextPairMeetsFourAndAHalfInBothThemes" classname="com.mooscles.designsystem.tokens.ContrastTokensTest" time="0.004" />
+    <testcase name="exemptPairsAreOnlyDisabledTextAndSubtleBorder" classname="com.mooscles.designsystem.tokens.ContrastTokensTest" time="0.004" />
+    <testcase name="everyNonTextPairMeetsThreeInBothThemes" classname="com.mooscles.designsystem.tokens.ContrastTokensTest" time="0.005" />
+    <testcase name="theTableHasFiftyRows" classname="com.mooscles.designsystem.tokens.ContrastTokensTest" time="0.005" />
+    <testcase name="ratiosMatchTheSpecTable" classname="com.mooscles.designsystem.tokens.ContrastTokensTest" time="0.004" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.MotionTokensTest" tests="3" failures="0" errors="0" skipped="0" time="0.014" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="valuesMatchTheSpec" classname="com.mooscles.designsystem.tokens.MotionTokensTest" time="0.005" />
+    <testcase name="exitIsShorterThanEntry" classname="com.mooscles.designsystem.tokens.MotionTokensTest" time="0.004" />
+    <testcase name="onlyKeyMomentSpringsBounce" classname="com.mooscles.designsystem.tokens.MotionTokensTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.PrimitiveColorsTest" tests="1" failures="0" errors="0" skipped="0" time="0.005" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="hexValuesMatchTheSpecTable" classname="com.mooscles.designsystem.tokens.PrimitiveColorsTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.ReducedMotionTest" tests="1" failures="0" errors="0" skipped="0" time="0.005" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="zeroAnimatorScaleMeansReduced" classname="com.mooscles.designsystem.tokens.ReducedMotionTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.SemanticColorsTest" tests="2" failures="0" errors="0" skipped="0" time="0.009" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="scrimAndShadowMatchTheSpec" classname="com.mooscles.designsystem.tokens.SemanticColorsTest" time="0.005" />
+    <testcase name="everySemanticTokenMatchesTheSpecInBothThemes" classname="com.mooscles.designsystem.tokens.SemanticColorsTest" time="0.004" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.SizesTimingElevationTest" tests="3" failures="0" errors="0" skipped="0" time="0.013" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="elevationLevelsMatchTheSpec" classname="com.mooscles.designsystem.tokens.SizesTimingElevationTest" time="0.004" />
+    <testcase name="everyTimingMatchesPlanDecisionSeven" classname="com.mooscles.designsystem.tokens.SizesTimingElevationTest" time="0.005" />
+    <testcase name="everySizeMatchesPlanDecisionSeven" classname="com.mooscles.designsystem.tokens.SizesTimingElevationTest" time="0.004" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.SpaceTokensTest" tests="4" failures="0" errors="0" skipped="0" time="0.018" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="spaceScaleMatchesTheSpecAndIsMultipleOfFour" classname="com.mooscles.designsystem.tokens.SpaceTokensTest" time="0.004" />
+    <testcase name="drawnControlsFitTheirTargets" classname="com.mooscles.designsystem.tokens.SpaceTokensTest" time="0.005" />
+    <testcase name="targetsAreFortyEightFiftySixAndEight" classname="com.mooscles.designsystem.tokens.SpaceTokensTest" time="0.004" />
+    <testcase name="radiusMatchesTheSpec" classname="com.mooscles.designsystem.tokens.SpaceTokensTest" time="0.005" />
+  </testsuite>
+  <testsuite name="com.mooscles.designsystem.tokens.TypographyTokensTest" tests="3" failures="0" errors="0" skipped="0" time="0.014" timestamp="2026-10-28T19:25:31" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="numberStylesAreTabular" classname="com.mooscles.designsystem.tokens.TypographyTokensTest" time="0.005" />
+    <testcase name="nothingBelowTwelveSpOrWeightFourHundred" classname="com.mooscles.designsystem.tokens.TypographyTokensTest" time="0.004" />
+    <testcase name="matchesTheSpecTable" classname="com.mooscles.designsystem.tokens.TypographyTokensTest" time="0.005" />
+  </testsuite>
+</testsuites>

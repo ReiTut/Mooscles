@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the end-of-workout summary (pt-BR). -->
+<resources>
+    <string name="summary_title">Treino concluído</string>
+    <string name="summary_duration">Duração</string>
+    <string name="summary_sets">Séries</string>
+    <string name="summary_volume">Volume</string>
+    <string name="summary_exercises">Exercícios</string>
+    <string name="summary_records">Recordes</string>
+    <string name="summary_first_records">Primeiros registros</string>
+    <!-- "Supino reto · 87,5 kg × 6 · antes 85 kg". -->
+    <string name="summary_record_line">%1$s · %2$s</string>
+    <string name="summary_weight_record">%1$s&#160;×&#160;%2$d · antes %3$s</string>
+    <string name="summary_reps_record">%1$s&#160;×&#160;%2$d · antes %1$s&#160;×&#160;%3$d</string>
+    <string name="summary_set">%1$s&#160;×&#160;%2$d</string>
+    <string name="summary_bodyweight">Peso corporal</string>
+    <string name="summary_assistance_load">%1$s de assistência</string>
+    <plurals name="summary_consistency">
+        <item quantity="one">%1$d treino nas últimas 4 semanas</item>
+        <item quantity="other">%1$d treinos nas últimas 4 semanas</item>
+    </plurals>
+    <string name="summary_done">Concluir</string>
+    <string name="summary_share">Compartilhar</string>
+    <string name="summary_details">Ver detalhes</string>
+</resources>

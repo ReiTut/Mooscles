@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<!-- The old share preview stays in English until it is redesigned (outside phase 3, like D22),
+     so it has no pt-BR translation yet. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="share_workout">Share workout</string>
     <string name="share_preview_title">Workout preview</string>
     <string name="share_preview_loading">Creating your workout image…</string>

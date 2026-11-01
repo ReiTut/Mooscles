@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the workout share card (English). The card is an image: these are drawn, not read. Every key also exists in values-pt-rBR. -->
+<resources>
+    <!-- Weekday, day, month, year, start and end time (24 h): "Thu, Oct 22, 2026 · 20:55–21:39". The card keeps the year: it is a lasting picture. -->
+    <string name="share_date_format">%1$s, %3$s %2$d, %4$d · %5$s–%6$s</string>
+    <string name="share_assisted_set">%1$s assistance × %2$d</string>
+    <string name="share_duration">Duration</string>
+    <string name="share_sets">Sets</string>
+    <string name="share_volume">Volume</string>
+    <string name="share_records">Records</string>
+    <string name="share_exercises">Exercises</string>
+    <string name="share_best_set">Best set</string>
+    <string name="share_no_completed_sets">No completed sets</string>
+    <plurals name="share_set_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+</resources>

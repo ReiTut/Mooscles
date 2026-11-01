@@ -1,14 +1,17 @@
 package com.mooscles
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.dp
+import com.mooscles.designsystem.components.MTabBarTag
+import com.mooscles.designsystem.components.WorkoutBarRestTag
+import com.mooscles.designsystem.theme.MoosclesDesignTheme
+import com.mooscles.screens.shell.AppShellBottom
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
 import org.junit.Assert.*
@@ -19,6 +22,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 
+/**
+ * The keyboard and the shell (Task 24, on [AppShellBottom]): the workout bar, which carries the
+ * rest, rides on the keyboard whole, while the tab bar keeps its place behind it, as the old
+ * timer dock and footer did.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -37,44 +45,45 @@ class TimerKeyboardInsetsHostTest {
                 else -> { calls += method.name; null }
             }
         } as MoosclesActions
-        val timer = TimerUi("Bench press", 90, 120, running = true, workoutExerciseId = "bench-entry")
-        val state = UiState(loading = false, active = WorkoutUi("active", "Workout", 1_000), timer = timer)
+        val timerUi = TimerUi("Bench press", 90, 120, running = true, workoutExerciseId = "bench-entry")
+        val timer = mutableStateOf(timerUi)
+        val state = UiState(loading = false, active = WorkoutUi("active", "Workout", System.currentTimeMillis()), timer = timerUi)
         compose.setContent {
-            MaterialTheme {
+            MoosclesDesignTheme(dark = false) {
                 val ime = WindowInsets(bottom = imeBottom.intValue)
-                Scaffold(modifier = Modifier.fillMaxSize().testTag("window"), contentWindowInsets = WindowInsets(0),
-                    bottomBar = { WorkoutBottomBar(imeInsets = ime,
-                        timer = { WorkoutTimerDock(state, actions) },
-                        footer = { Box(Modifier.fillMaxWidth().height(80.dp).testTag("footer")) }) }) { padding ->
-                    Box(Modifier.padding(padding).consumeWindowInsets(padding)
-                        .windowInsetsPadding(ime).fillMaxSize().testTag("content"))
+                Column(Modifier.fillMaxSize().testTag("window")) {
+                    Box(Modifier.weight(1f).fillMaxWidth().testTag("content"))
+                    AppShellBottom(state, timer, "routines", {}, {}, {}, actions, imeInsets = ime, nowMillis = { 61_000L + state.active!!.startedAt })
                 }
             }
         }
-        val closedTimer = bounds("active-rest-timer")
-        val closedFooter = bounds("footer")
+        val closedBar = bounds("shell-workout-bar")
+        val closedTabs = bounds(MTabBarTag)
         val window = bounds("window")
-        assertEquals(closedFooter.top, closedTimer.bottom, 1f)
-        compose.onNodeWithText("1:30 min").assertExists()
+        val closedRest = restText()
+        assertEquals(closedTabs.top, closedBar.bottom, 1f)
+        assertEquals(window.bottom, closedTabs.bottom, 1f)
         compose.runOnIdle { imeBottom.intValue = 350 }
-        val openedTimer = bounds("active-rest-timer")
-        val openedFooter = bounds("footer")
-        assertEquals("Footer keeps its existing position behind the keyboard", closedFooter, openedFooter)
-        assertEquals("The whole timer is above the actual IME edge", window.bottom - 350, openedTimer.bottom, 1f)
-        assertEquals(closedTimer.height, openedTimer.height, 1f)
-        assertEquals("Content reserves exactly the timer, without double IME padding", openedTimer.top, bounds("content").bottom, 1f)
-        compose.onNodeWithContentDescription("Pause rest timer").assertIsDisplayed()
-        compose.onNodeWithText("1:30 min").assertExists()
+        val openedBar = bounds("shell-workout-bar")
+        val openedTabs = bounds(MTabBarTag)
+        assertEquals("The tab bar keeps its existing position behind the keyboard", closedTabs, openedTabs)
+        assertEquals("The whole workout bar is above the actual IME edge", window.bottom - 350, openedBar.bottom, 1f)
+        assertEquals(closedBar.height, openedBar.height, 1f)
+        assertEquals("Content gives way to exactly the bar and the keyboard, once", openedBar.top, bounds("content").bottom, 1f)
+        assertEquals(closedRest, restText())
         compose.runOnIdle { imeBottom.intValue = 0 }
-        assertEquals(closedTimer, bounds("active-rest-timer"))
-        assertEquals(closedFooter, bounds("footer"))
-        compose.onNodeWithText("1:30 min").assertExists()
+        assertEquals(closedBar, bounds("shell-workout-bar"))
+        assertEquals(closedTabs, bounds(MTabBarTag))
+        assertEquals(closedRest, restText())
         compose.runOnIdle {
             assertTrue("Opening and closing the IME must not issue countdown commands", calls.isEmpty())
-            assertEquals("bench-entry", state.timer.workoutExerciseId)
-            assertEquals(timer, state.timer)
+            assertEquals("bench-entry", timer.value.workoutExerciseId)
+            assertEquals(timerUi, timer.value)
         }
     }
 
     private fun bounds(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+    private fun restText() = compose.onNodeWithTag(WorkoutBarRestTag, useUnmergedTree = true).fetchSemanticsNode()
+        .let { node -> node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.joinToString { it.text } +
+            node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.joinToString() }
 }

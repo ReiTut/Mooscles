@@ -4,10 +4,12 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $projectRoot '.tooling\performance-baseline-project' }
+# Windows and default macOS volumes ignore path case; Linux does not.
+$pathComparison = if ($IsLinux) { [StringComparison]::Ordinal } else { [StringComparison]::OrdinalIgnoreCase }
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path (Join-Path $projectRoot '.tooling') 'performance-baseline-project' }
 $destination = [IO.Path]::GetFullPath($OutputDirectory)
 $permittedRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot '.tooling')) + [IO.Path]::DirectorySeparatorChar
-if (-not $destination.StartsWith($permittedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+if (-not $destination.StartsWith($permittedRoot, $pathComparison)) {
     throw 'Baseline output must be a new directory inside this project .tooling folder.'
 }
 if (Test-Path -LiteralPath $destination) { throw "Refusing to overwrite an existing baseline: $destination" }
@@ -24,7 +26,7 @@ try {
     finally { if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive } }
     # Configuration only: application sources remain exactly the baseline
     # commit. Use the same R8/signing/profileable settings for both captures.
-    $overlay = @('app\build.gradle.kts', 'app\src\performance\AndroidManifest.xml')
+    $overlay = @((Join-Path 'app' 'build.gradle.kts'), (Join-Path (Join-Path (Join-Path 'app' 'src') 'performance') 'AndroidManifest.xml'))
     foreach ($relative in $overlay) {
         $target = Join-Path $destination $relative
         New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null

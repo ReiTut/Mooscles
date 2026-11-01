@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the app shell (pt-BR): the tab bar and the in-progress workout bar. -->
+<resources>
+    <string name="shell_tab_train">Treinar</string>
+    <string name="shell_tab_library">Biblioteca</string>
+    <string name="shell_tab_history">Histórico</string>
+    <string name="shell_tab_records">Recordes</string>
+    <!-- How the workout bar reads an elapsed time under one minute; from a minute on it reads whole minutes. -->
+    <string name="shell_elapsed_under_minute">menos de um minuto</string>
+    <!-- How the workout bar reads a paused rest (%1$s is the time left, read aloud) and a rest that just ended, after "Rest, ". -->
+    <string name="shell_rest_paused_spoken">%1$s, pausado</string>
+    <string name="shell_rest_done_spoken">concluído</string>
+</resources>

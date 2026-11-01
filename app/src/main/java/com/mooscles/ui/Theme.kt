@@ -8,6 +8,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
@@ -15,7 +16,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
+import com.mooscles.designsystem.components.LocalOverlayWindowSetup
+import com.mooscles.designsystem.theme.MoosclesDesignTheme
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF006B50), onPrimary = Color.White,
@@ -49,18 +53,44 @@ private val AppTypography = Typography(
     labelLarge = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
 )
 
+/**
+ * An Activity whose system bars follow the app's resolved theme rather than the system's night
+ * mode. [MoosclesTheme] reports the theme after every composition; see MainActivity.
+ */
+fun interface AppThemeBars { fun appThemeResolved(dark: Boolean) }
+
 @Composable
 fun MoosclesTheme(theme: String, content: @Composable () -> Unit) {
     val dark = when (theme) { "dark" -> true; "light" -> false; else -> isSystemInDarkTheme() }
     val view = LocalView.current
     if (!view.isInEditMode) SideEffect {
         val activity = generateSequence(view.context) { (it as? ContextWrapper)?.baseContext }.filterIsInstance<Activity>().firstOrNull()
-        activity?.let {
-            WindowCompat.getInsetsController(it.window, view).apply {
-                isAppearanceLightStatusBars = !dark
-                isAppearanceLightNavigationBars = !dark
-            }
+        (activity as? AppThemeBars)?.appThemeResolved(dark)
+    }
+    // The Material theme stays exactly as before for the existing screens; the design system
+    // tokens (MTheme) are provided inside it for the new components.
+    MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = AppTypography) {
+        MoosclesDesignTheme(dark = dark) {
+            // An overlay's window (dialog, sheet, the exercise form) takes its bars' appearance from the system, not the app.
+            val overlayBars: @Composable () -> Unit = { OverlayWindowBars(dark) }
+            CompositionLocalProvider(LocalOverlayWindowSetup provides overlayBars) { content() }
         }
     }
-    MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = AppTypography, content = content)
+}
+
+/**
+ * Gives the window of the overlay this runs in the status and navigation bars of the app's theme [dark]
+ * (dark icons on a light app), as the Activity does for its own window. Nothing happens outside a dialog window.
+ */
+@Composable
+private fun OverlayWindowBars(dark: Boolean) {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    SideEffect {
+        val window = (view.parent as? DialogWindowProvider)?.window ?: return@SideEffect
+        WindowCompat.getInsetsController(window, view).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+    }
 }

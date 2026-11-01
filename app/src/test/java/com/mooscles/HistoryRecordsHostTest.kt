@@ -32,7 +32,7 @@ class HistoryRecordsHostTest {
         val workout = workout(listOf(benchWeight, pullupReps))
         assertEquals(2, workout.prExerciseCount)
         assertEquals(0, workout.firstRecordExerciseCount)
-        showSummary(workout)
+        showDetail(workout)
 
         assertDisplayedPrExerciseCount(2)
         scrollToMilestones()
@@ -51,7 +51,7 @@ class HistoryRecordsHostTest {
             RecordUi(bench, 100.0, 11, kind = RecordKind.REPS, previousReps = 10),
         ))
         assertEquals(1, workout.prExerciseCount)
-        showSummary(workout)
+        showDetail(workout)
         assertDisplayedPrExerciseCount(1)
         scrollToMilestones()
 
@@ -70,7 +70,7 @@ class HistoryRecordsHostTest {
         assertEquals(2, workout.prExerciseCount)
         assertEquals(1, workout.beatenPrExerciseCount)
         assertEquals(1, workout.firstRecordExerciseCount)
-        showSummary(workout)
+        showDetail(workout)
         assertDisplayedPrExerciseCount(2)
         scrollToMilestones()
 
@@ -93,7 +93,7 @@ class HistoryRecordsHostTest {
         assertEquals(2, workout.prExerciseCount)
         assertEquals(0, workout.beatenPrExerciseCount)
         assertEquals(2, workout.firstRecordExerciseCount)
-        showSummary(workout)
+        showDetail(workout)
 
         assertDisplayedPrExerciseCount(2)
         scrollToMilestones()
@@ -110,7 +110,7 @@ class HistoryRecordsHostTest {
         assertEquals(0, workout.prExerciseCount)
         assertEquals(0, workout.beatenPrExerciseCount)
         assertEquals(0, workout.firstRecordExerciseCount)
-        showSummary(workout)
+        showDetail(workout)
 
         assertDisplayedPrExerciseCount(0)
         compose.onNodeWithText("New milestones").assertDoesNotExist()
@@ -127,12 +127,12 @@ class HistoryRecordsHostTest {
             exercises = entries, records = records)
     }
 
-    private fun showSummary(workout: WorkoutUi) {
+    private fun showDetail(workout: WorkoutUi) {
         compose.setContent {
             MaterialTheme {
                 Box(Modifier.size(430.dp, 900.dp)) {
                     WorkoutDetailScreen(workout, UiState(loading = false), noActions,
-                        summary = true, onDeleted = {}, onExerciseHistory = {})
+                        onDeleted = {}, onExerciseHistory = {})
                 }
             }
         }

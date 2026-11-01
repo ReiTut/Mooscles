@@ -1,0 +1,14 @@
+--- docs/superpowers/reports/2026-10-29-phase3-verificacao/deps-after.txt	2026-10-28 22:32:47
++++ docs/superpowers/reports/2026-10-29-phase3-verificacao/deps-after-t10.txt	2026-10-28 22:40:24
+@@ -1008,7 +1008,10 @@
+ |    +--- org.jetbrains.compose.ui:ui:1.12.2 (*)
+ |    +--- org.jetbrains.compose.animation:animation:1.12.2 (*)
+ |    +--- org.jetbrains.compose.components:components-resources:1.12.2 (*)
+-|    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
++|    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
++|    \--- org.jetbrains.kotlinx:kotlinx-datetime:0.8.0
++|         \--- org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.8.0
++|              \--- org.jetbrains.kotlin:kotlin-stdlib:2.1.20 -> 2.4.21 (*)
+ +--- androidx.core:core-ktx:1.19.1 (*)
+ +--- androidx.activity:activity-compose:1.13.0 (*)
+ +--- androidx.lifecycle:lifecycle-runtime-compose:2.11.0 (*)

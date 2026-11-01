@@ -1,0 +1,74 @@
+Applications Graphics Acceleration Info:
+Uptime: 4586481 Realtime: 4586481
+
+** Graphics info for pid 5347 [com.mooscles] **
+
+Stats since: 4580518185392ns
+Total frames rendered: 77
+Janky frames: 36 (46.75%)
+Janky frames (legacy): 75 (97.40%)
+50th percentile: 46ms
+90th percentile: 101ms
+95th percentile: 125ms
+99th percentile: 150ms
+Number Missed Vsync: 14
+Number High input latency: 81
+Number Slow UI thread: 21
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 34
+Number Frame deadline missed: 36
+Number Frame deadline missed (legacy): 37
+HISTOGRAM: 5ms=0 6ms=0 7ms=0 8ms=0 9ms=0 10ms=0 11ms=0 12ms=0 13ms=0 14ms=0 15ms=0 16ms=0 17ms=0 18ms=0 19ms=0 20ms=0 21ms=2 22ms=4 23ms=1 24ms=1 25ms=3 26ms=0 27ms=0 28ms=2 29ms=3 30ms=2 31ms=2 32ms=3 34ms=3 36ms=1 38ms=1 40ms=2 42ms=5 44ms=3 46ms=1 48ms=2 53ms=2 57ms=2 61ms=3 65ms=4 69ms=3 73ms=2 77ms=2 81ms=4 85ms=2 89ms=1 93ms=1 97ms=2 101ms=1 105ms=0 109ms=1 113ms=1 117ms=1 121ms=0 125ms=2 129ms=0 133ms=0 150ms=2 200ms=0 250ms=0 300ms=0 350ms=0 400ms=0 450ms=0 500ms=0 550ms=0 600ms=0 650ms=0 700ms=0 750ms=0 800ms=0 850ms=0 900ms=0 950ms=0 1000ms=0 1050ms=0 1100ms=0 1150ms=0 1200ms=0 1250ms=0 1300ms=0 1350ms=0 1400ms=0 1450ms=0 1500ms=0 1550ms=0 1600ms=0 1650ms=0 1700ms=0 1750ms=0 1800ms=0 1850ms=0 1900ms=0 1950ms=0 2000ms=0 2050ms=0 2100ms=0 2150ms=0 2200ms=0 2250ms=0 2300ms=0 2350ms=0 2400ms=0 2450ms=0 2500ms=0 2550ms=0 2600ms=0 2650ms=0 2700ms=0 2750ms=0 2800ms=0 2850ms=0 2900ms=0 2950ms=0 3000ms=0 3050ms=0 3100ms=0 3150ms=0 3200ms=0 3250ms=0 3300ms=0 3350ms=0 3400ms=0 3450ms=0 3500ms=0 3550ms=0 3600ms=0 3650ms=0 3700ms=0 3750ms=0 3800ms=0 3850ms=0 3900ms=0 3950ms=0 4000ms=0 4050ms=0 4100ms=0 4150ms=0 4200ms=0 4250ms=0 4300ms=0 4350ms=0 4400ms=0 4450ms=0 4500ms=0 4550ms=0 4600ms=0 4650ms=0 4700ms=0 4750ms=0 4800ms=0 4850ms=0 4900ms=0 4950ms=0
+50th gpu percentile: 18ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+GPU HISTOGRAM: 1ms=0 2ms=0 3ms=0 4ms=0 5ms=1 6ms=4 7ms=2 8ms=3 9ms=4 10ms=4 11ms=3 12ms=3 13ms=3 14ms=1 15ms=1 16ms=2 17ms=6 18ms=4 19ms=4 20ms=1 21ms=2 22ms=2 23ms=1 24ms=0 25ms=1 4950ms=25
+
+Pipeline=Skia (OpenGL)
+Memory policy:
+  Max surface area: 2961504
+  Max resource usage: 142.15MB (x48)
+  Background retention: 50% (altUiHidden = true)
+  GPU Context timeout: 10
+Contexts: 1 (stopped = 0)
+CPU Caches:
+  Glyph Cache: 586.19 KB (1 entry)
+  Glyph Count: 62 
+Total CPU memory usage:
+  600263 bytes, 586.19 KB (0.00 bytes is purgeable)
+GPU Caches:
+  Other:
+    Other: 53.03 KB (1 entry)
+    Buffer Object: 38.94 KB (7 entries)
+    StencilAttachment: 1.20 MB (9 entries)
+  Image:
+    Texture: 1.03 MB (126 entries)
+  Scratch:
+    RenderTarget: 10.75 MB (5 entries)
+    Buffer Object: 174.00 KB (5 entries)
+    Texture: 2.00 MB (2 entries)
+Total GPU memory usage:
+  15979012 bytes, 15.24 MB (12.70 MB is purgeable)
+
+GraphicBufferAllocator buffers:
+        Handle |        Size |     W (Stride) x H | Layers |   Format |      Usage | Requestor
+0xb400007077473080 |     unknown | 1080 (   0) x 2400 |      1 |        1 | 0x     b00 | VRI[MainActivity]#1(BLAST Consumer)1
+0xb400007077499360 |     unknown | 1080 (   0) x 2400 |      1 |        1 | 0x     b00 | VRI[MainActivity]#1(BLAST Consumer)1
+0xb400007077499ea0 |     unknown | 1080 (   0) x 2400 |      1 |        1 | 0x     b00 | VRI[MainActivity]#1(BLAST Consumer)1
+Total allocated by GraphicBufferAllocator (estimate): 0.00 KB
+GoldfishAllocator::dumpDebugInfo is not implemented
+Profile data in ms:
+
+	com.mooscles/com.mooscles.MainActivity/android.view.ViewRootImpl@4de0e26 (visibility=0)
+View hierarchy:
+
+  com.mooscles/com.mooscles.MainActivity/android.view.ViewRootImpl@4de0e26
+  9 views, 14.79 kB of render nodes
+
+
+Total ViewRootImpl   : 1
+Total attached Views : 9
+Total RenderNode     : 14.79 kB (used) / 38.61 kB (capacity)
+
+00:02:07 load=5.16 gfn=45.7 qemu5554=0 crashpad=0

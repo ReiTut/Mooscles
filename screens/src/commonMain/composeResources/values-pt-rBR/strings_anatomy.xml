@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brazilian Portuguese translation of values/strings_anatomy.xml, with the same keys and arguments. -->
+<resources>
+    <string name="anatomy_region_abdominals">abdominais</string>
+    <string name="anatomy_region_abductors">abdutores</string>
+    <string name="anatomy_region_adductors">adutores</string>
+    <string name="anatomy_region_biceps">bíceps</string>
+    <string name="anatomy_region_calves">panturrilhas</string>
+    <string name="anatomy_region_chest">peito</string>
+    <string name="anatomy_region_forearms">antebraços</string>
+    <string name="anatomy_region_glutes">glúteos</string>
+    <string name="anatomy_region_hamstrings">posteriores da coxa</string>
+    <string name="anatomy_region_lats">dorsais</string>
+    <string name="anatomy_region_lower_back">lombar</string>
+    <string name="anatomy_region_middle_back">meio das costas</string>
+    <string name="anatomy_region_neck">pescoço</string>
+    <string name="anatomy_region_quadriceps">quadríceps</string>
+    <string name="anatomy_region_shoulders">ombros</string>
+    <string name="anatomy_region_traps">trapézio</string>
+    <string name="anatomy_region_triceps">tríceps</string>
+
+    <string name="anatomy_primary">Principais: %1$s.</string>
+    <string name="anatomy_primary_secondary">Principais: %1$s. Secundários: %2$s.</string>
+</resources>

@@ -16,21 +16,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mooscles.MoosclesApplication
 import com.mooscles.R
+import com.mooscles.designsystem.format.currentNumberLocale
+import com.mooscles.screens.share.ShareCardDensity
+import com.mooscles.screens.share.ShareCardPainter
+import com.mooscles.screens.share.ShareCards
+import com.mooscles.screens.share.rememberShareCardStyles
+import com.mooscles.screens.share.rememberShareCardTexts
 import com.mooscles.sharing.WorkoutCardRenderer
-import com.mooscles.sharing.WorkoutShareCards
 import com.mooscles.sharing.WorkoutShareIntent
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
 
 internal sealed interface WorkoutSharePreviewState {
     data object Loading : WorkoutSharePreviewState
@@ -38,7 +47,12 @@ internal sealed interface WorkoutSharePreviewState {
     data class Ready(val files: List<File>) : WorkoutSharePreviewState
 }
 
-/** Reads a fresh saved snapshot once per request; rendering never writes workout data. */
+/**
+ * Reads a fresh saved snapshot once per request; rendering never writes workout data. The card is
+ * the common one (`ShareCardPainter`, in `:screens`): its texts and fonts are resolved
+ * here, in the composition, and the drawing and the PNG run on a background dispatcher. The pages
+ * shown are those very PNGs, decoded, so the preview is the bitmap that is shared.
+ */
 @Composable
 fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -49,12 +63,20 @@ fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Uni
         available = withContext(Dispatchers.IO) { WorkoutShareIntent.availableWhatsAppPackages(context) }
     }
     var state by remember(workoutId, pounds, attempt) { mutableStateOf<WorkoutSharePreviewState>(WorkoutSharePreviewState.Loading) }
-    LaunchedEffect(workoutId, pounds, attempt) {
+    val texts = rememberShareCardTexts()
+    val styles = rememberShareCardStyles()
+    val fonts = LocalFontFamilyResolver.current
+    val locale = currentNumberLocale()
+    // The texts, fonts and number style are keys too: a language change redraws the card in it.
+    LaunchedEffect(workoutId, pounds, attempt, texts, styles, fonts, locale) {
         state = try {
             withContext(Dispatchers.IO) {
                 val app = context.applicationContext as MoosclesApplication
-                val card = requireNotNull(WorkoutShareCards.from(app.repository.snapshot(), workoutId, pounds))
-                val files = WorkoutCardRenderer().export(context.applicationContext, card)
+                val card = ShareCards.from(app.repository.snapshot(), workoutId, pounds, locale,
+                    TimeZone.currentSystemDefault(), texts)
+                // A measurer of its own: a retry can start while a cancelled export still draws.
+                val measurer = TextMeasurer(fonts, ShareCardDensity, LayoutDirection.Ltr)
+                val files = WorkoutCardRenderer().export(context.applicationContext, card, ShareCardPainter(styles), measurer)
                 check(files.isNotEmpty())
                 WorkoutSharePreviewState.Ready(files)
             }

@@ -2,6 +2,7 @@ package com.mooscles.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.domain.WorkoutCalculations
 import kotlinx.coroutines.runBlocking
@@ -23,7 +24,7 @@ class CatalogUpgradeTest {
 
     @Before fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).build()
+        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).setDriver(AndroidSQLiteDriver()).build()
         repository = WorkoutRepository(database)
     }
 

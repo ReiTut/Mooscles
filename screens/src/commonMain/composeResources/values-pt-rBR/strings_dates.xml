@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Month and weekday names, date and duration formats (pt-BR). Own strings, so no platform date formatter is used; the clock is 24 h in both languages. -->
+<resources>
+    <string name="date_month_jan">jan</string>
+    <string name="date_month_feb">fev</string>
+    <string name="date_month_mar">mar</string>
+    <string name="date_month_apr">abr</string>
+    <string name="date_month_may">mai</string>
+    <string name="date_month_jun">jun</string>
+    <string name="date_month_jul">jul</string>
+    <string name="date_month_aug">ago</string>
+    <string name="date_month_sep">set</string>
+    <string name="date_month_oct">out</string>
+    <string name="date_month_nov">nov</string>
+    <string name="date_month_dec">dez</string>
+    <string name="date_day_sun">dom.</string>
+    <string name="date_day_mon">seg.</string>
+    <string name="date_day_tue">ter.</string>
+    <string name="date_day_wed">qua.</string>
+    <string name="date_day_thu">qui.</string>
+    <string name="date_day_fri">sex.</string>
+    <string name="date_day_sat">sáb.</string>
+    <string name="date_short_format">%1$d %2$s</string>
+    <string name="date_short_year_format">%1$d %2$s %3$d</string>
+    <string name="date_range_format">%1$s, %2$s · %3$s–%4$s</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_under_minute">&lt; 1 min</string>
+    <string name="duration_hours">%1$d h</string>
+    <!-- Full month names and spoken dates ("October 2026", "June 3"), read by the progress and records screens. -->
+    <string name="date_month_full_jan">janeiro</string>
+    <string name="date_month_full_feb">fevereiro</string>
+    <string name="date_month_full_mar">março</string>
+    <string name="date_month_full_apr">abril</string>
+    <string name="date_month_full_may">maio</string>
+    <string name="date_month_full_jun">junho</string>
+    <string name="date_month_full_jul">julho</string>
+    <string name="date_month_full_aug">agosto</string>
+    <string name="date_month_full_sep">setembro</string>
+    <string name="date_month_full_oct">outubro</string>
+    <string name="date_month_full_nov">novembro</string>
+    <string name="date_month_full_dec">dezembro</string>
+    <string name="date_month_year">%1$s de %2$s</string>
+    <string name="date_spoken">%1$d de %2$s</string>
+    <string name="date_spoken_year">%1$d de %2$s de %3$d</string>
+</resources>

@@ -9,11 +9,23 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$adb = Join-Path $projectRoot '.tooling\android-sdk\platform-tools\adb.exe'
+# Windows PowerShell 5.x defines neither $IsLinux nor $IsMacOS and only runs on Windows.
+$isWindowsHost = -not ($IsLinux -or $IsMacOS)
+$adb = Join-Path (Join-Path (Join-Path (Join-Path $projectRoot '.tooling') 'android-sdk') 'platform-tools') $(if ($isWindowsHost) { 'adb.exe' } else { 'adb' })
+if (-not $isWindowsHost -and -not (Test-Path -LiteralPath $adb)) {
+    # Outside Windows adb is rarely on PATH; use the SDK named by the environment,
+    # then the Android Studio default on macOS (as prepare-release.ps1 does).
+    $sdkRoots = @($env:ANDROID_SDK_ROOT, $env:ANDROID_HOME)
+    if ($IsMacOS) { $sdkRoots += Join-Path (Join-Path (Join-Path $HOME 'Library') 'Android') 'sdk' }
+    $sdkAdb = $sdkRoots | Where-Object { $_ } |
+        ForEach-Object { Join-Path (Join-Path $_ 'platform-tools') 'adb' } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if ($sdkAdb) { $adb = $sdkAdb }
+}
 if (-not (Test-Path -LiteralPath $adb)) { $adb = (Get-Command adb -ErrorAction Stop).Source }
 if ($Serial -notmatch '^[A-Za-z0-9._:-]+$') { throw 'Invalid device serial.' }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $projectRoot "app\build\outputs\performance\$Stage-$Fixture-$Scenario-$stamp" }
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path (Join-Path (Join-Path (Join-Path $projectRoot 'app') 'build') (Join-Path 'outputs' 'performance')) "$Stage-$Fixture-$Scenario-$stamp" }
 if (Test-Path -LiteralPath $OutputDirectory) { throw 'Use a new output directory so previous captures are preserved.' }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -54,7 +66,9 @@ $remoteTrace = "/data/misc/perfetto-traces/mooscles-$stamp.perfetto-trace"
 $captureArgs = @('-s', $Serial, 'shell', 'perfetto', '-o', $remoteTrace, '-t', "${DurationSeconds}s",
     '-a', 'com.mooscles', 'sched', 'freq', 'idle', 'am', 'wm', 'gfx', 'view', 'binder_driver', 'dalvik', 'input')
 Write-Host "Recording $Stage / $Fixture / $Scenario for $DurationSeconds seconds. Perform the documented scenario now."
-$capture = Start-Process -FilePath $adb -ArgumentList $captureArgs -WindowStyle Hidden -PassThru `
+# -WindowStyle exists only on Windows; elsewhere adb already runs without a window.
+$windowOptions = if ($isWindowsHost) { @{ WindowStyle = 'Hidden' } } else { @{} }
+$capture = Start-Process -FilePath $adb -ArgumentList $captureArgs @windowOptions -PassThru `
     -RedirectStandardOutput (Join-Path $OutputDirectory 'perfetto.stdout.txt') `
     -RedirectStandardError (Join-Path $OutputDirectory 'perfetto.stderr.txt')
 if (-not $capture.WaitForExit(($DurationSeconds + 20) * 1000)) {

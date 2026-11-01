@@ -1,0 +1,10 @@
+// Fixture for tools/check-design-tokens.ps1: nothing here may be reported.
+// Comments may mention 16.dp, Color.White or tween(200) freely.
+val a = MTheme.colors.bgBase
+val b = MTheme.space.s4
+val c = MTheme.type.bodyMd
+val d = tween(MTheme.motion.fast)
+val e = spring(dampingRatio = MTheme.motion.springSet.dampingRatio)
+val f = delay(MTheme.timing.toastInfo)
+val g = Color.Transparent
+val h = Color.Unspecified

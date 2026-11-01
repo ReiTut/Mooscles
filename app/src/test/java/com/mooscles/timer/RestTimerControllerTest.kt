@@ -75,6 +75,25 @@ class RestTimerControllerTest {
         assertEquals(emptyPreferences(), store.stored)
     }
 
+    @Test fun storageFailureSetsTheErrorCode() = runTest {
+        val store = UnavailableStore()
+        val controller = RestTimerController(ApplicationProvider.getApplicationContext<Context>(), backgroundScope,
+            RestTimerPersistence(store), activeWorkoutId = { "active" }, sessionChanges = flowOf("active"))
+        assertNull(controller.errorCode.value)
+        runCurrent()
+        assertNotNull(controller.error.value)
+        assertEquals(RestTimerError.STORAGE_UNAVAILABLE, controller.errorCode.value)
+
+        controller.clearError()
+        assertNull(controller.error.value)
+        assertNull(controller.errorCode.value)
+
+        // A failed command reports both again.
+        controller.start("Bench press", 90)
+        assertNotNull(controller.error.value)
+        assertEquals(RestTimerError.STORAGE_UNAVAILABLE, controller.errorCode.value)
+    }
+
     @Test fun transientReadFailureRecoversPersistedTimerOnRetry() = runTest {
         val store = UnavailableStore()
         val deadline = System.currentTimeMillis() + 120_000

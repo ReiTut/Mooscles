@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A linha de alvo da rotina (pt-BR), "Alvo 3×8 · 80 kg". -->
+<resources>
+    <string name="routines_target_prefix">Alvo</string>
+    <plurals name="routines_target_sets">
+        <item quantity="one">%1$d série</item>
+        <item quantity="other">%1$d séries</item>
+    </plurals>
+    <string name="routines_target_reps">%1$s reps</string>
+    <plurals name="routines_target_warmups">
+        <item quantity="one">+ %1$d aquec.</item>
+        <item quantity="other">+ %1$d aquec.</item>
+    </plurals>
+    <!-- Fase 4B, tarefa 11: a aba Treinar. -->
+    <string name="routines_title">Treinar</string>
+    <string name="routines_settings">Configurações</string>
+    <string name="routines_folders">Pastas</string>
+    <plurals name="routines_exercise_count">
+        <item quantity="one">%1$d exercício</item>
+        <item quantity="other">%1$d exercícios</item>
+    </plurals>
+    <plurals name="routines_set_count">
+        <item quantity="one">%1$d série</item>
+        <item quantity="other">%1$d séries</item>
+    </plurals>
+    <string name="routines_summary">%1$s · %2$s</string>
+    <string name="routines_last_today">Última vez: hoje</string>
+    <string name="routines_last_yesterday">Última vez: ontem</string>
+    <plurals name="routines_last_days">
+        <item quantity="one">Última vez: há %1$d dia</item>
+        <item quantity="other">Última vez: há %1$d dias</item>
+    </plurals>
+    <string name="routines_last_date">Última vez: %1$s</string>
+    <string name="routines_never">Nunca feita</string>
+    <string name="routines_start">Começar</string>
+    <string name="routines_resume">Retomar treino</string>
+    <string name="routines_more">Opções de %1$s</string>
+    <string name="routines_edit">Editar</string>
+    <string name="routines_rename">Renomear</string>
+    <string name="routines_duplicate">Duplicar</string>
+    <string name="routines_copy_name">%1$s (cópia)</string>
+    <string name="routines_duplicated">Rotina duplicada</string>
+    <string name="routines_open">Abrir</string>
+    <string name="routines_move_to_folder">Mover para pasta</string>
+    <string name="routines_current_folder">Pasta atual</string>
+    <string name="routines_delete">Excluir</string>
+    <string name="routines_delete_title">Excluir %1$s?</string>
+    <string name="routines_delete_body">Os treinos já feitos com ela continuam no histórico.</string>
+    <string name="routines_new">Nova rotina</string>
+    <string name="routines_new_name">Nova rotina</string>
+    <string name="routines_create">Criar</string>
+    <string name="routines_name_field">Nome da rotina</string>
+    <string name="routines_empty_workout">Treino vazio</string>
+    <string name="routines_empty_folder">Nenhuma rotina nesta pasta</string>
+    <string name="routines_empty_folder_body">Crie uma rotina aqui ou mova uma de outra pasta.</string>
+    <string name="routines_active_title">Já existe um treino em andamento</string>
+    <string name="routines_active_body">Termine ou descarte “%1$s” antes de começar outro.</string>
+    <string name="routines_cancel">Cancelar</string>
+    <!-- Phase 4B task 12: the folder manager. -->
+    <string name="folders_title">Pastas</string>
+    <plurals name="folders_routine_count">
+        <item quantity="one">%1$d rotina</item>
+        <item quantity="other">%1$d rotinas</item>
+    </plurals>
+    <string name="folders_new">Nova pasta</string>
+    <string name="folders_name_field">Nome da pasta</string>
+    <string name="folders_more">Opções de %1$s</string>
+    <string name="folders_rename">Renomear</string>
+    <string name="folders_delete">Excluir</string>
+    <string name="folders_delete_title">Excluir a pasta %1$s?</string>
+    <plurals name="folders_delete_body">
+        <item quantity="one">A rotina dela vai para %2$s.</item>
+        <item quantity="other">As %1$d rotinas dela vão para %2$s.</item>
+    </plurals>
+</resources>

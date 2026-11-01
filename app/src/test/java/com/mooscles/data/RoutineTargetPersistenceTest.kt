@@ -1,7 +1,10 @@
 package com.mooscles.data
 
+import androidx.room.execSQL
+import androidx.room.useWriterConnection
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.domain.WeightUnits
 import kotlinx.coroutines.runBlocking
@@ -22,7 +25,7 @@ class RoutineTargetPersistenceTest {
     private var clock = 1000L
 
     @Before fun setup() = runBlocking {
-        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).build()
+        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).setDriver(AndroidSQLiteDriver()).build()
         repo = WorkoutRepository(database)
         repo.initialize()
     }
@@ -157,7 +160,7 @@ class RoutineTargetPersistenceTest {
         val plan = plan(exercise)
         val old = finish(exercise, 22.0 to 6)
         // Remove only the feature's checkpoint to model a pre-feature installation.
-        database.openHelper.writableDatabase.execSQL("DELETE FROM routine_target_checkpoints")
+        database.useWriterConnection { it.execSQL("DELETE FROM routine_target_checkpoints") }
         repo.updateRoutineExercise(saved(plan).copy(targetWeightKg = 20.0, targetReps = 7))
         val active = repo.startRoutine(plan.routineId)
         val before = repo.snapshot()
@@ -235,7 +238,7 @@ class RoutineTargetPersistenceTest {
 
     @Test fun onDiskReopenPreservesTargetsManualOverridesAndFutureWorkoutInitialization() = runBlocking {
         val name = "rt-${newId().take(8)}.db"
-        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).build()
+        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).setDriver(AndroidSQLiteDriver()).build()
         try {
             val memoryRepo = repo
             repo = WorkoutRepository(disk)
@@ -244,7 +247,7 @@ class RoutineTargetPersistenceTest {
             val plan = plan(exercise)
             finish(exercise, 22.0 to 6)
             disk.close()
-            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).build()
+            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).setDriver(AndroidSQLiteDriver()).build()
             repo = WorkoutRepository(disk)
             repo.initialize()
             assertEquals(22.0, saved(plan).targetWeightKg!!, 0.0)
@@ -257,7 +260,7 @@ class RoutineTargetPersistenceTest {
             val manual = saved(plan).copy(targetWeightKg = 21.0, targetReps = 4)
             repo.updateRoutineExercise(manual)
             disk.close()
-            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).build()
+            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).setDriver(AndroidSQLiteDriver()).build()
             repo = WorkoutRepository(disk)
             repo.initialize()
             assertEquals(manual, saved(plan))

@@ -1,0 +1,1724 @@
+{
+  "barbell_bench_flat": [
+    "Squeeze your shoulder blades together and down before you unrack.",
+    "Feet planted, slight arch, glutes stay on the bench.",
+    "Lower the bar to your lower chest with elbows about 45° from your body.",
+    "Press up and slightly back, wrists stacked over your elbows."
+  ],
+  "barbell_bench_incline": [
+    "Set the bench to 30–45° and keep your shoulder blades pinned back.",
+    "Lower the bar to your upper chest, just under the collarbones.",
+    "Keep your elbows slightly tucked, not flared straight out.",
+    "Press straight up over your shoulders and keep your hips down."
+  ],
+  "barbell_bench_decline": [
+    "Lock your legs under the pads before you take the bar.",
+    "Lower the bar to your lower chest with control.",
+    "Keep your shoulder blades back and down on the bench.",
+    "Have a spotter help you unrack and rerack the bar."
+  ],
+  "barbell_floor_press": [
+    "Lie with knees bent, feet flat and shoulder blades pulled together.",
+    "Lower until your upper arms touch the floor, then pause briefly.",
+    "Keep your elbows about 45° from your body.",
+    "Press up without bouncing your arms off the floor."
+  ],
+  "barbell_bench_close_grip": [
+    "Grip about shoulder-width, a little narrower than your usual bench.",
+    "Keep your elbows close to your sides as you lower.",
+    "Touch your lower chest, then press by straightening your elbows.",
+    "Wrists stay straight and stacked over your elbows."
+  ],
+  "barbell_bench_spoto": [
+    "Set up as for a regular bench press.",
+    "Lower the bar and stop it 2–3 cm above your chest.",
+    "Hold the pause without letting the bar sink or your back relax.",
+    "Press from the pause with no bounce."
+  ],
+  "barbell_row_overhand": [
+    "Hinge at the hips with a flat back, torso at about 45° or lower.",
+    "Grip overhand, slightly wider than your shoulders.",
+    "Pull the bar to your upper stomach, leading with your elbows.",
+    "Lower under control without standing up between reps."
+  ],
+  "barbell_row_underhand": [
+    "Hinge forward with a flat back and soft knees.",
+    "Grip shoulder-width with your palms facing up.",
+    "Pull the bar to your belly button, elbows close to your sides.",
+    "Lower until your arms are straight without rounding your back."
+  ],
+  "barbell_row_pendlay": [
+    "Start each rep with the bar resting on the floor.",
+    "Keep your torso close to parallel with the floor and your back flat.",
+    "Pull the bar fast to your lower chest, then set it back on the floor.",
+    "Brace again before every rep."
+  ],
+  "barbell_row_seal": [
+    "Lie face down on a high bench so your arms hang straight.",
+    "Keep your chest on the bench for the whole set.",
+    "Pull the bar up toward the bench, squeezing your shoulder blades.",
+    "Lower until your arms are fully straight."
+  ],
+  "barbell_landmine_row_two_arm": [
+    "Straddle the bar and hinge at the hips with a flat back.",
+    "Hold the bar just behind the plates, or use a V handle.",
+    "Pull toward your chest without changing your torso angle.",
+    "Lower under control until your arms are straight."
+  ],
+  "barbell_landmine_row_one_arm": [
+    "Stand beside the end of the bar, feet staggered, back flat.",
+    "Brace your free hand on your knee or a bench.",
+    "Pull the bar to your hip, elbow close to your body.",
+    "Keep your shoulders square; don't twist to finish the rep."
+  ],
+  "barbell_meadows_row": [
+    "Stand side-on to the end of the bar in a staggered stance.",
+    "Grip the thick end overhand and rest your other forearm on your knee.",
+    "Drive your elbow up and back, past your torso.",
+    "Lower to a full stretch without rounding your back."
+  ],
+  "barbell_overhead_press": [
+    "Start with the bar on your front shoulders, hands just outside them.",
+    "Squeeze your glutes and brace your abs so you don't lean back.",
+    "Pull your head back slightly to clear the bar, then press straight up.",
+    "Finish with the bar over your mid-foot and your arms locked."
+  ],
+  "barbell_seated_press": [
+    "Sit with your back against an upright pad and your feet planted.",
+    "Lower the bar to chin or upper-chest height.",
+    "Press straight up without arching away from the pad.",
+    "Keep your forearms vertical under the bar."
+  ],
+  "barbell_push_press": [
+    "Start with the bar resting on your front shoulders.",
+    "Dip a few centimeters at the knees with your torso upright.",
+    "Drive hard with your legs and use that push to press the bar overhead.",
+    "Lock out over your mid-foot, then lower the bar to your shoulders."
+  ],
+  "barbell_landmine_press": [
+    "Hold the end of the bar at shoulder height in one hand.",
+    "Stagger your stance and brace your abs.",
+    "Press up and forward along the bar's arc until your arm is straight.",
+    "Lower under control without twisting your torso."
+  ],
+  "barbell_upright_row": [
+    "Grip about shoulder-width or a little wider.",
+    "Lift the bar close to your body, leading with your elbows.",
+    "Stop near lower-chest height, elbows no higher than your shoulders.",
+    "Lower slowly, keeping the bar close to you."
+  ],
+  "barbell_shrug": [
+    "Stand tall with the bar in front of your thighs and your arms straight.",
+    "Lift your shoulders straight up toward your ears.",
+    "Pause at the top, then lower all the way down.",
+    "Don't roll your shoulders or bend your elbows."
+  ],
+  "barbell_back_squat_high_bar": [
+    "Rest the bar on top of your traps, not on your neck.",
+    "Take a breath and brace your abs before you descend.",
+    "Sit down between your heels with your knees tracking over your toes.",
+    "Keep your torso fairly upright and drive up through your whole foot."
+  ],
+  "barbell_back_squat_low_bar": [
+    "Set the bar lower, across the back of your shoulders.",
+    "Squeeze the bar hard to keep your upper back tight.",
+    "Sit your hips back, with more forward lean than in a high-bar squat.",
+    "Keep the bar over your mid-foot for the whole rep."
+  ],
+  "barbell_front_squat": [
+    "Rest the bar on your front shoulders, close to your throat.",
+    "Keep your elbows high so the bar doesn't roll forward.",
+    "Squat straight down with your torso upright.",
+    "Drive up leading with your elbows and chest."
+  ],
+  "barbell_zercher_squat": [
+    "Hold the bar in the crook of your elbows, hands together.",
+    "Keep the bar close to your body and your chest up.",
+    "Squat down between your knees with your abs braced.",
+    "Stand up without letting your upper back round."
+  ],
+  "barbell_overhead_squat": [
+    "Hold the bar overhead with a wide grip and locked elbows.",
+    "Push up into the bar and keep it over your mid-foot.",
+    "Squat with your chest up and your hips between your heels.",
+    "Start light: shoulder and ankle mobility usually limits the load."
+  ],
+  "barbell_landmine_squat": [
+    "Hold the end of the bar at your chest with both hands.",
+    "Stand with feet shoulder-width apart, leaning slightly into the bar.",
+    "Squat down between your knees with your chest up.",
+    "Drive up through your whole foot."
+  ],
+  "barbell_split_squat": [
+    "Take a long stance with the bar on your upper back.",
+    "Drop your back knee straight down toward the floor.",
+    "Keep your front heel down and your torso upright.",
+    "Finish all reps on one side, then switch."
+  ],
+  "barbell_squat_bulgarian": [
+    "Rest the top of your back foot on a bench behind you.",
+    "Stand far enough forward that your front knee tracks over your foot.",
+    "Lower straight down until your front thigh is about parallel.",
+    "Push through your front foot; the back leg only helps you balance."
+  ],
+  "barbell_reverse_lunge": [
+    "Start standing tall with the bar on your upper back.",
+    "Step back and lower your back knee toward the floor.",
+    "Keep most of your weight on your front foot.",
+    "Push through your front heel to return to standing."
+  ],
+  "barbell_walking_lunge": [
+    "Step forward into a long stride with your torso upright.",
+    "Lower until your back knee nearly touches the floor.",
+    "Drive up and bring your back leg through into the next step.",
+    "Keep your feet about hip-width apart for balance."
+  ],
+  "barbell_deadlift_conventional": [
+    "Bar over your mid-foot, shins close, hands just outside your legs.",
+    "Pull the slack out of the bar and brace before it leaves the floor.",
+    "Push the floor away, keeping the bar against your legs.",
+    "Stand tall with hips and knees locked; don't lean back."
+  ],
+  "barbell_deadlift_sumo": [
+    "Take a wide stance, toes turned out, bar over your mid-foot.",
+    "Grip inside your knees with your arms hanging straight.",
+    "Push your knees out over your toes and keep your chest up.",
+    "Spread the floor with your feet and bring your hips forward to finish."
+  ],
+  "barbell_deadlift_romanian": [
+    "Start standing, knees soft, bar against your thighs.",
+    "Push your hips back and slide the bar down your legs.",
+    "Stop when your hamstrings are stretched and your back is still flat.",
+    "Drive your hips forward to stand up."
+  ],
+  "barbell_deadlift_stiff_leg": [
+    "Keep your knees almost straight for the whole rep.",
+    "Hinge at the hips and lower the bar close to your legs.",
+    "Go only as low as you can with a flat back.",
+    "Squeeze your glutes to return to standing."
+  ],
+  "barbell_good_morning": [
+    "Rest the bar on your upper back as for a squat.",
+    "Bend your knees slightly and keep them there.",
+    "Push your hips back and lower your chest with a flat back.",
+    "Start light and stop before your back starts to round."
+  ],
+  "barbell_hip_thrust": [
+    "Rest your upper back on a bench, with a padded bar across your hips.",
+    "Feet flat and about hip-width, shins vertical at the top.",
+    "Drive through your heels until your hips line up with your knees.",
+    "Tuck your chin and keep your ribs down; don't arch to finish."
+  ],
+  "barbell_glute_bridge": [
+    "Lie on the floor, knees bent, bar across your hips.",
+    "Press through your heels and lift your hips.",
+    "Squeeze your glutes at the top for a second.",
+    "Lower your hips to the floor under control."
+  ],
+  "barbell_calf_raise_standing": [
+    "Bar on your upper back, balls of your feet on a plate or step.",
+    "Lower your heels for a full stretch.",
+    "Rise as high as you can onto your toes and pause.",
+    "Keep your knees straight but not hard-locked."
+  ],
+  "barbell_curl": [
+    "Stand tall, grip shoulder-width, palms up.",
+    "Keep your elbows at your sides as you lift.",
+    "Lift without swinging your torso or hips.",
+    "Lower slowly until your arms are straight."
+  ],
+  "barbell_curl_reverse": [
+    "Grip the bar overhand, about shoulder-width.",
+    "Keep your wrists straight, in line with your forearms.",
+    "Lift with your elbows fixed at your sides.",
+    "Lower under control; this grip takes a lighter load."
+  ],
+  "barbell_curl_preacher": [
+    "Set the seat so your armpits rest on the top edge of the pad.",
+    "Keep the backs of your upper arms on the pad.",
+    "Lift without raising your elbows off the pad.",
+    "Lower slowly to almost straight; don't drop into the bottom."
+  ],
+  "barbell_curl_drag": [
+    "Grip shoulder-width, palms up, bar against your thighs.",
+    "Pull your elbows back as you lift.",
+    "Drag the bar up along your body to your lower chest.",
+    "Lower it the same way, keeping the bar against you."
+  ],
+  "ez_bar_curl": [
+    "Grip the angled parts of the bar, palms up.",
+    "Keep your elbows at your sides for the whole rep.",
+    "Lift without leaning back.",
+    "Lower slowly to full extension."
+  ],
+  "ez_bar_curl_preacher": [
+    "Armpits on the top edge of the pad, upper arms flat on it.",
+    "Grip the inner angles of the bar.",
+    "Lift until your forearms are nearly vertical.",
+    "Lower under control without bouncing at the bottom."
+  ],
+  "ez_bar_triceps_lying": [
+    "Lie on a bench and hold the bar over your shoulders on the angled grips.",
+    "Keep your upper arms still, tilted slightly back toward your head.",
+    "Bend your elbows to lower the bar to your forehead or just behind it.",
+    "Straighten your elbows to return without flaring them out."
+  ],
+  "barbell_triceps_lying": [
+    "Lie on a bench with a narrow grip, bar over your shoulders.",
+    "Keep your upper arms fixed; only your elbows bend.",
+    "Lower the bar slowly toward your forehead.",
+    "Press back up by straightening your elbows, keeping them in."
+  ],
+  "barbell_wrist_curl": [
+    "Sit with your forearms on your thighs or a bench, palms up.",
+    "Let your wrists bend back so the bar rolls toward your fingers.",
+    "Curl your wrists up as high as you can.",
+    "Keep your forearms flat; only your wrists move."
+  ],
+  "barbell_wrist_curl_reverse": [
+    "Rest your forearms on your thighs or a bench, palms down.",
+    "Lower the bar by letting your wrists bend down.",
+    "Lift the backs of your hands as high as you can.",
+    "Use a light load and move slowly."
+  ],
+  "barbell_rollout": [
+    "Kneel with your hands on the bar, under your shoulders.",
+    "Brace your abs and tuck your pelvis slightly.",
+    "Roll forward only as far as you can without your lower back sagging.",
+    "Pull back with your abs, not by bending at the hips first."
+  ],
+  "dumbbell_bench_flat": [
+    "Kick the dumbbells up from your thighs as you lie back.",
+    "Pull your shoulder blades together and down on the bench.",
+    "Lower until the dumbbells are beside your chest, elbows about 45°.",
+    "Press up and slightly in, without clanking them at the top."
+  ],
+  "dumbbell_bench_one_arm": [
+    "Lie on a flat bench with one dumbbell; hold the bench with your free hand.",
+    "Brace your abs so your body doesn't roll toward the weight.",
+    "Lower beside your chest, elbow about 45° from your body.",
+    "Press up and finish all reps before switching sides."
+  ],
+  "dumbbell_bench_incline": [
+    "Set the bench to 30–45° and plant your feet.",
+    "Keep your shoulder blades back against the bench.",
+    "Lower the dumbbells to the sides of your upper chest.",
+    "Press up over your shoulders."
+  ],
+  "dumbbell_bench_decline": [
+    "Secure your legs under the pads before lying back.",
+    "Hold the dumbbells over your lower chest.",
+    "Lower them to the sides of your lower chest with control.",
+    "After the set, sit up with the dumbbells held close to your chest."
+  ],
+  "dumbbell_bench_neutral": [
+    "Hold the dumbbells with your palms facing each other.",
+    "Keep your elbows close to your body as you lower.",
+    "Lower until the dumbbells reach the sides of your chest.",
+    "Press straight up, palms still facing in."
+  ],
+  "dumbbell_floor_press": [
+    "Lie on the floor with your knees bent and feet flat.",
+    "Lower until your upper arms rest on the floor.",
+    "Pause briefly with the dumbbells over your elbows.",
+    "Press up without bouncing off the floor."
+  ],
+  "dumbbell_floor_press_one_arm": [
+    "Lie on the floor, knees bent, one dumbbell over your shoulder.",
+    "Brace your abs to stop your body from rolling.",
+    "Lower until your upper arm touches the floor.",
+    "Press up, and finish one side before switching."
+  ],
+  "dumbbell_fly_flat": [
+    "Start with the dumbbells over your chest, palms facing each other.",
+    "Keep a slight, fixed bend in your elbows.",
+    "Open your arms wide until you feel a stretch across your chest.",
+    "Bring the dumbbells back together along the same arc."
+  ],
+  "dumbbell_fly_incline": [
+    "Set the bench to about 30° and hold the dumbbells over your chest.",
+    "Keep your elbows slightly bent throughout.",
+    "Lower in a wide arc until your arms are about level with the bench.",
+    "Squeeze your chest to bring the weights back up."
+  ],
+  "dumbbell_pullover": [
+    "Lie on a bench holding one dumbbell over your chest with both hands.",
+    "Keep a slight bend in your elbows.",
+    "Lower the dumbbell behind your head until you feel a stretch.",
+    "Bring it back over your chest without bending your elbows more."
+  ],
+  "dumbbell_row_one_arm": [
+    "Put one knee and one hand on a bench, back flat and level.",
+    "Let the dumbbell hang straight below your shoulder.",
+    "Pull it toward your hip, elbow close to your body.",
+    "Lower to a full stretch without twisting your torso."
+  ],
+  "dumbbell_row_chest_supported": [
+    "Lie chest-down on an incline bench, feet on the floor.",
+    "Let the dumbbells hang with your arms straight.",
+    "Row them up, squeezing your shoulder blades together.",
+    "Keep your chest on the pad; don't lift it to finish."
+  ],
+  "dumbbell_row_bent_over": [
+    "Hinge at the hips with a flat back, dumbbells below your shoulders.",
+    "Keep your knees soft and your neck in line with your back.",
+    "Row both dumbbells toward your hips.",
+    "Lower under control, holding the same torso angle."
+  ],
+  "dumbbell_row_renegade": [
+    "Start in a high plank on the dumbbells, feet wider than your hips.",
+    "Brace your abs and glutes to keep your hips square.",
+    "Row one dumbbell to your hip without rotating your body.",
+    "Set it down quietly and alternate sides."
+  ],
+  "dumbbell_shrug": [
+    "Stand tall with the dumbbells at your sides and your arms straight.",
+    "Lift your shoulders straight up toward your ears.",
+    "Pause at the top, then lower all the way down.",
+    "Keep your elbows straight and don't roll your shoulders."
+  ],
+  "dumbbell_press_seated": [
+    "Sit on an upright bench with your back against the pad.",
+    "Start with the dumbbells at shoulder height, forearms vertical.",
+    "Press up until your arms are straight over your shoulders.",
+    "Lower back to shoulder height with control."
+  ],
+  "dumbbell_press_standing": [
+    "Stand with feet hip-width apart, dumbbells at shoulder height.",
+    "Squeeze your glutes and brace your abs.",
+    "Press straight up without leaning back.",
+    "Lower under control to your shoulders."
+  ],
+  "dumbbell_press_arnold": [
+    "Start with the dumbbells in front of your shoulders, palms facing you.",
+    "Rotate your palms outward as you press up.",
+    "Finish overhead with your palms facing forward.",
+    "Reverse the rotation on the way down."
+  ],
+  "dumbbell_raise_lateral": [
+    "Stand tall with a slight bend in your elbows.",
+    "Raise the dumbbells out to the sides, leading with your elbows.",
+    "Stop at about shoulder height.",
+    "Lower slowly without swinging your body."
+  ],
+  "dumbbell_raise_lateral_seated": [
+    "Sit on the end of a bench with your back tall.",
+    "Raise the dumbbells out to the sides with a slight bend in your elbows.",
+    "Stop at about shoulder height.",
+    "Lower slowly and keep your torso still."
+  ],
+  "dumbbell_raise_front": [
+    "Hold the dumbbells in front of your thighs.",
+    "Raise them forward with a slight bend in your elbows.",
+    "Stop at about shoulder height.",
+    "Lower slowly without leaning back."
+  ],
+  "dumbbell_fly_reverse": [
+    "Hinge forward until your torso is nearly parallel to the floor.",
+    "Let the dumbbells hang with a slight bend in your elbows.",
+    "Raise your arms out to the sides, squeezing your upper back.",
+    "Lower slowly, keeping your back flat."
+  ],
+  "dumbbell_fly_reverse_incline": [
+    "Lie chest-down on an incline bench.",
+    "Let the dumbbells hang with a slight bend in your elbows.",
+    "Raise your arms out to the sides until they line up with your body.",
+    "Keep your chest on the pad and lower slowly."
+  ],
+  "dumbbell_upright_row": [
+    "Hold the dumbbells in front of your thighs.",
+    "Lift them close to your body, leading with your elbows.",
+    "Stop when your elbows reach about shoulder height.",
+    "Lower slowly to the start."
+  ],
+  "dumbbell_squat_goblet": [
+    "Hold one dumbbell upright against your chest.",
+    "Feet about shoulder-width apart, toes turned slightly out.",
+    "Squat down between your knees, elbows inside them.",
+    "Keep your chest up and drive up through your whole foot."
+  ],
+  "dumbbell_squat_front": [
+    "Rest the dumbbells on the front of your shoulders.",
+    "Keep your elbows up and your torso upright.",
+    "Squat down with your knees tracking over your toes.",
+    "Drive up through your whole foot."
+  ],
+  "dumbbell_squat_bulgarian": [
+    "Rest the top of your back foot on a bench behind you.",
+    "Hold the dumbbells at your sides with your arms straight.",
+    "Lower straight down until your front thigh is about parallel.",
+    "Push through your front foot and keep that heel down."
+  ],
+  "dumbbell_split_squat": [
+    "Take a long stance with the dumbbells at your sides.",
+    "Drop your back knee straight down toward the floor.",
+    "Keep your torso upright and your front heel planted.",
+    "Finish one side, then switch."
+  ],
+  "dumbbell_lunge_reverse": [
+    "Stand tall with the dumbbells at your sides.",
+    "Step back and lower your back knee toward the floor.",
+    "Keep your weight on your front foot.",
+    "Push through your front heel to return."
+  ],
+  "dumbbell_lunge_forward": [
+    "Stand tall with the dumbbells at your sides.",
+    "Step forward and lower until both knees are bent to about 90°.",
+    "Keep your front knee in line with your foot.",
+    "Push off your front foot to step back to the start."
+  ],
+  "dumbbell_lunge_walking": [
+    "Step forward into a long stride, dumbbells at your sides.",
+    "Lower until your back knee nearly touches the floor.",
+    "Drive up and bring your back leg through into the next step.",
+    "Keep your torso upright the whole way."
+  ],
+  "dumbbell_lunge_lateral": [
+    "Start with your feet together and the dumbbells at your sides.",
+    "Take a wide step to the side and sit your hips back over that foot.",
+    "Keep the other leg straight and both feet pointing forward.",
+    "Push off the bent leg to return to the start."
+  ],
+  "dumbbell_step_up": [
+    "Pick a box around knee height; go higher only if your form holds.",
+    "Place your whole foot on the box.",
+    "Drive up through that foot without pushing off your back leg.",
+    "Step down under control; finish all reps on that side."
+  ],
+  "dumbbell_deadlift_romanian": [
+    "Stand tall with the dumbbells in front of your thighs, knees soft.",
+    "Push your hips back and slide the dumbbells down your legs.",
+    "Stop at a strong hamstring stretch, back still flat.",
+    "Drive your hips forward to stand up."
+  ],
+  "dumbbell_deadlift_romanian_one_leg": [
+    "Stand on one leg with a soft knee, dumbbell in the opposite hand.",
+    "Hinge forward as your free leg rises behind you.",
+    "Keep your hips square to the floor; don't let them open.",
+    "Return by driving the standing hip forward."
+  ],
+  "dumbbell_deadlift_sumo": [
+    "Take a wide stance, toes out, one dumbbell hanging between your legs.",
+    "Hold it by one end with both hands, arms straight.",
+    "Sit your hips down and back with your knees pushed out.",
+    "Stand up by driving through your heels, chest up."
+  ],
+  "dumbbell_hip_thrust": [
+    "Rest your upper back on a bench with the dumbbell on your hips.",
+    "Hold the dumbbell in place with both hands.",
+    "Drive through your heels until your hips line up with your knees.",
+    "Keep your chin tucked and squeeze your glutes at the top."
+  ],
+  "dumbbell_calf_raise_standing": [
+    "Stand on a step on the balls of your feet, dumbbells at your sides.",
+    "Lower your heels for a full stretch.",
+    "Rise as high as you can and pause at the top.",
+    "Move slowly instead of bouncing."
+  ],
+  "dumbbell_calf_raise_one_leg": [
+    "Stand on one foot on a step, dumbbell in the same-side hand.",
+    "Hold a support with your other hand for balance.",
+    "Lower your heel for a full stretch, then rise as high as you can.",
+    "Finish one side before switching."
+  ],
+  "dumbbell_calf_raise_seated": [
+    "Sit with the balls of your feet on a plate or step.",
+    "Rest the dumbbells on your knees and hold them in place.",
+    "Lower your heels, then lift them as high as you can.",
+    "Pause at the top of each rep."
+  ],
+  "dumbbell_curl_standing": [
+    "Stand tall, dumbbells at your sides, palms facing forward.",
+    "Keep your elbows pinned to your sides.",
+    "Lift without swinging.",
+    "Lower slowly to full extension."
+  ],
+  "dumbbell_curl_hammer": [
+    "Hold the dumbbells with your palms facing your body.",
+    "Keep your palms facing in for the whole rep.",
+    "Lift with your elbows fixed at your sides.",
+    "Lower under control."
+  ],
+  "dumbbell_curl_incline": [
+    "Sit back on a bench set to about 45–60°.",
+    "Let your arms hang straight down, behind the line of your body.",
+    "Lift without bringing your elbows forward.",
+    "Lower slowly for a full stretch."
+  ],
+  "dumbbell_curl_concentration": [
+    "Sit and brace the back of your upper arm against your inner thigh.",
+    "Start with the arm straight below your shoulder.",
+    "Lift toward your shoulder without moving your upper arm.",
+    "Lower slowly, and finish one side before switching."
+  ],
+  "dumbbell_curl_preacher": [
+    "Rest your upper arm flat on the preacher pad.",
+    "Start with your elbow nearly straight.",
+    "Lift until your forearm is close to vertical.",
+    "Lower slowly without lifting your elbow off the pad."
+  ],
+  "dumbbell_curl_spider": [
+    "Lie chest-down on an incline bench, arms hanging straight.",
+    "Keep your upper arms vertical and still.",
+    "Lift the dumbbells and squeeze at the top.",
+    "Lower slowly to full extension."
+  ],
+  "dumbbell_curl_reverse": [
+    "Hold the dumbbells with your palms facing back.",
+    "Keep your wrists straight, in line with your forearms.",
+    "Lift with your elbows at your sides.",
+    "Lower slowly, with a lighter load than a regular curl."
+  ],
+  "dumbbell_curl_zottman": [
+    "Lift with your palms facing up.",
+    "At the top, turn your palms to face down.",
+    "Lower slowly with your palms down.",
+    "Turn your palms back up at the bottom."
+  ],
+  "dumbbell_triceps_overhead_two_hands": [
+    "Hold one dumbbell overhead, both hands cupping the top end.",
+    "Keep your elbows pointing forward and close to your head.",
+    "Bend your elbows to lower the dumbbell behind your head.",
+    "Brace your abs and straighten your elbows without arching your back."
+  ],
+  "dumbbell_triceps_overhead_one_arm": [
+    "Hold the dumbbell overhead, arm straight, upper arm by your ear.",
+    "Lower it behind your head by bending only your elbow.",
+    "Keep your elbow pointing up, not out to the side.",
+    "Straighten your arm fully, and finish one side before switching."
+  ],
+  "dumbbell_triceps_lying": [
+    "Lie on a bench, dumbbells over your shoulders, palms facing in.",
+    "Keep your upper arms still.",
+    "Bend your elbows to lower the dumbbells beside your head.",
+    "Straighten your elbows to return."
+  ],
+  "dumbbell_triceps_kickback": [
+    "Hinge forward with a flat back and one hand on a bench.",
+    "Hold your upper arm parallel to the floor, close to your side.",
+    "Straighten your elbow until your arm is fully extended.",
+    "Lower your forearm under control; your upper arm stays still."
+  ],
+  "dumbbell_wrist_curl": [
+    "Rest your forearm on your thigh or a bench, palm up.",
+    "Let your wrist bend back so the dumbbell lowers.",
+    "Curl your wrist up as high as you can.",
+    "Keep your forearm flat; only your wrist moves."
+  ],
+  "dumbbell_wrist_curl_reverse": [
+    "Rest your forearm on your thigh or a bench, palm down.",
+    "Let your wrist bend down with the dumbbell.",
+    "Lift the back of your hand as high as you can.",
+    "Use a light load and move slowly."
+  ],
+  "dumbbell_side_bend": [
+    "Stand tall with one dumbbell at your side.",
+    "Bend sideways toward the dumbbell, sliding it down your leg.",
+    "Don't lean forward or back as you bend.",
+    "Use the opposite side to pull back upright, then switch."
+  ],
+  "dumbbell_crunch": [
+    "Lie on your back, knees bent, holding a dumbbell on your chest.",
+    "Bring your ribs toward your hips, lifting your shoulder blades.",
+    "Keep your chin slightly tucked and your neck relaxed.",
+    "Lower slowly without letting the weight pull you down."
+  ],
+  "kettlebell_squat_goblet": [
+    "Hold the kettlebell by the sides of the handle, against your chest, elbows down.",
+    "Feet a bit wider than your shoulders, toes turned slightly out.",
+    "Squat down between your knees, keeping them in line with your toes.",
+    "Keep your chest up and drive up through your whole foot."
+  ],
+  "kettlebell_squat_front_double": [
+    "Clean both kettlebells to the rack, resting on your forearms at chest height.",
+    "Keep your elbows tucked close to your ribs.",
+    "Squat down with your chest up; don't let the weight pull you forward.",
+    "Brace before each rep and drive up through your whole foot."
+  ],
+  "kettlebell_lunge_reverse_racked": [
+    "Hold one kettlebell in the rack position, elbow tucked to your ribs.",
+    "Step back and lower until your back knee nearly touches the floor.",
+    "Keep your torso tall; don't lean toward or away from the weight.",
+    "Push through your front foot to return; finish all reps on that side."
+  ],
+  "kettlebell_deadlift": [
+    "Set the kettlebell between your feet, in line with the middle of your foot.",
+    "Push your hips back and grip the handle with a flat back.",
+    "Pull your shoulders down and brace your abs before you lift.",
+    "Stand up by driving your hips forward; squeeze your glutes at the top."
+  ],
+  "kettlebell_deadlift_romanian": [
+    "Stand tall holding the kettlebell by the handle, arms long.",
+    "Soften your knees and push your hips back, the kettlebell close to your legs.",
+    "Lower until you feel a strong stretch in your hamstrings, back flat.",
+    "Drive your hips forward to stand; don't lean back at the top."
+  ],
+  "kettlebell_deadlift_one_leg": [
+    "Stand on one leg with a soft knee, kettlebell in the opposite hand.",
+    "Hinge forward as your free leg rises behind you.",
+    "Keep your hips level; don't let them open.",
+    "Keep the kettlebell close to your standing leg, then drive that hip forward to return."
+  ],
+  "kettlebell_swing_two_hand": [
+    "Start with the kettlebell a little in front of you and hike it back between your legs.",
+    "It's a hinge, not a squat: hips go back, shins stay nearly vertical.",
+    "Snap your hips forward and let the kettlebell float to chest height.",
+    "Stand tall at the top, glutes and abs tight; don't lean back."
+  ],
+  "kettlebell_swing_one_hand": [
+    "Grip the handle with one hand and keep that shoulder down.",
+    "Hike the kettlebell back between your legs, thumb pointing back.",
+    "Snap your hips forward with your shoulders square; don't twist.",
+    "Finish all reps on one side, then switch hands."
+  ],
+  "kettlebell_clean": [
+    "Hike the kettlebell back, then drive your hips forward.",
+    "Keep your elbow close so the kettlebell rises near your body, not in a wide arc.",
+    "Turn your hand around the handle so it lands softly on your forearm.",
+    "Finish in the rack: wrist neutral, elbow by your ribs, glutes tight."
+  ],
+  "kettlebell_snatch": [
+    "Hike the kettlebell back, then drive your hips forward hard.",
+    "Pull it up close to your body, leading with your elbow.",
+    "As it passes your head, punch your hand through so it doesn't slam your forearm.",
+    "Lock out overhead, biceps by your ear, then let it drop into the next swing."
+  ],
+  "kettlebell_clean_press": [
+    "Clean the kettlebell to the rack, wrist neutral and elbow by your ribs.",
+    "Pause in the rack and tighten your glutes and abs before pressing.",
+    "Press up until your arm is locked, biceps by your ear.",
+    "Lower back to the rack with control before the next clean."
+  ],
+  "kettlebell_press": [
+    "Start in the rack: wrist neutral, elbow under the kettlebell, forearm vertical.",
+    "Squeeze your glutes and brace your abs so you don't lean back.",
+    "Press up and slightly out, finishing with your biceps by your ear.",
+    "No leg drive; lower back to the rack under control."
+  ],
+  "kettlebell_push_press": [
+    "Start in the rack with your elbow tucked and your abs braced.",
+    "Make a short, quick dip at the knees, torso upright.",
+    "Drive up with your legs and press the kettlebell overhead in one move.",
+    "Lock out with your biceps by your ear, then lower to the rack, bending your knees."
+  ],
+  "kettlebell_floor_press": [
+    "Lie on your side, take the kettlebell with both hands, then roll onto your back.",
+    "Knees bent, upper arm about 45° from your body, wrist neutral.",
+    "Press up until your arm is locked over your shoulder.",
+    "Lower until your upper arm touches the floor, pause, then press again."
+  ],
+  "kettlebell_row": [
+    "Brace one hand on a bench and hinge until your back is flat and nearly level.",
+    "Let the kettlebell hang below your shoulder.",
+    "Row it toward your hip, elbow close to your body.",
+    "Lower to a full stretch without twisting your torso."
+  ],
+  "kettlebell_gorilla_row": [
+    "Stand wide with two kettlebells between your feet, hinged with a flat back.",
+    "Hold both handles and press one kettlebell into the floor as you row the other.",
+    "Row toward your hip without rotating your torso.",
+    "Set it down with control before switching sides."
+  ],
+  "kettlebell_high_pull": [
+    "Hike the kettlebell back between your legs with one hand.",
+    "Snap your hips forward and let it float up.",
+    "Pull your elbow up and back, finishing with your hand near chest height.",
+    "Push the kettlebell back out and let it drop into the next swing."
+  ],
+  "kettlebell_halo": [
+    "Hold the kettlebell upside down by the sides of the handle, at chest height.",
+    "Circle it around your head, keeping it close to your neck.",
+    "Keep your ribs down and your hips still; only your arms move.",
+    "Switch direction every rep or every set."
+  ],
+  "kettlebell_turkish_get_up": [
+    "Lying down with the kettlebell pressed up, keep your eyes on it the whole time.",
+    "Keep the loaded arm vertical and locked from start to finish.",
+    "One step at a time: elbow, hand, hips up, sweep the leg through to a kneel, then stand.",
+    "Reverse the steps to come down; start light until each one feels steady."
+  ],
+  "kettlebell_windmill": [
+    "Press the kettlebell overhead and turn your feet about 45° away from it.",
+    "Keep your eyes on the kettlebell and the loaded arm vertical.",
+    "Push your hip out toward the loaded side and slide your free hand down the other leg.",
+    "Go only as low as you can with a long spine, then stand back up."
+  ],
+  "kettlebell_curl": [
+    "Hold the kettlebell by the sides of the handle, arms extended, elbows at your sides.",
+    "Curl it up to chest height without moving your elbows forward.",
+    "Keep your torso still; don't swing with your hips.",
+    "Lower slowly until your arms are fully extended."
+  ],
+  "kettlebell_triceps_overhead": [
+    "Hold the kettlebell overhead by the sides of the handle, arms extended.",
+    "Bend your elbows to lower it behind your head, elbows pointing up.",
+    "Keep your elbows close to your head as you straighten your arms.",
+    "Brace your abs so your lower back doesn't arch."
+  ],
+  "cable_chest_fly_mid": [
+    "Set both pulleys at about shoulder height and stand with one foot forward.",
+    "Keep a slight bend in your elbows that stays the same all set.",
+    "Bring your hands together in front of your chest in a wide arc.",
+    "Open back slowly to a stretch without your shoulders rolling forward."
+  ],
+  "cable_chest_fly_high_low": [
+    "Set the pulleys high; stand with one foot forward and lean slightly in.",
+    "Keep a slight bend in your elbows that doesn't change.",
+    "Sweep your hands down and together in front of your hips.",
+    "Return slowly along the same arc, keeping your chest up."
+  ],
+  "cable_chest_fly_low_high": [
+    "Set the pulleys at the bottom and stand in the middle, one foot slightly forward.",
+    "Keep a slight bend in your elbows that doesn't change.",
+    "Sweep your hands up until they meet in front of your upper chest.",
+    "Keep your shoulders down, without shrugging, and lower slowly."
+  ],
+  "cable_chest_fly_one_arm": [
+    "Stand side-on to a pulley at about shoulder height, handle in your near hand.",
+    "Keep a slight bend in your elbow that doesn't change.",
+    "Sweep your hand across to the middle of your chest without turning your torso.",
+    "Return slowly to a stretch; finish all reps on that side."
+  ],
+  "cable_chest_fly_flat_bench": [
+    "Place a flat bench between two low pulleys and lie with the handles over your chest.",
+    "Set your shoulder blades back and keep a slight bend in your elbows.",
+    "Open your arms in a wide arc until your hands are about level with your chest.",
+    "Bring the handles back together over your chest, squeezing your pecs."
+  ],
+  "cable_chest_fly_incline_bench": [
+    "Set an incline bench at 30–45° between two low pulleys.",
+    "Start with the handles over your upper chest, elbows slightly bent.",
+    "Lower in a wide arc until you feel a stretch across your chest.",
+    "Bring your hands back together without your shoulders leaving the bench."
+  ],
+  "cable_chest_press": [
+    "Set the pulleys at chest height and stand with one foot forward.",
+    "Start with the handles by your chest, elbows about 45° from your body.",
+    "Press forward until your arms are fully extended, without leaning in.",
+    "Brace your abs so the cables don't pull you back."
+  ],
+  "cable_shoulder_press": [
+    "Sit on a bench between two low pulleys, back against the pad.",
+    "Start with the handles at shoulder height, forearms vertical.",
+    "Press up until your arms are extended over your shoulders.",
+    "Lower to shoulder height with control, without arching your lower back."
+  ],
+  "cable_row_close_neutral": [
+    "Sit with your feet on the platform and your knees slightly bent.",
+    "Chest up and torso still; don't rock back to move the weight.",
+    "Pull the handle to your upper stomach, elbows close to your sides.",
+    "Squeeze your shoulder blades together, then extend your arms slowly."
+  ],
+  "cable_row_wide_overhand": [
+    "Use a long bar with a wide overhand grip.",
+    "Sit tall, knees slightly bent, torso still.",
+    "Pull the bar to your lower chest, elbows out to the sides.",
+    "Squeeze your upper back, then extend your arms with control."
+  ],
+  "cable_row_underhand": [
+    "Use a straight bar with an underhand grip about shoulder-width.",
+    "Sit tall with your knees slightly bent.",
+    "Pull to your belly button, elbows close to your sides.",
+    "Extend your arms slowly without leaning forward."
+  ],
+  "cable_row_one_arm": [
+    "Sit facing the pulley with one handle; rest your other hand on your thigh.",
+    "Sit tall and let your arm reach forward without rounding your back.",
+    "Pull the handle to your side, elbow close to your body.",
+    "Don't twist to finish the pull; complete all reps on that side."
+  ],
+  "cable_lat_pulldown_wide": [
+    "Lock your thighs under the pad and grip the bar wider than your shoulders.",
+    "Lean back slightly and keep your chest up.",
+    "Pull the bar to your upper chest, driving your elbows down.",
+    "Let it rise with control until your arms are extended."
+  ],
+  "cable_lat_pulldown_underhand": [
+    "Grip the bar underhand at about shoulder width.",
+    "Thighs under the pad, chest up, slight lean back.",
+    "Pull the bar to your upper chest, elbows close to your body.",
+    "Control the bar on the way up until your arms are extended."
+  ],
+  "cable_lat_pulldown_neutral": [
+    "Attach a close-grip V-handle and sit with your thighs under the pad.",
+    "Lean back slightly and keep your chest up.",
+    "Pull the handle to your upper chest, driving your elbows down.",
+    "Return slowly until your arms are extended."
+  ],
+  "cable_lat_pulldown_one_arm": [
+    "Use a single handle on the high pulley, seated or kneeling.",
+    "Start with your arm extended and a full stretch along your side.",
+    "Pull your elbow down toward your hip, keeping your torso still.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "cable_straight_arm_pulldown_bar": [
+    "Face a high pulley with a straight bar and hinge forward slightly at the hips.",
+    "Keep a slight bend in your elbows that doesn't change.",
+    "Sweep the bar down in an arc until it reaches your thighs.",
+    "Return slowly to about head height without arching your lower back."
+  ],
+  "cable_straight_arm_pulldown_rope": [
+    "Attach a rope to the high pulley and hinge forward slightly at the hips.",
+    "Keep a slight bend in your elbows that doesn't change.",
+    "Pull the rope down in an arc to your thighs, spreading the ends at the bottom.",
+    "Return slowly until your arms are about level with your head."
+  ],
+  "cable_face_pull": [
+    "Set the rope at about head height; hold the ends with your thumbs toward you.",
+    "Step back until there's tension and stand tall.",
+    "Pull toward your face, splitting the rope and driving your elbows high and back.",
+    "Finish with your hands beside your ears, then return slowly."
+  ],
+  "cable_reverse_fly": [
+    "Set the pulleys at shoulder height and hold the cables crossed, each hand on the far one.",
+    "Keep a slight bend in your elbows that doesn't change.",
+    "Pull your arms out wide until they line up with your shoulders.",
+    "Don't shrug or arch your back; return slowly to the crossed position."
+  ],
+  "cable_lateral_raise": [
+    "Stand side-on to a low pulley and take the handle in your far hand.",
+    "Hold the machine with your free hand for balance.",
+    "Raise your arm out to the side to shoulder height, leading with your elbow.",
+    "Lower slowly without shrugging; finish all reps on that side."
+  ],
+  "cable_front_raise": [
+    "Stand facing away from a low pulley, handle in one hand by your side.",
+    "Keep your elbow slightly bent and don't lean back.",
+    "Raise your arm in front of you to shoulder height.",
+    "Lower slowly; finish all reps on that side."
+  ],
+  "cable_upright_row": [
+    "Attach a straight bar to the low pulley and grip it overhand, about shoulder-width.",
+    "Lift the bar close to your body, leading with your elbows.",
+    "Stop near lower-chest height, elbows no higher than your shoulders.",
+    "Lower with control and keep your torso still."
+  ],
+  "cable_external_rotation": [
+    "Set the pulley at elbow height, stand side-on and take the handle in your far hand.",
+    "Bend your elbow to 90° and keep it against your side.",
+    "Rotate your forearm out, away from your body, without moving your elbow.",
+    "Use a light load and return slowly; finish all reps on that side."
+  ],
+  "cable_curl_straight_bar": [
+    "Attach a straight bar to the low pulley and grip it underhand, shoulder-width.",
+    "Stand close to the pulley with your elbows at your sides.",
+    "Curl up without swinging or moving your elbows forward.",
+    "Lower slowly until your arms are fully extended."
+  ],
+  "cable_curl_rope": [
+    "Attach a rope to the low pulley and hold the ends, palms facing each other.",
+    "Keep your elbows at your sides and your wrists firm.",
+    "Curl the rope up toward your shoulders without swinging.",
+    "Lower slowly until your arms are extended."
+  ],
+  "cable_curl_one_arm": [
+    "Hold a single handle from the low pulley, palm up.",
+    "Keep your elbow against your side and stand tall.",
+    "Curl all the way up and squeeze your biceps at the top.",
+    "Lower slowly; finish all reps on that side."
+  ],
+  "cable_curl_behind_body": [
+    "Face away from a low pulley, handle in one hand, and step forward.",
+    "Let the cable pull your arm slightly behind your body.",
+    "Curl up keeping your elbow back; don't let it drift forward.",
+    "Lower slowly to a full stretch; finish all reps on that side."
+  ],
+  "cable_curl_high": [
+    "Stand between two high pulleys, arms out to the sides at shoulder height, palms up.",
+    "Only your forearms move; your upper arms stay level with your shoulders.",
+    "Curl the handles toward your ears and squeeze.",
+    "Extend your elbows slowly back to the start."
+  ],
+  "cable_curl_preacher": [
+    "Set a preacher bench in front of a low pulley with a short bar.",
+    "Keep the backs of your upper arms on the pad, armpits at its top edge.",
+    "Curl up without lifting your elbows off the pad.",
+    "Lower slowly until your arms are almost fully extended."
+  ],
+  "cable_triceps_pushdown_rope": [
+    "Attach a rope to the high pulley and hold the ends, palms facing each other.",
+    "Keep your elbows against your sides and lean forward slightly.",
+    "Push down until your arms are extended, spreading the ends at the bottom.",
+    "Let your forearms rise to about parallel with the floor, elbows still."
+  ],
+  "cable_triceps_pushdown_bar": [
+    "Grip the straight bar overhand, about shoulder-width.",
+    "Keep your elbows against your sides and still all set.",
+    "Push the bar down until your arms are fully extended.",
+    "Don't lean your weight over the bar; let it rise slowly."
+  ],
+  "cable_triceps_pushdown_reverse": [
+    "Grip the bar underhand, hands about shoulder-width.",
+    "Keep your elbows against your sides and your wrists firm.",
+    "Push down until your arms are fully extended.",
+    "Use less load than with the overhand grip and return slowly."
+  ],
+  "cable_triceps_overhead_rope": [
+    "Face away from the pulley, rope behind your head, one foot forward.",
+    "Lean forward slightly, elbows pointing forward and close to your head.",
+    "Straighten your elbows, spreading the rope ends at the finish.",
+    "Return slowly to a deep stretch without your elbows flaring out."
+  ],
+  "cable_triceps_pushdown_one_arm": [
+    "Hold a single handle from the high pulley, elbow against your side.",
+    "Push down until your arm is fully extended.",
+    "Keep your shoulder down and your torso still.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "cable_triceps_cross_body": [
+    "Take the handle of a high pulley in your far hand, the cable crossing in front of you.",
+    "Keep your upper arm still; only your forearm moves.",
+    "Extend your arm out to the side until your elbow is straight.",
+    "Return slowly across your body; finish all reps on that side."
+  ],
+  "cable_pull_through": [
+    "Face away from a low pulley with the rope between your legs.",
+    "Walk forward until there's tension, feet a bit wider than your hips.",
+    "Push your hips back with a flat back, letting the rope pass between your legs.",
+    "Drive your hips forward to stand and squeeze your glutes; your arms only hold."
+  ],
+  "cable_glute_kickback": [
+    "Attach an ankle strap to a low pulley and face the machine.",
+    "Hold the frame, lean forward slightly, standing knee soft.",
+    "Kick the leg back by squeezing your glute, not by arching your lower back.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "cable_hip_abduction": [
+    "Stand side-on to a low pulley with the strap on your far ankle.",
+    "Hold the machine and stand tall on your other leg.",
+    "Lift the leg out to the side, toes forward, without leaning your torso.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "cable_hip_adduction": [
+    "Stand side-on to a low pulley with the strap on your near ankle.",
+    "Step away until the cable pulls that leg out to the side.",
+    "Bring the leg in until it crosses in front of your standing leg, torso still.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "cable_leg_curl": [
+    "Strap the cuff to one ankle and face a low pulley.",
+    "Hold the frame, knees side by side, standing leg slightly bent.",
+    "Curl your heel toward your glutes without moving your thigh.",
+    "Lower slowly; finish all reps on that side."
+  ],
+  "cable_crunch_kneeling": [
+    "Kneel facing a high pulley and hold the rope beside your head.",
+    "Keep your hips still; don't sit back onto your heels.",
+    "Curl your torso down, bringing your ribs toward your hips.",
+    "Return slowly until you feel your abs stretch."
+  ],
+  "cable_crunch_standing": [
+    "Stand with your back to a high pulley, rope ends beside your head.",
+    "Soften your knees and keep your hips still.",
+    "Curl your torso down, bringing your ribs toward your hips.",
+    "Don't bend at the hips; return slowly until you stand tall."
+  ],
+  "cable_woodchop_high_low": [
+    "Set the pulley high and stand side-on, feet wider than your shoulders.",
+    "Grip the handle with both hands, arms long.",
+    "Pull it diagonally across your body toward the opposite knee, turning your torso.",
+    "Let the foot nearest the pulley pivot; return slowly and finish all reps on that side."
+  ],
+  "cable_woodchop_low_high": [
+    "Set the pulley low and stand side-on, feet wider than your shoulders.",
+    "Bend your knees slightly and hold the handle with both hands by your near knee.",
+    "Pull it diagonally across your body to above the opposite shoulder, turning your torso.",
+    "Let the foot nearest the pulley pivot; return slowly and finish all reps on that side."
+  ],
+  "cable_pallof_press": [
+    "Stand side-on to a pulley at chest height, handle held at your chest.",
+    "Step away until there's tension, feet hip-width, knees soft.",
+    "Press the handle straight out in front and hold it without rotating.",
+    "Bring it back to your chest slowly; finish all reps on that side."
+  ],
+  "bodyweight_push_up": [
+    "Hands a bit wider than your shoulders, body in one line from head to heels.",
+    "Squeeze your glutes and abs so your hips don't sag.",
+    "Lower your chest to just above the floor, elbows about 45° from your body.",
+    "Push the floor away until your arms are extended."
+  ],
+  "bodyweight_push_up_incline": [
+    "Put your hands on a bench or box, a bit wider than your shoulders.",
+    "Keep your body in one line from head to heels.",
+    "Lower your chest to the edge, elbows about 45° from your body.",
+    "The higher the support, the easier; use a lower one as you get stronger."
+  ],
+  "bodyweight_push_up_decline": [
+    "Feet on a bench or box, hands on the floor a bit wider than your shoulders.",
+    "Brace your abs and glutes so your hips don't sag or pike up.",
+    "Lower your chest toward the floor, elbows about 45° from your body.",
+    "Keep your neck in line with your body and push back up."
+  ],
+  "bodyweight_push_up_wide": [
+    "Place your hands clearly wider than your shoulders.",
+    "Turn your fingers slightly out and keep your body in one line.",
+    "Lower your chest between your hands with control.",
+    "Push up without letting your hips sag."
+  ],
+  "bodyweight_push_up_diamond": [
+    "Put your hands together under your chest, thumbs and index fingers forming a diamond.",
+    "Keep your elbows close to your body as you lower.",
+    "Lower until your chest nearly touches your hands.",
+    "Keep your body in one line and press back up."
+  ],
+  "bodyweight_push_up_archer": [
+    "Set your hands very wide, fingers turned out.",
+    "Lower toward one hand, bending that elbow while the other arm stays extended.",
+    "Keep your hips level and your body in one line.",
+    "Push back to the center, then alternate sides or finish one side first."
+  ],
+  "bodyweight_push_up_pike": [
+    "Start with your hips high so your body makes an upside-down V.",
+    "Hands about shoulder-width, head between your arms.",
+    "Bend your elbows to lower the top of your head toward the floor, just ahead of your hands.",
+    "Keep your hips high and press back up."
+  ],
+  "bodyweight_push_up_handstand": [
+    "Kick up to a handstand against the wall, hands a bit wider than your shoulders.",
+    "Brace your abs and glutes so your back doesn't arch.",
+    "Lower slowly until your head lightly touches the floor or a mat.",
+    "Press up until your arms lock; build up with pike push-ups first."
+  ],
+  "bodyweight_dip_chest": [
+    "Support yourself on the bars with your arms locked.",
+    "Lean your torso forward and let your elbows flare slightly.",
+    "Lower until your shoulders are a little below your elbows, or as far as is comfortable.",
+    "Press back up without shrugging your shoulders toward your ears."
+  ],
+  "bodyweight_dip_triceps": [
+    "Support yourself on the bars, arms locked and shoulders down.",
+    "Keep your torso upright and your elbows close to your body.",
+    "Lower until your upper arms are about parallel to the floor.",
+    "Press up until your elbows are fully extended."
+  ],
+  "bodyweight_bench_dip": [
+    "Put your hands on the edge of a bench behind you, fingers forward.",
+    "Keep your hips close to the bench; bending your knees makes it easier.",
+    "Lower until your upper arms are about parallel to the floor, no deeper.",
+    "Press up through your palms until your arms are extended."
+  ],
+  "bodyweight_pull_up": [
+    "Grip the bar overhand, slightly wider than your shoulders.",
+    "Start from a dead hang and pull your shoulders down first.",
+    "Pull until your chin clears the bar, without kicking or swinging.",
+    "Lower all the way down with control."
+  ],
+  "bodyweight_pull_up_wide": [
+    "Grip the bar overhand, clearly wider than your shoulders.",
+    "Pull your shoulders down and keep your chest up.",
+    "Drive your elbows down and out to bring your chest toward the bar.",
+    "Lower to full extension with control, without swinging."
+  ],
+  "bodyweight_pull_up_neutral": [
+    "Use the parallel handles, palms facing each other.",
+    "Start from a dead hang with your shoulders pulled down.",
+    "Pull until your chin clears the handles, elbows close to your body.",
+    "Lower all the way down with control."
+  ],
+  "bodyweight_chin_up": [
+    "Grip the bar underhand at about shoulder width.",
+    "Start from a dead hang and brace your abs.",
+    "Pull your chest toward the bar until your chin clears it.",
+    "Lower to full extension without dropping."
+  ],
+  "bodyweight_row_inverted": [
+    "Hang under a bar at about waist height, overhand grip slightly wider than your shoulders.",
+    "Keep your body in one line from shoulders to heels.",
+    "Pull your chest to the bar, squeezing your shoulder blades together.",
+    "Lower until your arms are extended; bend your knees to make it easier."
+  ],
+  "bodyweight_row_inverted_underhand": [
+    "Hang under a bar at about waist height with an underhand, shoulder-width grip.",
+    "Brace your glutes and abs so your hips stay in line.",
+    "Pull the bar to your lower chest, elbows close to your body.",
+    "Lower with control until your arms are extended."
+  ],
+  "bodyweight_squat": [
+    "Feet about shoulder-width, toes turned slightly out.",
+    "Reach your arms forward for balance and sit down between your knees.",
+    "Keep your heels down and your knees in line with your toes.",
+    "Go as deep as you can with a flat back, then stand up."
+  ],
+  "bodyweight_split_squat": [
+    "Stand in a long split stance with your back heel up.",
+    "Lower straight down until your back knee nearly touches the floor.",
+    "Keep your torso upright and your front heel down.",
+    "Push through your front foot; finish all reps before switching."
+  ],
+  "bodyweight_bulgarian_split_squat": [
+    "Rest the top of your back foot on a bench behind you.",
+    "Set your front foot far enough out that its heel stays down at the bottom.",
+    "Lower straight down until your front thigh is about parallel.",
+    "Push through your front foot; finish all reps before switching."
+  ],
+  "bodyweight_lunge_reverse": [
+    "Stand tall with your feet hip-width apart.",
+    "Step back and lower until your back knee nearly touches the floor.",
+    "Keep your weight on your front foot and your torso upright.",
+    "Push through your front foot to return; alternate legs or finish one side."
+  ],
+  "bodyweight_lunge_forward": [
+    "Take a long step forward, landing with your whole foot.",
+    "Lower until your back knee nearly touches the floor.",
+    "Keep your front knee in line with your toes and your torso upright.",
+    "Push off your front foot to step back to the start."
+  ],
+  "bodyweight_lunge_lateral": [
+    "Start with your feet together and your arms in front for balance.",
+    "Take a wide step to the side and sit your hips back over that foot.",
+    "Keep the other leg straight and both feet pointing forward.",
+    "Push off the bent leg to return to the start."
+  ],
+  "bodyweight_step_up": [
+    "Pick a box around knee height; go higher only if your form holds.",
+    "Place your whole foot on the box.",
+    "Drive up through that foot without pushing off your back leg.",
+    "Step down under control; finish all reps on that side."
+  ],
+  "bodyweight_pistol_squat": [
+    "Stand on one leg with the other leg extended in front of you.",
+    "Reach your arms forward to counterbalance as you sit down.",
+    "Keep your standing heel down and your knee in line with your toes.",
+    "Hold a support or squat to a box until you can do the full range."
+  ],
+  "bodyweight_squat_jump": [
+    "Squat down partway, swinging your arms back.",
+    "Jump explosively, driving your arms up.",
+    "Land softly on the balls of your feet, then lower your heels and bend your knees.",
+    "Keep your knees in line with your toes when you land."
+  ],
+  "bodyweight_reverse_nordic": [
+    "Kneel on a pad, knees hip-width, body in one line from knees to head.",
+    "Squeeze your glutes and abs to hold that line.",
+    "Lean back slowly with your hips extended; don't sit toward your heels.",
+    "Go only as far as you can control, then pull back up with your thighs."
+  ],
+  "bodyweight_glute_bridge": [
+    "Lie on your back, knees bent, feet flat about hip-width.",
+    "Press through your heels and lift your hips.",
+    "Stop when your shoulders, hips and knees line up; don't arch your lower back.",
+    "Squeeze your glutes at the top for a second, then lower slowly."
+  ],
+  "bodyweight_glute_bridge_one_leg": [
+    "Lie on your back with one foot flat and the other leg raised.",
+    "Press through the heel of the planted foot to lift your hips.",
+    "Keep your hips level; don't let one side drop.",
+    "Lower slowly; finish all reps before switching legs."
+  ],
+  "bodyweight_hip_thrust": [
+    "Rest your upper back on a bench, knees bent and feet flat.",
+    "Feet about hip-width, shins vertical at the top.",
+    "Drive through your heels until your hips line up with your knees.",
+    "Tuck your chin, keep your ribs down and squeeze your glutes at the top."
+  ],
+  "bodyweight_nordic_curl": [
+    "Kneel on a pad with your ankles held under something solid.",
+    "Keep one line from knees to head, hips extended.",
+    "Lower forward as slowly as you can, resisting with your hamstrings.",
+    "Catch yourself with your hands and push off lightly to come back up."
+  ],
+  "bodyweight_hamstring_walkout": [
+    "Start in a glute bridge with your heels on the floor.",
+    "Walk your heels out in small steps, keeping your hips up.",
+    "Go until your legs are nearly extended or your hips start to drop.",
+    "Walk your heels back to the start, hips still high."
+  ],
+  "bodyweight_calf_raise": [
+    "Stand with the balls of your feet on a step, heels hanging off.",
+    "Hold a support lightly for balance.",
+    "Lower your heels for a full stretch, then rise as high as you can.",
+    "Pause briefly at the top; don't bounce at the bottom."
+  ],
+  "bodyweight_calf_raise_one_leg": [
+    "Stand on one foot on a step, heel hanging off.",
+    "Hold a support with one hand for balance.",
+    "Lower your heel for a full stretch, then rise as high as you can.",
+    "Finish one side before switching."
+  ],
+  "bodyweight_crunch": [
+    "Lie on your back, knees bent, hands by your head or across your chest.",
+    "Bring your ribs toward your hips, lifting your shoulder blades.",
+    "Don't pull on your head; keep your neck relaxed.",
+    "Lower slowly back to the start."
+  ],
+  "bodyweight_reverse_crunch": [
+    "Lie on your back, hands by your sides, knees bent and lifted.",
+    "Curl your hips off the floor, bringing your knees toward your chest.",
+    "Use your abs, not momentum from swinging your legs.",
+    "Lower your hips slowly until they touch the floor."
+  ],
+  "bodyweight_sit_up": [
+    "Lie on your back, knees bent, feet flat or held down.",
+    "Curl up with your chin slightly tucked; don't pull on your head.",
+    "Come up until your torso is upright.",
+    "Lower slowly instead of dropping back."
+  ],
+  "bodyweight_bicycle_crunch": [
+    "Lie on your back, hands by your head, shoulder blades off the floor.",
+    "Bring one knee in as you turn the opposite shoulder toward it.",
+    "Extend the other leg low without touching the floor.",
+    "Move slowly and rotate from your torso, without pulling your neck."
+  ],
+  "bodyweight_hanging_knee_raise": [
+    "Hang from a bar with your shoulders pulled down.",
+    "Raise your knees toward your chest and curl your hips up at the top.",
+    "Avoid swinging; pause briefly between reps if needed.",
+    "Lower your legs slowly, under control."
+  ],
+  "bodyweight_hanging_leg_raise": [
+    "Hang from a bar, shoulders pulled down, legs together.",
+    "Raise your legs, knees extended, to hip height or higher.",
+    "Curl your hips up at the top so your abs work, not just your hip flexors.",
+    "Lower slowly and stop the swing before the next rep."
+  ],
+  "bodyweight_captains_chair_knee_raise": [
+    "Rest your forearms on the pads and press your back into the backrest.",
+    "Let your legs hang and keep your shoulders down.",
+    "Raise your knees toward your chest and curl your hips up at the top.",
+    "Lower slowly without swinging your legs."
+  ],
+  "bodyweight_lying_leg_raise": [
+    "Lie on your back with your hands under your hips or by your sides.",
+    "Press your lower back into the floor before each rep.",
+    "Raise your legs, knees extended, until they point up.",
+    "Lower slowly, only as far as your lower back stays on the floor."
+  ],
+  "bodyweight_dead_bug": [
+    "Lie on your back, arms up and knees bent at 90° over your hips.",
+    "Press your lower back into the floor and keep it there.",
+    "Slowly extend one arm and the opposite leg toward the floor.",
+    "Breathe out as you reach, come back, then switch sides."
+  ],
+  "bodyweight_bird_dog": [
+    "Start on hands and knees, hands under shoulders, knees under hips.",
+    "Reach one arm forward and the opposite leg back until both line up with your torso.",
+    "Keep your hips level; don't let your lower back arch or twist.",
+    "Pause, return slowly, then switch sides."
+  ],
+  "bodyweight_back_extension": [
+    "Set the pad at the top of your thighs, ankles locked in, so your hips can bend.",
+    "Cross your arms on your chest or hold your hands by your head.",
+    "Lower your torso with a flat back, under control.",
+    "Rise until your body lines up with your legs; don't arch past that."
+  ],
+  "bodyweight_glute_ham_raise": [
+    "Set the footplate so your knees sit just behind the pad.",
+    "Start with your body level, hips extended, in one line from knees to head.",
+    "Press your toes into the plate and curl your body up with your hamstrings.",
+    "Keep your hips extended and lower slowly back to level."
+  ],
+  "smith_bench_flat": [
+    "Place the bench so the bar comes down on your lower chest.",
+    "Squeeze your shoulder blades together and down, feet planted.",
+    "Lower with control, elbows about 45° from your body, then press up.",
+    "Set the safety stops just below where the bar touches your chest."
+  ],
+  "smith_bench_incline": [
+    "Set the bench to 30–45°, placed so the bar comes down on your upper chest.",
+    "Keep your shoulder blades pinned back and your hips on the bench.",
+    "Lower with control to your upper chest, elbows slightly tucked.",
+    "Set the safety stops just below where the bar touches your chest."
+  ],
+  "smith_bench_decline": [
+    "Lock your legs under the pads and line the bar up with your lower chest.",
+    "Keep your shoulder blades back and down on the bench.",
+    "Lower the bar with control to your lower chest, then press up.",
+    "Set the safety stops just below where the bar touches your chest."
+  ],
+  "smith_bench_close_grip": [
+    "Grip about shoulder-width, a little narrower than your usual bench.",
+    "Place the bench so the bar comes down on your lower chest.",
+    "Keep your elbows close to your sides as you lower.",
+    "Press by straightening your elbows, wrists stacked over them."
+  ],
+  "smith_shoulder_press": [
+    "Set an upright bench so the bar passes just in front of your face.",
+    "Start with the bar at about chin height, hands just outside your shoulders.",
+    "Keep your back against the pad and your abs braced; don't arch.",
+    "Press up until your arms are extended, then lower with control."
+  ],
+  "smith_upright_row": [
+    "Stand close to the bar and grip it overhand, about shoulder-width.",
+    "Lift the bar close to your body, leading with your elbows.",
+    "Stop near lower-chest height, elbows no higher than your shoulders.",
+    "Lower slowly until your arms are extended."
+  ],
+  "smith_shrug": [
+    "Unhook the bar with your arms extended, in front of your thighs.",
+    "Lift your shoulders up toward your ears without rolling them.",
+    "Keep your arms extended; don't bend your elbows to pull.",
+    "Pause at the top, then lower all the way down."
+  ],
+  "smith_bent_over_row": [
+    "Stand close to the bar and grip overhand, a little wider than your shoulders.",
+    "Hinge at the hips with a flat back, torso at about 45° or closer to parallel.",
+    "Pull the bar to your upper stomach, leading with your elbows.",
+    "Lower under control without standing up between reps."
+  ],
+  "smith_squat": [
+    "Rest the bar on top of your traps, feet slightly in front of the bar.",
+    "Set the safety stops just below the lowest point of your squat.",
+    "Brace your abs and sit down with your knees tracking over your toes.",
+    "Drive up through your whole foot without locking your knees hard at the top."
+  ],
+  "smith_front_squat": [
+    "Rest the bar on your front shoulders, close to your throat.",
+    "Keep your elbows high so the bar stays on your shoulders.",
+    "Feet under the bar or slightly in front, torso upright.",
+    "Squat down with control and drive up through your whole foot."
+  ],
+  "smith_split_squat": [
+    "Bar on your upper back; take a long stance with your front foot ahead of the bar.",
+    "Lower your back knee toward the floor.",
+    "Keep your torso upright and your front heel planted.",
+    "Push through your front foot; finish all reps before switching."
+  ],
+  "smith_lunge_reverse": [
+    "Stand under the bar with it on your upper back, feet hip-width.",
+    "Step one foot back and lower that knee toward the floor.",
+    "Keep your weight on your front foot and your torso upright.",
+    "Push through your front heel to step back in; finish all reps on that side."
+  ],
+  "smith_deadlift_romanian": [
+    "Start standing with the bar against your thighs, knees soft.",
+    "Push your hips back and lower the bar close to your legs.",
+    "Stop when your hamstrings are stretched and your back is still flat.",
+    "Drive your hips forward to stand up; don't lean back at the top."
+  ],
+  "smith_hip_thrust": [
+    "Rest your upper back on a bench, the bar over your hips on a pad.",
+    "Feet flat and about hip-width, shins vertical at the top.",
+    "Drive through your heels until your shoulders, hips and knees line up.",
+    "Keep your ribs down and squeeze your glutes; don't arch to finish."
+  ],
+  "smith_calf_raise": [
+    "Bar on your upper back, balls of your feet on a plate or step.",
+    "Lower your heels for a full stretch.",
+    "Rise as high as you can onto your toes and pause.",
+    "Keep your knees straight but not hard-locked."
+  ],
+  "selectorized_chest_press": [
+    "Set the seat so the handles line up with your mid-chest.",
+    "Back and head against the pad, shoulder blades pulled back.",
+    "Press forward until your arms are extended, without locking your elbows hard.",
+    "Return slowly; don't let the weight stack touch down between reps."
+  ],
+  "selectorized_chest_press_incline": [
+    "Set the seat so the handles start at your upper chest.",
+    "Keep your back on the pad and your shoulders down, not shrugged.",
+    "Press up and forward until your arms are extended.",
+    "Return slowly to a stretch without the weight stack touching down."
+  ],
+  "selectorized_pec_fly": [
+    "Set the seat so the handles are at about shoulder height.",
+    "Keep a slight, fixed bend in your elbows.",
+    "Bring the handles together in front of your chest, squeezing your pecs.",
+    "Open slowly until your arms are about in line with your body, shoulders back."
+  ],
+  "selectorized_shoulder_press": [
+    "Set the seat so the handles start at about shoulder height.",
+    "Keep your back against the pad and your abs braced.",
+    "Press up until your arms are extended, without shrugging.",
+    "Lower slowly to shoulder height before the next rep."
+  ],
+  "selectorized_lateral_raise": [
+    "Set the seat so your shoulders line up with the machine's pivot.",
+    "Rest the outside of your upper arms against the pads, elbows bent.",
+    "Raise your arms out to the sides until they reach shoulder height.",
+    "Lower slowly, without shrugging or leaning your torso."
+  ],
+  "selectorized_reverse_fly": [
+    "Sit facing the pad with your chest against it.",
+    "Set the seat so the handles are at shoulder height.",
+    "With elbows slightly bent, pull your arms out wide until they line up with your shoulders.",
+    "Don't shrug; return slowly without the weight stack touching down."
+  ],
+  "selectorized_lat_pulldown": [
+    "Set the thigh pad so your legs are locked in snugly.",
+    "Start with your arms extended and your chest up.",
+    "Pull down, driving your elbows toward your sides, until your hands reach shoulder height.",
+    "Let the handles rise with control until your arms are extended."
+  ],
+  "selectorized_seated_row": [
+    "Set the seat so the handles are at about mid-chest height.",
+    "Keep your chest against the pad for the whole set.",
+    "Pull your elbows back past your torso, squeezing your shoulder blades.",
+    "Return slowly until your arms are extended."
+  ],
+  "selectorized_high_row": [
+    "Set the seat so you reach the handles with your arms fully extended.",
+    "Sit tall with your chest up and your feet flat.",
+    "Pull down and back until your hands are near your chest, leading with your elbows.",
+    "Squeeze your shoulder blades at the end, then return slowly."
+  ],
+  "selectorized_pullover": [
+    "Set the seat so your shoulders line up with the machine's pivot.",
+    "Rest your elbows on the pads and keep your grip loose.",
+    "Sweep your arms down in an arc until the bar reaches your stomach.",
+    "Return slowly overhead to a stretch, without arching your lower back."
+  ],
+  "selectorized_assisted_pull_up": [
+    "The more weight you select, the more help you get.",
+    "Kneel or stand on the platform and grip overhand, a little wider than your shoulders.",
+    "Pull your shoulders down first, then pull until your chin clears the bar.",
+    "Lower all the way down with control, without swinging."
+  ],
+  "selectorized_assisted_dip": [
+    "The more weight you select, the more help you get.",
+    "Kneel or stand on the platform, hands on the bars, arms extended.",
+    "Keep your torso upright and lower until your upper arms are about parallel to the floor.",
+    "Press up until your elbows are fully extended, shoulders down."
+  ],
+  "selectorized_biceps_curl": [
+    "Set the seat so your armpits rest on the top edge of the pad.",
+    "Line your elbows up with the machine's pivot.",
+    "Curl up without lifting your elbows off the pad.",
+    "Lower slowly until your arms are almost extended."
+  ],
+  "selectorized_triceps_extension": [
+    "Set the seat so your elbows line up with the machine's pivot.",
+    "Keep the backs of your upper arms and your elbows on the pad.",
+    "Push until your elbows are fully extended.",
+    "Return slowly without lifting your elbows off the pad."
+  ],
+  "selectorized_triceps_press": [
+    "Set the seat so you start with your elbows bent at about 90°.",
+    "Sit tall, chest up, elbows close to your sides.",
+    "Push the handles down until your arms are fully extended.",
+    "Let the handles rise slowly, without shrugging."
+  ],
+  "selectorized_leg_press": [
+    "Set the seat so your knees start at about 90° or a little deeper.",
+    "Feet about hip-width on the platform, back and hips against the pad.",
+    "Push through your whole foot; stop just short of locking your knees.",
+    "Return slowly, keeping your knees in line with your feet."
+  ],
+  "selectorized_leg_extension": [
+    "Line your knees up with the machine's pivot, back against the pad.",
+    "Set the leg pad on the front of your lower shins, just above your feet.",
+    "Extend your knees fully and pause briefly at the top.",
+    "Hold the handles to keep your hips on the seat, and lower slowly."
+  ],
+  "selectorized_leg_curl_seated": [
+    "Line your knees up with the machine's pivot, back against the pad.",
+    "Lower the thigh pad until it's snug; the leg pad sits just above your heels.",
+    "Curl your heels down and back as far as you can.",
+    "Return slowly until your knees are almost extended."
+  ],
+  "selectorized_leg_curl_lying": [
+    "Lie face down with your knees just past the edge of the bench, in line with the pivot.",
+    "Set the leg pad just above your heels.",
+    "Curl your heels toward your glutes, keeping your hips on the bench.",
+    "Lower slowly until your knees are almost extended."
+  ],
+  "selectorized_leg_curl_standing": [
+    "Line your knee up with the machine's pivot, thigh against the pad.",
+    "Set the leg pad just above your heel.",
+    "Curl your heel toward your glute without moving your thigh.",
+    "Lower slowly; finish all reps on that side."
+  ],
+  "selectorized_hip_abduction": [
+    "Sit back against the pad with the leg pads on the outside of your knees.",
+    "Hold the handles and keep your hips on the seat.",
+    "Push your knees apart as far as you can and pause briefly.",
+    "Bring them back slowly; don't let the weight stack touch down."
+  ],
+  "selectorized_hip_adduction": [
+    "Sit back against the pad with the leg pads on the inside of your knees.",
+    "Set the starting width to a stretch you can control.",
+    "Squeeze your legs together until the pads meet, then pause briefly.",
+    "Open slowly back to the start, keeping your hips on the seat."
+  ],
+  "selectorized_glute_kickback": [
+    "Brace on the pad and handles, with your hips level and facing forward.",
+    "Push the leg back by squeezing your glute, not by arching your lower back.",
+    "Stop when your hip is fully extended; don't swing past it.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "selectorized_calf_raise_standing": [
+    "Set the shoulder pads so you stand tall under them with your knees extended.",
+    "Balls of your feet on the edge of the step, heels free.",
+    "Lower your heels for a full stretch, then rise as high as you can.",
+    "Pause at the top; don't bounce at the bottom."
+  ],
+  "selectorized_calf_raise_seated": [
+    "Sit with the balls of your feet on the platform, heels free.",
+    "Set the seat or pad so your knee angle stays fixed; only your ankles move.",
+    "Use the full range: a deep stretch, then push all the way onto your toes.",
+    "Pause at the end of each rep and don't bounce."
+  ],
+  "selectorized_abdominal_crunch": [
+    "Set the seat so the pads or handles sit at your upper chest.",
+    "Hold on lightly; your abs do the work, not your arms.",
+    "Curl your torso down, bringing your ribs toward your hips.",
+    "Return slowly until you feel your abs stretch, without the weight stack touching down."
+  ],
+  "selectorized_back_extension": [
+    "Set the seat so the back pad sits across your shoulder blades.",
+    "Plant your feet and fasten the belt if the machine has one.",
+    "Push back with control until your torso is upright.",
+    "Don't arch past upright; return slowly to the start."
+  ],
+  "selectorized_torso_rotation": [
+    "Set the start position for one side and lock your legs in place.",
+    "Sit tall; turn with your midsection, not by pulling with your arms.",
+    "Rotate slowly through a range you can control, without jerking.",
+    "Return slowly; finish all reps on that side, then switch."
+  ],
+  "plate_chest_press": [
+    "Set the seat so the handles line up with your mid-chest.",
+    "Back against the pad, shoulder blades back and down.",
+    "Press until your arms are extended, without locking your elbows hard.",
+    "Load the same plates on both sides and return slowly to a stretch."
+  ],
+  "plate_chest_press_incline": [
+    "Set the seat so the handles start at your upper chest.",
+    "Keep your back on the pad and your shoulders down.",
+    "Press up and forward until your arms are extended.",
+    "Lower slowly to a stretch, moving both arms at the same pace."
+  ],
+  "plate_chest_press_decline": [
+    "Set the seat so the handles line up with your lower chest.",
+    "Back against the pad, shoulder blades pulled back.",
+    "Press forward and down until your arms are extended.",
+    "Return slowly without letting your shoulders roll forward."
+  ],
+  "plate_chest_press_one_arm": [
+    "Set the seat so the handle lines up with your mid-chest.",
+    "Hold the frame or the other handle to keep your torso still.",
+    "Press until your arm is extended, without twisting your torso.",
+    "Return slowly; finish all reps on that side."
+  ],
+  "plate_shoulder_press": [
+    "Set the seat so the handles start at about shoulder height.",
+    "Back against the pad and abs braced; don't arch.",
+    "Press up until your arms are extended, without shrugging.",
+    "Lower slowly to shoulder height, moving both arms at the same pace."
+  ],
+  "plate_row_chest_supported": [
+    "Set the seat so your chest is on the pad and you reach the handles with arms extended.",
+    "Keep your chest on the pad for the whole set.",
+    "Pull your elbows back past your torso, squeezing your shoulder blades.",
+    "Return slowly until your arms are extended."
+  ],
+  "plate_row_high": [
+    "Lock your thighs under the pad and reach up for the handles.",
+    "Keep your chest up for the whole set.",
+    "Pull down and back until your hands are near your chest, leading with your elbows.",
+    "Squeeze your shoulder blades at the end, then return slowly."
+  ],
+  "plate_row_low": [
+    "Sit with your chest against the pad and your feet braced.",
+    "Start with your arms extended and your chest up.",
+    "Pull the handles toward your waist, elbows close to your body.",
+    "Squeeze your shoulder blades, then return slowly."
+  ],
+  "plate_row_one_arm": [
+    "Set the seat so your chest rests on the pad and you can reach the handle.",
+    "Keep your chest on the pad and your torso from twisting.",
+    "Pull your elbow back past your torso, drawing your shoulder blade back.",
+    "Return slowly to a full stretch; finish all reps on that side."
+  ],
+  "plate_lat_pulldown": [
+    "Set the thigh pad so your legs are locked in snugly.",
+    "Start with your arms extended and your chest up.",
+    "Pull down, driving your elbows toward your sides, until your hands reach shoulder height.",
+    "Let the handles rise slowly, moving both arms at the same pace."
+  ],
+  "plate_t_bar_row_supported": [
+    "Stand on the foot plates and rest your chest on the pad.",
+    "Grip the handles and start with your arms extended, back flat.",
+    "Pull the handles toward your chest, leading with your elbows.",
+    "Keep your chest on the pad; don't jerk the weight with your legs."
+  ],
+  "plate_hack_squat": [
+    "Shoulders under the pads, back and hips firm against the backrest.",
+    "Feet about shoulder-width in the middle of the platform.",
+    "Release the safeties and lower with control, knees tracking over your toes.",
+    "Drive up through your whole foot; lock the safeties before you step out."
+  ],
+  "plate_pendulum_squat": [
+    "Shoulders under the pads, back and hips firm against the backrest.",
+    "Feet about hip-width in the middle of the platform.",
+    "Release the safety and lower as deep as you can control, knees over your toes.",
+    "Drive up through your whole foot; lock the safety before you step out."
+  ],
+  "plate_belt_squat": [
+    "Fasten the belt around your hips and stand on the platform.",
+    "Feet about shoulder-width; hold the handles for balance only.",
+    "Sit down between your heels with your torso upright.",
+    "Drive up through your whole foot, knees tracking over your toes."
+  ],
+  "plate_leverage_squat": [
+    "Shoulders under the pads, feet slightly in front of you on the platform.",
+    "Brace your abs, then release the safety.",
+    "Squat down with control, knees tracking over your toes.",
+    "Drive up through your whole foot; lock the safety before you step out."
+  ],
+  "plate_leg_press_45": [
+    "Back and hips firm on the seat, feet about hip-width on the platform.",
+    "Release the safeties and lower with control, stopping before your hips lift off the seat.",
+    "Press through your whole foot, knees in line with your feet.",
+    "Stop just short of locking your knees; lock the safeties when you finish."
+  ],
+  "plate_leg_press_horizontal": [
+    "Set the seat so your knees start at about 90° or a little deeper.",
+    "Back and hips against the pad, feet hip-width on the platform.",
+    "Push through your whole foot; stop just short of locking your knees.",
+    "Return slowly, keeping your knees in line with your feet."
+  ],
+  "plate_leg_press_one_leg": [
+    "Use a lighter load and put one foot in the middle of the platform.",
+    "Keep your hips on the seat; rest the other foot on the frame.",
+    "Lower with control, knee in line with your foot.",
+    "Press without locking your knee; finish all reps on that side."
+  ],
+  "plate_leg_extension": [
+    "Line your knees up with the machine's pivot, back against the pad.",
+    "Set the leg pad on the front of your lower shins, just above your feet.",
+    "Extend your knees fully and pause briefly at the top.",
+    "Hold the handles to keep your hips on the seat, and lower slowly."
+  ],
+  "plate_leg_curl": [
+    "Line your knees up with the machine's pivot.",
+    "Set the leg pad just above your heels.",
+    "Curl your heels toward your glutes without lifting your hips.",
+    "Lower slowly until your knees are almost extended."
+  ],
+  "plate_hip_thrust": [
+    "Set the pad across your hips, with your upper back on the backrest.",
+    "Feet flat and about hip-width, shins vertical at the top.",
+    "Drive through your heels until your shoulders, hips and knees line up.",
+    "Keep your ribs down and squeeze your glutes; don't arch to finish."
+  ],
+  "plate_calf_raise_seated": [
+    "Set the pad snugly on your lower thighs, just above your knees.",
+    "Balls of your feet on the edge of the step, heels free.",
+    "Release the safety and lower your heels for a full stretch.",
+    "Lift your heels as high as you can, pause, and lower slowly."
+  ],
+  "plate_calf_raise_standing": [
+    "Shoulders under the pads, standing tall with your knees extended.",
+    "Balls of your feet on the edge of the step, heels free.",
+    "Lower your heels for a full stretch, then rise as high as you can.",
+    "Pause at the top; don't bounce at the bottom."
+  ],
+  "plate_biceps_curl": [
+    "Set the seat so your armpits rest on the top edge of the pad.",
+    "Line your elbows up with the machine's pivot.",
+    "Curl up without lifting your elbows off the pad.",
+    "Lower slowly until your arms are almost extended; don't drop the weight."
+  ],
+  "plate_triceps_dip": [
+    "Set the seat so you start with your elbows bent at about 90°.",
+    "Sit tall, chest up, elbows close to your sides.",
+    "Push the handles down until your arms are fully extended.",
+    "Let the handles rise slowly, without shrugging or rocking your torso."
+  ],
+  "trap_bar_deadlift": [
+    "Step inside the bar and stand centered, handles beside your mid-foot.",
+    "Push your hips back and down, chest up, and grip the middle of the handles.",
+    "Brace, then push the floor away until you stand tall.",
+    "Lower the bar along the same path, keeping your back flat."
+  ]
+}

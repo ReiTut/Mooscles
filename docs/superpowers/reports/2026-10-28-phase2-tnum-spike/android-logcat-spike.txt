@@ -1,0 +1,13 @@
+SPIKE interWithoutTnumIsProportional: inter400 1111=156.0 8888=236.0
+SPIKE interWeightAxisApplies: inter 8888 w400=236.0 w700=248.0
+SPIKE barlowTimerKeepsWidthWithTnum: barlow600 tnum 0:00=162.0 9:59=162.0
+SPIKE barlowIsReallyLoaded: 8888 barlow600=168.0 inter600=244.0 default600=220.0
+SPIKE interWithTnumIsTabular: inter400 tnum 1111=248.0 8888=248.0
+SPIKE interWithTnumIsTabular: inter600 tnum 1111=248.0 8888=248.0
+SPIKE interWithTnumIsTabular: inter700 tnum 1111=248.0 8888=248.0
+SPIKE barlowWithTnumIsTabular: barlow500 tnum 1111=176.0 8888=176.0
+SPIKE barlowWithTnumIsTabular: barlow600 tnum 1111=184.0 8888=184.0
+SPIKE barlowWithTnumIsTabular: barlow700 tnum 1111=192.0 8888=192.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow500 no-tnum 1111=100.0 8888=164.0 0:00=151.0 9:59=142.0 0=43.0 1=26.0 2=40.0 3=40.0 4=42.0 5=40.0 6=40.0 7=37.0 8=41.0 9=40.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow600 no-tnum 1111=101.0 8888=168.0 0:00=153.0 9:59=147.0 0=43.0 1=26.0 2=41.0 3=41.0 4=44.0 5=41.0 6=41.0 7=38.0 8=42.0 9=41.0
+SPIKE barlowDefaultFiguresAreRecorded: barlow700 no-tnum 1111=106.0 8888=168.0 0:00=155.0 9:59=152.0 0=43.0 1=27.0 2=42.0 3=42.0 4=46.0 5=42.0 6=42.0 7=39.0 8=42.0 9=42.0

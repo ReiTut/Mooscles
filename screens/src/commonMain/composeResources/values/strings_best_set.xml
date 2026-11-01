@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The best set's words (English), one set for the share card and the workout summary, so the two never disagree. Every key also exists in values-pt-rBR. -->
+<resources>
+    <!-- A best set with the body's weight only: "Bodyweight × 12". -->
+    <string name="best_set_bodyweight">Bodyweight × %1$d</string>
+    <!-- No best set: every completed set was a warm-up. -->
+    <string name="best_set_warmup_only">Warm-up only</string>
+    <!-- No best set: the completed sets were assisted. -->
+    <string name="best_set_assistance_only">Assistance only</string>
+    <!-- No best set: warm-ups and assisted sets only, or no valid set. -->
+    <string name="best_set_no_working_set">No working set</string>
+</resources>

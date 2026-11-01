@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="6" failures="0" errors="0" skipped="0" time="8.578" timestamp="2026-10-28T13:40:54" hostname="localhost">
+  <testsuite name="com.mooscles.designsystem.TnumRegressionTest" tests="6" failures="0" errors="0" skipped="0" time="6.534" timestamp="2026-10-28T13:40:54" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="interWithoutTnumIsProportional" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.244" />
+    <testcase name="interWeightAxisApplies" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.108" />
+    <testcase name="barlowTimerKeepsWidthWithTnum" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.977" />
+    <testcase name="barlowIsReallyLoaded" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.646" />
+    <testcase name="interWithTnumIsTabular" classname="com.mooscles.designsystem.TnumRegressionTest" time="0.999" />
+    <testcase name="barlowWithTnumIsTabular" classname="com.mooscles.designsystem.TnumRegressionTest" time="1.56" />
+  </testsuite>
+</testsuites>

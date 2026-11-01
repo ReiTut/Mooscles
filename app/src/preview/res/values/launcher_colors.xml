@@ -1,0 +1,4 @@
+<resources>
+    <!-- The preview build tells itself apart: a brass-tinted ground and a brass bar under the mark. -->
+    <color name="launcher_background">#3A2F12</color>
+</resources>

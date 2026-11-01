@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the custom exercise form in Brazilian Portuguese; the same keys as values/strings_exercise.xml. -->
+<resources>
+    <string name="exercise_form_new">Novo exercício</string>
+    <string name="exercise_form_edit">Editar exercício</string>
+    <string name="exercise_form_name">Nome</string>
+    <string name="exercise_form_muscle">Grupo muscular</string>
+    <string name="exercise_form_equipment">Equipamento</string>
+    <string name="exercise_form_convention">Convenção de registro</string>
+    <string name="exercise_form_save">Salvar</string>
+    <string name="exercise_form_cancel">Cancelar</string>
+    <string name="exercise_form_duplicate">Já existe “%1$s”. Você pode salvar mesmo assim.</string>
+    <string name="exercise_form_convention_change">As séries já registradas continuam com a convenção de quando foram feitas.</string>
+    <string name="exercise_form_name_required">Digite um nome.</string>
+    <string name="exercise_form_name_long">Use até 120 caracteres.</string>
+    <string name="exercise_form_muscle_required">Escolha um grupo muscular.</string>
+    <string name="exercise_form_equipment_required">Escolha o equipamento.</string>
+    <string name="exercise_form_required_hint">Escolha um grupo muscular e o equipamento.</string>
+
+    <!-- O detalhe do exercício (Task 17). -->
+    <string name="exercise_muscles">Músculos</string>
+    <string name="exercise_how_to">Como fazer</string>
+    <string name="exercise_history">Seu histórico</string>
+    <string name="exercise_history_none">Você ainda não fez este exercício.</string>
+    <string name="exercise_history_last">%1$s · %2$s</string>
+    <string name="exercise_history_last_label">Última vez</string>
+    <string name="exercise_history_best_label">Melhor</string>
+    <plurals name="exercise_history_sessions">
+        <item quantity="one">%1$d sessão</item>
+        <item quantity="other">%1$d sessões</item>
+    </plurals>
+    <string name="exercise_history_full">Ver progresso</string>
+    <string name="exercise_edit">Editar exercício</string>
+    <string name="exercise_add_routine">Adicionar à rotina</string>
+    <string name="exercise_add_workout">Adicionar ao treino</string>
+    <string name="exercise_added_to">Adicionado a %1$s</string>
+    <string name="exercise_added_to_workout">Adicionado ao treino</string>
+    <string name="exercise_open">Abrir</string>
+    <string name="exercise_add_no_routines">Você ainda não tem rotinas. Crie uma na aba Treinar.</string>
+    <string name="exercise_not_found">Exercício não encontrado</string>
+    <string name="exercise_not_found_body">Ele pode ter sido removido, por exemplo ao importar um backup.</string>
+    <string name="exercise_back_to_library">Voltar à biblioteca</string>
+    <string name="exercise_more">Mais opções</string>
+    <string name="exercise_form_photo">Foto</string>
+    <string name="exercise_form_photo_gallery">Escolher da galeria</string>
+    <string name="exercise_form_photo_camera">Tirar foto</string>
+    <string name="exercise_form_photo_remove">Remover foto</string>
+    <string name="exercise_photo_failed">Não foi possível salvar a foto.</string>
+    <string name="exercise_photo_label">Foto de %1$s</string>
+</resources>

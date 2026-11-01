@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="25" failures="0" errors="0" skipped="2" time="52.308" timestamp="2026-10-29T15:53:36" hostname="localhost">
+  <testsuite name="com.mooscles.DecimalTextDeviceTest" tests="1" failures="0" errors="0" skipped="0" time="15.134" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="fixed2EqualsStringFormatOnArt" classname="com.mooscles.DecimalTextDeviceTest" time="15.134" />
+  </testsuite>
+  <testsuite name="com.mooscles.LegacyInstallOpenTest" tests="2" failures="0" errors="0" skipped="0" time="0.3" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="legacyDatabaseOpensWithEveryRow" classname="com.mooscles.LegacyInstallOpenTest" time="0.239" />
+    <testcase name="legacyPreferencesAndTimerReadBack" classname="com.mooscles.LegacyInstallOpenTest" time="0.061" />
+  </testsuite>
+  <testsuite name="com.mooscles.SearchFoldingDeviceTest" tests="1" failures="0" errors="0" skipped="0" time="16.897" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="foldEqualsArtNormalizerForEveryBmpCodePoint" classname="com.mooscles.SearchFoldingDeviceTest" time="16.897" />
+  </testsuite>
+  <testsuite name="com.mooscles.ThreadComparisonFixtureTest" tests="1" failures="0" errors="0" skipped="1" time="0.017" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="appendComparisonRoutineWithoutChangingExistingData" classname="com.mooscles.ThreadComparisonFixtureTest" time="0.017">
+      <skipped />
+    </testcase>
+  </testsuite>
+  <testsuite name="com.mooscles.UiFeatureSmokeTest" tests="2" failures="0" errors="0" skipped="0" time="10.779" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="realKeyboardKeepsTimerAndFocusedInputAccessibleWithoutChangingItsSession" classname="com.mooscles.UiFeatureSmokeTest" time="6.068" />
+    <testcase name="foldersAndRepeatedDiscardUseTheCorrectPageAndDoNotRestoreDiscardedSessions" classname="com.mooscles.UiFeatureSmokeTest" time="4.711" />
+  </testsuite>
+  <testsuite name="com.mooscles.UiFlowTest" tests="1" failures="0" errors="0" skipped="0" time="7.357" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="routineToWorkoutRestSummaryAndHistory" classname="com.mooscles.UiFlowTest" time="7.357" />
+  </testsuite>
+  <testsuite name="com.mooscles.WorkoutPerformanceFixtureTest" tests="1" failures="0" errors="0" skipped="1" time="0.018" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="seedDisposableDevice" classname="com.mooscles.WorkoutPerformanceFixtureTest" time="0.018">
+      <skipped />
+    </testcase>
+  </testsuite>
+  <testsuite name="com.mooscles.data.WorkoutRepositoryTest" tests="8" failures="0" errors="0" skipped="0" time="0.547" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="activeCreationAndFinishingAreAtomicAndIdempotent" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.093" />
+    <testcase name="discardingRemovesChildrenAndDoesNotProduceRecords" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.09" />
+    <testcase name="routineCrudOrderingReplacementAndDuplicationPersist" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.121" />
+    <testcase name="routineAndCustomRenameCannotRewriteHistoricalSnapshots" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.034" />
+    <testcase name="editingAndDeletingHistoryRecomputeRecords" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.065" />
+    <testcase name="catalogIsSubstantialUniqueAndSeedsIdempotently" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.009" />
+    <testcase name="processReopenRestoresActiveWorkoutAndDecimalSetsWithoutDuplicates" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.098" />
+    <testcase name="invalidNumericSetsFailWithoutOverwritingPersistedData" classname="com.mooscles.data.WorkoutRepositoryTest" time="0.037" />
+  </testsuite>
+  <testsuite name="com.mooscles.timer.RestTimerPersistenceTest" tests="8" failures="0" errors="0" skipped="0" time="0.147" timestamp="2026-10-29T15:53:36" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="pauseAtExpirationCannotSwallowTheCompletionAlert" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.009" />
+    <testcase name="resetAndQuickAdjustmentSurviveRecreationWithoutChangingOtherPreferences" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.034" />
+    <testcase name="addingTimeAfterCompletionProducesAResumablePausedTimer" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.032" />
+    <testcase name="earlyAlarmCannotCompleteAndSkipCannotBeRevivedByOldAlarm" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.003" />
+    <testcase name="restartedTimerRejectsStaleAlarmEvenAtSameWallClockTime" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.03" />
+    <testcase name="processRecreationRetainsDeadlineAndCountsBackgroundTime" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.002" />
+    <testcase name="pausedTimeDoesNotTickWhileProcessIsGoneAndResumeKeepsRemainder" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.003" />
+    <testcase name="expiredRestoredTimerCanOnlyBeClaimedOnceByConcurrentReceivers" classname="com.mooscles.timer.RestTimerPersistenceTest" time="0.034" />
+  </testsuite>
+</testsuites>

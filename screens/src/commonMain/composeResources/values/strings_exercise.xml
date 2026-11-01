@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the custom exercise form and the exercise detail. English is the base; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="exercise_form_new">New exercise</string>
+    <string name="exercise_form_edit">Edit exercise</string>
+    <string name="exercise_form_name">Name</string>
+    <string name="exercise_form_muscle">Muscle group</string>
+    <string name="exercise_form_equipment">Equipment</string>
+    <string name="exercise_form_convention">Logging convention</string>
+    <string name="exercise_form_save">Save</string>
+    <string name="exercise_form_cancel">Cancel</string>
+    <string name="exercise_form_duplicate">“%1$s” already exists. You can save anyway.</string>
+    <string name="exercise_form_convention_change">Sets already logged keep the convention they were logged with.</string>
+    <string name="exercise_form_name_required">Enter a name.</string>
+    <string name="exercise_form_name_long">Use 120 characters or fewer.</string>
+    <string name="exercise_form_muscle_required">Choose a muscle group.</string>
+    <string name="exercise_form_equipment_required">Choose the equipment.</string>
+    <string name="exercise_form_required_hint">Choose a muscle group and the equipment.</string>
+
+    <!-- The exercise detail (Task 17). -->
+    <string name="exercise_muscles">Muscles</string>
+    <string name="exercise_how_to">How to do it</string>
+    <string name="exercise_history">Your history</string>
+    <string name="exercise_history_none">You haven’t done this exercise yet.</string>
+    <!-- The last session: its date and its best set, "Oct 21 · 80 kg × 8". -->
+    <string name="exercise_history_last">%1$s · %2$s</string>
+    <!-- The labels of the history card's two lines. -->
+    <string name="exercise_history_last_label">Last time</string>
+    <string name="exercise_history_best_label">Best</string>
+    <plurals name="exercise_history_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <string name="exercise_history_full">View progress</string>
+    <string name="exercise_edit">Edit exercise</string>
+    <string name="exercise_add_routine">Add to routine</string>
+    <string name="exercise_add_workout">Add to workout</string>
+    <string name="exercise_added_to">Added to %1$s</string>
+    <string name="exercise_added_to_workout">Added to the workout</string>
+    <string name="exercise_open">Open</string>
+    <string name="exercise_add_no_routines">You have no routines yet. Create one in the Train tab.</string>
+    <string name="exercise_not_found">Exercise not found</string>
+    <string name="exercise_not_found_body">It may have been removed, for example by importing a backup.</string>
+    <string name="exercise_back_to_library">Back to the library</string>
+    <string name="exercise_more">More options</string>
+    <string name="exercise_form_photo">Photo</string>
+    <string name="exercise_form_photo_gallery">Choose from gallery</string>
+    <string name="exercise_form_photo_camera">Take photo</string>
+    <string name="exercise_form_photo_remove">Remove photo</string>
+    <string name="exercise_photo_failed">Couldn’t save the photo.</string>
+    <string name="exercise_photo_label">Photo of %1$s</string>
+</resources>

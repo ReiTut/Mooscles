@@ -1,0 +1,105 @@
+package com.mooscles.designsystem.illustration
+
+import android.os.ParcelFileDescriptor
+import android.os.Process
+import android.provider.Settings
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ActivityScenario
+import androidx.test.platform.app.InstrumentationRegistry
+import com.mooscles.designsystem.theme.MoosclesDesignTheme
+import kotlin.test.Test
+
+/**
+ * TEMPORARY measurement (4B Task 5; kept as text in the report, never compiled in the repo): the figure in a real activity on the real
+ * Choreographer, traced for 10 s with atrace. Reports Choreographer#doFrame per second overall and
+ * inside the holds (the stretches between two RenderThread draw bursts longer than 300 ms).
+ */
+class FigureHoldMeasurement {
+    private val start = FigurePose(
+        hipX = 50f, hipY = 50f, trunk = 0f, head = 0f,
+        upperArmNear = 180f, forearmNear = 180f, upperArmFar = 180f, forearmFar = 180f,
+        thighNear = 180f, shinNear = 180f, footNear = 90f, thighFar = 180f, shinFar = 180f, footFar = 90f,
+        floorY = 91f,
+        props = listOf(FigureProp.Dumbbell(FigureJoint.HAND_NEAR), FigureProp.Floor(91f)),
+    )
+    private val end = start.copy(forearmNear = 20f)
+
+    private fun shell(command: String): String {
+        val pfd = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        return ParcelFileDescriptor.AutoCloseInputStream(pfd).bufferedReader().readText()
+    }
+
+    @Test
+    fun measureHold() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val scale = Settings.Global.getFloat(instrumentation.targetContext.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        val pkg = instrumentation.targetContext.packageName
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.setContentView(
+                    ComposeView(activity).apply {
+                        setContent {
+                            MoosclesDesignTheme(dark = false, reducedMotion = false) {
+                                Box(Modifier.fillMaxSize()) {
+                                    AnimatedExerciseFigure(start, end, setOf(FigureSegment.UPPER_ARM_FRONT), "Curl", Modifier.size(200.dp))
+                                }
+                            }
+                        }
+                    },
+                )
+            }
+            Thread.sleep(1500)
+            shell("dumpsys gfxinfo $pkg reset")
+            shell("atrace --async_start -b 16384 -a $pkg gfx view")
+            Thread.sleep(10_000)
+            val trace = shell("atrace --async_stop")
+            val gfx = shell("dumpsys gfxinfo $pkg")
+            val pid = Process.myPid()
+            val stamp = Regex("""\s(\d+\.\d+):\s+tracing_mark_write:\s+B\|$pid\|(.*)""")
+            val doFrames = mutableListOf<Double>()
+            val draws = mutableListOf<Double>()
+            for (line in trace.lineSequence()) {
+                val match = stamp.find(line) ?: continue
+                val time = match.groupValues[1].toDouble()
+                val name = match.groupValues[2]
+                if (name.startsWith("Choreographer#doFrame")) doFrames += time
+                if (name.startsWith("DrawFrame")) draws += time
+            }
+            var holdTime = 0.0
+            var holdFrames = 0
+            var holds = 0
+            for (i in 1 until draws.size) {
+                val gapStart = draws[i - 1]
+                val gapEnd = draws[i]
+                if (gapEnd - gapStart < 0.3) continue
+                holds++
+                // A little inside the hold: the last draw's doFrame and the next fade's first doFrame are not the hold.
+                val from = gapStart + 0.05
+                val to = gapEnd - 0.05
+                holdTime += to - from
+                holdFrames += doFrames.count { it > from && it < to }
+            }
+            val span = if (doFrames.size > 1) doFrames.last() - doFrames.first() else 0.0
+            val totalRendered = Regex("""Total frames rendered:\s*(\d+)""").find(gfx)?.groupValues?.get(1)
+            val report = buildString {
+                append("FIGURE_HOLD animatorScale=$scale pkg=$pkg traceLines=${trace.length} ")
+                append("doFrames=${doFrames.size} draws=${draws.size} span=${"%.2f".format(span)}s ")
+                append("doFramePerSec=${if (span > 0) "%.1f".format(doFrames.size / 10.0) else "n/a"} ")
+                append("drawPerSec=${"%.1f".format(draws.size / 10.0)} ")
+                append("holds=$holds holdTime=${"%.2f".format(holdTime)}s holdDoFrames=$holdFrames ")
+                append("holdDoFramePerSec=${if (holdTime > 0) "%.1f".format(holdFrames / holdTime) else "n/a"} ")
+                append("gfxinfoTotalFramesRendered=$totalRendered")
+            }
+            Log.i("FigureHold", report)
+            println(report)
+            throw AssertionError(report)
+        }
+    }
+}

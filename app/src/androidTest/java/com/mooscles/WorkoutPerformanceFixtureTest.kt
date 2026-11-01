@@ -1,6 +1,5 @@
 package com.mooscles
 
-import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -41,7 +40,7 @@ class WorkoutPerformanceFixtureTest {
         val setCount = if (size == "large") 12 else 4
         val historyCount = if (size == "large") 200 else 30
         val dao = app.database.dao()
-        app.database.withTransaction {
+        app.database.writeTransaction {
             before.workouts.forEach { dao.deleteWorkout(it.id) }
             before.routines.forEach { dao.deleteRoutine(it.id) }
             val routine = Routine("${PREFIX}routine", "Performance $size", position = 0)

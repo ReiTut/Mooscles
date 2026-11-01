@@ -1,0 +1,64 @@
+file format write/read version: 2/2
+user_version: 5
+integrity_check: integrity_check=text:ok
+foreign_key_check: []
+== sqlite_master
+type=text:index | name=text:index_routine_exercises_exerciseId | tbl_name=text:routine_exercises | sql=text:CREATE INDEX `index_routine_exercises_exerciseId` ON `routine_exercises` (`exerciseId`)
+type=text:index | name=text:index_routine_exercises_routineId | tbl_name=text:routine_exercises | sql=text:CREATE INDEX `index_routine_exercises_routineId` ON `routine_exercises` (`routineId`)
+type=text:index | name=text:index_routine_sets_routineExerciseId | tbl_name=text:routine_sets | sql=text:CREATE INDEX `index_routine_sets_routineExerciseId` ON `routine_sets` (`routineExerciseId`)
+type=text:index | name=text:index_routines_folderId | tbl_name=text:routines | sql=text:CREATE INDEX `index_routines_folderId` ON `routines` (`folderId`)
+type=text:index | name=text:index_workout_exercises_exerciseId | tbl_name=text:workout_exercises | sql=text:CREATE INDEX `index_workout_exercises_exerciseId` ON `workout_exercises` (`exerciseId`)
+type=text:index | name=text:index_workout_exercises_workoutId | tbl_name=text:workout_exercises | sql=text:CREATE INDEX `index_workout_exercises_workoutId` ON `workout_exercises` (`workoutId`)
+type=text:index | name=text:index_workout_sets_workoutExerciseId | tbl_name=text:workout_sets | sql=text:CREATE INDEX `index_workout_sets_workoutExerciseId` ON `workout_sets` (`workoutExerciseId`)
+type=text:index | name=text:sqlite_autoindex_exercises_1 | tbl_name=text:exercises | sql=null
+type=text:index | name=text:sqlite_autoindex_routine_exercises_1 | tbl_name=text:routine_exercises | sql=null
+type=text:index | name=text:sqlite_autoindex_routine_folders_1 | tbl_name=text:routine_folders | sql=null
+type=text:index | name=text:sqlite_autoindex_routine_sets_1 | tbl_name=text:routine_sets | sql=null
+type=text:index | name=text:sqlite_autoindex_routine_target_checkpoints_1 | tbl_name=text:routine_target_checkpoints | sql=null
+type=text:index | name=text:sqlite_autoindex_routines_1 | tbl_name=text:routines | sql=null
+type=text:index | name=text:sqlite_autoindex_workout_exercises_1 | tbl_name=text:workout_exercises | sql=null
+type=text:index | name=text:sqlite_autoindex_workout_sets_1 | tbl_name=text:workout_sets | sql=null
+type=text:index | name=text:sqlite_autoindex_workouts_1 | tbl_name=text:workouts | sql=null
+type=text:table | name=text:android_metadata | tbl_name=text:android_metadata | sql=text:CREATE TABLE android_metadata (locale TEXT)
+type=text:table | name=text:exercises | tbl_name=text:exercises | sql=text:CREATE TABLE `exercises` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `muscle` TEXT NOT NULL, `equipment` TEXT NOT NULL, `convention` TEXT NOT NULL, `custom` INTEGER NOT NULL, PRIMARY KEY(`id`))
+type=text:table | name=text:room_master_table | tbl_name=text:room_master_table | sql=text:CREATE TABLE room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)
+type=text:table | name=text:routine_exercises | tbl_name=text:routine_exercises | sql=text:CREATE TABLE `routine_exercises` (`id` TEXT NOT NULL, `routineId` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `plannedSets` INTEGER NOT NULL, `targetReps` INTEGER NOT NULL, `targetWeightKg` REAL, `restSeconds` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`routineId`) REFERENCES `routines`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )
+type=text:table | name=text:routine_folders | tbl_name=text:routine_folders | sql=text:CREATE TABLE `routine_folders` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`id`))
+type=text:table | name=text:routine_sets | tbl_name=text:routine_sets | sql=text:CREATE TABLE `routine_sets` (`id` TEXT NOT NULL, `routineExerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `targetReps` INTEGER NOT NULL, `targetWeightKg` REAL, `inheritPr` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`routineExerciseId`) REFERENCES `routine_exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)
+type=text:table | name=text:routine_target_checkpoints | tbl_name=text:routine_target_checkpoints | sql=text:CREATE TABLE `routine_target_checkpoints` (`exerciseId` TEXT NOT NULL, `convention` TEXT NOT NULL, `weightKg` REAL, `reps` INTEGER NOT NULL, PRIMARY KEY(`exerciseId`, `convention`))
+type=text:table | name=text:routines | tbl_name=text:routines | sql=text:CREATE TABLE `routines` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, `folderId` TEXT NOT NULL DEFAULT 'default', PRIMARY KEY(`id`))
+type=text:table | name=text:workout_exercises | tbl_name=text:workout_exercises | sql=text:CREATE TABLE `workout_exercises` (`id` TEXT NOT NULL, `workoutId` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `name` TEXT NOT NULL, `muscle` TEXT NOT NULL, `equipment` TEXT NOT NULL, `convention` TEXT NOT NULL, `position` INTEGER NOT NULL, `restSeconds` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`workoutId`) REFERENCES `workouts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )
+type=text:table | name=text:workout_sets | tbl_name=text:workout_sets | sql=text:CREATE TABLE `workout_sets` (`id` TEXT NOT NULL, `workoutExerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `reps` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `completed` INTEGER NOT NULL, `warmup` INTEGER NOT NULL, `assistance` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`workoutExerciseId`) REFERENCES `workout_exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )
+type=text:table | name=text:workouts | tbl_name=text:workouts | sql=text:CREATE TABLE `workouts` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `status` TEXT NOT NULL, `sourceRoutineId` TEXT, PRIMARY KEY(`id`))
+== android_metadata
+locale=text:en_US
+== exercises
+id=text:edge-exercise | name=text:Côte d'Azur “row” 💪 | muscle=text:BACK | equipment=text:CABLE | convention=text:TOTAL_LOAD | custom=integer:1
+id=text:v2-exercise | name=text:Press | muscle=text:CHEST | equipment=text:DUMBBELL | convention=text:PER_HAND | custom=integer:1
+== room_master_table
+id=integer:42 | identity_hash=text:48892117afebb5cd76d2a80e62cb729e
+== routine_exercises
+id=text:edge-negative | routineId=text:edge-routine | exerciseId=text:edge-exercise | position=integer:1 | plannedSets=integer:-2 | targetReps=integer:5 | targetWeightKg=real:1.5 | restSeconds=null
+id=text:edge-precise | routineId=text:edge-routine | exerciseId=text:edge-exercise | position=integer:2 | plannedSets=integer:1 | targetReps=integer:6 | targetWeightKg=real:22.6796185 | restSeconds=integer:300
+id=text:edge-zero | routineId=text:edge-routine | exerciseId=text:edge-exercise | position=integer:0 | plannedSets=integer:0 | targetReps=integer:5 | targetWeightKg=null | restSeconds=integer:0
+id=text:v2-blank | routineId=text:v2-routine | exerciseId=text:v2-exercise | position=integer:1 | plannedSets=integer:3 | targetReps=integer:0 | targetWeightKg=null | restSeconds=null
+id=text:v2-weighted | routineId=text:v2-routine | exerciseId=text:v2-exercise | position=integer:0 | plannedSets=integer:4 | targetReps=integer:7 | targetWeightKg=real:20.375 | restSeconds=integer:135
+== routine_folders
+id=text:default | name=text:My routines | position=integer:0
+== routine_sets
+id=<generated uuid> | routineExerciseId=text:edge-precise | position=integer:0 | targetReps=integer:6 | targetWeightKg=real:22.6796185 | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-blank | position=integer:0 | targetReps=integer:0 | targetWeightKg=null | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-blank | position=integer:1 | targetReps=integer:0 | targetWeightKg=null | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-blank | position=integer:2 | targetReps=integer:0 | targetWeightKg=null | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-weighted | position=integer:0 | targetReps=integer:7 | targetWeightKg=real:20.375 | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-weighted | position=integer:1 | targetReps=integer:7 | targetWeightKg=real:20.375 | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-weighted | position=integer:2 | targetReps=integer:7 | targetWeightKg=real:20.375 | inheritPr=integer:0
+id=<generated uuid> | routineExerciseId=text:v2-weighted | position=integer:3 | targetReps=integer:7 | targetWeightKg=real:20.375 | inheritPr=integer:0
+== routine_target_checkpoints
+exerciseId=text:v2-exercise | convention=text:PER_HAND | weightKg=real:20.375 | reps=integer:7
+== routines
+id=text:edge-routine | name=text:Edge 'routine' | position=integer:7 | folderId=text:default
+id=text:v2-routine | name=text:Original routine | position=integer:0 | folderId=text:default
+== workout_exercises
+== workout_sets
+== workouts

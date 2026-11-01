@@ -1,3 +1,4 @@
 <resources>
-    <color name="launcher_background">#101713</color>
+    <!-- Plate graphite (bg.base of the design system). -->
+    <color name="launcher_background">#111513</color>
 </resources>

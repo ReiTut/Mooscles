@@ -68,13 +68,10 @@ class WorkoutSharePreviewHostTest {
         compose.runOnIdle { assertEquals(1, retried); assertEquals(1, closed) }
     }
 
-    @Test fun completedHistoryDetailsExposeShareWorkout() = assertShareAction(summary = false)
-    @Test fun completedWorkoutSummaryExposesShareWorkout() = assertShareAction(summary = true)
-
-    private fun assertShareAction(summary: Boolean) {
+    @Test fun completedHistoryDetailsExposeShareWorkout() {
         val workout = WorkoutUi("saved-workout", "Strength", startedAt = 1_000, endedAt = 61_000)
         compose.setContent { MaterialTheme { Box(Modifier.size(430.dp, 900.dp)) {
-            WorkoutDetailScreen(workout, UiState(loading = false), noActions, summary, onDeleted = {}, onExerciseHistory = {})
+            WorkoutDetailScreen(workout, UiState(loading = false), noActions, onDeleted = {}, onExerciseHistory = {})
         } } }
         compose.onNodeWithTag("workout-details").performScrollToNode(hasTestTag("share-workout"))
         compose.onNodeWithTag("share-workout").assertIsDisplayed()

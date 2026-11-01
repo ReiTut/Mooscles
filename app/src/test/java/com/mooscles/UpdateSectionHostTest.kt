@@ -3,7 +3,7 @@ package com.mooscles
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
+import com.mooscles.ui.MoosclesTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
@@ -54,7 +54,7 @@ class UpdateSectionHostTest {
             phase = UpdatePhase.DOWNLOADING, downloadedBytes = 1_048_576, totalBytes = 2_097_152,
             releaseNotes = "Improved workout tracking.",
         ))
-        compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
+        compose.setContent { MoosclesTheme("light") { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
         compose.onNodeWithTag("update-progress").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("update-cancel").performScrollTo().performClick()
         compose.onNodeWithTag("update-check").performScrollTo().assertIsNotEnabled()
@@ -70,7 +70,7 @@ class UpdateSectionHostTest {
             installedVersionName = "1.1.0", installedVersionCode = 5,
             availableVersionName = "1.2.0", availableVersionCode = 6, phase = UpdatePhase.DEFERRED,
         ))
-        compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
+        compose.setContent { MoosclesTheme("light") { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
         compose.onNodeWithText("Update ready · installation deferred").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("update-install").assertDoesNotExist()
         compose.runOnIdle { state.value = state.value.copy(phase = UpdatePhase.PERMISSION_REQUIRED) }
@@ -90,7 +90,7 @@ class UpdateSectionHostTest {
             availableVersionName = "1.2.0", availableVersionCode = 6,
             phase = UpdatePhase.FAILED, verifiedApkReady = true,
         ))
-        compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
+        compose.setContent { MoosclesTheme("light") { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state.value, actions) } } }
         compose.onNodeWithText("Retry installation").performScrollTo().performClick()
         compose.runOnIdle { state.value = state.value.copy(phase = UpdatePhase.CANCELLED) }
         compose.onNodeWithText("Retry installation").performScrollTo().performClick()
@@ -100,7 +100,7 @@ class UpdateSectionHostTest {
     }
 
     private fun show(state: UpdateUi, actions: UpdateActions) {
-        compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state, actions) } } }
+        compose.setContent { MoosclesTheme("light") { Column(Modifier.verticalScroll(rememberScrollState())) { UpdateSection(state, actions) } } }
     }
 
     private class CapturedUpdateActions : UpdateActions {

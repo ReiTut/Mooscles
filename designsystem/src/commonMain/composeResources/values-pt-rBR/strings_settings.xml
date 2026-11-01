@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brazilian Portuguese translation of values/strings_settings.xml, with the same keys and arguments. -->
+<resources>
+    <string name="settings_title">Configurações</string>
+    <string name="settings_weight_units">Unidades de peso</string>
+    <string name="settings_unit_kg">Quilogramas · kg</string>
+    <string name="settings_unit_lb">Libras · lb</string>
+    <string name="settings_units_hint">Os recordes mantêm a precisão original quando você troca de unidade.</string>
+    <string name="settings_appearance">Aparência</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Escuro</string>
+    <string name="settings_auto_rest">Descanso automático</string>
+    <string name="settings_auto_rest_desc">Começa ao concluir uma série</string>
+    <string name="settings_auto_rest_hint">Ao concluir outra série, o descanso recomeça com a duração daquele exercício.</string>
+    <string name="settings_default_rest">Duração padrão do descanso</string>
+    <string name="settings_rest_each_exercise">Cada exercício pode ter a sua própria duração de descanso.</string>
+    <string name="settings_rest_duration">Duração do descanso</string>
+    <string name="settings_rest_help">Minutos e depois segundos · máximo 5:00</string>
+    <string name="settings_rest_error">Use de 0:00 a 5:00, com segundos de 00 a 59.</string>
+    <string name="settings_rest_suffix">min</string>
+    <string name="settings_privacy_title">Só você e o seu progresso</string>
+    <string name="settings_privacy_body">Suas rotinas, o histórico de treinos e os recordes ficam neste aparelho. O treino funciona sem internet. O app só se conecta ao GitHub para procurar e baixar atualizações. Ao compartilhar, o app cria uma imagem do treino no aparelho e abre o app que você escolher, onde você seleciona quem recebe e confirma o envio. Os dados de treino ficam de fora dos backups automáticos na nuvem. Use Exportar dados, acima, para guardar a sua própria cópia.</string>
+    <string name="settings_component_gallery">Galeria de componentes</string>
+
+    <string name="settings_data_title">Seus dados</string>
+    <string name="settings_data_desc">Salve em um arquivo uma cópia dos seus treinos, rotinas e configurações, ou restaure uma cópia.</string>
+    <string name="settings_export">Exportar dados</string>
+    <string name="settings_import">Importar dados</string>
+    <string name="settings_import_blocked">Conclua ou descarte o treino em andamento para importar</string>
+    <string name="settings_data_export_photos_note">As fotos dos exercícios personalizados não entram no arquivo.</string>
+    <string name="settings_data_dismiss">Fechar</string>
+    <string name="settings_data_footer">Os backups trazem todo o seu histórico de treinos sem criptografia. Guarde o arquivo em um lugar privado.</string>
+    <string name="settings_import_title">Importar backup?</string>
+    <string name="settings_import_nothing_new">Tudo o que está neste backup já está neste celular.</string>
+    <string name="settings_import_ok">Fechar</string>
+    <string name="settings_import_confirm">Importar</string>
+    <string name="settings_import_cancel">Cancelar</string>
+    <plurals name="settings_workouts">
+        <item quantity="one">%1$d treino</item>
+        <item quantity="other">%1$d treinos</item>
+    </plurals>
+    <plurals name="settings_routines">
+        <item quantity="one">%1$d rotina</item>
+        <item quantity="other">%1$d rotinas</item>
+    </plurals>
+    <plurals name="settings_custom_exercises">
+        <item quantity="one">%1$d exercício personalizado</item>
+        <item quantity="other">%1$d exercícios personalizados</item>
+    </plurals>
+    <plurals name="settings_workouts_kept">
+        <item quantity="one">%1$d treino já está neste celular e será mantido como está.</item>
+        <item quantity="other">%1$d treinos já estão neste celular e serão mantidos como estão.</item>
+    </plurals>
+    <string name="settings_import_counts">%1$s, %2$s e %3$s</string>
+    <string name="settings_import_add">Adicionar %1$s.</string>
+    <string name="settings_import_prefs">Suas unidades, tema e configurações de descanso também serão restaurados.</string>
+
+    <string name="settings_updates_title">Atualizações do app</string>
+    <string name="settings_updates_reading_version">Lendo a versão instalada</string>
+    <string name="settings_updates_installed">Instalada: %1$s · build %2$s</string>
+    <string name="settings_updates_build">%1$s · build %2$s</string>
+    <string name="settings_updates_automatic">Atualizações automáticas</string>
+    <string name="settings_updates_automatic_desc">Baixa as atualizações disponíveis automaticamente</string>
+    <string name="settings_updates_wifi_only">Baixar só no Wi-Fi</string>
+    <string name="settings_updates_wifi_only_desc">Espera o Wi-Fi antes de baixar um APK</string>
+    <string name="settings_updates_prereleases">Incluir pré-lançamentos</string>
+    <string name="settings_updates_prereleases_desc">Recebe versões de teste e de depuração, além das estáveis</string>
+    <string name="settings_updates_channel_prerelease">Canal: estável + pré-lançamento. As versões de teste podem ser menos testadas.</string>
+    <string name="settings_updates_channel_stable">Canal: estável. Rascunhos e pré-lançamentos ficam de fora.</string>
+    <string name="settings_updates_last_checked">Última verificação</string>
+    <string name="settings_updates_not_checked">Ainda não verificado</string>
+    <string name="settings_updates_checking">Procurando…</string>
+    <string name="settings_updates_check">Procurar atualizações</string>
+    <string name="settings_updates_schedule">A busca roda quando você abre o app e a cada seis horas, mais ou menos, em segundo plano. O Android pode atrasar a busca em segundo plano. O registro de treinos continua disponível sem internet.</string>
+    <string name="settings_updates_approval_note">O Android pode pedir que você aprove a instalação. As atualizações esperam o seu treino e o descanso terminarem. Um celular com uma versão antiga, sem este atualizador, precisa instalar uma vez o APK com o atualizador.</string>
+    <string name="settings_updates_status_idle">Pronto para procurar</string>
+    <string name="settings_updates_status_checking">Procurando no GitHub Releases</string>
+    <string name="settings_updates_status_available">Atualização disponível</string>
+    <string name="settings_updates_status_waiting_for_wifi">Esperando o Wi-Fi</string>
+    <string name="settings_updates_status_downloading">Baixando a atualização</string>
+    <string name="settings_updates_status_verifying">Verificando a atualização</string>
+    <string name="settings_updates_status_ready">Atualização pronta</string>
+    <string name="settings_updates_status_deferred">Atualização pronta · instalação adiada</string>
+    <string name="settings_updates_status_permission_required">Falta a permissão de instalação</string>
+    <string name="settings_updates_status_approval_required">Atualização pronta · falta a sua aprovação</string>
+    <string name="settings_updates_status_installing">Instalando a atualização</string>
+    <string name="settings_updates_status_succeeded">Atualização concluída</string>
+    <string name="settings_updates_status_failed">A atualização não terminou</string>
+    <string name="settings_updates_status_cancelled">Atualização cancelada</string>
+    <string name="settings_updates_idle_note">As atualizações publicadas vêm de ReiTut/Mooscles no GitHub.</string>
+    <string name="settings_updates_download">Baixar atualização</string>
+    <string name="settings_updates_wifi_note">A atualização começa a ser baixada quando houver Wi-Fi. Você pode mudar a preferência de Wi-Fi acima.</string>
+    <string name="settings_updates_install">Instalar atualização</string>
+    <string name="settings_updates_deferred_note">O arquivo baixado está seguro. A instalação espera o treino ser salvo e o descanso terminar.</string>
+    <string name="settings_updates_permission_note">O Android exige permissão para instalar um APK do Mooscles. Ative “Permitir desta fonte” na próxima tela e volte aqui. A permissão só é pedida na hora de instalar.</string>
+    <string name="settings_updates_allow_source">Permitir desta fonte</string>
+    <string name="settings_updates_approval_note_short">O Android precisa da sua aprovação. Abra a confirmação do sistema quando estiver pronto.</string>
+    <string name="settings_updates_review_install">Revisar instalação</string>
+    <string name="settings_updates_retry_install">Tentar instalar de novo</string>
+    <string name="settings_updates_retry">Tentar de novo</string>
+    <string name="settings_updates_download_again">Baixar de novo</string>
+    <string name="settings_updates_succeeded_note">A versão instalada está pronta. Seus dados de treino continuam neste aparelho.</string>
+    <string name="settings_updates_cancel">Parar de baixar</string>
+    <string name="settings_updates_release_notes">Notas da versão</string>
+    <string name="settings_updates_show_less">Mostrar menos</string>
+    <string name="settings_updates_read_all">Ler todas as notas</string>
+    <string name="settings_updates_progress">%1$s · %2$s / %3$s</string>
+    <string name="settings_updates_size_mb">%1$s MB</string>
+    <string name="settings_updates_size_kb">%1$s KB</string>
+</resources>

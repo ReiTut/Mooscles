@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the design system components. English is the base; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="ds_licenses_title">Open-source licenses</string>
+    <plurals name="ds_sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="ds_unit_kg_spoken">
+        <item quantity="one">%1$s kilogram</item>
+        <item quantity="other">%1$s kilograms</item>
+    </plurals>
+    <plurals name="ds_unit_lb_spoken">
+        <item quantity="one">%1$s pound</item>
+        <item quantity="other">%1$s pounds</item>
+    </plurals>
+    <string name="ds_back">Back</string>
+    <string name="ds_loading">Loading</string>
+    <string name="ds_error_prefix">Error</string>
+    <string name="ds_close">Close</string>
+    <string name="ds_dismiss">Dismiss</string>
+    <string name="ds_set_row_position">Set %1$d of %2$d</string>
+    <string name="ds_set_row_a11y">%1$s, previous %2$s, %3$s, %4$s, %5$s</string>
+    <string name="ds_set_row_a11y_no_previous">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="ds_load_by_reps_spoken">%1$s by %2$d</string>
+    <plurals name="ds_reps_count">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <string name="ds_set_done">completed</string>
+    <string name="ds_set_not_done">not completed</string>
+    <string name="ds_action_complete_set">Complete set</string>
+    <string name="ds_action_uncomplete_set">Mark set as not done</string>
+    <string name="ds_action_edit_load">Edit load</string>
+    <string name="ds_action_edit_reps">Edit reps</string>
+    <string name="ds_action_change_type">Change type</string>
+    <string name="ds_action_remove_set">Remove set</string>
+    <string name="ds_complete_set_n">Complete set %1$d</string>
+    <string name="ds_set_n_completed">Set %1$d completed</string>
+    <string name="ds_stepper_increase">Increase %1$s by %2$s</string>
+    <string name="ds_stepper_decrease">Decrease %1$s by %2$s</string>
+    <string name="ds_pr_label">PR</string>
+    <string name="ds_pr_spoken">personal record</string>
+    <string name="ds_set_type_warmup_short">W</string>
+    <string name="ds_set_type_drop_short">D</string>
+    <string name="ds_set_type_failure_short">F</string>
+    <string name="ds_set_type_warmup_spoken">warm-up</string>
+    <string name="ds_set_type_drop_spoken">drop set</string>
+    <string name="ds_set_type_failure_spoken">to failure</string>
+    <string name="ds_timer_rest">Rest</string>
+    <string name="ds_timer_done">Rest complete</string>
+    <string name="ds_timer_paused">Paused</string>
+    <string name="ds_timer_minus15">Minus 15 seconds</string>
+    <string name="ds_timer_plus15">Plus 15 seconds</string>
+    <string name="ds_timer_minus15_short">−15 s</string>
+    <string name="ds_timer_plus15_short">+15 s</string>
+    <string name="ds_timer_skip">Skip rest</string>
+    <string name="ds_timer_up_next">Up next</string>
+    <string name="ds_timer_announce">Rest, %1$s remaining</string>
+    <plurals name="ds_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <plurals name="ds_seconds">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <string name="ds_duration_and">%1$s and %2$s</string>
+    <string name="ds_pr_toast_title">New record: %1$s</string>
+    <string name="ds_pr_toast_before">before %1$s</string>
+    <string name="ds_add_set">Add set</string>
+    <string name="ds_media_offline">Image not downloaded yet</string>
+    <string name="ds_exercise_menu">Exercise options</string>
+    <plurals name="ds_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <string name="ds_duration_list">%1$s, %2$s and %3$s</string>
+    <string name="ds_workout_bar_spoken">Workout in progress, %1$s, %2$s</string>
+    <string name="ds_workout_bar_rest_spoken">%1$s. Rest, %2$s</string>
+    <string name="ds_load_spoken">load %1$s</string>
+    <string name="ds_suggestion_spoken">suggestion %1$s</string>
+    <string name="ds_load_suggestion_spoken">suggested load %1$s</string>
+    <string name="ds_set_type_assisted_short">AS</string>
+    <string name="ds_set_type_assisted_spoken">assisted set</string>
+    <string name="ds_action_edit_set">Edit set</string>
+    <string name="ds_action_copy_previous">Copy previous</string>
+    <string name="ds_timer_open">Open rest timer, %1$s remaining</string>
+    <!-- The open label once the rest is over, when no time is left to read. -->
+    <string name="ds_timer_open_done">Open rest timer</string>
+    <string name="ds_timer_of">of %1$s</string>
+    <string name="ds_timer_pause">Pause</string>
+    <string name="ds_timer_resume">Resume</string>
+    <string name="ds_timer_restart">Restart</string>
+    <string name="ds_timer_close">Close timer</string>
+    <plurals name="ds_sets_done_of">
+        <item quantity="one">%1$d of %2$d set</item>
+        <item quantity="other">%1$d of %2$d sets</item>
+    </plurals>
+    <string name="ds_card_expand">Show sets</string>
+    <string name="ds_card_collapse">Hide sets</string>
+    <string name="ds_figure_label">Illustration: start and end of %1$s</string>
+    <string name="ds_figure_show_start">Show the start of the movement</string>
+    <string name="ds_figure_show_end">Show the end of the movement</string>
+    <!-- The body map legend: the swatch of the main muscles and of the secondary ones. -->
+    <string name="ds_body_map_primary">Primary</string>
+    <string name="ds_body_map_secondary">Secondary</string>
+    <!-- The licenses entry of the own media, under CC0 1.0. -->
+    <string name="ds_licenses_mooscles_media">Mooscles illustrations, exercise tips and names</string>
+    <!-- The clear button of the search field. -->
+    <string name="ds_search_clear">Clear search</string>
+    <!-- Reordering (phase 4B, spec D15): the drag handle's label and the accessibility actions. -->
+    <string name="ds_reorder_handle">Reorder %1$s</string>
+    <string name="ds_reorder_up">Move up</string>
+    <string name="ds_reorder_down">Move down</string>
+    <string name="ds_reorder_top">Move to top</string>
+    <string name="ds_reorder_bottom">Move to bottom</string>
+    <!-- Announced after a move: the item's name, its new position and the count. -->
+    <string name="ds_reorder_moved">%1$s moved to position %2$d of %3$d</string>
+    <!-- Charts (phase 5A, spec D4): the button that swaps a chart and its data table, and the record legend and table mark. -->
+    <string name="ds_chart_view_data">View data</string>
+    <string name="ds_chart_view_chart">View chart</string>
+    <string name="ds_chart_record">Record</string>
+</resources>

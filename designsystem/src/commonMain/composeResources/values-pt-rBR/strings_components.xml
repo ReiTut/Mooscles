@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brazilian Portuguese translation of values/strings_components.xml, with the same keys and arguments. -->
+<resources>
+    <string name="ds_licenses_title">Licenças de código aberto</string>
+    <plurals name="ds_sets_count">
+        <item quantity="one">%1$d série</item>
+        <item quantity="other">%1$d séries</item>
+    </plurals>
+    <plurals name="ds_unit_kg_spoken">
+        <item quantity="one">%1$s quilo</item>
+        <item quantity="other">%1$s quilos</item>
+    </plurals>
+    <plurals name="ds_unit_lb_spoken">
+        <item quantity="one">%1$s libra</item>
+        <item quantity="other">%1$s libras</item>
+    </plurals>
+    <string name="ds_back">Voltar</string>
+    <string name="ds_loading">Carregando</string>
+    <string name="ds_error_prefix">Erro</string>
+    <string name="ds_close">Fechar</string>
+    <string name="ds_dismiss">Dispensar</string>
+    <string name="ds_set_row_position">Série %1$d de %2$d</string>
+    <string name="ds_set_row_a11y">%1$s, anterior %2$s, %3$s, %4$s, %5$s</string>
+    <string name="ds_set_row_a11y_no_previous">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="ds_load_by_reps_spoken">%1$s por %2$d</string>
+    <plurals name="ds_reps_count">
+        <item quantity="one">%1$d repetição</item>
+        <item quantity="other">%1$d repetições</item>
+    </plurals>
+    <string name="ds_set_done">concluída</string>
+    <string name="ds_set_not_done">não concluída</string>
+    <string name="ds_action_complete_set">Concluir série</string>
+    <string name="ds_action_uncomplete_set">Marcar série como não feita</string>
+    <string name="ds_action_edit_load">Editar carga</string>
+    <string name="ds_action_edit_reps">Editar repetições</string>
+    <string name="ds_action_change_type">Mudar tipo</string>
+    <string name="ds_action_remove_set">Remover série</string>
+    <string name="ds_complete_set_n">Concluir série %1$d</string>
+    <string name="ds_set_n_completed">Série %1$d concluída</string>
+    <string name="ds_stepper_increase">Aumentar %1$s em %2$s</string>
+    <string name="ds_stepper_decrease">Diminuir %1$s em %2$s</string>
+    <string name="ds_pr_label">PR</string>
+    <string name="ds_pr_spoken">recorde pessoal</string>
+    <string name="ds_set_type_warmup_short">A</string>
+    <string name="ds_set_type_drop_short">D</string>
+    <string name="ds_set_type_failure_short">F</string>
+    <string name="ds_set_type_warmup_spoken">aquecimento</string>
+    <string name="ds_set_type_drop_spoken">drop set</string>
+    <string name="ds_set_type_failure_spoken">até a falha</string>
+    <string name="ds_timer_rest">Descanso</string>
+    <string name="ds_timer_done">Descanso concluído</string>
+    <string name="ds_timer_paused">Pausado</string>
+    <string name="ds_timer_minus15">Menos 15 segundos</string>
+    <string name="ds_timer_plus15">Mais 15 segundos</string>
+    <string name="ds_timer_minus15_short">−15 s</string>
+    <string name="ds_timer_plus15_short">+15 s</string>
+    <string name="ds_timer_skip">Pular descanso</string>
+    <string name="ds_timer_up_next">A seguir</string>
+    <string name="ds_timer_announce">Descanso, tempo restante: %1$s</string>
+    <plurals name="ds_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+    <plurals name="ds_seconds">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundos</item>
+    </plurals>
+    <string name="ds_duration_and">%1$s e %2$s</string>
+    <string name="ds_pr_toast_title">Novo recorde: %1$s</string>
+    <string name="ds_pr_toast_before">antes %1$s</string>
+    <string name="ds_add_set">Adicionar série</string>
+    <string name="ds_media_offline">Imagem ainda não baixada</string>
+    <string name="ds_exercise_menu">Opções do exercício</string>
+    <plurals name="ds_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+    <string name="ds_duration_list">%1$s, %2$s e %3$s</string>
+    <string name="ds_workout_bar_spoken">Treino em andamento, %1$s, %2$s</string>
+    <string name="ds_workout_bar_rest_spoken">%1$s. Descanso, %2$s</string>
+    <string name="ds_load_spoken">carga %1$s</string>
+    <string name="ds_suggestion_spoken">sugestão %1$s</string>
+    <string name="ds_load_suggestion_spoken">sugestão de carga %1$s</string>
+    <string name="ds_set_type_assisted_short">AS</string>
+    <string name="ds_set_type_assisted_spoken">série assistida</string>
+    <string name="ds_action_edit_set">Editar série</string>
+    <string name="ds_action_copy_previous">Copiar anterior</string>
+    <string name="ds_timer_open">Abrir timer de descanso, tempo restante: %1$s</string>
+    <string name="ds_timer_open_done">Abrir timer de descanso</string>
+    <string name="ds_timer_of">de %1$s</string>
+    <string name="ds_timer_pause">Pausar</string>
+    <string name="ds_timer_resume">Retomar</string>
+    <string name="ds_timer_restart">Recomeçar</string>
+    <string name="ds_timer_close">Fechar timer</string>
+    <plurals name="ds_sets_done_of">
+        <item quantity="one">%1$d de %2$d série</item>
+        <item quantity="other">%1$d de %2$d séries</item>
+    </plurals>
+    <string name="ds_card_expand">Mostrar séries</string>
+    <string name="ds_card_collapse">Ocultar séries</string>
+    <string name="ds_figure_label">Ilustração de início e fim: %1$s</string>
+    <string name="ds_figure_show_start">Mostrar o início do movimento</string>
+    <string name="ds_figure_show_end">Mostrar o fim do movimento</string>
+    <string name="ds_body_map_primary">Principais</string>
+    <string name="ds_body_map_secondary">Secundários</string>
+    <string name="ds_licenses_mooscles_media">Ilustrações, dicas de execução e nomes do Mooscles</string>
+    <string name="ds_search_clear">Limpar busca</string>
+    <string name="ds_reorder_handle">Reordenar %1$s</string>
+    <string name="ds_reorder_up">Mover para cima</string>
+    <string name="ds_reorder_down">Mover para baixo</string>
+    <string name="ds_reorder_top">Mover para o topo</string>
+    <string name="ds_reorder_bottom">Mover para o fim</string>
+    <string name="ds_reorder_moved">%1$s agora na posição %2$d de %3$d</string>
+    <!-- Gráficos (fase 5A, spec D4): o botão que troca o gráfico pela tabela, e a legenda e a marca de recorde. -->
+    <string name="ds_chart_view_data">Ver dados</string>
+    <string name="ds_chart_view_chart">Ver gráfico</string>
+    <string name="ds_chart_record">Recorde</string>
+</resources>

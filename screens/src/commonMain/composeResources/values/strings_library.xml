@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the library tab. English is the base; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="library_title">Library</string>
+    <string name="library_search">Search by name, muscle or equipment</string>
+    <string name="library_create">Create exercise</string>
+    <string name="library_settings">Settings</string>
+    <plurals name="library_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <string name="library_recent">Recently used</string>
+    <string name="library_all">All</string>
+    <string name="library_equipment">Equipment</string>
+    <string name="library_equipment_count">Equipment · %1$d</string>
+    <string name="library_mine">My exercises</string>
+    <string name="library_clear_filters">Clear filters</string>
+    <string name="library_empty">No exercises found</string>
+    <string name="library_empty_body">Try other words or fewer filters.</string>
+    <string name="library_catalog_empty">No exercises yet</string>
+    <string name="library_catalog_empty_body">Create an exercise to start your library.</string>
+    <string name="library_create_named">Create “%1$s”</string>
+    <string name="library_custom">Custom</string>
+    <string name="library_meta">%1$s · %2$s</string>
+    <string name="library_row">%1$s, %2$s, %3$s</string>
+    <string name="library_row_custom">%1$s, %2$s, %3$s, custom</string>
+</resources>

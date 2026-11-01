@@ -1,0 +1,6 @@
+foreground idle 5 s: frames=67
+two captures 0.7 s apart: differ
+background 5 s: gfx frames=0 doFrame on main thread=15 app pid alive=29489
+after return, idle 5 s: frames=69
+two captures after return: differ
+[42, 279, 1038, 336] text='Barbell hip thrust' desc='' id=

@@ -1,0 +1,28 @@
+
+
+SPIKE undecodable api=26 path=legacy out=null
+SPIKE input api=26 case=noise-o6 inputBytes=9040009
+SPIKE photo api=26 case=noise-o6 path=legacy out=810x1080 bytes=187372 thumb=2795 peakNativeKb=15985 peakJavaKb=766 ms=216 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=26 case=noise-o6 path=legacy q85=186878 q75=154921 q65=62863 q55=55299
+SPIKE input api=26 case=fullnoise-1440 inputBytes=1500952
+SPIKE photo api=26 case=fullnoise-1440 path=legacy out=1080x810 bytes=298501 thumb=12124 peakNativeKb=9801 peakJavaKb=3793 ms=158 oom=false upright=true thumbUpright=false outExif=0 detail=legacy(sample=1,exif=0),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=26 case=fullnoise-1440 path=legacy q85=368644 q75=315399 q65=297846 q55=282260
+SPIKE orientation api=26 o=1 path=legacy out=1080x810 upright=true
+SPIKE orientation api=26 o=2 path=legacy out=1080x810 upright=true
+SPIKE orientation api=26 o=3 path=legacy out=1080x810 upright=true
+SPIKE orientation api=26 o=4 path=legacy out=1080x810 upright=true
+SPIKE orientation api=26 o=5 path=legacy out=810x1080 upright=true
+SPIKE orientation api=26 o=6 path=legacy out=810x1080 upright=true
+SPIKE orientation api=26 o=7 path=legacy out=810x1080 upright=true
+SPIKE orientation api=26 o=8 path=legacy out=810x1080 upright=true
+SPIKE input api=26 case=heic-o6 inputBytes=54896 streamExif=0 fdExif=0
+SPIKE photo api=26 case=heic-o6 path=legacy out=nullxnull bytes=null peakNativeKb=7 ms=1 upright=null detail=null
+SPIKE input api=26 case=jpeg-o6 inputBytes=3656937
+SPIKE photo api=26 case=jpeg-o6 path=legacy out=810x1080 bytes=236266 thumb=13461 peakNativeKb=15952 peakJavaKb=865 ms=85 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE input api=26 case=jpeg-o8 inputBytes=3723707
+SPIKE photo api=26 case=jpeg-o8 path=legacy out=810x1080 bytes=238336 thumb=13476 peakNativeKb=15954 peakJavaKb=817 ms=89 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=8) quadrants=red/green/blue/yellow
+SPIKE input api=26 case=jpeg-o1 inputBytes=3742304
+SPIKE photo api=26 case=jpeg-o1 path=legacy out=1080x810 bytes=240267 thumb=13639 peakNativeKb=15952 peakJavaKb=817 ms=89 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE input api=26 case=png inputBytes=9512746
+SPIKE photo api=26 case=png path=legacy out=1080x810 bytes=221326 thumb=12767 peakNativeKb=15962 peakJavaKb=786 ms=435 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE png-center api=26 path=legacy rgb=255,255,255

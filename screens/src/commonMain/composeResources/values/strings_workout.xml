@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the active workout screen. English is the base; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="workout_enter_reps">Enter the reps</string>
+    <string name="workout_load_of_set">Load of set %1$d</string>
+    <string name="workout_reps_of_set">Reps of set %1$d</string>
+    <string name="workout_editing_load">Editing load of set %1$d</string>
+    <string name="workout_editing_reps">Editing reps of set %1$d</string>
+    <string name="workout_step">step of %1$s</string>
+    <string name="workout_open_keyboard">Open keyboard</string>
+    <string name="workout_field_load">load</string>
+    <string name="workout_field_reps">reps</string>
+    <string name="workout_set_type">Set type</string>
+    <string name="workout_type_normal">Normal</string>
+    <string name="workout_type_warmup">Warm-up</string>
+    <string name="workout_type_warmup_note">doesn't count for records</string>
+    <string name="workout_type_assisted">Assisted</string>
+    <string name="workout_type_assisted_note">separate rep records</string>
+    <string name="workout_remove_set">Remove set</string>
+    <string name="workout_set_removed">Set %1$d removed</string>
+    <string name="workout_undo">Undo</string>
+    <string name="workout_card_meta">%1$s · %2$s · set %3$d of %4$d</string>
+    <string name="workout_card_meta_short">%1$s · %2$s</string>
+    <string name="workout_rest_chip">Rest %1$s</string>
+    <string name="workout_previous_date">Previous: %1$s</string>
+    <string name="workout_first_time">First time</string>
+    <string name="workout_col_set">Set</string>
+    <string name="workout_col_previous">Previous</string>
+    <string name="workout_col_reps">Reps</string>
+    <string name="workout_col_kg_assisted">kg assist.</string>
+    <string name="workout_col_lb_assisted">lb assist.</string>
+    <string name="workout_menu_about">About the exercise</string>
+    <string name="workout_menu_history">Exercise progress</string>
+    <string name="workout_menu_swap">Swap exercise</string>
+    <string name="workout_menu_move_up">Move up</string>
+    <string name="workout_menu_move_down">Move down</string>
+    <string name="workout_menu_how_to_log">How to log</string>
+    <string name="workout_menu_remove">Remove exercise</string>
+    <plurals name="workout_remove_exercise_text">
+        <item quantity="one">Remove %1$s? Its %2$d set leaves this workout.</item>
+        <item quantity="other">Remove %1$s? Its %2$d sets leave this workout.</item>
+    </plurals>
+    <string name="workout_swap_exercise_text">Swap %1$s? Its logged sets leave this workout.</string>
+    <string name="workout_remove">Remove</string>
+    <string name="workout_swap">Swap</string>
+    <string name="workout_keep_training">Keep training</string>
+    <!-- The exercise's rest sheet (D14). -->
+    <string name="workout_rest_title">Rest</string>
+    <string name="workout_field_rest">rest</string>
+    <string name="workout_rest_note">Applies to this exercise's next rests; the current rest keeps its own time.</string>
+    <string name="workout_rest_start_now">Start rest now</string>
+    <!-- The exercise picker. -->
+    <string name="workout_picker_search">Search exercises</string>
+    <string name="workout_picker_recent">Recent</string>
+    <string name="workout_picker_all">All</string>
+    <string name="workout_picker_none">No matching exercises. Try a broader search.</string>
+    <plurals name="workout_picker_add_count">
+        <item quantity="one">Add %1$d exercise</item>
+        <item quantity="other">Add %1$d exercises</item>
+    </plurals>
+    <!-- The active workout screen: header, end of the list, finish, discard, rename, no workout. -->
+    <string name="workout_minimize">Minimize workout</string>
+    <string name="workout_more_options">More options</string>
+    <!-- How the clock is read: %1$s is the time in whole minutes, read aloud ("42 minutes"). -->
+    <string name="workout_clock_spoken">Workout time, %1$s</string>
+    <string name="workout_finish">Finish</string>
+    <string name="workout_finish_workout">Finish workout</string>
+    <string name="workout_add_exercise">Add exercise</string>
+    <string name="workout_menu_rename">Rename workout</string>
+    <string name="workout_menu_discard">Discard workout</string>
+    <string name="workout_finish_title">Finish workout?</string>
+    <!-- %1$s is workout_sets_count, %2$s workout_exercises_count, %3$s the duration ("42 min"). -->
+    <string name="workout_finish_summary">%1$s across %2$s · %3$s.</string>
+    <plurals name="workout_sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="workout_exercises_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="workout_finish_pending">
+        <item quantity="one">%1$d incomplete set will be left out.</item>
+        <item quantity="other">%1$d incomplete sets will be left out.</item>
+    </plurals>
+    <string name="workout_discard_title">Discard workout?</string>
+    <plurals name="workout_discard_text">
+        <item quantity="one">The %1$d logged set will be deleted.</item>
+        <item quantity="other">The %1$d logged sets will be deleted.</item>
+    </plurals>
+    <string name="workout_discard_nothing">Nothing has been logged yet.</string>
+    <string name="workout_discard">Discard</string>
+    <string name="workout_rename_field">Workout name</string>
+    <string name="workout_save">Save</string>
+    <string name="workout_none_title">No workout in progress</string>
+    <string name="workout_none_body">Start from a routine or an empty workout.</string>
+    <string name="workout_choose_routine">Choose routine</string>
+    <string name="workout_empty_workout">Empty workout</string>
+    <string name="workout_opening">Opening the workout</string>
+    <!-- The rest timer of the workout: the dock's name, the expanded timer's title and what comes next. -->
+    <!-- %1$s is the exercise ("Bench press"); %2$d its completed sets, %3$d all its sets. -->
+    <string name="workout_timer_title">Rest · %1$s · set %2$d of %3$d</string>
+    <string name="workout_timer_title_short">Rest · %1$s</string>
+    <!-- Under the expanded timer's "Up next": %1$d the set, %2$s its load without the unit, %3$d its reps. -->
+    <string name="workout_up_next_value">set %1$d · %2$s × %3$d</string>
+    <!-- The same without a load (0, left blank in the row): %1$d the set, %2$s its reps ("12 reps"); without reps, the set alone. -->
+    <string name="workout_up_next_reps">set %1$d · %2$s</string>
+    <string name="workout_up_next_set">set %1$d</string>
+    <string name="workout_record_weight_title">New weight record</string>
+    <string name="workout_record_reps_title">New reps record</string>
+    <!-- %1$s is the set's load with its unit ("87.5 kg"), %2$d its reps, %3$s the history's best load ("85 kg"). -->
+    <string name="workout_record_weight_detail">%1$s&#160;×&#160;%2$d · before %3$s</string>
+    <!-- %1$s is the set's load with its unit ("80 kg"), %2$d its reps, %3$d the history's most reps at that load. -->
+    <string name="workout_record_reps_detail">%1$s&#160;×&#160;%2$d · before %1$s&#160;×&#160;%3$d</string>
+</resources>

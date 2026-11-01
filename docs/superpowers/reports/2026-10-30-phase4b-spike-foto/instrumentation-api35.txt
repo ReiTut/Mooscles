@@ -1,0 +1,8 @@
+
+com.mooscles.spike.PhotoPipelineSpikeTest:......
+
+Time: 15.613
+
+OK (6 tests)
+
+

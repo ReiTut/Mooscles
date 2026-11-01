@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -63,7 +62,7 @@ private fun WorkoutHistoryCard(workout: WorkoutUi, pounds: Boolean, onClick: () 
 }
 
 @Composable
-fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesActions, summary: Boolean, onDeleted: () -> Unit, onExerciseHistory: (String) -> Unit) {
+fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesActions, onDeleted: () -> Unit, onExerciseHistory: (String) -> Unit) {
     var editing by remember(workout.id) { mutableStateOf(false) }
     var confirmEdit by remember { mutableStateOf(false) }
     var delete by remember { mutableStateOf(false) }
@@ -74,7 +73,7 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
     val beaten = workout.records.filterNot { it.firstRecord }
     val first = workout.records.filter { it.firstRecord }
     LazyColumn(modifier = Modifier.testTag("workout-details"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item { PageHeading(if (editing) "Editing saved session" else if (summary) "Workout complete" else "Session breakdown", if (summary && !editing) "Strong work." else workout.name, if (summary && !editing) workout.name else null) }
+        item { PageHeading(if (editing) "Editing saved session" else "Session breakdown", workout.name) }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(25.dp)) {
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -156,74 +155,4 @@ fun recordAchievementText(record: RecordUi, pounds: Boolean): String {
     } else {
         "${record.previousKg?.let { "${weight(it, pounds)} → " } ?: ""}$load × ${record.reps}"
     }
-}
-
-@Composable
-fun RecordsScreen(state: UiState, onExercise: (String) -> Unit) {
-    var search by remember { mutableStateOf("") }
-    val records = state.records.filter { search.isBlank() || it.exercise.name.contains(search.trim(), true) }.sortedBy { it.exercise.name }
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { PageHeading("Proof of your progress", "Personal records", "Weight and repetition records for each unique movement and load.") }
-        item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Outlined.EmojiEvents, null)
-                    Text("Every kind of progress.", style = MaterialTheme.typography.titleLarge)
-                    Text("105 kg × 3 beats 100 kg × 10 for a Weight PR. More reps at the same load earns a Reps PR, including bodyweight.", style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-        item { SearchField(search, { search = it }, "Find a movement’s record") }
-        if (records.isEmpty()) item { EmptyState(Icons.Outlined.EmojiEvents, if (search.isBlank()) "Your next milestone awaits" else "No matching records", "Complete working sets to build your weight and repetition records.") }
-        items(records, key = { it.exercise.id + it.exercise.convention + it.kind.name + it.weightKg + it.assistance }) { record ->
-            Card(onClick = { onExercise(record.exercise.id) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = RoundedCornerShape(22.dp)) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) { Text(record.exercise.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f)); Icon(Icons.Outlined.ChevronRight, null) }
-                    Text(record.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
-                    Text(recordAchievementText(record, state.preferences.pounds), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-                    Text("${record.exercise.convention} · ${dateText(record.date)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ExerciseHistoryScreen(exercise: ExerciseUi, state: UiState, actions: MoosclesActions, onWorkout: (String) -> Unit) {
-    var edit by remember { mutableStateOf(false) }
-    val sessions = state.history.filter { workout -> workout.exercises.any { it.exercise.id == exercise.id && it.sets.any { set -> set.completed } } }.sortedByDescending { it.startedAt }
-    val record = state.records.filter { it.exercise.id == exercise.id }
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { PageHeading("Movement history", exercise.name, "${human(exercise.muscle)} · ${human(exercise.equipment)}", trailing = if (exercise.custom) ({ IconButton(onClick = { edit = true }) { Icon(Icons.Outlined.Edit, "Edit custom exercise") } }) else null) }
-        item { Text(conventionExplanation(exercise.convention), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (record.isNotEmpty()) item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("PERSONAL BEST", style = MaterialTheme.typography.labelSmall)
-                    record.forEach { pr ->
-                        Text(pr.label, style = MaterialTheme.typography.labelLarge)
-                        Text(recordAchievementText(pr, state.preferences.pounds), style = MaterialTheme.typography.titleLarge)
-                    }
-                    Text("${sessions.size} recorded sessions", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-        item { SectionTitle("Performance timeline") }
-        if (sessions.isEmpty()) item { EmptyState(Icons.Outlined.Insights, "A clean slate", "Log this exact movement in a workout to see its progress here.") }
-        items(sessions, key = { it.id }) { workout ->
-            val entries = workout.exercises.filter { it.exercise.id == exercise.id }
-            Card(onClick = { onWorkout(workout.id) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(dateText(workout.startedAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary); Text(workout.name, style = MaterialTheme.typography.titleMedium) }; Icon(Icons.Outlined.ChevronRight, null) }
-                    entries.forEach { entry ->
-                        Text("Logged as ${entry.exercise.name} · ${entry.exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        entry.sets.filter { it.completed }.forEachIndexed { index, set -> CompletedSetRow(set, index, state.preferences.pounds, entry.exercise.convention == "Assistance") }
-                    }
-                    val volume = entries.filter { it.exercise.convention != "Assistance" }.sumOf { entry -> entry.sets.filter { it.completed && !it.assistance }.sumOf { it.weightKg * it.reps } }
-                    Text("${weight(volume, state.preferences.pounds)} moved", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-    if (edit) CustomExerciseDialog(exercise, state.exercises, actions, onDismiss = { edit = false })
 }
