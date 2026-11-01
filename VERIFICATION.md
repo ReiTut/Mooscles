@@ -22,7 +22,7 @@ Not verified:
 - Performance was measured on the emulator only.
 - The final release APK, signed with the original key, has not been installed over a real 1.4.6.
 
-Release preparation results: see below (filled at publish time).
+Release preparation (2026-11-01): `tools/publish-release.ps1` built the tagged commit `96336a6` in a clean worktree, ran **551** `:app` unit tests (0 failures) and debug lint (**0** errors), and produced `Mooscles-v1.5.0-debug.apk` (24,754,115 bytes, SHA-256 `7b7f7477…2306e`) signed only by the existing certificate `0cd093b2…bb35`, with `update.json` at versionCode 21. Before publishing, the official v1.4.6 APK from the GitHub release was installed on the Android 15 emulator, opened, and then replaced in place with this APK (`adb install -r`): the database went from `user_version` 5 to 6, the 287 catalog exercises and the default folder were kept, and the app opened on the new Train tab with no crash. This was an emulator with a fresh 1.4.6 install, not a phone with a real history.
 
 ## Release 1.4.6 / Build 17
 
