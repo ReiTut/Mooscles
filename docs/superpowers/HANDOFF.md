@@ -1,18 +1,18 @@
 # Handoff: como continuar o Mooscles
 
-Atualizado em 2026-10-31, no fim da fase 5A. Este arquivo é a porta de entrada para o agente (Claude Code, Codex ou outro) que vai continuar o desenvolvimento. Ele não repete o que já está no [AGENTS.md](../../AGENTS.md) nem no [ROADMAP](ROADMAP.md): diz onde as coisas estão, o que falta e como trabalhar sem repetir os erros de antes.
+Atualizado em 2026-11-01, depois da release 1.5.0 (fases 0 a 5A) no repositório original. Este arquivo é a porta de entrada para o agente (Claude Code, Codex ou outro) que vai continuar o desenvolvimento. Ele não repete o que já está no [AGENTS.md](../../AGENTS.md) nem no [ROADMAP](ROADMAP.md): diz onde as coisas estão, o que falta e como trabalhar sem repetir os erros de antes.
 
 Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" deste arquivo junto com o ROADMAP.
 
 ## Estado
 
-- **Repositório de trabalho:** o fork `pedroyuuki/Mooscles` (`origin`). O original é `ReiTut/Mooscles` (`upstream`): **nunca** dê push nele.
-- **`main` do fork:** `1aa69bd` (merge da 5A), CI verde ([41253719805](https://github.com/pedroyuuki/Mooscles/actions/runs/41253719805)): host 1264 testes; simulador iOS com `:shared` 280, `:designsystem` 414 e `:screens` 892.
-- **Fases prontas e mescladas na `main` do fork:** 1 (base KMP), 2 (design system), 3 (treino ativo), 4 (biblioteca, rotinas e 285 figuras) e 5A (gráficos, progresso do exercício e aba Recordes).
-- **Fase 0:** o código está pronto (export/import, recordes fora da thread principal, CI, build no macOS). Faltam a chave de assinatura original e a release v1.5.0 (ver "Pendências com o dono").
+- **Repositório de trabalho:** desde 2026-11-01 é o original, `ReiTut/Mooscles` (remote `upstream` neste clone), onde o dono do fork (`pedroyuuki`) é colaborador com permissão de push. O fork `pedroyuuki/Mooscles` (`origin`) virou arquivo: a `main` dele guarda o histórico completo das fases 0 a 5A (510 commits) e as capturas de verificação, que não entram no original.
+- **`main` do original:** `96336a6`, o merge squash do PR [#4](https://github.com/ReiTut/Mooscles/pull/4) com tudo das fases 0 a 5A. O CI dessa árvore rodou no fork ([41258967331](https://github.com/pedroyuuki/Mooscles/actions/runs/41258967331)): host 1264 testes; simulador iOS com `:shared` 280, `:designsystem` 414 e `:screens` 892. **O original não tem GitHub Actions rodando** (nenhum run até hoje): para ter CI, dê push da branch também no fork, ou peça ao dono do original para ligar o Actions.
+- **Fases prontas e na `main` do original:** 0 (proteger os dados), 1 (base KMP), 2 (design system), 3 (treino ativo), 4 (biblioteca, rotinas e 285 figuras) e 5A (gráficos, progresso do exercício e aba Recordes).
+- **Release publicada:** [v1.5.0](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.0) (`versionCode` 21, Latest), assinada com a chave original, acima das pré-releases 1.4.7-beta.1 a beta.3 (`versionCode` 18 a 20) que o dono do original tinha publicado de outras branches (`codex/*`, que continuam lá). Quem estava na 1.4.6 ou nas betas atualiza sozinho.
 - **Próxima etapa:** a **5B** (histórico redesenhado, calendário, gráficos gerais, detalhe do treino com edição e a prévia de compartilhamento). A spec já está aprovada; falta o plano.
-- **Nada em andamento.** A árvore está limpa, sem branch de trabalho aberta. A branch `feat/phase5a-progress` já está mesclada e pode ser apagada.
-- **Release:** nenhuma publicada pelo fork. Todo o trabalho entra num único PR para o original no fim do roadmap. As notas acumuladas desse PR estão em [releases/v1.5.0.md](releases/v1.5.0.md).
+- **Nada em andamento.** As branches antigas do fork já estão mescladas.
+- **Próxima release:** `versionCode` 22 ou mais (nunca reutilizar) e `-PreviousVersionCode 21` no `build.ps1`.
 
 ## Antes de começar, leia nesta ordem
 
@@ -26,12 +26,12 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
 
 - **Idioma:** responda ao dono em português do Brasil. O código, os comentários e os KDocs são em inglês; os documentos em `docs/superpowers/`, em português.
 - **Autonomia:** o dono delegou as decisões de produto e de técnica ("pode fazer as melhores escolhas decidindo por mim"). Decida, registre a decisão e o motivo no documento da etapa e siga. Pare só para o que é irreversível, de segurança ou fora do repositório.
-- **Branches e merge:** cada etapa tem a sua branch a partir da `main` do fork (`feat/slug`, `fix/slug`). Depois da revisão final e do CI verde, faça o merge na `main` do fork localmente e dê push para `origin`. Nunca use force push. Nunca abra PR nem dê push para o `upstream` antes do fim do roadmap, e não lembre o dono desse PR no meio do caminho: só vá acumulando as notas no `releases/v1.5.0.md`.
-- **Upstream separado:** não traga mudanças do `ReiTut/Mooscles` para o fork. O dono do original decide no PR final.
+- **Branches e merge:** cada etapa tem a sua branch a partir de `upstream/main` (`git fetch upstream && git switch -c feat/slug upstream/main`). Ao terminar (revisão final e CI verde), abra um PR para `ReiTut/Mooscles:main` e faça o merge **squash** (o dono do fork tem permissão; o dono do original já concordou em que a `main` siga este desenvolvimento). Nunca use force push. Não use a `main` do fork como base: a história dela diverge da do original (o PR #4 foi squash).
+- **Capturas e evidências pesadas** (PNG, traces) não entram no original: deixe em `docs/superpowers/reports/<pasta>/local/` (ignorado pelo git). Se um relatório precisar citar uma captura, publique-a num commit só de capturas na `main` do fork e use a URL absoluta, como os relatórios das fases 2 a 5A já fazem.
 - **Ritmo pedido pelo dono (da fase 5 em diante):** para cada task, rode os testes de host, a compilação dos testes iOS e, no emulador, só a classe de UI tocada (e só quando a task muda comportamento). As suítes completas de aparelho, a atualização por cima, o teste sem rede, o desempenho e o tamanho rodam **uma vez, no fim da fase**, e as correções entram num bloco. O push para o CI acontece só nos checkpoints.
 - **Revisões proporcionais ao risco:** use revisão completa (o modelo mais forte) para dados, navegação, concorrência e telas com comportamento novo. Para texto, testes e documentos, basta uma revisão curta ou uma checagem do controlador. Toda branch passa por uma revisão final da branch inteira e pelo `/code-review` antes do merge.
 - **iOS:** não há iPhone nem Xcode completo no Mac. O iOS só compila e roda testes no CI (job `ios`, `macos-26`). O app iOS em si (fase 7) ficou para depois, a pedido do dono ("deixa o ios pra outra hr").
-- **Celular do dono:** é um Galaxy S23 Ultra. **Nunca** instale nem desinstale nada nele: só o dono instala, e só o build `preview` (`com.mooscles.preview`, que fica ao lado do app de verdade). O APK `com.mooscles` feito no Mac tem outra chave e não atualiza o app dele. Entregue o preview copiando o APK para `~/Desktop/` e mandando para o dono.
+- **Celular do dono:** é um Galaxy S23 Ultra. **Nunca** instale nem desinstale nada nele: só o dono instala, e só o build `preview` (`com.mooscles.preview`, que fica ao lado do app de verdade). Entregue o preview copiando o APK para `~/Desktop/` e mandando para o dono.
 - **Segredos:** ficam no 1Password, cofre "Agentes" (veja `~/.config/op/agentes.env`). Nunca escreva o valor de um segredo em comando, arquivo, commit ou memória.
 
 ## Ambiente da máquina (Mac do dono)
@@ -84,7 +84,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
 
 ## Próxima etapa: fase 5B
 
-**O quê:** histórico redesenhado (aba Histórico com os segmentos Treinos e Progresso), calendário mensal, filtros, gráficos gerais, um detalhe do treino novo com modo de edição, e a prévia de compartilhamento no design system. Tudo está na spec, seção "Telas da 5B" e decisões D2, D12, D13, D14 e D17. Branch: `feat/phase5b-history`, a partir da `main` do fork.
+**O quê:** histórico redesenhado (aba Histórico com os segmentos Treinos e Progresso), calendário mensal, filtros, gráficos gerais, um detalhe do treino novo com modo de edição, e a prévia de compartilhamento no design system. Tudo está na spec, seção "Telas da 5B" e decisões D2, D12, D13, D14 e D17. Branch: `feat/phase5b-history`, a partir de `upstream/main` (o `ReiTut/Mooscles`).
 
 ### O que a spec já decide
 
@@ -152,16 +152,28 @@ As fases estão descritas no [ROADMAP](ROADMAP.md). O que importa para planejar:
   - Antes do import, faça um teste de ida e volta do backup entre plataformas: a formatação de `Double` pode diferir entre Kotlin/Native e a JVM.
 - **Fase 8, backup na nuvem do usuário:** Google Drive `appDataFolder` e iCloud, sem servidor do projeto.
 - **Fase 9, extras:** só com motivo claro e spec própria (widgets, Health Connect e HealthKit, Live Activity, relógio, treino guiado, sincronização).
-- **No fim do roadmap, o PR único** para `ReiTut/Mooscles`. Antes dele:
-  - tirar do histórico as capturas pesadas (cerca de 25 MB; ver `releases/v1.5.0.md`);
-  - colocar o `versionCode` acima do último do original (o original publicou a 1.4.6, `versionCode` 17);
-  - assinar com a chave original.
+- **Cada release** segue a seção "Releases" do AGENTS.md e o `UPDATES.md`, como a [v1.5.0](releases/v1.5.0.md) fez (ver "Como publicar uma release" abaixo).
 
-  O roteiro completo está na seção "Releases" do AGENTS.md e no `UPDATES.md`.
+## Como publicar uma release
+
+1. Num PR: subir `versionCode` e `versionName` em `app/build.gradle.kts`, `-PreviousVersionCode` no `build.ps1` (o último código distribuído) e atualizar `README.md` (Download), `VERIFICATION.md` e, se o fluxo mudar, `UPDATES.md`. Merge squash na `main` do original.
+2. Criar a tag anotada `vX.Y.Z` no commit do merge e dar push para `upstream` (sem force).
+3. Num worktree limpo e destacado nesse commit (copie o `local.properties`), com o emulador ligado e o `com.mooscles` desinstalado dele, rodar o `publish-release.ps1` assinando com a chave original pelas propriedades injetadas do Gradle (o `signingConfig` do projeto não muda):
+
+   ```sh
+   env "ORG_GRADLE_PROJECT_android.injected.signing.store.file=/Volumes/Disco Macbook/Projetos-Github/Mooscles/docs/private/debug.keystore" \
+       "ORG_GRADLE_PROJECT_android.injected.signing.store.password=android" \
+       "ORG_GRADLE_PROJECT_android.injected.signing.key.alias=androiddebugkey" \
+       "ORG_GRADLE_PROJECT_android.injected.signing.key.password=android" \
+       pwsh -NoProfile ./tools/publish-release.ps1 -Tag vX.Y.Z -NotesFile <notas em inglês> -PreviousVersionCode <último> -Remote upstream
+   ```
+
+   Sem `-Publish` ele só cria um rascunho. Confira o assinante (`apksigner verify --print-certs`, SHA-256 `0cd093b2…bb35`), o `update.json` e, de preferência, instale a release anterior oficial no emulador e o APK novo por cima (`adb install -r`), conferindo `PRAGMA user_version` e que o app abre. Depois rode de novo com `-Publish`.
+4. As notas da release são só o texto para o usuário, em inglês (na v1.5.0, a seção "Notas para o usuário" de `releases/v1.5.0.md`). Atualize o ROADMAP e este HANDOFF.
 
 ## Pendências com o dono (não bloqueiam o trabalho)
 
-- **Chave de assinatura original:** está com o dono do `ReiTut/Mooscles`. Sem ela, não há release, e nenhum APK feito no Mac atualiza o app instalado. Quando chegar, ela vai para o 1Password.
+- **Chave de assinatura:** resolvida em 2026-10-31. O dono do original mandou uma cópia do `debug.keystore`, que está neste Mac em `docs/private/` (ignorado pelo git; nunca dê commit nem a mova para dentro de outro caminho versionado). Falta guardar uma cópia fora da máquina (o dono do fork tem 1Password, cofre "Agentes").
 - **Testes no S23 Ultra com o `preview`:** os APKs de preview das fases 3, 4B, a cópia de série e a 5A foram entregues; o último é `~/Desktop/Mooscles-Preview-1aa69bd.apk`, da 5A. Nada disso foi verificado num aparelho físico:
   - TalkBack (resumos dos gráficos, o calendário da 5B, o item #11);
   - háptico e a notificação na gaveta e na tela de bloqueio;
