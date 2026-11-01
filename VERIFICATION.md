@@ -1,5 +1,29 @@
 # Verification — 2026-10-25
 
+## Release 1.5.0 / Build 21
+
+Version name **1.5.0**, version code **21**, above the 1.4.6 stable release (Build 17) and the 1.4.7 prereleases (Builds 18-20, beta.3 on 2026-10-31). It brings the whole redesign from the fork, phases 0 to 5A:
+
+- Phases 0-1: export/import, records off the main thread, portable build scripts and CI, new toolchain (Room 2.8 with the SQLite driver) and the `:shared` Kotlin Multiplatform module: [1A](docs/superpowers/reports/2026-10-27-phase1a-verificacao.md), [1B](docs/superpowers/reports/2026-10-27-phase1b-verificacao.md), [export/import](docs/superpowers/reports/2026-10-27-export-import-verificacao.md), [macOS build](docs/superpowers/reports/2026-10-27-macos-build-ci-verificacao.md).
+- Phase 2: the `:designsystem` module and Settings in Portuguese: [report](docs/superpowers/reports/2026-10-28-phase2-verificacao.md).
+- Phase 3: active workout, summary, share card and app shell (`:screens`): [report](docs/superpowers/reports/2026-10-29-phase3-verificacao.md).
+- Phase 4A: exercise library, detail, body map and custom exercise form: [report](docs/superpowers/reports/2026-10-30-phase4a-verificacao.md).
+- Phase 4B: routines, folders, editor, photos: [report](docs/superpowers/reports/2026-10-30-phase4b-verificacao.md); and the exercise figures (20-exercise pilot to 285 of 287): [final](docs/superpowers/reports/2026-10-31-phase4-figuras-final.md).
+- Phase 5A: charts, exercise progress and the Records timeline: [report](docs/superpowers/reports/2026-10-31-phase5a-verificacao.md).
+
+Compatibility: Room goes from schema 5 to **6** through the additive `MIGRATION_5_6` (`routine_sets.warmup`, `INTEGER NOT NULL DEFAULT 0`), covered by host and iOS migration tests. No DataStore key changed. The `applicationId` (`com.mooscles`), the signing identity and the `update.json` contract are the same. The 1.4.7 beta features are not included.
+
+Latest CI: run 41253719805 on the fork `main` at `1aa69bd`: host 1264 tests; iOS simulator `:shared` 280, `:designsystem` 414 and `:screens` 892.
+
+Not verified:
+
+- Anything on a physical phone: TalkBack, haptics, 120 Hz behaviour and the Samsung keyboard.
+- Anything on an iPhone; iOS was only compiled and tested on the CI simulator.
+- Performance was measured on the emulator only.
+- The final release APK, signed with the original key, has not been installed over a real 1.4.6.
+
+Release preparation results: see below (filled at publish time).
+
 ## Release 1.4.6 / Build 17
 
 This release skips historical PR baseline work for active sessions without eligible
