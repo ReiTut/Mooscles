@@ -10,6 +10,8 @@ Esta pasta guarda o rastro de cada mudança relevante do Mooscles, da pesquisa a
 | `plans/` | Plano de implementação passo a passo de uma spec | `superpowers:writing-plans` | `plans/AAAA-MM-DD-slug.md` |
 | `releases/` | Notas e checklist de cada versão publicada | etapa de release | `releases/vX.Y.Z.md` (ou `vX.Y.Z-buildN.md`) |
 
+[HANDOFF.md](HANDOFF.md) é a porta de entrada para quem continua o trabalho: o estado atual, a próxima etapa, o ambiente da máquina e as armadilhas já pagas.
+
 [ROADMAP.md](ROADMAP.md) é o mapa das fases do produto. Cada item do roadmap aponta para a spec, o plano e a release que o entregaram.
 
 O fluxo completo, as regras de quando cada etapa é obrigatória e os critérios de pronto estão na seção "Fluxo de desenvolvimento" do [AGENTS.md](../../AGENTS.md).

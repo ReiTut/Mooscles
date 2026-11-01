@@ -114,7 +114,7 @@ Usuários reais atualizam APKs por cima, sem backup em servidor. Uma quebra aqui
 
 ## Fluxo de desenvolvimento
 
-Todo trabalho que não seja correção pequena e localizada passa por estas etapas, e cada uma deixa um arquivo em `docs/superpowers/` (ver o [README](docs/superpowers/README.md) da pasta). Antes de começar, abra o [ROADMAP](docs/superpowers/ROADMAP.md) e os specs e planos já existentes do assunto. No Claude Code, use as skills indicadas. Em outro agente, produza o mesmo arquivo no mesmo lugar.
+Todo trabalho que não seja correção pequena e localizada passa por estas etapas, e cada uma deixa um arquivo em `docs/superpowers/` (ver o [README](docs/superpowers/README.md) da pasta). Antes de começar, abra o [HANDOFF](docs/superpowers/HANDOFF.md) (estado atual e próxima etapa), o [ROADMAP](docs/superpowers/ROADMAP.md) e os specs e planos já existentes do assunto. No Claude Code, use as skills indicadas. Em outro agente, produza o mesmo arquivo no mesmo lugar.
 
 1. **Pesquisa**, quando a decisão depende de conhecimento externo (biblioteca, plataforma, padrão de UX, custo): skill `deep-research`. As notas vão para `docs/superpowers/research/AAAA-MM-DD-slug/` e o relatório para `docs/superpowers/reports/AAAA-MM-DD-slug.md`, em vez de `research_notes/` e `reports/` na raiz.
 2. **Spec**, obrigatória para feature nova, mudança de comportamento, de schema ou de design system: `superpowers:brainstorming` gera `docs/superpowers/specs/AAAA-MM-DD-slug-design.md`. O usuário aprova a spec antes do plano.

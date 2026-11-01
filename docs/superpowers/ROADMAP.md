@@ -2,6 +2,8 @@
 
 Atualizado em 2026-10-29. Este é o mapa de onde o produto vai. Cada fase vira uma ou mais specs (`specs/`), planos (`plans/`) e releases (`releases/`), seguindo o fluxo do [AGENTS.md](../../AGENTS.md). Quando uma fase termina, marque-a aqui e ligue os documentos que a entregaram.
 
+> **Para continuar o desenvolvimento:** comece pelo [HANDOFF.md](HANDOFF.md), com o estado atual, a próxima etapa (5B) e como trabalhar nesta máquina.
+
 ## Aonde queremos chegar
 
 Um diário de treino para Android e iOS que seja o mais prático de usar no meio da série e o mais bonito de abrir no dia seguinte:
