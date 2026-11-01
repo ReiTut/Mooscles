@@ -19,12 +19,12 @@ Há quatro imagens, todas capturadas no emulador (Pixel 8, Android 15) pelo pró
 
 | | Tema claro | Tema escuro |
 | --- | --- | --- |
-| **64 dp** (o tamanho da miniatura na lista) | [pilot-light-64.png](2026-10-29-phase4a-verificacao/pilot-light-64.png) | [pilot-dark-64.png](2026-10-29-phase4a-verificacao/pilot-dark-64.png) |
-| **360 dp** (o tamanho no detalhe, num celular de 412 dp) | [pilot-light-detail.png](2026-10-29-phase4a-verificacao/pilot-light-detail.png) | [pilot-dark-detail.png](2026-10-29-phase4a-verificacao/pilot-dark-detail.png) |
+| **64 dp** (o tamanho da miniatura na lista) | [pilot-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-light-64.png?raw=true) | [pilot-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-dark-64.png?raw=true) |
+| **360 dp** (o tamanho no detalhe, num celular de 412 dp) | [pilot-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-light-detail.png?raw=true) | [pilot-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-dark-detail.png?raw=true) |
 
-![Miniaturas a 64 dp, tema claro](2026-10-29-phase4a-verificacao/pilot-light-64.png)
+![Miniaturas a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-light-64.png?raw=true)
 
-![Miniaturas a 64 dp, tema escuro](2026-10-29-phase4a-verificacao/pilot-dark-64.png)
+![Miniaturas a 64 dp, tema escuro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-verificacao/pilot-dark-64.png?raw=true)
 
 As duas folhas do detalhe são compridas (40 quadros cada). Abra pelos links da tabela.
 

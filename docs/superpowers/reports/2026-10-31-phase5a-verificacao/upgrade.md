@@ -45,7 +45,7 @@ Task 16, Step 2. Feito em 2026-10-31 no `emulator-5558` (AVD `Mooscles_Pixel8_AP
 | `workout_sets` (concluídas) | 12.697 (12.690) | **12.697 (12.690)** |
 | MD5 de `local_preferences.preferences_pb` | `ba0a258a4e04ac4d9fa3bc675ab582c6` | **o mesmo** logo depois do `install -r`, depois da abertura e depois do export (`local/upgrade/md5-*.txt`) |
 | Alarme do descanso (`RestAlarmReceiver`) | `origWhen 2026-10-31 17:13:15.790` | **o mesmo** depois da troca. O descanso terminou com o app aberto, e o alarme foi cancelado às 17:13:15.801 (fim tratado no processo) |
-| Treino ativo | "Verif routine 1", 2 de 9 séries, descanso correndo | **o mesmo**: "Retomar treino" no card e a barra "Treino em andamento, Verif routine 1 … Descanso". No treino, as séries 1 e 2 concluídas e "3:06" restando às 17:10:09 ([print 01](upgrade-01-train-after.png), [print 02](upgrade-02-workout-after.png)) |
+| Treino ativo | "Verif routine 1", 2 de 9 séries, descanso correndo | **o mesmo**: "Retomar treino" no card e a barra "Treino em andamento, Verif routine 1 … Descanso". No treino, as séries 1 e 2 concluídas e "3:06" restando às 17:10:09 ([print 01](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-01-train-after.png?raw=true), [print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-02-workout-after.png?raw=true)) |
 | Export depois contra antes | | `exportedAt` tirado: **iguais**, por `jq -S` + `diff` (0 linhas) e por igualdade de objetos em Python |
 | Erros | | Nenhum `FATAL EXCEPTION` no logcat |
 
@@ -61,7 +61,7 @@ Os recordes não ficam no banco: são recalculados das séries pela apresentaç�
 | Recordes atuais (`UiState.records`) | 246 | **246** |
 | Treino ativo, séries (concluídas) | 9 (2) | **9 (2)** |
 
-O volume de três treinos, calculado pelo `sqlite3` nos dois bancos (carga × repetições das séries concluídas) e lido na tela do histórico depois da troca ([print do detalhe](upgrade-06-history-detail-after.png)):
+O volume de três treinos, calculado pelo `sqlite3` nos dois bancos (carga × repetições das séries concluídas) e lido na tela do histórico depois da troca ([print do detalhe](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-06-history-detail-after.png?raw=true)):
 
 | Treino | `sqlite3`, antes | `sqlite3`, depois | Na tela, depois |
 | --- | ---: | ---: | ---: |
@@ -69,12 +69,12 @@ O volume de três treinos, calculado pelo `sqlite3` nos dois bancos (carga × re
 | Session 206 (7 jun 2024) | 17.885 kg = 39.429,68 lb | **o mesmo** | 39429.68 lb |
 | Session 100 (22 fev 2024) | 35.770 kg = 78.859,35 lb | **o mesmo** | 78859.35 lb |
 
-O cabeçalho do histórico, depois da troca, diz "208 Workouts · 12688 Completed sets · 240 Exercise PRs" ([print](upgrade-05-history-after.png)). Os 240 são a soma de exercícios com recorde por treino (`prExerciseCount`), que não é a mesma medida dos 246 recordes atuais.
+O cabeçalho do histórico, depois da troca, diz "208 Workouts · 12688 Completed sets · 240 Exercise PRs" ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-05-history-after.png?raw=true)). Os 240 são a soma de exercícios com recorde por treino (`prExerciseCount`), que não é a mesma medida dos 246 recordes atuais.
 
 ### Recordes e progresso na tela, depois da troca
 
-- **Aba Recordes** ([print 03](upgrade-03-records-after.png)): no topo, "Barbell bench press · 259,04 lb × 11 · antes 253,53 lb · Carga · 23 dez · Atual". No banco, a maior série de trabalho do supino é 117,5 kg × 11 (= 259,04 lb), registrada pela primeira vez em 23 dez 2023.
-- **Progresso do supino**, aberto pela linha ([print 04](upgrade-04-progress-after.png)):
+- **Aba Recordes** ([print 03](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-03-records-after.png?raw=true)): no topo, "Barbell bench press · 259,04 lb × 11 · antes 253,53 lb · Carga · 23 dez · Atual". No banco, a maior série de trabalho do supino é 117,5 kg × 11 (= 259,04 lb), registrada pela primeira vez em 23 dez 2023.
+- **Progresso do supino**, aberto pela linha ([print 04](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/upgrade-04-progress-after.png?raw=true)):
   - Carga total, Carga, Tudo.
   - Destaque de 82,67 lb, que é a maior série do treino mais novo no banco.
   - O resumo do gráfico diz "máximo 259,04 libras na semana de 17 de dezembro de 2023; tendência em alta; 208 treinos". No banco, o supino está nos 208 treinos finalizados.

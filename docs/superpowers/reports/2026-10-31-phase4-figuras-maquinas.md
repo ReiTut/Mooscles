@@ -17,12 +17,12 @@ Há quatro imagens, capturadas no emulador (Pixel 8, Android 15) pelo `PilotShee
 
 | | Tema claro | Tema escuro |
 | --- | --- | --- |
-| **64 dp** (a miniatura da lista) | [machine-light-64.png](2026-10-31-phase4-figuras-maquinas/machine-light-64.png) | [machine-dark-64.png](2026-10-31-phase4-figuras-maquinas/machine-dark-64.png) |
-| **360 dp** (o detalhe num celular de 412 dp) | [machine-light-detail.png](2026-10-31-phase4-figuras-maquinas/machine-light-detail.png) | [machine-dark-detail.png](2026-10-31-phase4-figuras-maquinas/machine-dark-detail.png) |
+| **64 dp** (a miniatura da lista) | [machine-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-light-64.png?raw=true) | [machine-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-dark-64.png?raw=true) |
+| **360 dp** (o detalhe num celular de 412 dp) | [machine-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-light-detail.png?raw=true) | [machine-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-dark-detail.png?raw=true) |
 
-![Miniaturas a 64 dp, tema claro](2026-10-31-phase4-figuras-maquinas/machine-light-64.png)
+![Miniaturas a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-light-64.png?raw=true)
 
-![Miniaturas a 64 dp, tema escuro](2026-10-31-phase4-figuras-maquinas/machine-dark-64.png)
+![Miniaturas a 64 dp, tema escuro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-maquinas/machine-dark-64.png?raw=true)
 
 As folhas do detalhe são compridas (98 quadros cada). Abra pelos links da tabela.
 

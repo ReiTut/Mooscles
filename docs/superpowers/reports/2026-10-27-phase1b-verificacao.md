@@ -53,9 +53,9 @@
 | Export JSON (98.995 bytes) | [`export-before-upgrade.json`](2026-10-27-phase1b-verificacao/export-before-upgrade.json) | [`export-after-upgrade.json`](2026-10-27-phase1b-verificacao/export-after-upgrade.json) | **Idêntico byte a byte**, tirando o `exportedAt` (a versão não mudou) |
 | Timer no DataStore | `timer_deadline` 1793187830821, token 1793187530821, levantamento terra, 300 s, não pausado | o mesmo arquivo | Sim |
 | Alarme do timer | `RTC_WAKEUP` de `RestAlarmReceiver` em 08:43:50.821 | o processo novo registrou outro alarme no mesmo instante, 08:43:50.821 | Sim |
-| Tela | treino ativo com o timer em ~3:50 ([print 01](2026-10-27-phase1b-verificacao/01-before-workout-timer.png)) | "Pick up where you left off · Upgrade routine 2 · 4 sets logged" e o timer em 3:18 contando ([print 02](2026-10-27-phase1b-verificacao/02-after-train-resume.png)); o treino com 4 séries ([print 03](2026-10-27-phase1b-verificacao/03-after-workout-timer.png)) | Sim |
-| Fim do descanso | — | às 08:43:49 o dock mostrava 0:01, e às 08:43:55, "Rest complete", 0:00 ([print 07](2026-10-27-phase1b-verificacao/07-after-rest-complete.png)) | — |
-| Histórico, recordes, rotinas | 10 treinos, 160 séries, 40 PRs no banco e no export | History com 10 treinos, 160 séries e 40 PRs ([print 04](2026-10-27-phase1b-verificacao/04-after-history.png)), Records ([print 05](2026-10-27-phase1b-verificacao/05-after-records.png)) e as rotinas da pasta "Upgrade block" ([print 06](2026-10-27-phase1b-verificacao/06-after-routines.png)) | Sim |
+| Tela | treino ativo com o timer em ~3:50 ([print 01](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/01-before-workout-timer.png?raw=true)) | "Pick up where you left off · Upgrade routine 2 · 4 sets logged" e o timer em 3:18 contando ([print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/02-after-train-resume.png?raw=true)); o treino com 4 séries ([print 03](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/03-after-workout-timer.png?raw=true)) | Sim |
+| Fim do descanso | — | às 08:43:49 o dock mostrava 0:01, e às 08:43:55, "Rest complete", 0:00 ([print 07](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/07-after-rest-complete.png?raw=true)) | — |
+| Histórico, recordes, rotinas | 10 treinos, 160 séries, 40 PRs no banco e no export | History com 10 treinos, 160 séries e 40 PRs ([print 04](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/04-after-history.png?raw=true)), Records ([print 05](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/05-after-records.png?raw=true)) e as rotinas da pasta "Upgrade block" ([print 06](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/06-after-routines.png?raw=true)) | Sim |
 
 O export tem as 292 linhas de exercício, as 2 pastas, as 4 rotinas, as 24 séries planejadas, os 11 treinos, as 42 linhas de exercício de treino, as 166 séries e os 4 checkpoints de PR.
 
@@ -141,7 +141,7 @@ Os dois estão muito abaixo do orçamento de cerca de 1 MB.
 
 ## APK R8 (`assemblePerformance`): export e import
 
-O APK R8 do depois (não debuggable, minificado, mesma chave) foi instalado por cima do debug, com a base grande importada. O `pm` aceitou sem desinstalar, e History mostrou 208 treinos, 12.688 séries e 240 PRs ([print 08](2026-10-27-phase1b-verificacao/08-r8-history-208.png)).
+O APK R8 do depois (não debuggable, minificado, mesma chave) foi instalado por cima do debug, com a base grande importada. O `pm` aceitou sem desinstalar, e History mostrou 208 treinos, 12.688 séries e 240 PRs ([print 08](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1b-verificacao/08-r8-history-208.png?raw=true)).
 
 1. Export pela UI: "Exported 208 workouts, 3 routines and 2 custom exercises", 2.887.123 bytes.
 2. `pm clear` (só no emulador), e import desse arquivo pela UI: "Imported 208 workouts, 3 routines and 2 custom exercises".

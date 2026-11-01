@@ -46,9 +46,9 @@
 | `app_updates.preferences_pb` (estado do updater) | 169.681 bytes | 169.681 bytes | **Idêntico byte a byte** |
 | Export JSON (98.997 bytes) | `export-before-upgrade.json` | `export-after-upgrade.json` | **Idêntico byte a byte**, tirando o `exportedAt` (o `versionCode`/`versionName` não mudaram) |
 | Alarme do timer | `RTC_WAKEUP` em 21:42:45.143 | o processo novo registrou outro alarme no mesmo instante, 21:42:45.143 | Sim |
-| Tela | treino ativo, timer em 4:57 | "Pick up where you left off · 2 sets logged" e o timer em 3:28 contando ([print 02](2026-10-27-phase1a-verificacao/02-after-train-resume.png), [print 03](2026-10-27-phase1a-verificacao/03-after-workout-timer.png)) | Sim |
-| Fim do descanso | — | às 21:43:01 o dock mostrava "Rest complete", 0:00 ([print 10](2026-10-27-phase1a-verificacao/10-after-rest-complete.png)) | — |
-| Histórico, recordes, rotinas | 10 treinos, 160 séries, 40 PRs | iguais ([print 04](2026-10-27-phase1a-verificacao/04-before-history.png), [print 05](2026-10-27-phase1a-verificacao/05-after-history.png)) | Sim |
+| Tela | treino ativo, timer em 4:57 | "Pick up where you left off · 2 sets logged" e o timer em 3:28 contando ([print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/02-after-train-resume.png?raw=true), [print 03](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/03-after-workout-timer.png?raw=true)) | Sim |
+| Fim do descanso | — | às 21:43:01 o dock mostrava "Rest complete", 0:00 ([print 10](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/10-after-rest-complete.png?raw=true)) | — |
+| Histórico, recordes, rotinas | 10 treinos, 160 séries, 40 PRs | iguais ([print 04](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/04-before-history.png?raw=true), [print 05](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/05-after-history.png?raw=true)) | Sim |
 
 O export inclui as 292 linhas de exercício, as 2 pastas, as 4 rotinas, as 24 séries planejadas, os 11 treinos, as 42 linhas de exercício de treino, as 166 séries e os 4 checkpoints de PR.
 
@@ -76,10 +76,10 @@ Os mesmos prints foram tirados antes e depois e comparados pixel a pixel, por um
 | History | status bar, dock do timer, barra inferior | relógio, contagem, barra inferior |
 | Records | idem | idem |
 | Detalhe do treino | só status bar e dock do timer | — |
-| History depois do gesto de voltar (borda esquerda → centro) a partir do detalhe | status bar, dock do timer, barra inferior | o gesto voltou para a lista nos dois ([print 06](2026-10-27-phase1a-verificacao/06-before-back-gesture.png), [print 07](2026-10-27-phase1a-verificacao/07-after-back-gesture.png)) |
+| History depois do gesto de voltar (borda esquerda → centro) a partir do detalhe | status bar, dock do timer, barra inferior | o gesto voltou para a lista nos dois ([print 06](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/06-before-back-gesture.png?raw=true), [print 07](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/07-after-back-gesture.png?raw=true)) |
 
 - **Edge-to-edge:** a status bar, a barra de gestos e o espaço do conteúdo atrás delas ficaram nas mesmas linhas de pixel. Só os ícones do relógio mudam.
-- **Barra de navegação inferior:** com a tela parada (4 s depois do toque), o indicador do item selecionado tem 168 px de largura antes e 147 px depois, na mesma posição ([print 08](2026-10-27-phase1a-verificacao/08-before-records-nav.png), [print 09](2026-10-27-phase1a-verificacao/09-after-records-nav.png)). Os pixels do rótulo também mudam um pouco (linhas 2260–2284). Vem do Material 3 do BOM 2026.09.00. É uma mudança perceptível, embora pequena, que contradiz o antiobjetivo da spec. Aceita, porque a fase 2 redesenha a navegação; registrado na spec.
+- **Barra de navegação inferior:** com a tela parada (4 s depois do toque), o indicador do item selecionado tem 168 px de largura antes e 147 px depois, na mesma posição ([print 08](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/08-before-records-nav.png?raw=true), [print 09](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-phase1a-verificacao/09-after-records-nav.png?raw=true)). Os pixels do rótulo também mudam um pouco (linhas 2260–2284). Vem do Material 3 do BOM 2026.09.00. É uma mudança perceptível, embora pequena, que contradiz o antiobjetivo da spec. Aceita, porque a fase 2 redesenha a navegação; registrado na spec.
 - **Comportamento igual nos dois, registrado para não ser confundido com regressão:** estando em Settings, aberto a partir de History, tocar em History na barra inferior deixa o app em Settings, porque o `restoreState` restaura a pilha salva. Antes e depois fazem o mesmo.
 
 ## Desempenho

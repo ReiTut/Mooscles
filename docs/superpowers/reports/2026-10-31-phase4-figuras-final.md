@@ -17,14 +17,14 @@ Há oito imagens, capturadas no emulador (Pixel 8, Android 15) pelo `PilotSheetC
 
 | | Tema claro | Tema escuro |
 | --- | --- | --- |
-| **Kettlebell, 64 dp** (a miniatura da lista) | [kettlebell-light-64.png](2026-10-31-phase4-figuras-final/kettlebell-light-64.png) | [kettlebell-dark-64.png](2026-10-31-phase4-figuras-final/kettlebell-dark-64.png) |
-| **Kettlebell, 360 dp** (o detalhe num celular de 412 dp) | [kettlebell-light-detail.png](2026-10-31-phase4-figuras-final/kettlebell-light-detail.png) | [kettlebell-dark-detail.png](2026-10-31-phase4-figuras-final/kettlebell-dark-detail.png) |
-| **Smith, 64 dp** | [smith-light-64.png](2026-10-31-phase4-figuras-final/smith-light-64.png) | [smith-dark-64.png](2026-10-31-phase4-figuras-final/smith-dark-64.png) |
-| **Smith, 360 dp** | [smith-light-detail.png](2026-10-31-phase4-figuras-final/smith-light-detail.png) | [smith-dark-detail.png](2026-10-31-phase4-figuras-final/smith-dark-detail.png) |
+| **Kettlebell, 64 dp** (a miniatura da lista) | [kettlebell-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/kettlebell-light-64.png?raw=true) | [kettlebell-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/kettlebell-dark-64.png?raw=true) |
+| **Kettlebell, 360 dp** (o detalhe num celular de 412 dp) | [kettlebell-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/kettlebell-light-detail.png?raw=true) | [kettlebell-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/kettlebell-dark-detail.png?raw=true) |
+| **Smith, 64 dp** | [smith-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/smith-light-64.png?raw=true) | [smith-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/smith-dark-64.png?raw=true) |
+| **Smith, 360 dp** | [smith-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/smith-light-detail.png?raw=true) | [smith-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/smith-dark-detail.png?raw=true) |
 
-![Kettlebell a 64 dp, tema claro](2026-10-31-phase4-figuras-final/kettlebell-light-64.png)
+![Kettlebell a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/kettlebell-light-64.png?raw=true)
 
-![Smith a 64 dp, tema claro](2026-10-31-phase4-figuras-final/smith-light-64.png)
+![Smith a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/smith-light-64.png?raw=true)
 
 As folhas do detalhe são compridas (44 e 30 quadros). Abra pelos links da tabela.
 
@@ -243,14 +243,14 @@ Capturas no emulador (Pixel 8, Android 15) pelo `PilotSheetCaptureTest` com `-e 
 
 | | Antes | Depois |
 |---|---|---|
-| **64 dp, claro** | [shrugs-before-light-64.png](2026-10-31-phase4-figuras-final/shrugs-before-light-64.png) | [shrugs-after-light-64.png](2026-10-31-phase4-figuras-final/shrugs-after-light-64.png) |
-| **64 dp, escuro** | [shrugs-before-dark-64.png](2026-10-31-phase4-figuras-final/shrugs-before-dark-64.png) | [shrugs-after-dark-64.png](2026-10-31-phase4-figuras-final/shrugs-after-dark-64.png) |
-| **360 dp, claro** | [shrugs-before-light-detail.png](2026-10-31-phase4-figuras-final/shrugs-before-light-detail.png) | [shrugs-after-light-detail.png](2026-10-31-phase4-figuras-final/shrugs-after-light-detail.png) |
-| **360 dp, escuro** | [shrugs-before-dark-detail.png](2026-10-31-phase4-figuras-final/shrugs-before-dark-detail.png) | [shrugs-after-dark-detail.png](2026-10-31-phase4-figuras-final/shrugs-after-dark-detail.png) |
+| **64 dp, claro** | [shrugs-before-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-before-light-64.png?raw=true) | [shrugs-after-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-after-light-64.png?raw=true) |
+| **64 dp, escuro** | [shrugs-before-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-before-dark-64.png?raw=true) | [shrugs-after-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-after-dark-64.png?raw=true) |
+| **360 dp, claro** | [shrugs-before-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-before-light-detail.png?raw=true) | [shrugs-after-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-after-light-detail.png?raw=true) |
+| **360 dp, escuro** | [shrugs-before-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-before-dark-detail.png?raw=true) | [shrugs-after-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-after-dark-detail.png?raw=true) |
 
-![Encolhimentos a 64 dp, antes](2026-10-31-phase4-figuras-final/shrugs-before-light-64.png)
+![Encolhimentos a 64 dp, antes](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-before-light-64.png?raw=true)
 
-![Encolhimentos a 64 dp, depois](2026-10-31-phase4-figuras-final/shrugs-after-light-64.png)
+![Encolhimentos a 64 dp, depois](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-final/shrugs-after-light-64.png?raw=true)
 
 Testes novos: 3 no `FigureGeometryTest` do design system (`noShoulderLiftLeavesEveryJointBitIdentical`, `aShoulderLiftRaisesTheShoulderAlongTheTrunk`, que confere a subida exata ao longo do tronco, os braços com o mesmo comprimento e o resto parado, e `theShoulderLiftIsClamped`) e 2 no `ExerciseFiguresTest` (`shrugsRaiseTheShouldersInFrameB`, que pede pelo menos 2 unidades de subida do ombro e da mão, a cabeça parada e o braço esticado, e `onlyTheShrugsLiftTheShoulders`). Os mínimos do CI subiram: `MIN_HOST_TESTS` 1099 → 1104, `MIN_DS_IOS_TESTS` 377 → 380 e `MIN_SCREENS_IOS_TESTS` 652 → 654.
 

@@ -88,7 +88,7 @@ Com 48 exercícios, o `present()` do debug começou ~8 a 9 s depois do primeiro 
 | imp2 | 6 exercícios | 93 em 45 s | 1,13 s | 278 ms | não |
 | imp48 | 48 exercícios | 127 em 60 s | 1,74 s | 202 ms | não |
 
-Cada import gerou dois `present()`: um de 0,3–0,5 ms (estado intermediário) e o completo. Durante o import, a barra de "Importing…" continua animando ([print 02](2026-10-27-pr-off-main-thread-verificacao/02-importing-ui-alive.png)), e a mensagem final aparece com o ícone de check ([print 03](2026-10-27-pr-off-main-thread-verificacao/03-import-done.png)). Depois do import, History mostra 208 treinos, 12.688 séries e 240 PRs de exercício ([print 04](2026-10-27-pr-off-main-thread-verificacao/04-history-208.png)), os mesmos números da verificação do export/import. Records mostra os recordes em lb ([print 05](2026-10-27-pr-off-main-thread-verificacao/05-records.png)).
+Cada import gerou dois `present()`: um de 0,3–0,5 ms (estado intermediário) e o completo. Durante o import, a barra de "Importing…" continua animando ([print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-pr-off-main-thread-verificacao/02-importing-ui-alive.png?raw=true)), e a mensagem final aparece com o ícone de check ([print 03](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-pr-off-main-thread-verificacao/03-import-done.png?raw=true)). Depois do import, History mostra 208 treinos, 12.688 séries e 240 PRs de exercício ([print 04](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-pr-off-main-thread-verificacao/04-history-208.png?raw=true)), os mesmos números da verificação do export/import. Records mostra os recordes em lb ([print 05](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-pr-off-main-thread-verificacao/05-records.png?raw=true)).
 
 ### Troca de unidade
 
@@ -118,7 +118,7 @@ Eles vêm antes da primeira seção `Mooscles:present`, então não são causado
 ## Observações
 
 - **O `present()` do debug é muito mais lento no processo recém-aberto.** Com o mesmo histórico, ele levou de 12 a 24 s na abertura e 1,1 s no import e na primeira troca de unidade, num processo já aberto havia minutos. Minha hipótese é o JIT do ART num build debuggable (o código roda interpretado até ser compilado), somada à disputa de CPU com a abertura. A hipótese bate com o R8 (1,7 s na abertura) e com o host (~86 ms), mas **não foi verificada**: não fiz perfil de CPU.
-- O indicador de carregamento aparece no tema claro e, quando o estado chega, a tela passa para o tema escuro restaurado ([print 01](2026-10-27-pr-off-main-thread-verificacao/01-cold-start-loading.png)). Isso acontece porque o tema vem do mesmo estado apresentado. Não comparei com o comportamento anterior, mas agora o carregamento dura mais tempo visível no debug.
+- O indicador de carregamento aparece no tema claro e, quando o estado chega, a tela passa para o tema escuro restaurado ([print 01](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-27-pr-off-main-thread-verificacao/01-cold-start-loading.png?raw=true)). Isso acontece porque o tema vem do mesmo estado apresentado. Não comparei com o comportamento anterior, mas agora o carregamento dura mais tempo visível no debug.
 - No debug, os quadros da animação do indicador ficaram entre 100 e 300 ms durante o `present()`: a animação gira aos trancos, mas responde.
 
 ## Riscos conhecidos

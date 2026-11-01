@@ -83,7 +83,7 @@ Nenhum commit da fase mexe no `:shared` nem em `data/`, `timer/`, `updates/` ou 
 
 - **Galeria:** cada página nos dois temas e a 200% (capturas `gallery-*`), e as capturas "depois" da crítica (`*-after.png`).
 - **Configurações:** en e pt-BR, claro e escuro, 200% em pt-BR (capturas `settings-*`) e a tela de licenças.
-- **Reduzir movimento** ([`animator-0.txt`](2026-10-28-phase2-verificacao/animator-0.txt)): com o controle da galeria em "reduzir", o check da série, o aviso de recorde e o toast viram fade de cerca de 150 ms, o skeleton para e o anel do timer pula para o valor novo. Com `animator_duration_scale 0`, o controle "Sistema" da galeria passa a ler `reducedMotion: true` ([captura](2026-10-28-phase2-verificacao/animator-0-foundations-motion-after.png)).
+- **Reduzir movimento** ([`animator-0.txt`](2026-10-28-phase2-verificacao/animator-0.txt)): com o controle da galeria em "reduzir", o check da série, o aviso de recorde e o toast viram fade de cerca de 150 ms, o skeleton para e o anel do timer pula para o valor novo. Com `animator_duration_scale 0`, o controle "Sistema" da galeria passa a ler `reducedMotion: true` ([captura](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-28-phase2-verificacao/animator-0-foundations-motion-after.png?raw=true)).
 - **Árvore de acessibilidade** ([`talkback.md`](2026-10-28-phase2-verificacao/talkback.md)): a ordem dos nós de Configurações e a leitura da linha de série em en e pt-BR, tiradas do `uiautomator dump`. Não é uma sessão de TalkBack (ver abaixo).
 
 ### Crítica de tela

@@ -12,8 +12,8 @@ Task 30, Step 3. Feito em 2026-10-29 no `emulator-5556` (Android 15), logo depoi
 
 | Pedido | Resultado |
 | --- | --- |
-| Dois ícones | `cmd package query-activities -a MAIN -c LAUNCHER` lista `com.mooscles/.MainActivity` e `com.mooscles.preview/com.mooscles.MainActivity`. A gaveta de apps mostra "Mooscles" e "Mooscles Preview" lado a lado ([print 01](preview-01-two-icons.png)). |
-| "Mooscles Preview" abre vazio | Abriu em Treinar com "No routines in My routines" ([print 02](preview-02-opens-empty.png)). No banco dele (`run-as com.mooscles.preview sqlite3`): 0 treinos, 0 rotinas e só os 287 exercícios do catálogo. O banco do `com.mooscles` continuou com 11 treinos e 4 rotinas. |
+| Dois ícones | `cmd package query-activities -a MAIN -c LAUNCHER` lista `com.mooscles/.MainActivity` e `com.mooscles.preview/com.mooscles.MainActivity`. A gaveta de apps mostra "Mooscles" e "Mooscles Preview" lado a lado ([print 01](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/preview-01-two-icons.png?raw=true)). |
+| "Mooscles Preview" abre vazio | Abriu em Treinar com "No routines in My routines" ([print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/preview-02-opens-empty.png?raw=true)). No banco dele (`run-as com.mooscles.preview sqlite3`): 0 treinos, 0 rotinas e só os 287 exercícios do catálogo. O banco do `com.mooscles` continuou com 11 treinos e 4 rotinas. |
 | O `md5` do `local_preferences` do `com.mooscles` não muda | `16a12f082f4290c83e72b484629ac435` antes de instalar o preview e de novo depois de abri-lo e esperar 20 s. O preview nem criou `files/datastore/` próprio. |
 | O `logcat` do preview não mostra checagem de atualização | Veja abaixo. |
 

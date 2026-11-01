@@ -17,12 +17,12 @@ Há quatro imagens, capturadas no emulador (Pixel 8, Android 15) pelo `PilotShee
 
 | | Tema claro | Tema escuro |
 | --- | --- | --- |
-| **64 dp** (a miniatura da lista) | [barbell-light-64.png](2026-10-31-phase4-figuras-barra/barbell-light-64.png) | [barbell-dark-64.png](2026-10-31-phase4-figuras-barra/barbell-dark-64.png) |
-| **360 dp** (o detalhe num celular de 412 dp) | [barbell-light-detail.png](2026-10-31-phase4-figuras-barra/barbell-light-detail.png) | [barbell-dark-detail.png](2026-10-31-phase4-figuras-barra/barbell-dark-detail.png) |
+| **64 dp** (a miniatura da lista) | [barbell-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-light-64.png?raw=true) | [barbell-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-dark-64.png?raw=true) |
+| **360 dp** (o detalhe num celular de 412 dp) | [barbell-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-light-detail.png?raw=true) | [barbell-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-dark-detail.png?raw=true) |
 
-![Miniaturas a 64 dp, tema claro](2026-10-31-phase4-figuras-barra/barbell-light-64.png)
+![Miniaturas a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-light-64.png?raw=true)
 
-![Miniaturas a 64 dp, tema escuro](2026-10-31-phase4-figuras-barra/barbell-dark-64.png)
+![Miniaturas a 64 dp, tema escuro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-barra/barbell-dark-64.png?raw=true)
 
 As folhas do detalhe são compridas (84 quadros cada). Abra pelos links da tabela.
 

@@ -32,7 +32,7 @@ Nenhuma medida reprovou, e nenhuma correção foi feita.
   - O trabalho de banco são as fatias `prepare …` e `execute…` do SQLite do framework, categoria `database`.
   - O "treino editável" é o fim do primeiro quadro da thread principal que começa depois do fim do `Mooscles:startSession`. O comando só termina quando o treino salvo chega ao estado da tela (`contentUi.first { it.active?.id == id }`), então esse quadro é o primeiro que pode mostrar o treino pronto.
 - `dumpsys gfxinfo com.mooscles` zerado antes de cada interação e lido depois. Os percentis são do tempo de quadro do próprio Android.
-- Resultados por execução: [`perf/trace-results.json`](perf/trace-results.json) e `perf/*.gfxinfo.txt`. Traces de amostra (comprimidos): [`perf/main-start-3.atrace.txt.gz`](perf/main-start-3.atrace.txt.gz), [`perf/branch-start-3.atrace.txt.gz`](perf/branch-start-3.atrace.txt.gz), [`perf/main-check-2.atrace.txt.gz`](perf/main-check-2.atrace.txt.gz) e [`perf/branch-check-6.atrace.txt.gz`](perf/branch-check-6.atrace.txt.gz). Os 24 traces completos (265 MB) ficaram fora do git, em `app/build/outputs/phase3-verificacao-20261029/`.
+- Resultados por execução: [`perf/trace-results.json`](perf/trace-results.json) e `perf/*.gfxinfo.txt`. Traces de amostra (comprimidos): [`perf/main-start-3.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf/main-start-3.atrace.txt.gz), [`perf/branch-start-3.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf/branch-start-3.atrace.txt.gz), [`perf/main-check-2.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf/main-check-2.atrace.txt.gz) e [`perf/branch-check-6.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf/branch-check-6.atrace.txt.gz). Os 24 traces completos (265 MB) ficaram fora do git, em `app/build/outputs/phase3-verificacao-20261029/`.
 
 ## Toque no check
 
@@ -89,8 +89,8 @@ Só a branch tem as molas novas. Valores do emulador:
 | Interação | Quadros | Janky | p50 / p90 / p95 / p99 |
 | --- | --- | --- | --- |
 | Concluir série (5 toques, `gfxinfo` de 3 s cada) | 11 a 16 | 0 a 2 por toque (5 em 70 no total) | p95 de 13 a 69 ms (mediana 34) |
-| Recorde: série de 600 lb × 8, com o selo "PR" ([print](perf-branch-pr.png)) | 59 | 2 (3,4%) | 17 / 21 / 25 / 26 ms |
-| Resumo: "Finish" no diálogo até a tela "Workout complete" ([print](perf-branch-summary.png)) | 68 | 4 (5,9%) | 21 / 29 / 32 / 48 ms |
+| Recorde: série de 600 lb × 8, com o selo "PR" ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf-branch-pr.png?raw=true)) | 59 | 2 (3,4%) | 17 / 21 / 25 / 26 ms |
+| Resumo: "Finish" no diálogo até a tela "Workout complete" ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase3-verificacao/perf-branch-summary.png?raw=true)) | 68 | 4 (5,9%) | 21 / 29 / 32 / 48 ms |
 
 O resumo mostrou 4 séries, 1 exercício e 7.682,54 lb, que bate com a soma das quatro séries concluídas (132,28 × 8 + 137,79 × 7 + 143,3 × 6 + 600 × 8 = 7.682,57 com os valores arredondados da tela; o app soma em kg). Os 60 fps no aparelho de referência não foram verificados: o emulador divide a CPU com o Mac.
 

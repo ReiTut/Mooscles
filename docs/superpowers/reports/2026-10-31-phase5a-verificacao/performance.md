@@ -115,7 +115,7 @@ O teste usa o `LargeProgressHistory` (208 treinos × 61 séries, 48 exercícios,
 
 ## Tocar na aba Recordes e num recorde
 
-Usei `atrace -a com.mooscles` (categorias `view gfx input am sched`) e tomei o último `deliverInputEvent` do app como o toque. Os traces de amostra são [`perf/tab-records-1.atrace.txt.gz`](perf/tab-records-1.atrace.txt.gz) e [`perf/record-to-chart-5.atrace.txt.gz`](perf/record-to-chart-5.atrace.txt.gz).
+Usei `atrace -a com.mooscles` (categorias `view gfx input am sched`) e tomei o último `deliverInputEvent` do app como o toque. Os traces de amostra são [`perf/tab-records-1.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/perf/tab-records-1.atrace.txt.gz) e [`perf/record-to-chart-5.atrace.txt.gz`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase5a-verificacao/perf/record-to-chart-5.atrace.txt.gz).
 
 | | 1º quadro (fim) | Quadro da rota (fim / duração) | Quadro seguinte (fim) |
 | --- | --- | --- | --- |

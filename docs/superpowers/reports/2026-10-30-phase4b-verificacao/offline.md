@@ -8,10 +8,10 @@ Task 18, Step 3. Feito em 2026-10-30 no `emulator-5556`, instalação nova (`adb
 | --- | --- | --- |
 | Treinar, pastas | Aba Treinar vazia ("No routines in this folder"), Folders → New folder → "Offline1" → Create | pasta criada e selecionável |
 | Editor | New routine "Offline2" dentro da pasta, abrir o editor | editor abriu vazio ("Routine without exercises") |
-| Seletor múltiplo | "Add exercises" → três linhas marcadas → botão "Add 3 exercises" ([print](offline-01-picker-multi.png)) | os três entraram, cada um com 2 séries planejadas e descanso 2:00 ([print](offline-02-editor-three.png)) |
+| Seletor múltiplo | "Add exercises" → três linhas marcadas → botão "Add 3 exercises" ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/offline-01-picker-multi.png?raw=true)) | os três entraram, cada um com 2 séries planejadas e descanso 2:00 ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/offline-02-editor-three.png?raw=true)) |
 | Séries planejadas | reps da série 1 do primeiro exercício → 10 | linha "Target 2 sets · 10 reps" |
-| Treino com a linha de alvo | Start workout | "0 of 6 sets", e no card "Target 2 sets · 10 reps" ([print](offline-03-workout-target-line.png)); depois, Discard workout |
-| Foto | Biblioteca → Create exercise → nome, "Choose from gallery" (seletor do sistema, sem pedido de permissão), Chest, Cable, Save | `files/exercise_photos/<id>.jpg` de 52.775 bytes; o detalhe mostra "Photo of …" ([print antes de salvar](offline-04-new-exercise-photo.png)) |
+| Treino com a linha de alvo | Start workout | "0 of 6 sets", e no card "Target 2 sets · 10 reps" ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/offline-03-workout-target-line.png?raw=true)); depois, Discard workout |
+| Foto | Biblioteca → Create exercise → nome, "Choose from gallery" (seletor do sistema, sem pedido de permissão), Chest, Cable, Save | `files/exercise_photos/<id>.jpg` de 52.775 bytes; o detalhe mostra "Photo of …" ([print antes de salvar](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/offline-04-new-exercise-photo.png?raw=true)) |
 
 A câmera não depende de rede e já foi percorrida na [atualização por cima](upgrade.md). Sem `FATAL EXCEPTION` no logcat.
 

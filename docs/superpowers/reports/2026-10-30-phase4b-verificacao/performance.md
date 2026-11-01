@@ -50,7 +50,7 @@ Das 3 solturas do segundo grupo e das 5 edições seguintes, só as de cima gera
 
 ## Treino ativo (medidas da fase 3) e linha de alvo
 
-- **Linha de alvo presente no R8:** a "Drag 10x5" iniciada mostra "Target 5 sets · …" no card e "Target 5×10 · 110.23 lb" na segunda linha ([print](perf/workout-target-line-r8.png)). Um dos cards mostra "10–1110 reps" porque, na minha edição por `adb input text`, o texto foi acrescentado ao valor em vez de substituí-lo (a faixa vem dos dados que eu digitei, não de um defeito).
+- **Linha de alvo presente no R8:** a "Drag 10x5" iniciada mostra "Target 5 sets · …" no card e "Target 5×10 · 110.23 lb" na segunda linha ([print](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/perf/workout-target-line-r8.png?raw=true)). Um dos cards mostra "10–1110 reps" porque, na minha edição por `adb input text`, o texto foi acrescentado ao valor em vez de substituí-lo (a faixa vem dos dados que eu digitei, não de um defeito).
 - **Rolagem dos cards do treino** (4 arrastos para baixo e 4 para cima, y 1700 → 500 em 120 ms, 10 exercícios, 50 séries): janky 25,2%, 36,2% e 27,9% (116 a 139 quadros, p50 30 a 42 ms), **na mesma janela contaminada**. A fase 3 mediu 2,3 a 3,9%. **Sem comparação válida**: não afirmo "sem piora" nem "piora". O que a 4B mudou no caminho do treino (a linha de alvo) não é lido pela rolagem de cada quadro (não conferi no código nesta task), então isso é uma suposição, não uma medida.
 
 ## O que ficou só no emulador ou sem medir

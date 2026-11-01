@@ -17,12 +17,12 @@ Há quatro imagens, capturadas no emulador (Pixel 8, Android 15) pelo `PilotShee
 
 | | Tema claro | Tema escuro |
 | --- | --- | --- |
-| **64 dp** (a miniatura da lista) | [cable-light-64.png](2026-10-31-phase4-figuras-polia/cable-light-64.png) | [cable-dark-64.png](2026-10-31-phase4-figuras-polia/cable-dark-64.png) |
-| **360 dp** (o detalhe num celular de 412 dp) | [cable-light-detail.png](2026-10-31-phase4-figuras-polia/cable-light-detail.png) | [cable-dark-detail.png](2026-10-31-phase4-figuras-polia/cable-dark-detail.png) |
+| **64 dp** (a miniatura da lista) | [cable-light-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-light-64.png?raw=true) | [cable-dark-64.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-dark-64.png?raw=true) |
+| **360 dp** (o detalhe num celular de 412 dp) | [cable-light-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-light-detail.png?raw=true) | [cable-dark-detail.png](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-dark-detail.png?raw=true) |
 
-![Miniaturas a 64 dp, tema claro](2026-10-31-phase4-figuras-polia/cable-light-64.png)
+![Miniaturas a 64 dp, tema claro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-light-64.png?raw=true)
 
-![Miniaturas a 64 dp, tema escuro](2026-10-31-phase4-figuras-polia/cable-dark-64.png)
+![Miniaturas a 64 dp, tema escuro](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-31-phase4-figuras-polia/cable-dark-64.png?raw=true)
 
 As folhas do detalhe são compridas (84 quadros cada). Abra pelos links da tabela.
 

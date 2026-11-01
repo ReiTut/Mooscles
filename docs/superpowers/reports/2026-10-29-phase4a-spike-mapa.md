@@ -58,8 +58,8 @@ Toda região tem caminho em pelo menos uma vista. No total são 58 caminhos de m
 
 **Duas leituras da fonte que a Task 2 deve conhecer** (não são ambiguidade no desenho, cada região acende uma área separada):
 
-- O `RHOMBOID` do MuscleMap fica **sobre a escápula** (a área do infraespinal e do redondo), não entre as escápulas. O centro das costas é trapézio médio e inferior ([`region-middle_back.png`](2026-10-29-phase4a-spike-mapa/region-middle_back.png), [`region-traps.png`](2026-10-29-phase4a-spike-mapa/region-traps.png)). Numa remada com o meio das costas como secundário, a faixa entre as escápulas fica neutra, a menos que a anatomia também liste `TRAPS`.
-- O `ABDUCTOR` de frente é a **faixa lateral da coxa** (tensor da fáscia lata). No agachamento, com quadríceps como principal, essa faixa fica neutra ([`region-abductors.png`](2026-10-29-phase4a-spike-mapa/region-abductors.png)).
+- O `RHOMBOID` do MuscleMap fica **sobre a escápula** (a área do infraespinal e do redondo), não entre as escápulas. O centro das costas é trapézio médio e inferior ([`region-middle_back.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/region-middle_back.png?raw=true), [`region-traps.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/region-traps.png?raw=true)). Numa remada com o meio das costas como secundário, a faixa entre as escápulas fica neutra, a menos que a anatomia também liste `TRAPS`.
+- O `ABDUCTOR` de frente é a **faixa lateral da coxa** (tensor da fáscia lata). No agachamento, com quadríceps como principal, essa faixa fica neutra ([`region-abductors.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/region-abductors.png?raw=true)).
 
 ## Estilo "giz" e capturas
 
@@ -69,10 +69,10 @@ Toda região tem caminho em pelo menos uma vista. No total são 58 caminhos de m
 
 | | Claro | Escuro |
 |---|---|---|
-| Agachamento, 2,0 | ![](2026-10-29-phase4a-spike-mapa/squat-light-d2-border.png) | ![](2026-10-29-phase4a-spike-mapa/squat-dark-d2-border.png) |
-| Remada, 2,0 | ![](2026-10-29-phase4a-spike-mapa/row-light-d2-border.png) | ![](2026-10-29-phase4a-spike-mapa/row-dark-d2-border.png) |
+| Agachamento, 2,0 | ![](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/squat-light-d2-border.png?raw=true) | ![](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/squat-dark-d2-border.png?raw=true) |
+| Remada, 2,0 | ![](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/row-light-d2-border.png?raw=true) | ![](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/row-dark-d2-border.png?raw=true) |
 
-A 1,0 ([`row-light-d1-border.png`](2026-10-29-phase4a-spike-mapa/row-light-d1-border.png), 320 × 240 px) as regiões continuam legíveis, e o contorno de 1 px ainda separa os músculos. Os candidatos descartados: [`squat-light-d2-subtle.png`](2026-10-29-phase4a-spike-mapa/squat-light-d2-subtle.png) (o secundário quase some no claro) e [`row-dark-d2-text_alpha.png`](2026-10-29-phase4a-spike-mapa/row-dark-d2-text_alpha.png) (verde perto do principal, e o alfa deixa aparecer os traços de baixo).
+A 1,0 ([`row-light-d1-border.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/row-light-d1-border.png?raw=true), 320 × 240 px) as regiões continuam legíveis, e o contorno de 1 px ainda separa os músculos. Os candidatos descartados: [`squat-light-d2-subtle.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/squat-light-d2-subtle.png?raw=true) (o secundário quase some no claro) e [`row-dark-d2-text_alpha.png`](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-29-phase4a-spike-mapa/row-dark-d2-text_alpha.png?raw=true) (verde perto do principal, e o alfa deixa aparecer os traços de baixo).
 
 Nenhuma região ficou ambígua nas capturas: cada uma das 17, acesa sozinha, ocupa uma área própria (as 17 capturas `region-*.png` estão na branch do spike).
 

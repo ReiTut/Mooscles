@@ -30,9 +30,9 @@ Os dois foram assinados pela chave debug local deste Mac, que **não** é a de d
 | `workout_sets` | 169 antes e depois |
 | MD5 de `local_preferences.preferences_pb` | **`77290d7676c0329aa84869c63650938b`** antes, logo depois do `install -r` e 6 s depois da abertura (`local/md5-*.txt`) |
 | Alarme do descanso | `RestAlarmReceiver`, `origWhen 2026-10-30 22:21:52.982` antes e depois da troca |
-| Treinar | Duas pastas ("Minhas rotinas", "Upgrade block"), "Upgrade manual" (3 exercícios · 9 séries, "Retomar treino") e "Upgrade custom" (2 exercícios · 6 séries), a barra do treino "Treino em andamento, Upgrade manual … Descanso" ([print 01](upgrade-01-train-after.png)) |
-| Editor ("Upgrade custom") | Mesmos 3 conjuntos: série 1 "segue o recorde" sem carga, 93,7 × 7, 99,21 × 6, descanso 5:00, linha "Alvo 3 séries · 6–7 reps · 93,7–99,21 lb" ([print 03](upgrade-03-editor.png)) |
-| Linha de alvo no card do treino | "Alvo 3 séries · 6–8 reps · 93,7–137,79 lb" no "Supino reto com barra", com as séries 1 e 2 ainda concluídas e o descanso correndo ([print 02](upgrade-02-workout-target-line.png)) |
+| Treinar | Duas pastas ("Minhas rotinas", "Upgrade block"), "Upgrade manual" (3 exercícios · 9 séries, "Retomar treino") e "Upgrade custom" (2 exercícios · 6 séries), a barra do treino "Treino em andamento, Upgrade manual … Descanso" ([print 01](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-01-train-after.png?raw=true)) |
+| Editor ("Upgrade custom") | Mesmos 3 conjuntos: série 1 "segue o recorde" sem carga, 93,7 × 7, 99,21 × 6, descanso 5:00, linha "Alvo 3 séries · 6–7 reps · 93,7–99,21 lb" ([print 03](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-03-editor.png?raw=true)) |
+| Linha de alvo no card do treino | "Alvo 3 séries · 6–8 reps · 93,7–137,79 lb" no "Supino reto com barra", com as séries 1 e 2 ainda concluídas e o descanso correndo ([print 02](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-02-workout-target-line.png?raw=true)) |
 | Export depois contra antes | `exportedAt` tirado e, de cada uma das 21 séries planejadas, `"warmup": false` tirado: **iguais**, comparados com Python (igualdade de objetos) e com `jq -S` + `diff` (0 linhas) |
 | Erros | Nenhum `FATAL EXCEPTION` no logcat |
 
@@ -40,8 +40,8 @@ Os dois foram assinados pela chave debug local deste Mac, que **não** é a de d
 
 No "Upgrade cable fly" (Biblioteca → Meus exercícios → Editar):
 
-- **Galeria.** "Escolher da galeria" abriu o seletor de fotos do sistema (`PhotoPickerActivity`, "This app can only access the photos you select"), com uma imagem enviada por `adb push` + varredura de mídia; escolhida, o formulário mostra a prévia e "Remover foto" ([print 04](upgrade-04-photo-gallery-staged.png)). Depois de Salvar: `files/exercise_photos/<id>.jpg` de 52.775 bytes, e o detalhe mostra "Foto de Upgrade cable fly" ([print 05](upgrade-05-detail-with-photo.png)).
-- **Câmera.** "Tirar foto" abriu o `com.android.camera2` (câmera virtual do emulador, `CaptureActivity`); obturador e "Done" voltaram ao formulário com a prévia ([print 06](upgrade-06-photo-camera-staged.png)). Salvar trocou o arquivo (18.352 bytes), `drafts/` vazio.
+- **Galeria.** "Escolher da galeria" abriu o seletor de fotos do sistema (`PhotoPickerActivity`, "This app can only access the photos you select"), com uma imagem enviada por `adb push` + varredura de mídia; escolhida, o formulário mostra a prévia e "Remover foto" ([print 04](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-04-photo-gallery-staged.png?raw=true)). Depois de Salvar: `files/exercise_photos/<id>.jpg` de 52.775 bytes, e o detalhe mostra "Foto de Upgrade cable fly" ([print 05](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-05-detail-with-photo.png?raw=true)).
+- **Câmera.** "Tirar foto" abriu o `com.android.camera2` (câmera virtual do emulador, `CaptureActivity`); obturador e "Done" voltaram ao formulário com a prévia ([print 06](https://github.com/pedroyuuki/Mooscles/blob/a672fda3dc/docs/superpowers/reports/2026-10-30-phase4b-verificacao/upgrade-06-photo-camera-staged.png?raw=true)). Salvar trocou o arquivo (18.352 bytes), `drafts/` vazio.
 - **Permissão.** Nenhum pedido de permissão apareceu em nenhum dos dois caminhos, e `CAMERA`, `READ_MEDIA_*` e `READ_EXTERNAL_STORAGE` não estão entre as permissões do pacote.
 
 ## Não verificado
