@@ -35,7 +35,7 @@ class ShareCardTimingTest {
     @Test
     fun paintAndEncodeTheLongWorkout() = runBlocking {
         val inputs = captureShareCardInputs()
-        val painter = ShareCardPainter(inputs.styles)
+        val painter = ShareCardPainter(inputs.styles, inputs.wordmark)
         val times = withContext(Dispatchers.Default) {
             repeat(WARM_UP) { paintAndEncode(painter, inputs) }
             List(RUNS) {

@@ -33,6 +33,7 @@ import com.mooscles.screens.share.ShareCardPainter
 import com.mooscles.screens.share.ShareCards
 import com.mooscles.screens.share.rememberShareCardStyles
 import com.mooscles.screens.share.rememberShareCardTexts
+import com.mooscles.screens.share.loadShareWordmark
 import com.mooscles.sharing.WorkoutCardRenderer
 import com.mooscles.sharing.WorkoutShareIntent
 import java.io.File
@@ -76,7 +77,7 @@ fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Uni
                     TimeZone.currentSystemDefault(), texts)
                 // A measurer of its own: a retry can start while a cancelled export still draws.
                 val measurer = TextMeasurer(fonts, ShareCardDensity, LayoutDirection.Ltr)
-                val files = WorkoutCardRenderer().export(context.applicationContext, card, ShareCardPainter(styles), measurer)
+                val files = WorkoutCardRenderer().export(context.applicationContext, card, ShareCardPainter(styles, loadShareWordmark()), measurer)
                 check(files.isNotEmpty())
                 WorkoutSharePreviewState.Ready(files)
             }

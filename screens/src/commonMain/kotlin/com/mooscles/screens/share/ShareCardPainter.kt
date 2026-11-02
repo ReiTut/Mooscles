@@ -8,16 +8,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -27,6 +24,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import com.mooscles.designsystem.tokens.MoosclesColors
 import com.mooscles.designsystem.tokens.MoosclesSizes
@@ -34,6 +32,8 @@ import com.mooscles.designsystem.tokens.MoosclesSpace
 import com.mooscles.designsystem.tokens.rememberMoosclesTypography
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * The density the card is drawn at on every device and platform: the Pixel 8's (420 dpi), so the
@@ -44,7 +44,7 @@ val ShareCardDensity: Density = Density(density = 2.625f, fontScale = 1f)
 
 /** The text styles of the card, from the design system's type scale (fonts resolved in a composition). */
 class ShareCardStyles(
-    /** "MOOSCLES", Barlow Condensed. */
+    /** Former wordmark metrics, retained only to keep the header allocation and pagination stable. */
     val brand: TextStyle,
     val title: TextStyle,
     val date: TextStyle,
@@ -113,7 +113,7 @@ class ShareCardPage internal constructor(
     internal val bodyTop: Int,
     internal val counter: TextLayoutResult?,
 ) {
-    /** Where "MOOSCLES" is drawn, in page pixels. */
+    /** The actual supplied wordmark's destination rectangle, in page pixels. */
     val brandBounds: IntRect get() = header.brandBounds
 }
 
@@ -125,7 +125,11 @@ class ShareCardPage internal constructor(
  * the app theme. Common code (`CanvasDrawScope`, `TextMeasurer`); call it off the main thread, one
  * card at a time per [TextMeasurer].
  */
-class ShareCardPainter(private val styles: ShareCardStyles, private val density: Density = ShareCardDensity) {
+class ShareCardPainter(
+    private val styles: ShareCardStyles,
+    private val wordmark: ImageBitmap,
+    private val density: Density = ShareCardDensity,
+) {
     private val colors = MoosclesColors.Dark
     private val space = MoosclesSpace()
     private val sizes = MoosclesSizes()
@@ -240,13 +244,19 @@ class ShareCardPainter(private val styles: ShareCardStyles, private val density:
         val brandM = measure(BRAND_FIRST, styles.brand, inner)
         val brandRest = measure(BRAND_REST, styles.brand, inner)
         val fontPx = with(density) { styles.brand.fontSize.toPx() }
-        // The plates run from the baseline to the cap height (0.7 em of Barlow Condensed).
+        // Keep the former header's allocation: only the pixels in the brand band change.
+        // The old letters/plates are not drawn; their metrics avoid moving workout content
+        // or changing page breaks when replacing the wordmark with proportioned artwork.
         val plateScale = fontPx * CAP_HEIGHT_EM / PLATE_RUN
         val brandGap = fontPx * BRAND_GAP_EM
         val brandWidth = brandM.size.width + brandGap * 2 + PLATES_WIDTH * plateScale + brandRest.size.width
-        val brandBounds = IntRect(margin, brandTop, margin + ceil(brandWidth).toInt(), brandTop + brandM.size.height)
+        val scale = min(min(inner.toFloat(), brandWidth) / wordmark.width, brandM.size.height.toFloat() / wordmark.height)
+        val imageWidth = (wordmark.width * scale).roundToInt().coerceAtLeast(1)
+        val imageHeight = (wordmark.height * scale).roundToInt().coerceAtLeast(1)
+        val imageTop = brandTop + (brandM.size.height - imageHeight) / 2
+        val brandBounds = IntRect(margin, imageTop, margin + imageWidth, imageTop + imageHeight)
 
-        val titleTop = brandBounds.bottom + px(space.s4)
+        val titleTop = brandTop + brandM.size.height + px(space.s4)
         val title = measure(card.workoutName, styles.title, inner)
         val dateTop = titleTop + title.size.height + px(space.s1)
         val date = measure(card.dateText, styles.date, inner)
@@ -273,19 +283,14 @@ class ShareCardPainter(private val styles: ShareCardStyles, private val density:
         val statsHeight = stats.maxOf { (value, label) -> value.size.height + px(space.s1) + label.size.height }
         val ruleY = statsTop + statsHeight + px(space.s5)
         val height = ruleY + px(sizes.border) + px(space.s4)
-        return Header(height, brandM, brandRest, brandTop, plateScale, brandGap, brandBounds, title, titleTop, date,
+        return Header(height, brandBounds, title, titleTop, date,
             dateTop, stats, statsTop, statWidth + gap, ruleY)
     }
 
     private fun DrawScope.drawHeader(header: Header) {
         val x = margin.toFloat()
-        val top = header.brandTop.toFloat()
-        drawText(header.brandM, colors.textPrimary, Offset(x, top))
-        val platesX = x + header.brandM.size.width + header.brandGap
-        val baseline = top + header.brandM.firstBaseline
-        drawPlates(Offset(platesX, baseline - PLATE_BASELINE * header.plateScale), header.plateScale)
-        drawText(header.brandRest, colors.textPrimary,
-            Offset(platesX + PLATES_WIDTH * header.plateScale + header.brandGap, top))
+        drawImage(wordmark, dstOffset = header.brandBounds.topLeft,
+            dstSize = IntSize(header.brandBounds.width, header.brandBounds.height), filterQuality = FilterQuality.High)
         drawText(header.title, colors.textPrimary, Offset(x, header.titleTop.toFloat()))
         drawText(header.date, colors.textSecondary, Offset(x, header.dateTop.toFloat()))
         header.stats.forEachIndexed { i, (value, label) ->
@@ -294,23 +299,6 @@ class ShareCardPainter(private val styles: ShareCardStyles, private val density:
             drawText(label, colors.textSecondary, Offset(sx, (header.statsTop + value.size.height + px(space.s1)).toFloat()))
         }
         drawRect(colors.borderSubtle, Offset(x, header.ruleY.toFloat()), Size(inner.toFloat(), px(sizes.border).toFloat()))
-    }
-
-    /** The "OO" of the brand: two chamfered plates joined by a handle with collars (the phase 2 board). */
-    private fun DrawScope.drawPlates(topLeft: Offset, scale: Float) {
-        translate(topLeft.x, topLeft.y) {
-            scale(scale, scale, pivot = Offset.Zero) {
-                val grip = colors.textSecondary
-                drawRoundRect(grip, Offset(90f, 63.83f), Size(30f, 14.04f), CornerRadius(3f))
-                drawRoundRect(grip, Offset(92f, 55.64f), Size(6f, 30.43f), CornerRadius(2f))
-                drawRoundRect(grip, Offset(112f, 55.64f), Size(6f, 30.43f), CornerRadius(2f))
-                for ((outer, ring, hole) in plates) {
-                    drawPath(outer, colors.accentSolid)
-                    drawPath(ring, colors.bgBase, alpha = RING_ALPHA, style = Stroke(width = RING_STROKE))
-                    drawOval(colors.bgBase, Offset(hole.x - HOLE_RX, hole.y - HOLE_RY), Size(HOLE_RX * 2, HOLE_RY * 2))
-                }
-            }
-        }
     }
 
     /** The body: sections, records and exercises, as blocks that can be sliced at line boundaries. */
@@ -474,41 +462,16 @@ class ShareCardPainter(private val styles: ShareCardStyles, private val density:
         private const val PLATES_WIDTH = 210f
         /** From the top of the plates (21.7) to their bottom on the baseline (120). */
         private const val PLATE_RUN = 120f - 21.7f
-        private const val PLATE_BASELINE = 120f
-        private const val RING_ALPHA = 0.35f
-        private const val RING_STROKE = 3f
-        private const val HOLE_RX = 10f
-        private const val HOLE_RY = 11.7f
         private const val ICON_GRID = 24f
         private const val ICON_STROKE = 2f
 
-        private fun path(data: String): Path = PathParser().parsePathString(data).toPath()
 
-        private val plates: List<Triple<Path, Path, Offset>> by lazy {
-            listOf(
-                Triple(
-                    path("M17.75 25.50Q21.00 21.70 26.00 21.70L70.00 21.70Q75.00 21.70 78.25 25.50L86.75 35.45Q90.00 39.25 90.00 44.25L90.00 97.45Q90.00 102.45 86.75 106.25L78.25 116.20Q75.00 120.00 70.00 120.00L26.00 120.00Q21.00 120.00 17.75 116.20L9.25 106.25Q6.00 102.45 6.00 97.45L6.00 44.25Q6.00 39.25 9.25 35.45Z"),
-                    path("M25.73 38.40Q28.00 35.74 31.50 35.74L64.50 35.74Q68.00 35.74 70.27 38.40L75.73 44.79Q78.00 47.45 78.00 50.95L78.00 90.76Q78.00 94.26 75.73 96.92L70.27 103.30Q68.00 105.96 64.50 105.96L31.50 105.96Q28.00 105.96 25.73 103.30L20.27 96.92Q18.00 94.26 18.00 90.76L18.00 50.95Q18.00 47.45 20.27 44.79Z"),
-                    Offset(48f, 70.85f),
-                ),
-                Triple(
-                    path("M131.75 25.50Q135.00 21.70 140.00 21.70L184.00 21.70Q189.00 21.70 192.25 25.50L200.75 35.45Q204.00 39.25 204.00 44.25L204.00 97.45Q204.00 102.45 200.75 106.25L192.25 116.20Q189.00 120.00 184.00 120.00L140.00 120.00Q135.00 120.00 131.75 116.20L123.25 106.25Q120.00 102.45 120.00 97.45L120.00 44.25Q120.00 39.25 123.25 35.45Z"),
-                    path("M139.73 38.40Q142.00 35.74 145.50 35.74L178.50 35.74Q182.00 35.74 184.27 38.40L189.73 44.79Q192.00 47.45 192.00 50.95L192.00 90.76Q192.00 94.26 189.73 96.92L184.27 103.30Q182.00 105.96 178.50 105.96L145.50 105.96Q142.00 105.96 139.73 103.30L134.27 96.92Q132.00 94.26 132.00 90.76L132.00 50.95Q132.00 47.45 134.27 44.79Z"),
-                    Offset(162f, 70.85f),
-                ),
-            )
-        }
     }
 }
 
 /** The measured header of a card, the same on every page. */
 internal class Header(
     val height: Int,
-    val brandM: TextLayoutResult,
-    val brandRest: TextLayoutResult,
-    val brandTop: Int,
-    val plateScale: Float,
-    val brandGap: Float,
     val brandBounds: IntRect,
     val title: TextLayoutResult,
     val titleTop: Int,

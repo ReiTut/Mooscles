@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.designsystem.tokens.MoosclesColors
@@ -12,6 +15,7 @@ import com.mooscles.screens.share.ShareCardRow
 import com.mooscles.screens.share.ShareCardSlice
 import com.mooscles.screens.share.ShareRecordRow
 import java.io.File
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -171,7 +175,7 @@ class WorkoutCardRendererTest {
 
     /** These real native-Canvas exports also serve as the visual review artifacts for this feature. */
     @Test fun generateRepresentativeWorkoutPreviews() {
-        val output = File("build/outputs/share-previews").apply { mkdirs() }
+        val output = previewDirectory()
         val fixtures = linkedMapOf(
             "short-kg" to example(),
             "multiple-pr" to example().copy(workoutNumber = 72, workoutName = "Milestone session",
@@ -206,13 +210,70 @@ class WorkoutCardRendererTest {
         }
     }
 
-    private fun assertBrand(bitmap: Bitmap, bounds: androidx.compose.ui.unit.IntRect) {
-        val plate = MoosclesColors.Dark.accentSolid.toArgb()
-        var found = 0
-        for (x in bounds.left until bounds.right) for (y in bounds.top until bounds.bottom) {
-            if (bitmap.getPixel(x, y) == plate) found++
+    @Test fun portugueseCardUsesTheSameSuppliedWordmarkAndKeepsItsValues() = runBlocking {
+        val portuguese = compose.captureShareCardInputs("pt-BR")
+        assertEquals("Duração", portuguese.texts.labels.duration)
+        assertEquals("Séries", portuguese.texts.labels.sets)
+        val card = ShareCardData(
+            workoutName = "Treino de força · nomes e valores preservados",
+            dateText = "seg., 2 de nov. de 2026 · 13:33–13:34",
+            durationText = "1:00", setsText = "2", volumeText = "1.234,567\u00A0kg",
+            records = listOf(ShareRecordRow("Leg press 45°", "100\u00A0kg × 10")),
+            rows = listOf(ShareCardRow("Leg press 45°", 2, "100\u00A0kg × 10", true)),
+            workoutNumber = 75, labels = portuguese.texts.labels,
+        )
+        val file = renderer.export(context, card, portuguese.painter, portuguese.measurer).single()
+        val bitmap = requireNotNull(BitmapFactory.decodeFile(file.absolutePath))
+        try {
+            val page = portuguese.painter.layout(card, portuguese.measurer).single()
+            assertBrand(bitmap, page.brandBounds, portuguese.wordmark)
+            assertEquals(1080, bitmap.width)
+            assertEquals("1.234,567\u00A0kg", card.volumeText)
+            assertEquals("Leg press 45°", card.rows.single().name)
+            val preview = File(previewDirectory(), "short-pt-BR-1.png")
+            file.copyTo(preview, overwrite = true)
+            assertTrue(preview.isFile)
+        } finally {
+            bitmap.recycle()
         }
-        assertTrue("no plate pixels in $bounds", found > 0)
+    }
+
+    private fun previewDirectory() = File(System.getProperty("mooscles.sharePreviewOutput")
+        ?: "build/outputs/share-previews").apply { mkdirs() }
+
+    private fun assertBrand(bitmap: Bitmap, bounds: androidx.compose.ui.unit.IntRect, wordmark: ImageBitmap = inputs.wordmark) {
+        val source = wordmark.toPixelMap()
+        val rendered = bitmap.asImageBitmap().toPixelMap()
+        val dark = MoosclesColors.Dark.bgBase
+        assertTrue(bounds.left >= 0 && bounds.top >= 0 && bounds.right <= bitmap.width && bounds.bottom <= bitmap.height)
+        assertEquals(source.width.toFloat() / source.height, bounds.width.toFloat() / bounds.height, 0.03f)
+        var lime = 0
+        var letters = 0
+        var gaps = 0
+        var checked = 0
+        for (x in 1 until source.width - 1 step 2) for (y in 1 until source.height - 1 step 2) {
+            val expected = source[x, y]
+            val interior = (-1..1).all { dx -> (-1..1).all { dy ->
+                val near = source[x + dx, y + dy]
+                abs(near.alpha - expected.alpha) < 0.01f &&
+                    (expected.alpha < 0.01f || (abs(near.red - expected.red) < 0.03f &&
+                        abs(near.green - expected.green) < 0.03f && abs(near.blue - expected.blue) < 0.03f))
+            } }
+            if (!interior || expected.alpha in 0.01f..0.99f) continue
+            val actual = rendered[bounds.left + ((x + 0.5f) * bounds.width / source.width).toInt(),
+                bounds.top + ((y + 0.5f) * bounds.height / source.height).toInt()]
+            val color = if (expected.alpha < 0.01f) dark else expected
+            assertTrue("source wordmark sample $x,$y differs", abs(actual.red - color.red) < 0.08f &&
+                abs(actual.green - color.green) < 0.08f && abs(actual.blue - color.blue) < 0.08f)
+            checked++
+            when {
+                expected.alpha < 0.01f -> gaps++
+                expected.red > 0.5f && expected.green > 0.7f && expected.blue < 0.3f -> lime++
+                expected.red > 0.75f && expected.green > 0.75f && expected.blue > 0.7f -> letters++
+            }
+        }
+        assertTrue("incomplete wordmark: checked=$checked lime=$lime letters=$letters gaps=$gaps",
+            checked > 100 && lime > 10 && letters > 20 && gaps > 10)
     }
 
     /** The "long-workout" fixture of `ShareCardPainterTest`: three pages in the former renderer. */
