@@ -1,5 +1,8 @@
 package com.mooscles.ui
 
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -119,15 +122,15 @@ fun rememberRestDurationEditor(seconds: Int, onSecondsChange: (Int) -> Unit, key
 @Composable
 fun RestDurationField(
     seconds: Int, onSecondsChange: (Int) -> Unit, modifier: Modifier = Modifier,
-    label: String = "Rest duration", testTag: String = "rest-duration",
-    help: String = "Minutes, then seconds · maximum 5:00",
+    label: String = stringResource(R.string.legacy_rest_duration), testTag: String = "rest-duration",
+    help: String = stringResource(R.string.legacy_rest_help),
 ) {
     val editor = rememberRestDurationEditor(seconds, onSecondsChange, testTag)
     TextField(editor.value, editor::onValueChange, label = { Text(label) }, suffix = { Text("min") }, singleLine = true,
         modifier = modifier.testTag(testTag).onFocusChanged { editor.onFocusChange(it.isFocused) },
         shape = RoundedCornerShape(14.dp), isError = editor.rejected,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        supportingText = { Text(if (editor.rejected) "Use 0:00 to 5:00, with seconds from 00 to 59." else help) },
+        supportingText = { Text(if (editor.rejected) stringResource(R.string.legacy_rest_invalid) else help) },
         colors = trainingFieldColors())
 }
 
@@ -172,17 +175,17 @@ fun SectionTitle(title: String, action: String? = null, onAction: () -> Unit = {
 }
 
 @Composable
-fun ConfirmDialog(title: String, text: String, confirm: String = "Delete", onDismiss: () -> Unit, onConfirm: () -> Unit) {
+fun ConfirmDialog(title: String, text: String, confirm: String = stringResource(R.string.legacy_delete), onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(text) },
         confirmButton = { TextButton(onClick = { onConfirm(); onDismiss() }) { Text(confirm, color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
 }
 
 @Composable
-fun NameDialog(title: String, initial: String = "", label: String = "Name", onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun NameDialog(title: String, initial: String = "", label: String = stringResource(R.string.legacy_name), onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var value by remember { mutableStateOf(initial) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = {
-        OutlinedTextField(value, { value = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth(), supportingText = { Text("1–80 characters") }, isError = value.length > 80)
-    }, confirmButton = { TextButton(onClick = { onSave(value.trim()); onDismiss() }, enabled = value.trim().isNotEmpty() && value.length <= 80) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+        OutlinedTextField(value, { value = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth(), supportingText = { Text(stringResource(R.string.legacy_name_length)) }, isError = value.length > 80)
+    }, confirmButton = { TextButton(onClick = { onSave(value.trim()); onDismiss() }, enabled = value.trim().isNotEmpty() && value.length <= 80) { Text(stringResource(R.string.legacy_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
 }

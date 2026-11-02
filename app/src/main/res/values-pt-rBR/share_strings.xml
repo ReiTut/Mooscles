@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_workout">Compartilhar treino</string>
+    <string name="share_preview_title">Prévia do treino</string>
+    <string name="share_preview_loading">Criando a imagem do treino…</string>
+    <string name="share_preview_failed">Não foi possível criar a imagem deste treino. O treino salvo pode ter sido alterado ou removido. Tente novamente.</string>
+    <string name="share_preview_page_failed">Não foi possível abrir esta imagem. Tente criar a prévia novamente.</string>
+    <string name="share_preview_image">Imagem do treino %1$d de %2$d</string>
+    <plurals name="share_preview_pages">
+        <item quantity="one">%1$d imagem · todos os exercícios estão incluídos na ordem</item>
+        <item quantity="many">%1$d imagens · todos os exercícios estão incluídos na ordem</item>
+        <item quantity="other">%1$d imagens · todos os exercícios estão incluídos na ordem</item>
+    </plurals>
+    <string name="share_preview_hint">Você escolhe quem recebe no próximo app e confirma o envio.</string>
+    <string name="share_whatsapp">Compartilhar no WhatsApp</string>
+    <string name="share_whatsapp_business">Compartilhar no WhatsApp Business</string>
+    <string name="share_other_apps">Outras opções de compartilhamento</string>
+    <string name="share_choose_app">Escolher app</string>
+    <string name="share_open_failed">Não foi possível abrir um app de compartilhamento. Tente novamente ou escolha outra opção.</string>
+    <string name="share_retry">Tentar novamente</string>
+    <string name="share_cancel">Cancelar</string>
+    <string name="share_close">Fechar prévia</string>
+</resources>

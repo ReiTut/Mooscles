@@ -1,5 +1,12 @@
 package com.mooscles.ui
 
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
+import com.mooscles.screens.format.exerciseName
+import com.mooscles.screens.format.equipmentLabel
+import com.mooscles.screens.format.conventionLabel
+import com.mooscles.screens.format.conventionExplanation as localizedConventionExplanation
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,12 +47,12 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             WorkoutExerciseHeading(entry.exercise, entry.id, index, count, entry.previous, entry.records,
                 pounds, actions, editable, onReplace, onHistory)
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
-            if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
+            if (visibleSets.isEmpty()) Text(stringResource(R.string.legacy_no_completed_sets), style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
                 if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
                 else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
             }
-            if (editable) WorkoutExerciseFooter(entry.id, entry.exercise.name, rest, actions,
+            if (editable) WorkoutExerciseFooter(entry.id, exerciseName(entry.exercise), rest, actions,
                 onEditRest = { onEditRest?.invoke() ?: run { restEditor = true } })
         }
     }
@@ -70,27 +77,27 @@ private fun WorkoutExerciseHeading(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("${index + 1}. ${exercise.name}", style = MaterialTheme.typography.titleMedium)
-                Text("${human(exercise.equipment)} · ${exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${index + 1}. ${exerciseName(exercise)}", style = MaterialTheme.typography.titleMedium)
+                Text("${equipmentLabel(exercise.equipment)} · ${conventionLabel(exercise.convention)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Exercise options") }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.legacy_exercise_options)) }
                 DropdownMenu(menu, { menu = false }) {
-                    DropdownMenuItem(text = { Text("Performance history") }, onClick = { menu = false; onHistory() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_performance_history)) }, onClick = { menu = false; onHistory() })
                     if (editable) {
-                        DropdownMenuItem(text = { Text("Replace exercise") }, onClick = { menu = false; onReplace() })
-                        DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entryId, -1) })
-                        DropdownMenuItem(text = { Text("Move down") }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entryId, 1) })
-                        DropdownMenuItem(text = { Text("Remove exercise", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_replace_exercise)) }, onClick = { menu = false; onReplace() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_move_up)) }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entryId, -1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_move_down)) }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entryId, 1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_remove_exercise), color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
                     }
                 }
             }
         }
-        Text(conventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(localizedConventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         previous?.let {
             Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text("Previous: $it", style = MaterialTheme.typography.bodySmall)
+                    Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text(stringResource(R.string.legacy_previous, it), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -98,23 +105,24 @@ private fun WorkoutExerciseHeading(
             Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp))
-                    Text("${record.label}${if (record.firstRecord) " · first record" else ""} · ${recordAchievementText(record, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium)
+                    Text(recordKindLabel(record) + (if (record.firstRecord) " · " + stringResource(R.string.legacy_first_record_lower) else "") + " · " + localizedRecordAchievementText(record, pounds) + (if (editable) " · " + stringResource(R.string.legacy_provisional) else ""), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
     }
-    if (remove) ConfirmDialog("Remove ${exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove",
+    if (remove) ConfirmDialog(stringResource(R.string.legacy_remove_named, exerciseName(exercise)), stringResource(R.string.legacy_remove_exercise_body), stringResource(R.string.legacy_remove),
         onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entryId) })
 }
 
 @Composable
 private fun WorkoutExerciseFooter(entryId: String, exerciseName: String, rest: Int, actions: MoosclesActions, onEditRest: () -> Unit) {
+    val restDescription = stringResource(R.string.legacy_edit_rest_for, exerciseName)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        TextButton(onClick = { actions.addSet(entryId) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
+        TextButton(onClick = { actions.addSet(entryId) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text(stringResource(R.string.legacy_add_set)) }
         TextButton(onClick = onEditRest, modifier = Modifier.testTag("workout-rest-edit-$entryId")
-            .semantics { contentDescription = "Edit rest duration for $exerciseName" }) {
+            .semantics { contentDescription = restDescription }) {
             Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(rest)} min")
+            Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.legacy_rest_value, RestDuration.format(rest)))
         }
     }
 }
@@ -124,24 +132,24 @@ private fun WorkoutExerciseFooter(entryId: String, exerciseName: String, rest: I
 private fun WorkoutRestDialog(entry: WorkoutExerciseUi, seconds: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
     var draft by rememberSaveable(entry.id, entry.exercise.id) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
     AlertDialog(onDismissRequest = onDismiss, icon = { Icon(Icons.Outlined.Timer, null) },
-        title = { Text("Edit rest timer") }, text = {
+        title = { Text(stringResource(R.string.legacy_edit_rest_timer)) }, text = {
             // The dialog has its own composition and keyboard controller. Request
             // focus here, after that composition attaches its text field.
             val focus = remember { FocusRequester() }
             val keyboard = LocalSoftwareKeyboardController.current
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(entry.exercise.name, style = MaterialTheme.typography.titleSmall)
+                Text(exerciseName(entry.exercise), style = MaterialTheme.typography.titleSmall)
                 RestDurationField(draft, { draft = it }, Modifier.fillMaxWidth().focusRequester(focus),
                     testTag = "workout-rest-${entry.id}")
-                Text("For this workout's next rests. The current countdown keeps its own duration.",
+                Text(stringResource(R.string.legacy_rest_scope),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
         }, confirmButton = {
             TextButton(onClick = { onSave(draft) },
-                modifier = Modifier.testTag("workout-rest-save-${entry.id}")) { Text("Save") }
+                modifier = Modifier.testTag("workout-rest-save-${entry.id}")) { Text(stringResource(R.string.legacy_save)) }
         }, dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.testTag("workout-rest-cancel-${entry.id}")) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("workout-rest-cancel-${entry.id}")) { Text(stringResource(R.string.legacy_cancel)) }
         })
 }
 
@@ -259,22 +267,22 @@ private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvent
                 val currentLoad = parsedLoad()
                 if (parsed != null && parsed in 0..9999 && currentLoad != null && currentLoad.isFinite() && exactKg(load, currentLoad) in 0.0..100000.0 && (!completed || parsed > 0))
                     submit(parsed, exactKg(load, currentLoad), completed, warmup, assistance)
-            }, label = "Reps", isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
-            IconToggleButton(checked = completed, onCheckedChange = { touched = true; save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (completed) "Undo set completion" else "Complete set") }
+            }, label = stringResource(R.string.legacy_reps), isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
+            IconToggleButton(checked = completed, onCheckedChange = { touched = true; save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (completed) stringResource(R.string.legacy_undo_completion) else stringResource(R.string.legacy_complete_set)) }
         }
-        if (!validLoad) Text("Enter a valid weight of 0 or more.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        if (validLoad && loadValue == 0.0 && !assistance && !assistanceConvention) Text("Bodyweight · no added load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (showRepsError) Text("Enter reps between 1 and 9999 to complete this set.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (!validLoad) Text(stringResource(R.string.legacy_invalid_weight), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (validLoad && loadValue == 0.0 && !assistance && !assistanceConvention) Text(stringResource(R.string.legacy_bodyweight_no_load), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (showRepsError) Text(stringResource(R.string.legacy_invalid_reps), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
-                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (warmup) "Warm-up" else if (assistance || assistanceConvention) "Assistance" else "Working set", style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
+                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (warmup) stringResource(R.string.legacy_warmup) else if (assistance || assistanceConvention) stringResource(R.string.legacy_assistance) else stringResource(R.string.legacy_working_set), style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
                 DropdownMenu(flags, { flags = false }) {
-                    DropdownMenuItem(text = { Text("Working set") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = assistanceConvention) })
-                    DropdownMenuItem(text = { Text("Warm-up · excluded from PRs") }, onClick = { flags = false; save(nextWarmup = true) })
-                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · separate reps records") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = true) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_working_set)) }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = assistanceConvention) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_warmup_excluded)) }, onClick = { flags = false; save(nextWarmup = true) })
+                    if (!assistanceConvention) DropdownMenuItem(text = { Text(stringResource(R.string.legacy_assistance_records)) }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = true) })
                 }
             }
-            IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, "Remove set ${index + 1}", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, stringResource(R.string.legacy_remove_set, index + 1), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -285,9 +293,9 @@ private fun setEditSignature(reps: Int, kg: Double, completed: Boolean, warmup: 
 @Composable
 fun CompletedSetRow(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("SET ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(62.dp))
-        Text("${if (set.weightKg == 0.0 && !set.assistance && !assistanceConvention) "Bodyweight" else weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        if (set.warmup || set.assistance || assistanceConvention) Text(if (set.warmup) "Warm-up" else "Assistance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else Icon(Icons.Outlined.Check, "Completed", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(stringResource(R.string.legacy_set_number, index + 1), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(62.dp))
+        Text("${if (set.weightKg == 0.0 && !set.assistance && !assistanceConvention) stringResource(R.string.legacy_bodyweight) else weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (set.warmup || set.assistance || assistanceConvention) Text(if (set.warmup) stringResource(R.string.legacy_warmup) else stringResource(R.string.legacy_assistance), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else Icon(Icons.Outlined.Check, stringResource(R.string.legacy_completed), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
     }
 }

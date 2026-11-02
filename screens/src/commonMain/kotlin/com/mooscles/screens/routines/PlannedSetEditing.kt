@@ -88,11 +88,12 @@ internal data class PlannedSave(val setId: String, val reps: Int, val weightKg: 
  *   type change) that clears every draft of the set, an invalid one included;
  * - a [step] holds its write for [release], so a hold of the stepper writes once (the last value) when it ends.
  *
- * It lives in `remember`, never in saved state, and is keyed on the unit and the number format.
+ * It lives in `remember`, never in saved state, and is keyed on the unit. Changing the language
+ * changes formatting for subsequent edits without replacing drafts or their exact values.
  */
 internal class PlannedSetDrafts(
     private val pounds: Boolean,
-    private val locale: NumberLocale,
+    private var locale: NumberLocale,
     private val saved: (String) -> RoutineSetUi?,
 ) {
     /** What a field holds: its [text] and the exact [value] of it (kg or reps), null when the text is not valid. */
@@ -105,6 +106,15 @@ internal class PlannedSetDrafts(
 
     /** The write of a stepper run that has not been sent yet. */
     private val held = HashMap<String, PlannedSave>()
+
+    /**
+     * Formats new values in [locale] while keeping text already being edited, pending writes and
+     * their exact kilograms. NumericInput accepts both decimal separators, so a language change
+     * does not need to rewrite text under the cursor or turn a partial draft into a saved value.
+     */
+    fun useLocale(locale: NumberLocale) {
+        this.locale = locale
+    }
 
     private fun norm(kg: Double?): Double? = kg?.takeIf { it != 0.0 }
 
@@ -133,7 +143,7 @@ internal class PlannedSetDrafts(
         field == SetField.REPS -> NumericInput.parseInteger(text, MAX_REPS)?.toDouble()
         else -> {
             val standing = expected(set).weightKg
-            if (standing != null && text == loadText(standing)) {
+            if (standing != null && text.replace(',', '.') == loadText(standing).replace(',', '.')) {
                 standing
             } else {
                 NumericInput.parseDecimal(text, max = WeightUnits.fromKg(MAX_LOAD_KG, pounds))?.let { WeightUnits.toKg(it, pounds) }

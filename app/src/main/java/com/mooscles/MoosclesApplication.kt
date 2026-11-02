@@ -1,6 +1,9 @@
 package com.mooscles
 
 import android.app.Application
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
 import com.mooscles.backup.AndroidBackupDocuments
 import com.mooscles.backup.BackupApp
 import com.mooscles.data.WorkoutDatabase
@@ -18,6 +21,12 @@ import com.mooscles.updates.UpdateManager
 import com.mooscles.updates.UpdatePolicy
 
 class MoosclesApplication : Application() {
+    override fun attachBaseContext(base: Context) { super.attachBaseContext(AppLanguages.wrap(base)) }
+    override fun onCreate() { super.onCreate(); AppLanguages.migrateToFramework(this) }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (Build.VERSION.SDK_INT < 33) AppLanguages.applyLegacy(this)
+    }
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val database by lazy { WorkoutDatabase.open(this) }
     val repository by lazy { WorkoutRepository(database) }

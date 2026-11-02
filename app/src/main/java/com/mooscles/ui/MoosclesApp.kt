@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
@@ -338,8 +340,8 @@ internal fun MoosclesApp(
                 // screens bring their own.
                 if (route == SettingsRoutes.SETTINGS) SettingsTopBar(onBack = { nav.popBackStack() })
                 else if (!newScreen && route != DeveloperGallery.ROUTE && route != SettingsRoutes.LICENSES) TopAppBar(title = { Text("mooscles", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
-                    navigationIcon = { if (route !in ShellTabs.keys) IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Outlined.ArrowBack, "Back") } },
-                    actions = { IconButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) { Icon(Icons.Outlined.Tune, "Settings") } })
+                    navigationIcon = { if (route !in ShellTabs.keys) IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Outlined.ArrowBack, stringResource(R.string.legacy_back)) } },
+                    actions = { IconButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) { Icon(Icons.Outlined.Tune, stringResource(R.string.legacy_settings)) } })
             },
             bottomBar = {
                 if (route != WORKOUT_ROUTE) ShellBottom(state, timer, selectedTab, ::selectTab, ::reselectTab, ::openWorkout, hosted)
@@ -386,7 +388,7 @@ internal fun MoosclesApp(
                         val workout = state.history.find { it.id == page.arguments?.getString("id") }
                         val asSummary = page.arguments?.getBoolean(SUMMARY_ARG) ?: false
                         when {
-                            workout == null -> MissingScreen("Workout unavailable")
+                            workout == null -> MissingScreen(stringResource(R.string.legacy_workout_unavailable))
                             asSummary -> SummaryRoute(workout, state, hosted, onDone = { selectTab(ShellTabs.TRAIN) },
                                 onDetails = { nav.navigate(detailRoute(workout.id, summary = false)) })
                             else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.openProgress(it) })
@@ -516,4 +518,4 @@ private fun SummaryRoute(workout: WorkoutUi, state: UiState, actions: MoosclesAc
 }
 
 @Composable
-private fun MissingScreen(title: String) = EmptyState(Icons.Outlined.SearchOff, title, "This item may have been deleted. Return to your library to continue.")
+private fun MissingScreen(title: String) = EmptyState(Icons.Outlined.SearchOff, title, stringResource(R.string.legacy_missing_body))

@@ -299,11 +299,13 @@ fun RoutineEditorRoute(
     }
 
     // The drafts of the planned sets: in memory only (a value nobody confirmed is never saved by a recreation), keyed
-    // on the unit and the number format, and reading the sets from the state as it is now.
+    // on the unit, and reading the sets from the state as it is now. A language change preserves
+    // the text under the cursor and exact pending kg; only newly formatted values use the new locale.
     val locale = currentNumberLocale()
     val sets = remember(entries) { entries.flatMap { it.setTargets }.associateBy { it.id } }
     val currentSets by rememberUpdatedState(sets)
-    val drafts = remember(pounds, locale) { PlannedSetDrafts(pounds, locale) { currentSets[it] } }
+    val drafts = remember(pounds) { PlannedSetDrafts(pounds, locale) { currentSets[it] } }
+    drafts.useLocale(locale)
     // Sets that are gone (removed here or elsewhere) take their drafts and their edit with them; so does a replaced
     // exercise (its sets keep their ids but are another movement's: nothing typed for the old one may be written).
     val exerciseOf = remember { HashMap<String, String>() }

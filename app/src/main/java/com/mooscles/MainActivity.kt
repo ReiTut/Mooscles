@@ -8,6 +8,9 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.content.Intent
+import android.content.Context
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -27,6 +30,16 @@ import com.mooscles.ui.AppThemeBars
 import com.mooscles.ui.MoosclesApp
 
 class MainActivity : ComponentActivity(), AppThemeBars {
+    private lateinit var language: AppLanguageController
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguages.wrap(newBase))
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        val resolved = if (Build.VERSION.SDK_INT < 33) AppLanguages.applyLegacy(this) else newConfig
+        super.onConfigurationChanged(resolved)
+        if (::language.isInitialized) language.refresh()
+    }
     private val vm: AppViewModel by viewModels { AppViewModel.Factory }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     private val updateApproval = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -49,6 +62,7 @@ class MainActivity : ComponentActivity(), AppThemeBars {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        language = AppLanguageController(this)
         enableEdgeToEdge(statusBarStyle, navigationBarStyle)
         setContent {
             val state = vm.contentUi.collectAsStateWithLifecycle()
@@ -58,9 +72,11 @@ class MainActivity : ComponentActivity(), AppThemeBars {
             // stops while the Activity is not started (in the background).
             val lifecycleState = lifecycle.currentStateAsState()
             val app = application as MoosclesApplication
-            ProvideExercisePhotos(app, this) {
-                ProvideProgressIndex(app) {
-                    MoosclesApp(state.value, vm, timer, workoutRequest.value, foreground = lifecycleState.value.isAtLeast(Lifecycle.State.STARTED))
+            CompositionLocalProvider(LocalAppLanguageController provides language, LocalConfiguration provides language.configuration) {
+                ProvideExercisePhotos(app, this) {
+                    ProvideProgressIndex(app) {
+                        MoosclesApp(state.value, vm, timer, workoutRequest.value, foreground = lifecycleState.value.isAtLeast(Lifecycle.State.STARTED))
+                    }
                 }
             }
         }
@@ -85,7 +101,7 @@ class MainActivity : ComponentActivity(), AppThemeBars {
         }
     }
     override fun onStart() { super.onStart(); (application as MoosclesApplication).timer.foreground = true }
-    override fun onResume() { super.onResume(); (application as MoosclesApplication).appScope.launch { (application as MoosclesApplication).updates.onForeground() } }
+    override fun onResume() { super.onResume(); language.refresh(); (application as MoosclesApplication).appScope.launch { (application as MoosclesApplication).updates.onForeground() } }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); openFrom(intent) }
     private fun openFrom(intent: Intent?) {
         when (intent?.action) {

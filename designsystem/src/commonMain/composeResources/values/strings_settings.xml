@@ -108,4 +108,8 @@
     <string name="settings_updates_progress">%1$s · %2$s / %3$s</string>
     <string name="settings_updates_size_mb">%1$s MB</string>
     <string name="settings_updates_size_kb">%1$s KB</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_portuguese">Português (Brasil)</string>
 </resources>

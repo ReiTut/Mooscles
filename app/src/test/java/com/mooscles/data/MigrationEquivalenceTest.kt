@@ -143,7 +143,9 @@ class MigrationEquivalenceTest {
 
     private fun reference(name: String): String =
         javaClass.classLoader!!.getResourceAsStream("migration-equivalence/$name")
-            ?.bufferedReader()?.use { it.readText() } ?: error("Missing reference $name")
+            // Git may check out the frozen text fixtures with CRLF on Windows.
+            // Normalize line endings only; every schema definition and row still compares exactly.
+            ?.bufferedReader()?.use { it.readText().replace("\r\n", "\n") } ?: error("Missing reference $name")
 
     /**
      * Opening runs the migrations or the creation callback; closing flushes WAL into the file.
