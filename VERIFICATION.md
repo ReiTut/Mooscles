@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release 1.5.2 / Build 23
+
+Shared-workout wordmark release. Reuses [22 passing host checks, 6 passing Android 15 device checks, real preview/chooser observations and PNG inspections](docs/superpowers/reports/2026-11-02-share-wordmark-verification.md) for the unchanged implementation. Version-only preparation uses a fresh clean APK build, lint, package/version/original-signer and size checks, then metadata generated from the final APK. Source changes follow normal PR CI; publication includes independent asset downloads and stable updater-discovery verification.
+
+The app remains `com.mooscles`, schema 6, minimum API 26, debug-signed with the original distribution certificate. Build 23 exceeds all inspected distributed metadata (maximum 22); no device is connected for this publication. Source artwork is 260×72 and can be soft when enlarged. Physical-device/iPhone installation and WhatsApp recipient UI were not repeated. [Release notes](docs/superpowers/releases/v1.5.2.md). Phase 5/5B remains paused.
+
+Fresh local preparation passed the clean debug build, lint (**0 errors / 21 warnings**), design tokens (169 files), and APK/font/icon budgets. The APK is 24,963,674 bytes, SHA-256 `bbef39264f7776699b3093ed87c38d34330ef47d4beee07a20b6a38e2b4e67c6`, using the original `0cd093b2…bb35` certificate. The unchanged implementation's 28 focused checks and recordings were reused, without another local full-suite or benchmark run.
+
 ## Release 1.5.1 / Build 22
 
 Language selection and launcher-icon release, preserving `com.mooscles`, the original debug distribution signing identity, schema 6 and existing workout data. Phase 5/5B remains paused.

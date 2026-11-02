@@ -5,18 +5,20 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.graphics.ImageBitmap
 import com.mooscles.screens.withScreen
 
 /** What the card needs from a composition: the design system's styles and a measurer. */
-internal class ShareCardInputs(val styles: ShareCardStyles, val measurer: TextMeasurer)
+internal class ShareCardInputs(val styles: ShareCardStyles, val measurer: TextMeasurer, val wordmark: ImageBitmap)
 
 /** Resolves the fonts in a composition (in the light or dark app theme), then leaves it: drawing runs outside. */
 @OptIn(ExperimentalTestApi::class)
-internal fun captureShareCardInputs(dark: Boolean = true): ShareCardInputs {
+internal suspend fun captureShareCardInputs(dark: Boolean = true): ShareCardInputs {
+    val wordmark = loadShareWordmark()
     var inputs: ShareCardInputs? = null
     runComposeUiTest {
         withScreen(dark = dark) {
-            inputs = ShareCardInputs(rememberShareCardStyles(), rememberTextMeasurer())
+            inputs = ShareCardInputs(rememberShareCardStyles(), rememberTextMeasurer(), wordmark)
         }
         waitForIdle()
     }

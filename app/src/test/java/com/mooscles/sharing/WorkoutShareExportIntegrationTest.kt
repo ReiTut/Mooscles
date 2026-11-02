@@ -97,7 +97,7 @@ class WorkoutShareExportIntegrationTest {
         assertEquals(1080, bounds.outWidth)
         assertTrue(bounds.outHeight in 700..WorkoutCardRenderer.MAX_PAGE_HEIGHT)
         assertEquals("image/png", bounds.outMimeType)
-        val preview = File("build/outputs/share-previews/representative-kg.png")
+        val preview = File(System.getProperty("mooscles.sharePreviewOutput") ?: "build/outputs/share-previews", "representative-kg.png")
         assertTrue(preview.parentFile!!.isDirectory || preview.parentFile!!.mkdirs())
         png.copyTo(preview, overwrite = true)
         assertArrayEquals(png.readBytes(), preview.readBytes())

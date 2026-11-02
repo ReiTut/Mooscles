@@ -2,6 +2,10 @@
 
 A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. App network requests only discover and download public GitHub updates. Optional sharing creates a workout image locally and opens the user's chosen destination; it never selects a recipient or sends automatically. No account, subscriptions or analytics.
 
+## Shared workout wordmark
+
+Version **1.5.2 / Build 23** replaces the shared-card header logo with the supplied white/lime Mooscles wordmark. The same artwork appears in the preview and every exported PNG page. Header spacing, statistics, exact values, translations, exercise order, pagination and sharing destinations retain their existing behavior. The artwork is cached outside drawing; the source is only 260×72 pixels, so enlargement can appear slightly soft. The launcher icon is unchanged, and Phase 5/5B remains paused. See the [verification report](docs/superpowers/reports/2026-11-02-share-wordmark-verification.md) and [release notes](docs/superpowers/releases/v1.5.2.md).
+
 ## Language selection and new launcher icon
 
 Version **1.5.1 / Build 22** adds **Settings → Language** with **System default**, **English**, and **Português (Brasil)**. System default follows the device; explicit selections persist and synchronize with Android's per-app language setting on Android 13+. Existing legacy screen labels are translated too. Changing language preserves in-progress drafts, exact weights, navigation and rest countdowns; custom names remain as entered. The launcher now uses the white M and green barbell artwork, including adaptive, round and themed layers. Some existing updater/backup diagnostic messages still arrive in English.
@@ -69,11 +73,11 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-The current release is **1.5.1 / Build 22**: language selection, localized legacy labels, draft/exact-weight preservation across language changes, and the new launcher artwork, preserving existing workouts, routines, folders and settings.
+The current release is **1.5.2 / Build 23**: the new shared-workout wordmark in previews and exported PNGs, preserving existing workouts, routines, folders, settings and the previous release's language selection and launcher artwork.
 
-[v1.5.1 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.1) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.1/Mooscles-v1.5.1-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.1/update.json)
+[v1.5.2 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.2) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.2/Mooscles-v1.5.2-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.2/update.json)
 
-This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.5.1` and version code `22`, and requires Android 8.0 or newer. Distributed updaters select the highest compatible metadata version code, so Build 21 and older compatible installations can discover Build 22 on the stable channel. **Include prereleases** is not required. Automatic downloads respect saved preferences, and Android may require installation approval. APKs are attached as release assets; previous tags and releases remain intact. Full GitHub release status does not change the APK build type or signing certificate.
+This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.5.2` and version code `23`, and requires Android 8.0 or newer. Distributed updaters select the highest compatible metadata version code, so Build 22 and older compatible installations can discover Build 23 on the stable channel. **Include prereleases** is not required. Automatic downloads respect saved preferences, and Android may require installation approval. APKs are attached as release assets; previous tags and releases remain intact. Full GitHub release status does not change the APK build type or signing certificate.
 
 The release keeps the recovery build's exercise menus and workout behavior. Its presentation cache follows saved values and invalidates on history corrections, routine changes and unit switches. Saved exercise order, independent targets, routines, completed history and active sessions remain readable through the additive Room schema v5 migration. Nullable timer ownership from Build 12 remains compatible, including its persistence and cleanup. The updater remains compatible with prior builds and future higher-build updates. Installed-version reporting shows the real **Build 17**.
 

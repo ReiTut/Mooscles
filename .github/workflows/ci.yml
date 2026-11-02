@@ -312,7 +312,8 @@ jobs:
           # (viewProgressFromTheDetailOverTheProgressReturnsToIt, :app host). No test retired. 1260 + 4 = 1264.
           # Language/icon: AppLanguageHostTest 6, AppLanguageUiHostTest 1, LegacyStringsHostTest 2,
           # PlannedSetDraftsTest +3, SetRowEditorLocaleTest 2: +14 over 1264.
-          MIN_HOST_TESTS: 1278
+          # Shared wordmark: WorkoutCardRendererTest +1 Portuguese export check.
+          MIN_HOST_TESTS: 1279
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
