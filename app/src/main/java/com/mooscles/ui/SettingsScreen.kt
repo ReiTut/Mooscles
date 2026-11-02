@@ -42,6 +42,12 @@ import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.resources.Res
 import com.mooscles.designsystem.resources.ds_licenses_title
 import com.mooscles.designsystem.resources.settings_appearance
+import com.mooscles.designsystem.resources.settings_language
+import com.mooscles.designsystem.resources.settings_language_system
+import com.mooscles.designsystem.resources.settings_language_english
+import com.mooscles.designsystem.resources.settings_language_portuguese
+import com.mooscles.AppLanguage
+import com.mooscles.LocalAppLanguageController
 import com.mooscles.designsystem.resources.settings_auto_rest
 import com.mooscles.designsystem.resources.settings_auto_rest_desc
 import com.mooscles.designsystem.resources.settings_auto_rest_hint
@@ -117,6 +123,19 @@ fun SettingsScreen(
                 // An unknown stored value (none of the three) selects no row.
                 RadioRow(stringResource(label), selected = prefs.theme == theme, onSelect = { actions.setTheme(theme) },
                     modifier = Modifier.testTag("theme-$theme"))
+            }
+        }
+
+        val language = LocalAppLanguageController.current
+        SectionHeader(stringResource(Res.string.settings_language))
+        RadioGroup(Modifier.testTag("language-group")) {
+            listOf(
+                AppLanguage.SYSTEM to Res.string.settings_language_system,
+                AppLanguage.ENGLISH to Res.string.settings_language_english,
+                AppLanguage.PORTUGUESE to Res.string.settings_language_portuguese,
+            ).forEach { (choice, label) ->
+                RadioRow(stringResource(label), selected = (language?.selected ?: AppLanguage.SYSTEM) == choice,
+                    onSelect = { language?.select(choice) }, modifier = Modifier.testTag("language-${choice.name.lowercase()}"))
             }
         }
 

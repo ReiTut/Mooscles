@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release 1.5.1 / Build 22
+
+Language selection and launcher-icon release, preserving `com.mooscles`, the original debug distribution signing identity, schema 6 and existing workout data. Phase 5/5B remains paused.
+
+The unchanged implementation reuses its [70 passing focused checks and Android 15 emulator observations](docs/superpowers/reports/2026-11-01-language-launcher-verification.md). New version information requires fresh packaging, package/version/signer verification and metadata generation; release preparation additionally checks Android lint and APK size. [Release notes and limits](docs/superpowers/releases/v1.5.1.md) distinguish reused implementation evidence, fresh artifact verification and unverified physical-device installation.
+
+Fresh local release checks: **25 updater tests passed** (`ReleaseClientTest` 15, `ApkVerifierTest` 10); clean debug build passed; lint **0 errors / 21 warnings**; APK/font/icon budgets passed. The versioned APK is 24,948,237 bytes with SHA-256 `4577ec583d2050350749848c391b33f2bb01ce137b07999663557400db5a66da`, signed by the same `0cd093b2…bb35` certificate. All inspected distributed metadata and the authorized connected test phone were at Build 21 or lower. The phone was queried read-only; no new installation or data reset was performed for publication.
+
 ## Release 1.5.0 / Build 21
 
 Version name **1.5.0**, version code **21**, above the 1.4.6 stable release (Build 17) and the 1.4.7 prereleases (Builds 18-20, beta.3 on 2026-10-31). It brings the whole redesign from the fork, phases 0 to 5A:

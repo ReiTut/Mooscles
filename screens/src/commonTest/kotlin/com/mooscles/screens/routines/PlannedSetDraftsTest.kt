@@ -283,4 +283,61 @@ class PlannedSetDraftsTest {
         d.type("bench-2", SetField.REPS, "20")
         assertNull(d.release("bench-2"))
     }
+
+    @Test
+    fun languageChangeKeepsPartialAndBlankDraftsWithoutSavingThem() {
+        val d = drafts()
+        d.type("bench-1", SetField.LOAD, "82.")
+        d.type("bench-2", SetField.REPS, "")
+        val before = saves.toList()
+
+        d.useLocale(NumberLocale.PT_BR)
+
+        assertEquals("82.", d.shown("bench-1", SetField.LOAD))
+        assertEquals("", d.shown("bench-2", SetField.REPS))
+        assertEquals(17.0, d.snapshot(sets.getValue("bench-1")).weightKg)
+        assertEquals(before, saves)
+        // New edits accept either separator and new formatted values use Portuguese.
+        d.type("bench-1", SetField.LOAD, "82,25")
+        assertEquals(PlannedSave("bench-1", 8, 82.25), saves.last())
+        assertEquals("82,25", d.loadText(82.25))
+    }
+
+    @Test
+    fun languageChangeKeepsExactPoundsDraftsAndPendingAcknowledgements() {
+        for (before in NumberLocale.entries) {
+            val after = if (before == NumberLocale.EN) NumberLocale.PT_BR else NumberLocale.EN
+            val exactKg = 22.123456789
+            reset(RoutineSetUi("bench-1", 8, exactKg))
+            saves.clear()
+            val d = drafts(pounds = true, locale = before)
+            val rounded = d.shown("bench-1", SetField.LOAD)
+            d.type("bench-1", SetField.REPS, "9")
+
+            d.useLocale(after)
+            assertEquals(rounded, d.shown("bench-1", SetField.LOAD))
+            d.type("bench-1", SetField.LOAD, rounded)
+            assertEquals(1, saves.size) // The old separator still denotes the same exact kilograms.
+            d.type("bench-1", SetField.REPS, "10")
+            assertEquals(exactKg, saves.last().weightKg!!, 0.0)
+            d.echo(saves.first())
+            assertEquals("10", d.shown("bench-1", SetField.REPS))
+            assertEquals(exactKg, d.snapshot(sets.getValue("bench-1")).weightKg!!, 0.0)
+            assertEquals(2, saves.size)
+        }
+    }
+
+    @Test
+    fun languageChangeKeepsAHeldStepperWriteAndDoesNotDuplicateIt() {
+        val d = drafts()
+        val held = d.step("bench-2", SetField.LOAD, 1)
+
+        d.useLocale(NumberLocale.PT_BR)
+
+        assertEquals("19.5", d.shown("bench-2", SetField.LOAD))
+        assertEquals(held, d.release("bench-2"))
+        assertNull(d.release("bench-2"))
+        assertEquals("19,5", d.loadText(19.5))
+        assertTrue(saves.isEmpty())
+    }
 }

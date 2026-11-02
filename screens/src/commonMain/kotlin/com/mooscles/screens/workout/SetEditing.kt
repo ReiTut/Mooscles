@@ -110,12 +110,16 @@ internal class SetRowEditor(
 
     fun shown(field: SetField): String = draft(field) ?: savedText(field)
 
-    /** The exact value of [text] in [field], or null when it is not a valid one. The empty text is 0. */
+    /**
+     * The exact value of [text] in [field], or null when it is not a valid one. The empty text is 0.
+     * An unchanged draft may use the previous language's separator: it still denotes the saved
+     * or pending exact kg, not a conversion back from the rounded pound display.
+     */
     fun value(field: SetField, text: String): Double? = when {
         text.isEmpty() -> 0.0
         field == SetField.REPS -> NumericInput.parseInteger(text, MAX_REPS)?.toDouble()
-        text == savedText(SetField.LOAD) -> set.weightKg
-        else -> screen.sent[set.id to field]?.lastOrNull { loadText(it) == text }
+        text.replace(',', '.') == savedText(SetField.LOAD).replace(',', '.') -> set.weightKg
+        else -> screen.sent[set.id to field]?.lastOrNull { loadText(it).replace(',', '.') == text.replace(',', '.') }
             ?: NumericInput.parseDecimal(text, max = maxLoad)?.let { WeightUnits.toKg(it, pounds) }
     }
 

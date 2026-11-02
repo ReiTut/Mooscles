@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-01 follow-up (user instruction takes precedence): Phase 5/5B is paused, including planning.** The local `codex/language-launcher-icon` follow-up prepares [v1.5.1 / Build 22](releases/v1.5.1.md) for the original `ReiTut/Mooscles` repository: Settings language selection, localized legacy labels, exact-weight/draft retention across language changes and new launcher assets. Existing Phase 5A features remain unchanged. Read the [focused verification](reports/2026-11-01-language-launcher-verification.md) and the current release notes before the older state below. The original repository has CI enabled; the older statement below that it has no Actions runs is historical and superseded. This Windows checkout uses `origin` for `ReiTut/Mooscles`; the Mac-specific remote/account commands below do not describe it.
+
 Atualizado em 2026-11-01, depois da release 1.5.0 (fases 0 a 5A) no repositório original. Este arquivo é a porta de entrada para o agente (Claude Code, Codex ou outro) que vai continuar o desenvolvimento. Ele não repete o que já está no [AGENTS.md](../../AGENTS.md) nem no [ROADMAP](ROADMAP.md): diz onde as coisas estão, o que falta e como trabalhar sem repetir os erros de antes.
 
 Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" deste arquivo junto com o ROADMAP.

@@ -310,7 +310,9 @@ jobs:
           # (progressPrewarmDelayIsHalfASecond), :designsystem commonTest; ProgressIndexCacheTest +1
           # (aFailedBuildWhoseOnlyCallerLeftIsForgottenToo, :screens commonTest); ProgressNavigationHostTest +1
           # (viewProgressFromTheDetailOverTheProgressReturnsToIt, :app host). No test retired. 1260 + 4 = 1264.
-          MIN_HOST_TESTS: 1264
+          # Language/icon: AppLanguageHostTest 6, AppLanguageUiHostTest 1, LegacyStringsHostTest 2,
+          # PlannedSetDraftsTest +3, SetRowEditorLocaleTest 2: +14 over 1264.
+          MIN_HOST_TESTS: 1278
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -715,7 +717,8 @@ jobs:
           # twoWorkoutsStartedTogetherAreTwoRowsOfTheTable, midnightMovesThePeriodsStart). ProgressTextsTest moved its
           # assertions off tableRows, weekOf and recordLine (deleted, unused by the screens) onto tableRow, chartWeekOf and
           # recordWasText: no test retired. 886 + 6 = 892.
-          MIN_SCREENS_IOS_TESTS: 892
+          # Language/icon: PlannedSetDraftsTest +3 common tests, 892 + 3 = 895.
+          MIN_SCREENS_IOS_TESTS: 895
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

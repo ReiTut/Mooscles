@@ -10,13 +10,15 @@ android {
         applicationId = "com.mooscles"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "1.5.0"
+        versionCode = 22
+        versionName = "1.5.1"
         // The updater runs everywhere except the side-by-side `preview` build (below).
         buildConfigField("boolean", "UPDATER_ENABLED", "true")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
+    // Both supported languages must remain available for offline in-app switching in bundles too.
+    bundle { language { enableSplit = false } }
     buildTypes {
         // Installs beside the distributed app (own applicationId, own data, own launcher entry) and
         // can never update or replace it: the updater is off. Signed with the debug key like debug.
