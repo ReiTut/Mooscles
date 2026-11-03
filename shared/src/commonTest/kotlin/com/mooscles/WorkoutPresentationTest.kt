@@ -282,6 +282,81 @@ class WorkoutPresentationTest {
         assertEquals(110.0, ui.records.single { it.kind == RecordKind.WEIGHT }.weightKg, 0.0)
     }
 
+    @Test fun nonCandidateActiveSetsKeepTheirValuesAndCheckingAWorkingSetStillFindsTheRecord() {
+        val base = fixture()
+        val entryIds = base.workoutItems("active").mapTo(hashSetOf()) { it.id }
+        val historical = base.sets.filterNot { it.workoutExerciseId in entryIds }
+        val pending = WorkoutSet("pending", "active-a", reps = 100, weightKg = 1000.0)
+        val nonCandidates = listOf(
+            pending,
+            pending.copy(id = "warmup", completed = true, warmup = true),
+            pending.copy(id = "zero-reps", completed = true, reps = 0),
+            pending.copy(id = "negative-reps", completed = true, reps = -1),
+            pending.copy(id = "negative-load", completed = true, weightKg = -1.0),
+            pending.copy(id = "not-a-number", completed = true, weightKg = Double.NaN),
+            pending.copy(id = "infinite", completed = true, weightKg = Double.POSITIVE_INFINITY),
+        )
+        val presenter = WorkoutPresentation()
+        val first = presenter.present(base, PreferencesUi())
+        val scenarios = listOf(emptyList<WorkoutSet>()) + nonCandidates.map { listOf(it) } + listOf(nonCandidates)
+        scenarios.forEachIndexed { index, rows ->
+            val data = base.copy(sets = historical + rows)
+            // The unchanged domain calculations provide an independent eligibility reference.
+            assertTrue(WorkoutCalculations.prsForWorkout(data, "active").isEmpty(), "weight scenario $index")
+            assertTrue(WorkoutCalculations.repsPrsForWorkout(data, "active").isEmpty(), "reps scenario $index")
+            val shown = presenter.present(data, PreferencesUi())
+            val active = shown.active!!
+            assertTrue(active.records.isEmpty(), "scenario $index")
+            assertTrue(active.exercises.all { it.provisionalRecordKg == null && it.sets.all { row -> row.record == null } })
+            assertSame(first.history, shown.history)
+            assertSame(first.records, shown.records)
+            assertSame(first.routines, shown.routines)
+            assertEquals(listOf("active-a", "active-pull", "active-b"), active.exercises.map { it.id })
+            assertEquals(rows.map { it.id }, active.exercises[0].sets.map { it.id })
+            rows.zip(active.exercises[0].sets).forEach { (saved, row) ->
+                assertEquals(saved.reps, row.reps)
+                assertEquals(saved.weightKg, row.weightKg)
+                assertEquals(saved.completed, row.completed)
+                assertEquals(saved.warmup, row.warmup)
+            }
+        }
+        val checked = pending.copy(id = "working", reps = 6, weightKg = 23.0, completed = true)
+        val active = presenter.present(base.copy(sets = historical + checked), PreferencesUi()).active!!
+        assertEquals(23.0, active.exercises[0].provisionalRecordKg)
+        assertEquals(listOf("working" to SetRecordUi(RecordKind.WEIGHT, previousKg = 22.0)), active.marks())
+        assertEquals(22.0, active.records.single { it.kind == RecordKind.WEIGHT }.previousKg)
+    }
+
+    @Test fun checkingBodyweightOrAssistedSetsAfterAnUnfinishedStateStillFindsRepetitionRecords() {
+        listOf(pull to false, assisted to false, bench to true).forEach { (exercise, assistance) ->
+            val load = if (exercise == pull) 0.0 else 20.0
+            val data = AppData(
+                exercises = listOf(exercise),
+                workouts = listOf(
+                    Workout("past", "Past", startedAt = 1000, endedAt = 1500, status = WorkoutStatus.FINISHED),
+                    Workout("active", "Active", startedAt = 2000),
+                ),
+                workoutExercises = listOf(entry("past-entry", "past", exercise, 0), entry("active-entry", "active", exercise, 0)),
+                sets = listOf(
+                    WorkoutSet("past-set", "past-entry", reps = 6, weightKg = load, completed = true, assistance = assistance),
+                    WorkoutSet("active-set", "active-entry", reps = 9, weightKg = load, assistance = assistance),
+                ),
+            )
+            val presenter = WorkoutPresentation()
+            assertTrue(presenter.present(data, PreferencesUi()).active!!.records.isEmpty())
+            val checked = data.copy(sets = data.sets.map { if (it.id == "active-set") it.copy(completed = true) else it })
+            val active = presenter.present(checked, PreferencesUi()).active!!
+            val record = active.records.single()
+            assertEquals(RecordKind.REPS, record.kind)
+            assertEquals(load, record.weightKg)
+            assertEquals(9, record.reps)
+            assertEquals(6, record.previousReps)
+            assertEquals(assistance || exercise.convention == LoadConvention.ASSISTANCE, record.assistance)
+            assertEquals(listOf("active-set" to SetRecordUi(RecordKind.REPS, previousReps = 6)), active.marks())
+            assertTrue(presenter.present(data, PreferencesUi()).active!!.records.isEmpty(), "Unchecking removes ${exercise.id}'s record")
+        }
+    }
+
     /** One set of [recordData]: completed unless told otherwise. */
     private data class Row(val id: String, val kg: Double, val reps: Int, val completed: Boolean = true,
         val warmup: Boolean = false, val assistance: Boolean = false)

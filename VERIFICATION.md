@@ -1,5 +1,17 @@
 # Verification — 2026-10-25
 
+## Prerelease 1.5.3-beta.1 / Build 24
+
+Reuses the unchanged implementation's [70 passing focused host tests, optimized Redmi Note 12 / Android 15 measurements, decoded early frames and state-preservation checks](docs/superpowers/reports/2026-11-03-routine-startup-latency.md). These established less PR preparation CPU and removal of translucent forward-entry overlap, **not** a consistent overall startup or scrolling speedup. Initial layout and occasional shader compilation remain. The old literal starting overlay is not present in this checkout; skeleton placeholders are preserved.
+
+Fresh release checks cover updater channel/metadata/signing policy, final versioned debug packaging, APK budgets, actual package/version/original certificate and metadata generated from the final bytes. Published assets must be independently downloaded and compared, and the unchanged distributed updater exercised against the public prerelease and stable channels. The prior full release v1.5.2 must remain Latest. [Release notes](docs/superpowers/releases/v1.5.3-beta.1.md).
+
+Version 24 exceeds all inspected published metadata and connected production/test installations (maximum 23). Application ID `com.mooscles`, minimum API 26, schema 6, original debug signer, preferences, timer and updater formats remain unchanged. No additional production-phone installation or performance recording is performed merely for the version bump. Reused phone input/state checks and update discovery do not prove installation of this final APK; Android may require approval. Phase 5/5B remains paused.
+
+The existing publication helper demands a completely clean tree and always reruns the broad build script. To preserve the unrelated `gradle.properties` edit and honor focused verification, this publication uses the authorized manual draft/assets/verification/publish fallback, with explicit `draft=false`, `prerelease=true` and `latest=false`, while retaining the existing `prepare-release.ps1` signer and artifact checks. Source/tag publication follows the existing development-branch PR-to-Test process; stable main is not merged for this prerelease.
+
+Fresh local checks passed: **25 updater/signing tests** (ReleaseClientTest 15, ApkVerifierTest 10), clean debug build, lint (**0 errors / 21 warnings**) and all APK/font/icon budgets. Final APK: **24,963,682 bytes**, SHA-256 `f1df386d11b821296f5234da4f5e4856302fbc2cabf286eed955e26e0b07e901`. Package/version and the original `0cd093b2…bb35` signer were verified against the downloaded stable v1.5.2 APK. The updater source is unchanged from that distributed tag. Public delivery checks and repository CI are separate from these local results.
+
 ## Release 1.5.2 / Build 23
 
 Shared-workout wordmark release. Reuses [22 passing host checks, 6 passing Android 15 device checks, real preview/chooser observations and PNG inspections](docs/superpowers/reports/2026-11-02-share-wordmark-verification.md) for the unchanged implementation. Version-only preparation uses a fresh clean APK build, lint, package/version/original-signer and size checks, then metadata generated from the final APK. Source changes follow normal PR CI; publication includes independent asset downloads and stable updater-discovery verification.

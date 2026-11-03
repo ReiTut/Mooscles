@@ -313,7 +313,8 @@ jobs:
           # Language/icon: AppLanguageHostTest 6, AppLanguageUiHostTest 1, LegacyStringsHostTest 2,
           # PlannedSetDraftsTest +3, SetRowEditorLocaleTest 2: +14 over 1264.
           # Shared wordmark: WorkoutCardRendererTest +1 Portuguese export check.
-          MIN_HOST_TESTS: 1279
+          # Startup PR fast path: WorkoutPresentationTest +2 (:shared commonTest). 1279 + 2 = 1281.
+          MIN_HOST_TESTS: 1281
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -446,7 +447,8 @@ jobs:
           # Phase 4B task 1: BackupCodecTest +3, ImportPlannerTest +1 (commonTest), IosDatabaseTest +1 (iosTest). 259 + 5 = 264.
           # Phase 4B task 3: WorkoutPresentationTest +10, UiErrorsTest +1 (commonTest). 264 + 11 = 275.
           # Phase 5A task 2: EstimatedOneRepMaxTest 5 (commonTest). 275 + 5 = 280.
-          MIN_IOS_TESTS: 280
+          # Startup PR fast path: WorkoutPresentationTest +2 (commonTest). 280 + 2 = 282.
+          MIN_IOS_TESTS: 282
         run: |
           $files = @(Get-ChildItem -Path 'shared/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @(); $platform = @()

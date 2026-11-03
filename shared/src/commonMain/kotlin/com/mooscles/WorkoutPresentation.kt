@@ -189,8 +189,16 @@ internal class WorkoutPresentation {
             routinesFinished = lastFinished
         }
         val active = data.activeWorkout?.let {
-            workout(it, data.workoutItems(it.id), WorkoutCalculations.prsForWorkout(data, it.id),
-                WorkoutCalculations.repsPrsForWorkout(data, it.id), active = true)
+            val entries = data.workoutItems(it.id)
+            // Neither record kind can exist without a completed working set. In particular, a fresh routine
+            // must not index the archive and fold both historical baselines only to find no candidates.
+            // Repetition records include bodyweight and assistance, so eligibility must not require a load.
+            val hasCandidate = entries.any { entry ->
+                allSetsByEntry[entry.id].orEmpty().any { set -> !set.warmup && WorkoutCalculations.validCompleted(set) }
+            }
+            val weight = if (hasCandidate) WorkoutCalculations.prsForWorkout(data, it.id) else emptyList()
+            val reps = if (hasCandidate) WorkoutCalculations.repsPrsForWorkout(data, it.id) else emptyList()
+            workout(it, entries, weight, reps, active = true)
         }
         previousActive = previousActive?.takeIf { it == active } ?: active
         val folders = data.routineFolders.sortedBy { it.position }.map { RoutineFolderUi(it.id, it.name) }

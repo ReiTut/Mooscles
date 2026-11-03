@@ -1,6 +1,7 @@
 package com.mooscles.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -366,7 +367,12 @@ internal fun MoosclesApp(
                             onOpenRoutine = { nav.openRoutine(it) },
                         )
                     }
-                    composable(WORKOUT_ROUTE) { WorkoutRoute(state, timer, hosted, nav, skeletonCards, workoutScreen, onChooseRoutine = { selectTab(ShellTabs.TRAIN) }) }
+                    composable(
+                        WORKOUT_ROUTE,
+                        enterTransition = { EnterTransition.None },
+                        // Keep Back's inherited transition; only forward workout entry skips the fade.
+                        popEnterTransition = null,
+                    ) { WorkoutRoute(state, timer, hosted, nav, skeletonCards, workoutScreen, onChooseRoutine = { selectTab(ShellTabs.TRAIN) }) }
                     composable(ShellTabs.LIBRARY) {
                         LibraryRoute(state, hosted, onOpenExercise = { nav.openExerciseInfo(it) },
                             onOpenSettings = { nav.navigate(SettingsRoutes.settings()) { launchSingleTop = true } })
