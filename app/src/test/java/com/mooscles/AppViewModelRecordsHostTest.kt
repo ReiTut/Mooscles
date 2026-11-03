@@ -7,7 +7,9 @@ import com.mooscles.data.Equipment
 import com.mooscles.data.LoadConvention
 import com.mooscles.data.MuscleGroup
 import com.mooscles.ui.RecordKind
+import com.mooscles.ui.TargetSetUi
 import com.mooscles.ui.UiState
+import com.mooscles.ui.WorkoutUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
@@ -196,7 +198,7 @@ class AppViewModelRecordsHostTest {
             } == true
         }
         restored.startWorkout(routineId)
-        awaitUi(restored) { it.active?.id != null && it.active.id != active.id }
+        awaitUi(restored) { it.active.let { a -> a?.id != null && a.id != active.id } }
         val future = restored.ui.value.active!!.exercises.single()
         assertEquals(105, future.restSeconds)
         assertEquals(3, future.sets.size)
@@ -229,13 +231,18 @@ class AppViewModelRecordsHostTest {
         val saved = model.ui.value.routines.single().exercises.single()
         assertFalse(saved.setTargets.first().inherited)
         assertTrue(saved.setTargets.drop(1).all { it.inherited })
-        assertEquals(before, model.ui.value.active)
+        // The routine is the active workout's source: only its target line follows the edit (phase 4B, D16).
+        assertEquals(before.logged(), model.ui.value.active!!.logged())
+        assertEquals(TargetSetUi(8, 17.25), model.ui.value.active!!.exercises.single().target!!.working.first())
         model.viewModelScope.cancel()
         val reopened = newModel()
         awaitUi(reopened) { !it.loading && it.routines.singleOrNull()?.exercises?.singleOrNull()?.setTargets?.size == 3 }
         assertEquals(saved, reopened.ui.value.routines.single().exercises.single())
-        assertEquals(before, reopened.ui.value.active)
+        assertEquals(before.logged(), reopened.ui.value.active!!.logged())
     }
+
+    /** The workout as logged, without the target line, which follows the source routine as it is now. */
+    private fun WorkoutUi.logged() = copy(exercises = exercises.map { it.copy(target = null) })
 
     @Test fun activeSourceIdSurvivesPresentationRecreationAndOtherStartsWithoutResettingTraining() {
         val seeded = runBlocking(Dispatchers.IO) {
@@ -268,7 +275,8 @@ class AppViewModelRecordsHostTest {
         model.startWorkout(null)
         model.renameRoutine(seeded.second, "Renamed source")
         awaitUi(model) { it.routines.single { routine -> routine.id == seeded.second }.name == "Renamed source" }
-        runBlocking(Dispatchers.IO) { app.repository.moveRoutine(seeded.second, -1) }
+        runBlocking(Dispatchers.IO) { app.repository.reorderRoutines(
+            app.repository.snapshot().routines.map { it.id }.let { ids -> listOf(seeded.second) + (ids - seeded.second) })  }
         awaitUi(model) { it.routines.firstOrNull()?.id == seeded.second }
         val after = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
         assertEquals(before.workouts, after.workouts)

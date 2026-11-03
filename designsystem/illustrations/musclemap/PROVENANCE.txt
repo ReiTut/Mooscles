@@ -1,0 +1,63 @@
+Mooscles body map: provenance
+
+Source
+  Repository: https://github.com/Jsplice/MuscleMap
+  Commit:     170cfacda79376dd59ac0cf2f7dfab8ff9f4443a (2026-09-15, @musclemap/assets 1.1.0)
+  Files:      packages/assets/src/male-front.ts
+                sha256 58cc6b7cc7493ddf6e6f60f94e83323abd4166d594521e33e75bb44173106a01
+              packages/assets/src/male-back.ts
+                sha256 767c0adb90d6cb4dfa36e11ea5b98414ef54a1fd6dc922dd3e19502f4d1da0bc
+              LICENSE (copied unchanged next to this file)
+                sha256 f7347b3759d6cb8c4a27d229a446aaed2af50e23012755615b98eb874af38a3d
+  License:    MIT License, Copyright (c) 2026 Jsplice / MuscleMap contributors. The source's
+              LICENSE says it covers the SVG muscle path data in packages/assets, hand-traced
+              in Inkscape (ASSET_PROVENANCE.md there).
+  Origin:     ASSET_PROVENANCE.md at the commit says the muscle paths are original vector work:
+              a person traced each surface by hand in Inkscape, over reference body photographs
+              that were generated with OpenAI image tooling and then edited. Those photographs
+              (packages/assets/bodies, apps/playground/public) are not part of Mooscles: only the
+              hand-traced path data is.
+  Decision:   Controller, 2026-10-29: the human-traced vectors ship under the MIT License and
+              are not an AI-generated asset under the phase 4 spec (whose rule excludes
+              AI-generated assets); the AI-generated reference photographs are not used.
+  Imported:   2026-10-29, phase 4A of Mooscles (spec D6; spike report
+              docs/superpowers/reports/2026-10-29-phase4a-spike-mapa.md).
+
+What was taken
+  Only the path data ("d") of the male front and back diagrams: the BODY silhouette and the
+  muscle paths, with both sides already drawn (side CENTER). Not taken: the female diagrams,
+  the body photographs, the region crop boxes and any code.
+
+What changed
+  1. Grouping. The muscle paths are grouped into the 17 regions of the Mooscles spec, one
+     <g id="REGION"> per region in body-front.svg and body-back.svg, both sides together. Each
+     path keeps its MuscleMap id in data-source (the group name where the source has no id):
+       CHEST                                            -> CHEST
+       SHOULDER_FRONT, SHOULDER_SIDE, SHOULDER_REAR     -> SHOULDERS
+       BICEPS                                           -> BICEPS
+       TRICEPS                                          -> TRICEPS
+       FOREARM                                          -> FOREARMS
+       CORE, OBLIQUE                                    -> ABDOMINALS
+       TRAPEZIUS                                        -> TRAPS
+       RHOMBOID                                         -> MIDDLE_BACK
+       LATISSIMUS                                       -> LATS
+       LOWER_BACK                                       -> LOWER_BACK
+       GLUTEUS                                          -> GLUTES
+       QUADRICEPS (and the two QUADS paths with no id)  -> QUADRICEPS
+       HAMSTRINGS                                       -> HAMSTRINGS
+       ADDUCTOR                                         -> ADDUCTORS
+       ABDUCTOR                                         -> ABDUCTORS
+       CALVES                                           -> CALVES
+     The source has no neck surface: the app draws NECK with the TRAPS paths (in code; the SVGs
+     have no NECK group).
+  2. Rounding. None in effect. The generated Kotlin writes each number with at most one decimal,
+     the source's own precision, and the generator stops if that would move any number. The path
+     strings are only re-spaced (a repeated command letter is left out, "405.0" becomes "405").
+     The viewBox (0 0 1024 1536) is kept, with no rescaling.
+  3. Restyle. The source's colors are not used. The app fills the silhouette and the regions
+     with its own neutral, primary and secondary tokens and outlines them with its hairline
+     stroke (BodyMap.kt). The geometry is not changed.
+
+How to regenerate
+  python3 -I tools/illustrations/gen_body_map.py import <MuscleMap checkout at the commit> designsystem/illustrations/musclemap
+  python3 -I tools/illustrations/gen_body_map.py designsystem/illustrations/musclemap designsystem/src/commonMain/kotlin/com/mooscles/designsystem/illustration

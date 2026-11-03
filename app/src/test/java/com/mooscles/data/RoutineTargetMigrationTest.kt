@@ -3,8 +3,8 @@ package com.mooscles.data
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
-import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -53,7 +53,7 @@ class RoutineTargetMigrationTest {
             database = openMigrating(filename)
             var repo = WorkoutRepository(database)
             val upgraded = repo.snapshot()
-            assertEquals(5, database.openHelper.writableDatabase.version)
+            assertEquals(6, database.userVersion())
             assertLegacyDataUnchanged(legacy, upgraded)
             assertEquals(planned.sortedBy { it.id }, upgraded.routineSets.sortedBy { it.id })
             assertTrue(upgraded.workouts.all { it.sourceRoutineId == null })
@@ -152,7 +152,7 @@ class RoutineTargetMigrationTest {
         try {
             database = openMigrating(filename)
             var repository = WorkoutRepository(database)
-            assertEquals(5, database.openHelper.writableDatabase.version)
+            assertEquals(6, database.userVersion())
             assertTrue(database.dao().targetCheckpoints().isEmpty())
             assertLegacyDataUnchanged(legacy, repository.snapshot())
 
@@ -199,8 +199,8 @@ class RoutineTargetMigrationTest {
     }
 
     private fun openMigrating(filename: String): WorkoutDatabase =
-        Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5).build()
+        Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver())
+            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
 
     private fun assertLegacyDataUnchanged(expected: AppData, actual: AppData) {
         assertEquals(expected.exercises.sortedBy { it.id }, actual.exercises.sortedBy { it.id })
@@ -216,10 +216,7 @@ class RoutineTargetMigrationTest {
     }
 
     private fun createLegacyDatabase(filename: String, data: AppData, version: Int) {
-        val schemaPath = "schemas/com.mooscles.data.WorkoutDatabase/$version.json"
-        val schemaFile = listOf(File(schemaPath), File("app/$schemaPath")).firstOrNull { it.isFile }
-            ?: error("Room's exported version-one schema was not found")
-        val schema = JSONObject(schemaFile.readText()).getJSONObject("database")
+        val schema = JSONObject(exportedSchemaFile(version).readText()).getJSONObject("database")
         val path = context.getDatabasePath(filename)
         path.parentFile!!.mkdirs()
         SQLiteDatabase.openOrCreateDatabase(path, null).use { raw ->

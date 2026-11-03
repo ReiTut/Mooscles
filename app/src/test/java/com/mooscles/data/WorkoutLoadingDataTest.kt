@@ -2,11 +2,8 @@ package com.mooscles.data
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -36,7 +33,7 @@ class WorkoutLoadingDataTest {
 
     @Before fun open() {
         database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .setQueryCallback(RoomDatabase.QueryCallback { sql, _ -> queries += sql }, Executor { it.run() })
+            .setDriver(RecordingDriver { sql -> queries += sql })
             .build()
         repo = WorkoutRepository(database)
     }
@@ -52,7 +49,7 @@ class WorkoutLoadingDataTest {
         val movement = Exercise(name = "Repeated movement", muscle = MuscleGroup.CHEST,
             equipment = Equipment.BODYWEIGHT, convention = LoadConvention.BODYWEIGHT, custom = true)
         val routine = Routine(name = "Routine $count")
-        database.withTransaction {
+        database.writeTransaction {
             val dao = database.dao()
             dao.insertExercise(movement)
             dao.insertRoutine(routine)
@@ -172,7 +169,7 @@ class WorkoutLoadingDataTest {
         val channel = observe()
         val initial = channel.nextMatching { it.activeWorkout?.id == workout }
         val first = initial.workoutItems(workout).first()
-        database.withTransaction {
+        database.writeTransaction {
             database.dao().updateWorkoutExercise(first.copy(name = "Changed outside repository", restSeconds = 145))
             val row = initial.exerciseSets(first.id).last()
             database.dao().updateSet(row.copy(weightKg = 21.5, reps = 8, completed = true))
@@ -217,7 +214,7 @@ class WorkoutLoadingDataTest {
         val writer = scope.launch {
             repeat(30) { index ->
                 val generation = index + 1
-                database.withTransaction {
+                database.writeTransaction {
                     database.dao().updateWorkoutExercise(entry.copy(name = "Generation $generation"))
                     rows.forEach { row -> database.dao().updateSet(row.copy(reps = generation)) }
                 }

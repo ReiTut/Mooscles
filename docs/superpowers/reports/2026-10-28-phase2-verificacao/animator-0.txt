@@ -1,0 +1,45 @@
+Task 16, Step 4: reduced motion in the design gallery
+=====================================================
+
+Device: emulator-5554 (AVD Mooscles_Pixel8_API35, Android 15), build 4d33c32 (debug), gallery in dark theme, 100% text, system language (English).
+Date: 2026-10-28.
+
+Method
+------
+Each case is a 3 s `adb shell screenrecord` with the tap injected 1.2 s in. The mp4 files were cropped to the component with ffmpeg (`crop` + `showinfo`), and the table counts the frames in which the crop changes, plus the time from the first change to the last. screenrecord only writes a frame when the screen changes, so 1 or 2 changes means the component jumped straight to its end state, and many changes over a span means it animated. Script: scratchpad tools/anim.py (not committed).
+
+Three conditions:
+  A. animator_duration_scale 1, gallery "Reduce motion" off (normal motion)
+  B. `adb shell settings put global animator_duration_scale 0` (the Step 4 command), gallery "Reduce motion" off
+  C. animator_duration_scale 1, gallery "Reduce motion" chip on (the design system's reduced-motion path with real durations)
+
+Results (changes / span)
+------------------------
+Case                                    A (normal)        B (scale 0)       C (Reduce motion chip)
+Set check, pending to done (Set row)    12 / 0.168 s      2 / 0.015 s       11 / 0.160 s
+Set check, done to pending              1 / instant       1 / instant       1 / instant
+PR toast entrance (Records)             48 / 1.489 s      2 / 0.017 s       10 / 0.145 s
+Toast entrance (Overlays, "Show toast") 13 / 0.197 s      3 / 0.047 s       9 / 0.147 s
+Skeleton, 3 s with no input (States)    22 changes        1 change          0 changes
+Timer ring after +15 s (Rest timer)     60 / 0.993 s      2 / 0.023 s       2 / 0.013 s
+
+Frame strips of the set check (committed next to this file):
+  animator-check-spring-frames.png   case A: the disc shrinks and springs back to full size (scale 0.92 to 1).
+  animator-check-reduced-frames.png  case C: the disc keeps its size and fades in (alpha 0 to 1, about 150 ms).
+
+What this shows
+---------------
+1. Reduced-motion behavior (case C), as the spec asks:
+   - Set check: fade, no scale. Matches.
+   - PR toast: a 0.15 s fade instead of the 1.5 s spring and rise. Matches.
+   - Toast: fades in about 0.15 s. Matches.
+   - Skeleton: no change at all in 3 s. Matches.
+   - Timer ring after +15 s: jumps straight to the new stepped value instead of the 1 s linear sweep. Matches "o anel do timer avança de segundo em segundo, sem varredura" for an adjustment. I could not see a once-per-second step on a running countdown, because the gallery's timer samples are static (1:24, and they only change with the ±15 s buttons). The per-second stepping is covered only by the ringProgress unit tests (commonTest RestTimerRingMathTest).
+
+2. With animator_duration_scale 0 (case B), every animation lands in one or two frames, including the fades. Compose applies the system scale to all its animations, so at scale 0 a fade and a spring look the same: an instant switch. The skeleton stops (1 change in 3 s, from the first frame), and the ring jumps.
+
+3. PROBLEM: the gallery ignores the system setting. With animator_duration_scale 0, Foundations still reads "reducedMotion: false" (screenshot animator-0-foundations-motion.png). GalleryScreen passes `reducedMotion = controls.reducedMotion` into MoosclesDesignTheme. That control starts at `false` (GalleryControls) and is never seeded from rememberSystemReducedMotion(), so the gallery's MoosclesDesignTheme overrides the system value. In case B, the components therefore still chose the spring path; it only looked instant because Compose scaled the spring to zero. The Android reader itself (ReducedMotion.android.kt, a ContentObserver on ANIMATOR_DURATION_SCALE) was not exercised on the device, because nothing outside the gallery uses the design system's motion yet. Suggested fix: start GalleryControls.reducedMotion from the system value, or make the chip a three-way choice (system, on, off).
+
+4. PROBLEM (small): a one-frame flash before the check animation. In both strips, the first frame after the tap shows the finished check at full size and full opacity. In case A the next frame jumps back to scale 0.92, and in case C the check vanishes and then fades in. The Animatable's start value is applied one frame after the completed state is drawn. On a phone this reads as a flicker at the start of the key moment.
+
+Restored afterwards: `adb shell settings put global animator_duration_scale 1` (read back as 1).

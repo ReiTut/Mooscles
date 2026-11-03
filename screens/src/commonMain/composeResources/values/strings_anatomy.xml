@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The text equivalent of the body map (spec D21): the muscle regions in lowercase, as they sit
+     inside a sentence, and the two sentences. English is the base; every key also exists in
+     values-pt-rBR. The body as a whole reads catalog_muscle_full_body. -->
+<resources>
+    <string name="anatomy_region_abdominals">abdominals</string>
+    <string name="anatomy_region_abductors">abductors</string>
+    <string name="anatomy_region_adductors">adductors</string>
+    <string name="anatomy_region_biceps">biceps</string>
+    <string name="anatomy_region_calves">calves</string>
+    <string name="anatomy_region_chest">chest</string>
+    <string name="anatomy_region_forearms">forearms</string>
+    <string name="anatomy_region_glutes">glutes</string>
+    <string name="anatomy_region_hamstrings">hamstrings</string>
+    <string name="anatomy_region_lats">lats</string>
+    <string name="anatomy_region_lower_back">lower back</string>
+    <string name="anatomy_region_middle_back">middle back</string>
+    <string name="anatomy_region_neck">neck</string>
+    <string name="anatomy_region_quadriceps">quadriceps</string>
+    <string name="anatomy_region_shoulders">shoulders</string>
+    <string name="anatomy_region_traps">traps</string>
+    <string name="anatomy_region_triceps">triceps</string>
+
+    <!-- The regions, joined by ", ": "Primary: quadriceps." -->
+    <string name="anatomy_primary">Primary: %1$s.</string>
+    <!-- "Primary: quadriceps. Secondary: glutes, hamstrings." -->
+    <string name="anatomy_primary_secondary">Primary: %1$s. Secondary: %2$s.</string>
+</resources>

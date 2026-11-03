@@ -1,16 +1,19 @@
 package com.mooscles.ui
 
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
+import com.mooscles.screens.format.exerciseName
+import com.mooscles.screens.format.equipmentLabel
+import com.mooscles.screens.format.conventionLabel
+import com.mooscles.screens.format.conventionExplanation as localizedConventionExplanation
+
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -21,212 +24,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import com.mooscles.domain.RestDuration
 
-private data class WorkoutRestOverride(val exerciseId: String, val seconds: Int)
-
-@Composable
-fun ActiveWorkoutScreen(state: UiState, actions: MoosclesActions, onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit) {
-    ActiveWorkoutScreen(state.active, state.exercises, state.preferences, state.history, state.error,
-        actions, onRoutines, onHistory, onExerciseHistory, state.startingWorkout, state.discardingWorkout)
-}
-
-/** The scrolling route deliberately receives no ticking rest-timer state. */
-@Composable
-fun ActiveWorkoutScreen(
-    workout: WorkoutUi?, exercises: List<ExerciseUi>, preferences: PreferencesUi,
-    history: List<WorkoutUi>, error: String?, actions: MoosclesActions,
-    onRoutines: () -> Unit, onHistory: (String) -> Unit, onExerciseHistory: (String) -> Unit,
-    startingWorkout: Boolean = false,
-    discardingWorkout: Boolean = false,
-) {
-    var picker by remember { mutableStateOf(false) }
-    var replace by remember { mutableStateOf<String?>(null) }
-    var discard by remember { mutableStateOf(false) }
-    var finish by remember { mutableStateOf(false) }
-    var rename by remember { mutableStateOf(false) }
-    var finishingId by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(history, workout, finishingId) {
-        finishingId?.let { id -> if (history.any { it.id == id }) { finishingId = null; onHistory(id) } }
-    }
-    LaunchedEffect(error) { if (error != null) finishingId = null }
-    if (workout == null) {
-        Column(Modifier.fillMaxSize().imePadding()) {
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                item { PageHeading("Your training space", "Ready to move?", "Every rep is a step forward.") }
-                item { EmptyState(Icons.Outlined.FitnessCenter, "A fresh start", "Start with a routine or build today’s session as you go.", "Choose a routine", onRoutines) }
-                item { Button(onClick = { actions.startWorkout(null) }, enabled = !startingWorkout, modifier = Modifier.fillMaxWidth()) {
-                    if (startingWorkout) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.Add, null)
-                    Spacer(Modifier.width(8.dp)); Text(if (startingWorkout) "Starting workout…" else "Start empty workout")
-                } }
-            }
-        }
-        return
-    }
-    var restEditorId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
-    var restEditorExerciseId by rememberSaveable(workout.id) { mutableStateOf<String?>(null) }
-    val pendingRests = remember(workout.id) { mutableStateMapOf<String, WorkoutRestOverride>() }
-    LaunchedEffect(workout.exercises) {
-        pendingRests.keys.toList().forEach { id ->
-            val entry = workout.exercises.find { it.id == id }
-            val pending = pendingRests[id]
-            if (entry == null || pending == null || pending.exerciseId != entry.exercise.id || pending.seconds == entry.restSeconds)
-                pendingRests.remove(id)
-        }
-        if (restEditorId != null && workout.exercises.none { it.id == restEditorId && it.exercise.id == restEditorExerciseId }) {
-            restEditorId = null
-            restEditorExerciseId = null
-        }
-    }
-    fun withRestOverride(entry: WorkoutExerciseUi): WorkoutExerciseUi {
-        val pending = pendingRests[entry.id]?.takeIf { it.exerciseId == entry.exercise.id }
-        return if (pending == null) entry else entry.copy(restSeconds = pending.seconds)
-    }
-    val totals = remember(workout) { workoutTotals(workout) }
-    Column(Modifier.fillMaxSize().imePadding()) {
-    LazyColumn(modifier = Modifier.weight(1f).testTag("active-workout-list"), contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp)) {
-        item(key = "workout-heading", contentType = "heading") { SpacedWorkoutItem { PageHeading("In your element", workout.name, trailing = { IconButton(onClick = { rename = true }) { Icon(Icons.Outlined.Edit, "Rename workout") } }) } }
-        item(key = "workout-totals", contentType = "totals") {
-            SpacedWorkoutItem {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                WorkoutElapsedMetric(workout.startedAt)
-                Metric(totals.completedSets.toString(), "Sets done")
-                Metric(weight(totals.volumeKg, preferences.pounds), "Weight moved")
-            }
-            }
-        }
-        item(key = "workout-movements", contentType = "section") { SpacedWorkoutItem { SectionTitle("Today’s movements", "Add", { picker = true }) } }
-        if (workout.exercises.isEmpty()) item(key = "workout-empty", contentType = "empty") { SpacedWorkoutItem { EmptyState(Icons.Outlined.AddCircleOutline, "Make the first move", "Add an exercise to begin logging sets.", "Add exercise", { picker = true }) } }
-        // An exercise is a group of independently lazy rows. Making the whole card
-        // one item would still compose every TextField in a large single exercise.
-        workout.exercises.forEachIndexed { index, entry ->
-            item(key = "exercise-heading:${entry.id}", contentType = "exercise-heading") {
-                WorkoutCardSegment(first = true) {
-                    WorkoutExerciseHeading(entry.exercise, entry.id, index, workout.exercises.size,
-                        entry.previous, entry.records, preferences.pounds, actions, editable = true,
-                        onReplace = { replace = entry.id; picker = true },
-                        onHistory = { onExerciseHistory(entry.exercise.id) })
-                }
-            }
-            itemsIndexed(entry.sets, key = { _, set -> "set:${entry.id}:${set.id}" }, contentType = { _, _ -> "working-set" }) { setIndex, set ->
-                WorkoutCardSegment {
-                    SetEditor(set, setIndex, preferences.pounds, entry.exercise.convention == "Assistance", actions)
-                }
-            }
-            item(key = "exercise-footer:${entry.id}", contentType = "exercise-footer") {
-                WorkoutCardSegment(last = true) {
-                    WorkoutExerciseFooter(entry.id, entry.exercise.name, withRestOverride(entry).restSeconds,
-                        actions, onEditRest = { restEditorId = entry.id; restEditorExerciseId = entry.exercise.id })
-                }
-            }
-        }
-        item(key = "workout-add", contentType = "button") { SpacedWorkoutItem { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Add, null); Text("Add exercise") } } }
-        item(key = "workout-finish", contentType = "finish") {
-            SpacedWorkoutItem {
-            Column {
-            Button(onClick = { finish = true }, enabled = totals.completedSets > 0 && finishingId == null && !discardingWorkout, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("finish-workout")) {
-                if (finishingId != null) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.CheckCircleOutline, null)
-                Spacer(Modifier.width(8.dp)); Text(if (finishingId == null) "Finish workout" else "Saving workout…")
-            }
-            if (totals.completedSets == 0) Text("Complete at least one set to finish your workout.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            }
-        }
-        item(key = "workout-discard", contentType = "button") {
-            TextButton(onClick = { discard = true }, enabled = !discardingWorkout && finishingId == null,
-                modifier = Modifier.fillMaxWidth().testTag("discard-workout")) {
-                if (discardingWorkout) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(if (discardingWorkout) "Discarding workout…" else "Discard workout", color = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
-    }
-    // Keep the modal outside lazy items: its originating card may leave the
-    // viewport when the keyboard opens or while the workout list scrolls.
-    val editingRest = restEditorId?.let { id ->
-        workout.exercises.find { it.id == id && it.exercise.id == restEditorExerciseId }?.let(::withRestOverride)
-    }
-    if (editingRest != null) WorkoutRestDialog(editingRest, editingRest.restSeconds,
-        onDismiss = { restEditorId = null; restEditorExerciseId = null }, onSave = { seconds ->
-            if (seconds != editingRest.restSeconds) {
-                pendingRests[editingRest.id] = WorkoutRestOverride(editingRest.exercise.id, seconds)
-                actions.updateWorkoutExerciseRest(editingRest.id, seconds)
-            }
-            restEditorId = null
-            restEditorExerciseId = null
-        })
-    if (picker) ExercisePicker(exercises, onDismiss = { picker = false; replace = null }, onSelect = { id -> replace?.let { actions.replaceWorkoutExercise(it, id) } ?: actions.addWorkoutExercise(workout.id, id) })
-    if (rename) NameDialog("Name this workout", workout.name, onDismiss = { rename = false }, onSave = { actions.renameWorkout(workout.id, it) })
-    if (discard) ConfirmDialog("Discard this workout?", "All sets from this active session will be removed. This cannot be undone.", "Discard", onDismiss = { discard = false }, onConfirm = {
-        discard = false
-        actions.discardWorkout()
-    })
-    if (finish) AlertDialog(onDismissRequest = { finish = false }, icon = { Icon(Icons.Outlined.CheckCircleOutline, null) }, title = { Text("Ready to call it?") },
-        text = { Text("Save ${totals.completedSets} completed sets across ${totals.completedExercises} exercises. Your records and session breakdown will be ready next.") },
-        confirmButton = { TextButton(onClick = { finishingId = workout.id; finish = false; actions.finishWorkout() }) { Text("Finish & save") } }, dismissButton = { TextButton(onClick = { finish = false }) { Text("Keep training") } })
-}
-
-private data class WorkoutTotals(val completedSets: Int, val completedExercises: Int, val volumeKg: Double)
-
-private fun workoutTotals(workout: WorkoutUi): WorkoutTotals {
-    var completedSets = 0
-    var completedExercises = 0
-    var volumeKg = 0.0
-    workout.exercises.forEach { entry ->
-        var hasCompletedSet = false
-        var exerciseVolumeKg = 0.0
-        entry.sets.forEach { set ->
-            if (set.completed) {
-                completedSets++
-                hasCompletedSet = true
-                if (entry.exercise.convention != "Assistance" && !set.assistance) exerciseVolumeKg += set.weightKg * set.reps
-            }
-        }
-        volumeKg += exerciseVolumeKg
-        if (hasCompletedSet) completedExercises++
-    }
-    return WorkoutTotals(completedSets, completedExercises, volumeKg)
-}
-
-@Composable
-private fun WorkoutElapsedMetric(startedAt: Long) {
-    var now by remember(startedAt) { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(startedAt) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
-    Metric(durationText((now - startedAt) / 1000), "Elapsed")
-}
-
-@Composable
-private fun SpacedWorkoutItem(content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxWidth().padding(bottom = 16.dp)) { content() }
-}
-
-/** Adjacent surfaces retain the card appearance without an unbounded Column. */
-@Composable
-private fun WorkoutCardSegment(first: Boolean = false, last: Boolean = false, content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().padding(bottom = if (last) 16.dp else 0.dp)
-        .background(MaterialTheme.colorScheme.surfaceContainerLow,
-            RoundedCornerShape(topStart = if (first) 22.dp else 0.dp, topEnd = if (first) 22.dp else 0.dp,
-                bottomStart = if (last) 22.dp else 0.dp, bottomEnd = if (last) 22.dp else 0.dp))) {
-        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = if (first) 16.dp else 0.dp,
-            bottom = if (last) 16.dp else 12.dp)) { content() }
-    }
-}
-
-/** A single measured dock above the app footer, independent of the scrolling route. */
-@Composable
-internal fun WorkoutTimerDock(state: UiState, actions: MoosclesActions) {
-    if (state.active == null) return
-    Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth().testTag("active-rest-timer")) {
-        Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            TimerPanel(state.timer, actions, state.preferences.defaultRestSeconds, compact = true)
-        }
-    }
-}
-
+/**
+ * The old exercise card, kept for the saved workout's detail (`WorkoutDetailScreen`): the active
+ * workout is the `:screens` one since phase 3.
+ */
 @Composable
 fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds: Boolean, actions: MoosclesActions, editable: Boolean, onReplace: () -> Unit, onHistory: () -> Unit, onEditRest: (() -> Unit)? = null) {
     var restEditor by rememberSaveable(entry.id, entry.exercise.id) { mutableStateOf(false) }
@@ -244,12 +47,12 @@ fun WorkoutExerciseCard(entry: WorkoutExerciseUi, index: Int, count: Int, pounds
             WorkoutExerciseHeading(entry.exercise, entry.id, index, count, entry.previous, entry.records,
                 pounds, actions, editable, onReplace, onHistory)
             val visibleSets = if (editable) entry.sets else entry.sets.filter { it.completed }
-            if (visibleSets.isEmpty()) Text("No completed sets", style = MaterialTheme.typography.bodySmall)
+            if (visibleSets.isEmpty()) Text(stringResource(R.string.legacy_no_completed_sets), style = MaterialTheme.typography.bodySmall)
             visibleSets.forEachIndexed { setIndex, set ->
                 if (editable) SetEditor(set, setIndex, pounds, entry.exercise.convention == "Assistance", actions)
                 else CompletedSetRow(set, setIndex, pounds, entry.exercise.convention == "Assistance")
             }
-            if (editable) WorkoutExerciseFooter(entry.id, entry.exercise.name, rest, actions,
+            if (editable) WorkoutExerciseFooter(entry.id, exerciseName(entry.exercise), rest, actions,
                 onEditRest = { onEditRest?.invoke() ?: run { restEditor = true } })
         }
     }
@@ -274,27 +77,27 @@ private fun WorkoutExerciseHeading(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("${index + 1}. ${exercise.name}", style = MaterialTheme.typography.titleMedium)
-                Text("${human(exercise.equipment)} · ${exercise.convention}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${index + 1}. ${exerciseName(exercise)}", style = MaterialTheme.typography.titleMedium)
+                Text("${equipmentLabel(exercise.equipment)} · ${conventionLabel(exercise.convention)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Exercise options") }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.legacy_exercise_options)) }
                 DropdownMenu(menu, { menu = false }) {
-                    DropdownMenuItem(text = { Text("Performance history") }, onClick = { menu = false; onHistory() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_performance_history)) }, onClick = { menu = false; onHistory() })
                     if (editable) {
-                        DropdownMenuItem(text = { Text("Replace exercise") }, onClick = { menu = false; onReplace() })
-                        DropdownMenuItem(text = { Text("Move up") }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entryId, -1) })
-                        DropdownMenuItem(text = { Text("Move down") }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entryId, 1) })
-                        DropdownMenuItem(text = { Text("Remove exercise", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_replace_exercise)) }, onClick = { menu = false; onReplace() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_move_up)) }, enabled = index > 0, onClick = { menu = false; actions.moveWorkoutExercise(entryId, -1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_move_down)) }, enabled = index < count - 1, onClick = { menu = false; actions.moveWorkoutExercise(entryId, 1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.legacy_remove_exercise), color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; remove = true })
                     }
                 }
             }
         }
-        Text(conventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(localizedConventionExplanation(exercise.convention), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         previous?.let {
             Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text("Previous: $it", style = MaterialTheme.typography.bodySmall)
+                    Icon(Icons.Outlined.History, null, Modifier.size(17.dp)); Text(stringResource(R.string.legacy_previous, it), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -302,23 +105,24 @@ private fun WorkoutExerciseHeading(
             Surface(color = MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     Icon(Icons.Outlined.EmojiEvents, null, Modifier.size(18.dp))
-                    Text("${record.label}${if (record.firstRecord) " · first record" else ""} · ${recordAchievementText(record, pounds)}${if (editable) " · provisional" else ""}", style = MaterialTheme.typography.labelMedium)
+                    Text(recordKindLabel(record) + (if (record.firstRecord) " · " + stringResource(R.string.legacy_first_record_lower) else "") + " · " + localizedRecordAchievementText(record, pounds) + (if (editable) " · " + stringResource(R.string.legacy_provisional) else ""), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
     }
-    if (remove) ConfirmDialog("Remove ${exercise.name}?", "This removes this exercise and all of its sets from the workout.", "Remove",
+    if (remove) ConfirmDialog(stringResource(R.string.legacy_remove_named, exerciseName(exercise)), stringResource(R.string.legacy_remove_exercise_body), stringResource(R.string.legacy_remove),
         onDismiss = { remove = false }, onConfirm = { actions.removeWorkoutExercise(entryId) })
 }
 
 @Composable
 private fun WorkoutExerciseFooter(entryId: String, exerciseName: String, rest: Int, actions: MoosclesActions, onEditRest: () -> Unit) {
+    val restDescription = stringResource(R.string.legacy_edit_rest_for, exerciseName)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        TextButton(onClick = { actions.addSet(entryId) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text("Add set") }
+        TextButton(onClick = { actions.addSet(entryId) }) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Text(stringResource(R.string.legacy_add_set)) }
         TextButton(onClick = onEditRest, modifier = Modifier.testTag("workout-rest-edit-$entryId")
-            .semantics { contentDescription = "Edit rest duration for $exerciseName" }) {
+            .semantics { contentDescription = restDescription }) {
             Icon(Icons.Outlined.Timer, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(4.dp)); Text("Rest ${RestDuration.format(rest)} min")
+            Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.legacy_rest_value, RestDuration.format(rest)))
         }
     }
 }
@@ -328,24 +132,24 @@ private fun WorkoutExerciseFooter(entryId: String, exerciseName: String, rest: I
 private fun WorkoutRestDialog(entry: WorkoutExerciseUi, seconds: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
     var draft by rememberSaveable(entry.id, entry.exercise.id) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
     AlertDialog(onDismissRequest = onDismiss, icon = { Icon(Icons.Outlined.Timer, null) },
-        title = { Text("Edit rest timer") }, text = {
+        title = { Text(stringResource(R.string.legacy_edit_rest_timer)) }, text = {
             // The dialog has its own composition and keyboard controller. Request
             // focus here, after that composition attaches its text field.
             val focus = remember { FocusRequester() }
             val keyboard = LocalSoftwareKeyboardController.current
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(entry.exercise.name, style = MaterialTheme.typography.titleSmall)
+                Text(exerciseName(entry.exercise), style = MaterialTheme.typography.titleSmall)
                 RestDurationField(draft, { draft = it }, Modifier.fillMaxWidth().focusRequester(focus),
                     testTag = "workout-rest-${entry.id}")
-                Text("For this workout's next rests. The current countdown keeps its own duration.",
+                Text(stringResource(R.string.legacy_rest_scope),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
         }, confirmButton = {
             TextButton(onClick = { onSave(draft) },
-                modifier = Modifier.testTag("workout-rest-save-${entry.id}")) { Text("Save") }
+                modifier = Modifier.testTag("workout-rest-save-${entry.id}")) { Text(stringResource(R.string.legacy_save)) }
         }, dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.testTag("workout-rest-cancel-${entry.id}")) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("workout-rest-cancel-${entry.id}")) { Text(stringResource(R.string.legacy_cancel)) }
         })
 }
 
@@ -357,146 +161,128 @@ fun conventionExplanation(convention: String): String = when (convention) {
     else -> "Log the external load, or leave weight blank for bodyweight. Volume = external load × reps."
 }
 
-/** One observable/saveable value for a lazy editor, including writes awaiting an echo. */
-@Immutable
-private data class WorkoutSetDraft(
-    val reps: String,
-    val referenceLoad: String,
-    val referenceWeightKg: Double,
-    val load: String = referenceLoad,
-    val draftPounds: Boolean,
-    val completed: Boolean,
-    val warmup: Boolean,
-    val assistance: Boolean,
-    val pendingSignature: String? = null,
-    val pendingWeightKg: Double? = null,
-    val pendingReps: Int? = null,
-    val acknowledgedReps: Int,
-    val acknowledgedWeightKg: Double,
-    val submittedRepsText: String = reps,
-    val submittedLoadText: String = load,
-    val touched: Boolean = false,
-) {
-    fun synchronize(set: SetUi, pounds: Boolean): WorkoutSetDraft {
-        if (pendingSignature == null && set.reps == acknowledgedReps && set.weightKg == acknowledgedWeightKg &&
-            set.completed == completed && set.warmup == warmup && set.assistance == assistance && draftPounds == pounds)
-            return this
-        var next = this
-        if (pendingSignature == null || pendingSignature == setEditSignature(set.reps, set.weightKg, set.completed, set.warmup, set.assistance)) {
-            // A matching echo preserves entered text (including comma decimals).
-            // External edits refresh only fields without newer unsubmitted input.
-            val refreshReps = pendingSignature == null && set.reps != acknowledgedReps && reps == submittedRepsText
-            val refreshLoad = pendingSignature == null && set.weightKg != acknowledgedWeightKg && load == submittedLoadText
-            val nextReps = if (refreshReps) repsText(set.reps) else reps
-            val nextLoad = if (refreshLoad) loadText(set.weightKg, pounds) else load
-            next = copy(reps = nextReps, load = nextLoad,
-                referenceLoad = if (refreshLoad) nextLoad else referenceLoad,
-                referenceWeightKg = if (refreshLoad) set.weightKg else referenceWeightKg,
-                acknowledgedReps = set.reps, acknowledgedWeightKg = set.weightKg,
-                submittedRepsText = if (refreshReps) nextReps else submittedRepsText,
-                submittedLoadText = if (refreshLoad) nextLoad else submittedLoadText,
-                completed = set.completed, warmup = set.warmup, assistance = set.assistance,
-                pendingSignature = null, pendingWeightKg = null, pendingReps = null)
-        }
-        // A row may restore a saved draft written in the former display unit.
-        // Reformat from exact kg, never from the rounded field text.
-        if (next.draftPounds != pounds) {
-            val kg = next.pendingWeightKg ?: set.weightKg
-            val text = loadText(kg, pounds)
-            next = next.copy(referenceWeightKg = kg, referenceLoad = text, load = text,
-                submittedLoadText = text, draftPounds = pounds)
-        }
-        return next
-    }
-
-    companion object {
-        private fun repsText(reps: Int) = if (reps > 0) reps.toString() else ""
-        private fun loadText(kg: Double, pounds: Boolean) = if (kg == 0.0) "" else number(kgToDisplay(kg, pounds))
-        fun initial(set: SetUi, pounds: Boolean) = WorkoutSetDraft(
-            reps = repsText(set.reps), referenceLoad = loadText(set.weightKg, pounds), referenceWeightKg = set.weightKg,
-            draftPounds = pounds, completed = set.completed, warmup = set.warmup, assistance = set.assistance,
-            acknowledgedReps = set.reps, acknowledgedWeightKg = set.weightKg)
-
-        val Saver = listSaver<WorkoutSetDraft, Any?>(
-            save = { listOf(it.reps, it.referenceLoad, it.referenceWeightKg, it.load, it.draftPounds,
-                it.completed, it.warmup, it.assistance, it.pendingSignature, it.pendingWeightKg, it.pendingReps,
-                it.acknowledgedReps, it.acknowledgedWeightKg, it.submittedRepsText, it.submittedLoadText, it.touched) },
-            restore = { WorkoutSetDraft(it[0] as String, it[1] as String, it[2] as Double, it[3] as String,
-                it[4] as Boolean, it[5] as Boolean, it[6] as Boolean, it[7] as Boolean, it[8] as String?,
-                it[9] as Double?, it[10] as Int?, it[11] as Int, it[12] as Double,
-                it[13] as String, it[14] as String, it[15] as Boolean) })
-    }
-}
-
 @Composable
 private fun SetEditor(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean, actions: MoosclesActions) {
-    // A single saved snapshot replaces sixteen registry entries per lazy row.
-    // Keep text, exact kg and pending acknowledgments together across disposal.
-    var draft by rememberSaveable(set.id, stateSaver = WorkoutSetDraft.Saver) {
-        mutableStateOf(WorkoutSetDraft.initial(set, pounds))
+    // Lazy rows can leave composition while a write is still in flight. Save
+    // local drafts by the real set identity, including blank and invalid input.
+    var reps by rememberSaveable(set.id) { mutableStateOf(if (set.reps > 0) set.reps.toString() else "") }
+    val originalLoad = remember(set.id, pounds) { if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds)) }
+    var referenceLoad by rememberSaveable(set.id) { mutableStateOf(originalLoad) }
+    var referenceWeightKg by rememberSaveable(set.id) { mutableDoubleStateOf(set.weightKg) }
+    var load by rememberSaveable(set.id) { mutableStateOf(originalLoad) }
+    var draftPounds by rememberSaveable(set.id) { mutableStateOf(pounds) }
+    var completed by rememberSaveable(set.id) { mutableStateOf(set.completed) }
+    var warmup by rememberSaveable(set.id) { mutableStateOf(set.warmup) }
+    var assistance by rememberSaveable(set.id) { mutableStateOf(set.assistance) }
+    var pendingSignature by rememberSaveable(set.id) { mutableStateOf<String?>(null) }
+    var pendingWeightKg by rememberSaveable(set.id) { mutableStateOf<Double?>(null) }
+    var pendingReps by rememberSaveable(set.id) { mutableStateOf<Int?>(null) }
+    var acknowledgedReps by rememberSaveable(set.id) { mutableIntStateOf(set.reps) }
+    var acknowledgedWeightKg by rememberSaveable(set.id) { mutableDoubleStateOf(set.weightKg) }
+    var submittedRepsText by rememberSaveable(set.id) { mutableStateOf(reps) }
+    var submittedLoadText by rememberSaveable(set.id) { mutableStateOf(load) }
+    LaunchedEffect(set) {
+        if (pendingSignature == null || pendingSignature == setEditSignature(set.reps, set.weightKg, set.completed, set.warmup, set.assistance)) {
+            // A matching acknowledgment retains the user's text (e.g. comma
+            // decimals). A subsequent external edit refreshes an untouched field,
+            // but must not erase a newer invalid/unsubmitted local draft.
+            if (pendingSignature == null) {
+                if (set.reps != acknowledgedReps && reps == submittedRepsText) {
+                    reps = if (set.reps > 0) set.reps.toString() else ""
+                    submittedRepsText = reps
+                }
+                if (set.weightKg != acknowledgedWeightKg && load == submittedLoadText) {
+                    referenceWeightKg = set.weightKg
+                    referenceLoad = if (set.weightKg == 0.0) "" else number(kgToDisplay(set.weightKg, pounds))
+                    load = referenceLoad
+                    submittedLoadText = load
+                }
+            }
+            acknowledgedReps = set.reps
+            acknowledgedWeightKg = set.weightKg
+            completed = set.completed
+            warmup = set.warmup
+            assistance = set.assistance
+            pendingSignature = null
+            pendingWeightKg = null
+            pendingReps = null
+        }
     }
-    LaunchedEffect(set, pounds) { draft = draft.synchronize(set, pounds) }
+    // A disposed row can restore a bundle written in the former display unit.
+    // Convert from exact kg before interpreting or saving its restored text.
+    LaunchedEffect(pounds) {
+        if (draftPounds != pounds) {
+            val kg = pendingWeightKg ?: set.weightKg
+            referenceWeightKg = kg
+            referenceLoad = if (kg == 0.0) "" else number(kgToDisplay(kg, pounds))
+            load = referenceLoad
+            submittedLoadText = load
+            draftPounds = pounds
+        }
+    }
+    var touched by rememberSaveable(set.id) { mutableStateOf(false) }
     var flags by remember { mutableStateOf(false) }
-    fun parsedReps() = if (draft.reps.isBlank()) 0 else draft.reps.toIntOrNull()
-    fun parsedLoad() = if (draft.load.isBlank()) 0.0 else draft.load.replace(',', '.').toDoubleOrNull()
-    fun exactKg(text: String, parsed: Double) = if (text == draft.referenceLoad) draft.referenceWeightKg else displayToKg(parsed, pounds)
+    fun parsedReps() = if (reps.isBlank()) 0 else reps.toIntOrNull()
+    fun parsedLoad() = if (load.isBlank()) 0.0 else load.replace(',', '.').toDoubleOrNull()
+    fun exactKg(text: String, parsed: Double) = if (text == referenceLoad) referenceWeightKg else displayToKg(parsed, pounds)
     val repsValue = parsedReps()
     val loadValue = parsedLoad()
     val validReps = repsValue != null && repsValue in 1..9999
-    val showRepsError = !validReps && (draft.touched || draft.reps.isNotBlank() || draft.completed)
-    val validLoad = loadValue != null && loadValue.isFinite() && exactKg(draft.load, loadValue) in 0.0..100000.0
+    val showRepsError = !validReps && (touched || reps.isNotBlank() || completed)
+    val validLoad = loadValue != null && loadValue.isFinite() && exactKg(load, loadValue) in 0.0..100000.0
     fun submit(nextReps: Int, kg: Double, nextCompleted: Boolean, nextWarmup: Boolean, nextAssistance: Boolean) {
-        val effectiveAssistance = nextAssistance || assistanceConvention
-        draft = draft.copy(completed = nextCompleted, warmup = nextWarmup, assistance = effectiveAssistance,
-            pendingSignature = setEditSignature(nextReps, kg, nextCompleted, nextWarmup, effectiveAssistance),
-            pendingWeightKg = kg, pendingReps = nextReps,
-            submittedRepsText = if (parsedReps() == nextReps) draft.reps else draft.submittedRepsText,
-            submittedLoadText = if (parsedLoad()?.let { it.isFinite() && exactKg(draft.load, it) == kg } == true)
-                draft.load else draft.submittedLoadText)
-        actions.updateSet(set.id, nextReps, kg, nextCompleted, nextWarmup, effectiveAssistance)
+        completed = nextCompleted
+        warmup = nextWarmup
+        assistance = nextAssistance || assistanceConvention
+        pendingSignature = setEditSignature(nextReps, kg, completed, warmup, assistance)
+        pendingWeightKg = kg
+        pendingReps = nextReps
+        if (parsedReps() == nextReps) submittedRepsText = reps
+        parsedLoad()?.takeIf { it.isFinite() && exactKg(load, it) == kg }?.let { submittedLoadText = load }
+        actions.updateSet(set.id, nextReps, kg, completed, warmup, assistance)
     }
-    fun save(nextCompleted: Boolean = draft.completed, nextWarmup: Boolean = draft.warmup, nextAssistance: Boolean = draft.assistance) {
+    fun save(nextCompleted: Boolean = completed, nextWarmup: Boolean = warmup, nextAssistance: Boolean = assistance) {
         // Read the current drafts inside the callback, rather than the values
         // captured by the preceding composition while another edit is pending.
         val currentReps = parsedReps()
         val currentLoad = parsedLoad()
-        val loadIsValid = currentLoad != null && currentLoad.isFinite() && exactKg(draft.load, currentLoad) in 0.0..100000.0
+        val loadIsValid = currentLoad != null && currentLoad.isFinite() && exactKg(load, currentLoad) in 0.0..100000.0
         if (nextCompleted && (currentReps == null || currentReps !in 1..9999 || !loadIsValid)) return
-        submit(currentReps?.takeIf { it in 0..9999 } ?: draft.pendingReps ?: set.reps,
-            if (loadIsValid) exactKg(draft.load, currentLoad!!) else draft.pendingWeightKg ?: set.weightKg, nextCompleted, nextWarmup, nextAssistance)
+        submit(currentReps?.takeIf { it in 0..9999 } ?: pendingReps ?: set.reps,
+            if (loadIsValid) exactKg(load, currentLoad!!) else pendingWeightKg ?: set.weightKg, nextCompleted, nextWarmup, nextAssistance)
     }
     Column(Modifier.testTag("workout-set-${set.id}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Surface(shape = RoundedCornerShape(8.dp), color = if (draft.completed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest) { Text("${index + 1}", Modifier.padding(horizontal = 10.dp, vertical = 12.dp), style = MaterialTheme.typography.labelLarge) }
-            TrainingNumberField(draft.load, { next ->
-                draft = draft.copy(load = next)
+            Surface(shape = RoundedCornerShape(8.dp), color = if (completed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest) { Text("${index + 1}", Modifier.padding(horizontal = 10.dp, vertical = 12.dp), style = MaterialTheme.typography.labelLarge) }
+            TrainingNumberField(load, { next ->
+                load = next
                 val parsed = if (next.isBlank()) 0.0 else next.replace(',', '.').toDoubleOrNull()
                 val currentReps = parsedReps()
-                if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!draft.completed || currentReps != null && currentReps in 1..9999))
-                    submit(currentReps?.takeIf { it in 0..9999 } ?: draft.pendingReps ?: set.reps, exactKg(next, parsed), draft.completed, draft.warmup, draft.assistance)
+                if (parsed != null && parsed.isFinite() && exactKg(next, parsed) in 0.0..100000.0 && (!completed || currentReps != null && currentReps in 1..9999))
+                    submit(currentReps?.takeIf { it in 0..9999 } ?: pendingReps ?: set.reps, exactKg(next, parsed), completed, warmup, assistance)
             }, label = if (pounds) "lb" else "kg", isError = !validLoad, decimal = true, modifier = Modifier.weight(1f).testTag("set-load-$index"))
-            TrainingNumberField(draft.reps, { next ->
-                draft = draft.copy(reps = next)
+            TrainingNumberField(reps, { next ->
+                reps = next
                 val parsed = if (next.isBlank()) 0 else next.toIntOrNull()
                 val currentLoad = parsedLoad()
-                if (parsed != null && parsed in 0..9999 && currentLoad != null && currentLoad.isFinite() && exactKg(draft.load, currentLoad) in 0.0..100000.0 && (!draft.completed || parsed > 0))
-                    submit(parsed, exactKg(draft.load, currentLoad), draft.completed, draft.warmup, draft.assistance)
-            }, label = "Reps", isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
-            IconToggleButton(checked = draft.completed, onCheckedChange = { draft = draft.copy(touched = true); save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (draft.completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (draft.completed) "Undo set completion" else "Complete set") }
+                if (parsed != null && parsed in 0..9999 && currentLoad != null && currentLoad.isFinite() && exactKg(load, currentLoad) in 0.0..100000.0 && (!completed || parsed > 0))
+                    submit(parsed, exactKg(load, currentLoad), completed, warmup, assistance)
+            }, label = stringResource(R.string.legacy_reps), isError = showRepsError, modifier = Modifier.weight(1f).testTag("set-reps-$index"))
+            IconToggleButton(checked = completed, onCheckedChange = { touched = true; save(nextCompleted = it) }, modifier = Modifier.testTag("set-complete-$index"), colors = IconButtonDefaults.iconToggleButtonColors(checkedContainerColor = MaterialTheme.colorScheme.primary, checkedContentColor = MaterialTheme.colorScheme.onPrimary)) { Icon(if (completed) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, if (completed) stringResource(R.string.legacy_undo_completion) else stringResource(R.string.legacy_complete_set)) }
         }
-        if (!validLoad) Text("Enter a valid weight of 0 or more.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        if (validLoad && loadValue == 0.0 && !draft.assistance && !assistanceConvention) Text("Bodyweight · no added load", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (showRepsError) Text("Enter reps between 1 and 9999 to complete this set.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (!validLoad) Text(stringResource(R.string.legacy_invalid_weight), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        if (validLoad && loadValue == 0.0 && !assistance && !assistanceConvention) Text(stringResource(R.string.legacy_bodyweight_no_load), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (showRepsError) Text(stringResource(R.string.legacy_invalid_reps), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
-                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (draft.warmup) "Warm-up" else if (draft.assistance || assistanceConvention) "Assistance" else "Working set", style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
+                TextButton(onClick = { flags = true }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text(if (warmup) stringResource(R.string.legacy_warmup) else if (assistance || assistanceConvention) stringResource(R.string.legacy_assistance) else stringResource(R.string.legacy_working_set), style = MaterialTheme.typography.labelSmall); Icon(Icons.Outlined.ExpandMore, null, Modifier.size(16.dp)) }
                 DropdownMenu(flags, { flags = false }) {
-                    DropdownMenuItem(text = { Text("Working set") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = assistanceConvention) })
-                    DropdownMenuItem(text = { Text("Warm-up · excluded from PRs") }, onClick = { flags = false; save(nextWarmup = true) })
-                    if (!assistanceConvention) DropdownMenuItem(text = { Text("Assistance only · separate reps records") }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = true) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_working_set)) }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = assistanceConvention) })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.legacy_warmup_excluded)) }, onClick = { flags = false; save(nextWarmup = true) })
+                    if (!assistanceConvention) DropdownMenuItem(text = { Text(stringResource(R.string.legacy_assistance_records)) }, onClick = { flags = false; save(nextWarmup = false, nextAssistance = true) })
                 }
             }
-            IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, "Remove set ${index + 1}", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            IconButton(onClick = { actions.removeSet(set.id) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Close, stringResource(R.string.legacy_remove_set, index + 1), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -507,9 +293,9 @@ private fun setEditSignature(reps: Int, kg: Double, completed: Boolean, warmup: 
 @Composable
 fun CompletedSetRow(set: SetUi, index: Int, pounds: Boolean, assistanceConvention: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("SET ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(62.dp))
-        Text("${if (set.weightKg == 0.0 && !set.assistance && !assistanceConvention) "Bodyweight" else weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        if (set.warmup || set.assistance || assistanceConvention) Text(if (set.warmup) "Warm-up" else "Assistance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else Icon(Icons.Outlined.Check, "Completed", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(stringResource(R.string.legacy_set_number, index + 1), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(62.dp))
+        Text("${if (set.weightKg == 0.0 && !set.assistance && !assistanceConvention) stringResource(R.string.legacy_bodyweight) else weight(set.weightKg, pounds)} × ${set.reps}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (set.warmup || set.assistance || assistanceConvention) Text(if (set.warmup) stringResource(R.string.legacy_warmup) else stringResource(R.string.legacy_assistance), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else Icon(Icons.Outlined.Check, stringResource(R.string.legacy_completed), Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
     }
 }

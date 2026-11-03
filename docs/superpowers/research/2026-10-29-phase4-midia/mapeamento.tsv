@@ -1,0 +1,288 @@
+catalog_id	equipment	name_en	class	fedb_id	fedb_equipment	fedb_primary	fedb_secondary	fedb_images
+catalog_barbell_bench_flat	BARBELL	Barbell bench press	exato	Barbell_Bench_Press_-_Medium_Grip	barbell	chest	shoulders,triceps	2
+catalog_barbell_bench_incline	BARBELL	Incline barbell bench press	exato	Barbell_Incline_Bench_Press_-_Medium_Grip	barbell	chest	shoulders,triceps	2
+catalog_barbell_bench_decline	BARBELL	Decline barbell bench press	exato	Decline_Barbell_Bench_Press	barbell	chest	shoulders,triceps	2
+catalog_barbell_floor_press	BARBELL	Barbell floor press	exato	Floor_Press	barbell	triceps	chest,shoulders	2
+catalog_barbell_bench_close_grip	BARBELL	Close-grip barbell bench press	exato	Close-Grip_Barbell_Bench_Press	barbell	triceps	chest,shoulders	2
+catalog_barbell_bench_spoto	BARBELL	Spoto bench press	provavel	Barbell_Bench_Press_-_Medium_Grip	barbell	chest	shoulders,triceps	2
+catalog_barbell_row_overhand	BARBELL	Overhand barbell row	exato	Bent_Over_Barbell_Row	barbell	middle back	biceps,lats,shoulders	2
+catalog_barbell_row_underhand	BARBELL	Underhand barbell row	exato	Reverse_Grip_Bent-Over_Rows	barbell	middle back	biceps,lats,shoulders	2
+catalog_barbell_row_pendlay	BARBELL	Pendlay row	provavel	Bent_Over_Barbell_Row	barbell	middle back	biceps,lats,shoulders	2
+catalog_barbell_row_seal	BARBELL	Barbell seal row	provavel	Lying_Cambered_Barbell_Row	barbell	middle back	biceps,lats,traps	2
+catalog_barbell_landmine_row_two_arm	BARBELL	Two-arm landmine row	exato	Bent_Over_Two-Arm_Long_Bar_Row	barbell	middle back	biceps,lats	2
+catalog_barbell_landmine_row_one_arm	BARBELL	One-arm landmine row	exato	Bent_Over_One-Arm_Long_Bar_Row	barbell	middle back	biceps,lats,lower back,traps	2
+catalog_barbell_meadows_row	BARBELL	Meadows row	provavel	One-Arm_Long_Bar_Row	barbell	middle back	biceps,lats	2
+catalog_barbell_overhead_press	BARBELL	Standing barbell overhead press	exato	Standing_Military_Press	barbell	shoulders	triceps	2
+catalog_barbell_seated_press	BARBELL	Seated barbell shoulder press	exato	Seated_Barbell_Military_Press	barbell	shoulders	triceps	2
+catalog_barbell_push_press	BARBELL	Barbell push press	exato	Push_Press	barbell	shoulders	quadriceps,triceps	2
+catalog_barbell_landmine_press	BARBELL	One-arm landmine press	sem_par					0
+catalog_barbell_upright_row	BARBELL	Barbell upright row	exato	Upright_Barbell_Row	barbell	shoulders	traps	2
+catalog_barbell_shrug	BARBELL	Barbell shrug	exato	Barbell_Shrug	barbell	traps		2
+catalog_barbell_back_squat_high_bar	BARBELL	High-bar back squat	provavel	Barbell_Squat	barbell	quadriceps	calves,glutes,hamstrings,lower back	2
+catalog_barbell_back_squat_low_bar	BARBELL	Low-bar back squat	provavel	Barbell_Squat	barbell	quadriceps	calves,glutes,hamstrings,lower back	2
+catalog_barbell_front_squat	BARBELL	Barbell front squat	exato	Front_Barbell_Squat	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_zercher_squat	BARBELL	Zercher squat	exato	Zercher_Squats	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_overhead_squat	BARBELL	Barbell overhead squat	exato	Overhead_Squat	barbell	quadriceps	abdominals,calves,glutes,hamstrings,lower back,shoulders,triceps	2
+catalog_barbell_landmine_squat	BARBELL	Landmine squat	sem_par					0
+catalog_barbell_split_squat	BARBELL	Barbell split squat	provavel	Barbell_Lunge	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_squat_bulgarian	BARBELL	Barbell Bulgarian split squat	exato	One_Leg_Barbell_Squat	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_reverse_lunge	BARBELL	Barbell reverse lunge	provavel	Barbell_Lunge	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_walking_lunge	BARBELL	Barbell walking lunge	exato	Barbell_Walking_Lunge	barbell	quadriceps	calves,glutes,hamstrings	2
+catalog_barbell_deadlift_conventional	BARBELL	Conventional barbell deadlift	exato	Barbell_Deadlift	barbell	lower back	calves,forearms,glutes,hamstrings,lats,middle back,quadriceps,traps	2
+catalog_barbell_deadlift_sumo	BARBELL	Sumo barbell deadlift	exato	Sumo_Deadlift	barbell	hamstrings	adductors,forearms,glutes,lower back,middle back,quadriceps,traps	2
+catalog_barbell_deadlift_romanian	BARBELL	Barbell Romanian deadlift	exato	Romanian_Deadlift	barbell	hamstrings	calves,glutes,lower back	2
+catalog_barbell_deadlift_stiff_leg	BARBELL	Stiff-leg barbell deadlift	exato	Stiff-Legged_Barbell_Deadlift	barbell	hamstrings	glutes,lower back	2
+catalog_barbell_good_morning	BARBELL	Barbell good morning	exato	Good_Morning	barbell	hamstrings	abdominals,glutes,lower back	2
+catalog_barbell_hip_thrust	BARBELL	Barbell hip thrust	exato	Barbell_Hip_Thrust	barbell	glutes	calves,hamstrings	2
+catalog_barbell_glute_bridge	BARBELL	Barbell glute bridge	exato	Barbell_Glute_Bridge	barbell	glutes	calves,hamstrings	2
+catalog_barbell_calf_raise_standing	BARBELL	Standing barbell calf raise	exato	Standing_Barbell_Calf_Raise	barbell	calves		2
+catalog_barbell_curl	BARBELL	Standing barbell curl	exato	Barbell_Curl	barbell	biceps	forearms	2
+catalog_barbell_curl_reverse	BARBELL	Reverse-grip barbell curl	exato	Reverse_Barbell_Curl	barbell	biceps	forearms	2
+catalog_barbell_curl_preacher	BARBELL	Barbell preacher curl	provavel	Preacher_Curl	barbell	biceps		2
+catalog_barbell_curl_drag	BARBELL	Barbell drag curl	exato	Drag_Curl	barbell	biceps	forearms	2
+catalog_ez_bar_curl	BARBELL	EZ-bar curl	exato	EZ-Bar_Curl	e-z curl bar	biceps		2
+catalog_ez_bar_curl_preacher	BARBELL	EZ-bar preacher curl	exato	Preacher_Curl	barbell	biceps		2
+catalog_ez_bar_triceps_lying	BARBELL	Lying EZ-bar triceps extension	exato	EZ-Bar_Skullcrusher	e-z curl bar	triceps	forearms	2
+catalog_barbell_triceps_lying	BARBELL	Lying barbell triceps extension	provavel	Lying_Triceps_Press	e-z curl bar	triceps		2
+catalog_barbell_wrist_curl	BARBELL	Barbell wrist curl	exato	Seated_Palm-Up_Barbell_Wrist_Curl	barbell	forearms		2
+catalog_barbell_wrist_curl_reverse	BARBELL	Reverse barbell wrist curl	exato	Seated_Palms-Down_Barbell_Wrist_Curl	barbell	forearms		2
+catalog_barbell_rollout	BARBELL	Barbell rollout	exato	Barbell_Ab_Rollout	barbell	abdominals	lower back,shoulders	2
+catalog_dumbbell_bench_flat	DUMBBELL	Flat dumbbell bench press	exato	Dumbbell_Bench_Press	dumbbell	chest	shoulders,triceps	2
+catalog_dumbbell_bench_one_arm	DUMBBELL	One-arm dumbbell bench press	exato	One_Arm_Dumbbell_Bench_Press	dumbbell	chest	shoulders,triceps	2
+catalog_dumbbell_bench_incline	DUMBBELL	Incline dumbbell bench press	exato	Incline_Dumbbell_Press	dumbbell	chest	shoulders,triceps	2
+catalog_dumbbell_bench_decline	DUMBBELL	Decline dumbbell bench press	exato	Decline_Dumbbell_Bench_Press	dumbbell	chest	shoulders,triceps	2
+catalog_dumbbell_bench_neutral	DUMBBELL	Neutral-grip dumbbell bench press	exato	Dumbbell_Bench_Press_with_Neutral_Grip	dumbbell	chest	shoulders,triceps	2
+catalog_dumbbell_floor_press	DUMBBELL	Dumbbell floor press	exato	Dumbbell_Floor_Press	dumbbell	triceps	chest,shoulders	2
+catalog_dumbbell_floor_press_one_arm	DUMBBELL	One-arm dumbbell floor press	provavel	One_Arm_Floor_Press	barbell	triceps	chest,shoulders	2
+catalog_dumbbell_fly_flat	DUMBBELL	Flat dumbbell fly	exato	Dumbbell_Flyes	dumbbell	chest		2
+catalog_dumbbell_fly_incline	DUMBBELL	Incline dumbbell fly	exato	Incline_Dumbbell_Flyes	dumbbell	chest	shoulders	2
+catalog_dumbbell_pullover	DUMBBELL	Dumbbell pullover	exato	Straight-Arm_Dumbbell_Pullover	dumbbell	chest	lats,shoulders,triceps	2
+catalog_dumbbell_row_one_arm	DUMBBELL	One-arm dumbbell row	exato	One-Arm_Dumbbell_Row	dumbbell	middle back	biceps,lats,shoulders	2
+catalog_dumbbell_row_chest_supported	DUMBBELL	Chest-supported dumbbell row	exato	Dumbbell_Incline_Row	dumbbell	middle back	biceps,forearms,lats,shoulders	2
+catalog_dumbbell_row_bent_over	DUMBBELL	Bent-over dumbbell row	exato	Bent_Over_Two-Dumbbell_Row	dumbbell	middle back	biceps,lats,shoulders	2
+catalog_dumbbell_row_renegade	DUMBBELL	Renegade row	provavel	Alternating_Renegade_Row	kettlebells	middle back	abdominals,biceps,chest,lats,triceps	2
+catalog_dumbbell_shrug	DUMBBELL	Dumbbell shrug	exato	Dumbbell_Shrug	dumbbell	traps		2
+catalog_dumbbell_press_seated	DUMBBELL	Seated dumbbell shoulder press	exato	Seated_Dumbbell_Press	dumbbell	shoulders	triceps	2
+catalog_dumbbell_press_standing	DUMBBELL	Standing dumbbell shoulder press	exato	Standing_Dumbbell_Press	dumbbell	shoulders	triceps	2
+catalog_dumbbell_press_arnold	DUMBBELL	Arnold press	exato	Arnold_Dumbbell_Press	dumbbell	shoulders	triceps	2
+catalog_dumbbell_raise_lateral	DUMBBELL	Dumbbell lateral raise	exato	Side_Lateral_Raise	dumbbell	shoulders		2
+catalog_dumbbell_raise_lateral_seated	DUMBBELL	Seated dumbbell lateral raise	exato	Seated_Side_Lateral_Raise	dumbbell	shoulders		2
+catalog_dumbbell_raise_front	DUMBBELL	Dumbbell front raise	exato	Front_Dumbbell_Raise	dumbbell	shoulders		2
+catalog_dumbbell_fly_reverse	DUMBBELL	Bent-over dumbbell reverse fly	provavel	Seated_Bent-Over_Rear_Delt_Raise	dumbbell	shoulders		2
+catalog_dumbbell_fly_reverse_incline	DUMBBELL	Incline-bench dumbbell reverse fly	exato	Reverse_Flyes	dumbbell	shoulders		2
+catalog_dumbbell_upright_row	DUMBBELL	Dumbbell upright row	exato	Standing_Dumbbell_Upright_Row	dumbbell	traps	biceps,shoulders	2
+catalog_dumbbell_squat_goblet	DUMBBELL	Dumbbell goblet squat	provavel	Goblet_Squat	kettlebells	quadriceps	calves,glutes,hamstrings,shoulders	2
+catalog_dumbbell_squat_front	DUMBBELL	Double-dumbbell front squat	sem_par					0
+catalog_dumbbell_squat_bulgarian	DUMBBELL	Dumbbell Bulgarian split squat	exato	Split_Squat_with_Dumbbells	dumbbell	quadriceps	glutes,hamstrings	2
+catalog_dumbbell_split_squat	DUMBBELL	Dumbbell split squat	provavel	Split_Squat_with_Dumbbells	dumbbell	quadriceps	glutes,hamstrings	2
+catalog_dumbbell_lunge_reverse	DUMBBELL	Dumbbell reverse lunge	exato	Dumbbell_Rear_Lunge	dumbbell	quadriceps	calves,glutes,hamstrings	2
+catalog_dumbbell_lunge_forward	DUMBBELL	Dumbbell forward lunge	exato	Dumbbell_Lunges	dumbbell	quadriceps	calves,glutes,hamstrings	2
+catalog_dumbbell_lunge_walking	DUMBBELL	Dumbbell walking lunge	provavel	Dumbbell_Lunges	dumbbell	quadriceps	calves,glutes,hamstrings	2
+catalog_dumbbell_lunge_lateral	DUMBBELL	Dumbbell lateral lunge	sem_par					0
+catalog_dumbbell_step_up	DUMBBELL	Dumbbell step-up	exato	Dumbbell_Step_Ups	dumbbell	quadriceps	calves,glutes,hamstrings	2
+catalog_dumbbell_deadlift_romanian	DUMBBELL	Dumbbell Romanian deadlift	provavel	Stiff-Legged_Dumbbell_Deadlift	dumbbell	hamstrings	glutes,lower back	2
+catalog_dumbbell_deadlift_romanian_one_leg	DUMBBELL	Single-leg dumbbell Romanian deadlift	provavel	Kettlebell_One-Legged_Deadlift	kettlebells	hamstrings	glutes,lower back	2
+catalog_dumbbell_deadlift_sumo	DUMBBELL	Single-dumbbell sumo deadlift	sem_par					0
+catalog_dumbbell_hip_thrust	DUMBBELL	Dumbbell hip thrust	sem_par					0
+catalog_dumbbell_calf_raise_standing	DUMBBELL	Standing dumbbell calf raise	exato	Standing_Dumbbell_Calf_Raise	dumbbell	calves		2
+catalog_dumbbell_calf_raise_one_leg	DUMBBELL	Single-leg dumbbell calf raise	sem_par					0
+catalog_dumbbell_calf_raise_seated	DUMBBELL	Seated dumbbell calf raise	provavel	Dumbbell_Seated_One-Leg_Calf_Raise	dumbbell	calves		2
+catalog_dumbbell_curl_standing	DUMBBELL	Standing dumbbell curl	exato	Dumbbell_Bicep_Curl	dumbbell	biceps	forearms	2
+catalog_dumbbell_curl_hammer	DUMBBELL	Dumbbell hammer curl	exato	Hammer_Curls	dumbbell	biceps		2
+catalog_dumbbell_curl_incline	DUMBBELL	Incline dumbbell curl	exato	Incline_Dumbbell_Curl	dumbbell	biceps		2
+catalog_dumbbell_curl_concentration	DUMBBELL	Dumbbell concentration curl	exato	Concentration_Curls	dumbbell	biceps	forearms	2
+catalog_dumbbell_curl_preacher	DUMBBELL	One-arm dumbbell preacher curl	exato	One_Arm_Dumbbell_Preacher_Curl	dumbbell	biceps		2
+catalog_dumbbell_curl_spider	DUMBBELL	Dumbbell spider curl	provavel	Spider_Curl	e-z curl bar	biceps		2
+catalog_dumbbell_curl_reverse	DUMBBELL	Reverse-grip dumbbell curl	exato	Standing_Dumbbell_Reverse_Curl	dumbbell	biceps	forearms	2
+catalog_dumbbell_curl_zottman	DUMBBELL	Zottman curl	exato	Zottman_Curl	dumbbell	biceps	forearms	2
+catalog_dumbbell_triceps_overhead_two_hands	DUMBBELL	Two-hand dumbbell overhead triceps extension	exato	Standing_Dumbbell_Triceps_Extension	dumbbell	triceps		2
+catalog_dumbbell_triceps_overhead_one_arm	DUMBBELL	One-arm dumbbell overhead triceps extension	exato	Standing_One-Arm_Dumbbell_Triceps_Extension	dumbbell	triceps	chest,shoulders	2
+catalog_dumbbell_triceps_lying	DUMBBELL	Lying dumbbell triceps extension	exato	Lying_Dumbbell_Tricep_Extension	dumbbell	triceps	chest,shoulders	2
+catalog_dumbbell_triceps_kickback	DUMBBELL	Dumbbell triceps kickback	exato	Tricep_Dumbbell_Kickback	dumbbell	triceps		2
+catalog_dumbbell_wrist_curl	DUMBBELL	Dumbbell wrist curl	exato	Seated_Dumbbell_Palms-Up_Wrist_Curl	dumbbell	forearms		2
+catalog_dumbbell_wrist_curl_reverse	DUMBBELL	Reverse dumbbell wrist curl	exato	Seated_Dumbbell_Palms-Down_Wrist_Curl	dumbbell	forearms		2
+catalog_dumbbell_side_bend	DUMBBELL	Dumbbell side bend	exato	Dumbbell_Side_Bend	dumbbell	abdominals		2
+catalog_dumbbell_crunch	DUMBBELL	Dumbbell weighted crunch	provavel	Weighted_Crunches	medicine ball	abdominals		2
+catalog_kettlebell_squat_goblet	KETTLEBELL	Kettlebell goblet squat	exato	Goblet_Squat	kettlebells	quadriceps	calves,glutes,hamstrings,shoulders	2
+catalog_kettlebell_squat_front_double	KETTLEBELL	Double-kettlebell front squat	exato	Front_Squats_With_Two_Kettlebells	kettlebells	quadriceps	calves,glutes	2
+catalog_kettlebell_lunge_reverse_racked	KETTLEBELL	Single-rack kettlebell reverse lunge	sem_par					0
+catalog_kettlebell_deadlift	KETTLEBELL	Kettlebell deadlift	sem_par					0
+catalog_kettlebell_deadlift_romanian	KETTLEBELL	Kettlebell Romanian deadlift	sem_par					0
+catalog_kettlebell_deadlift_one_leg	KETTLEBELL	Single-leg kettlebell deadlift	exato	Kettlebell_One-Legged_Deadlift	kettlebells	hamstrings	glutes,lower back	2
+catalog_kettlebell_swing_two_hand	KETTLEBELL	Two-hand kettlebell swing	provavel	One-Arm_Kettlebell_Swings	kettlebells	hamstrings	calves,glutes,lower back,shoulders	2
+catalog_kettlebell_swing_one_hand	KETTLEBELL	One-hand kettlebell swing	exato	One-Arm_Kettlebell_Swings	kettlebells	hamstrings	calves,glutes,lower back,shoulders	2
+catalog_kettlebell_clean	KETTLEBELL	One-arm kettlebell clean	exato	One-Arm_Kettlebell_Clean	kettlebells	hamstrings	glutes,lower back,shoulders,traps	2
+catalog_kettlebell_snatch	KETTLEBELL	One-arm kettlebell snatch	exato	One-Arm_Kettlebell_Snatch	kettlebells	shoulders	calves,glutes,hamstrings,lower back,traps,triceps	2
+catalog_kettlebell_clean_press	KETTLEBELL	One-arm kettlebell clean and press	provavel	One-Arm_Kettlebell_Clean_and_Jerk	kettlebells	shoulders		2
+catalog_kettlebell_press	KETTLEBELL	One-arm kettlebell strict press	provavel	One-Arm_Kettlebell_Military_Press_To_The_Side	kettlebells	shoulders	triceps	2
+catalog_kettlebell_push_press	KETTLEBELL	One-arm kettlebell push press	exato	One-Arm_Kettlebell_Push_Press	kettlebells	shoulders	calves,quadriceps,triceps	2
+catalog_kettlebell_floor_press	KETTLEBELL	One-arm kettlebell floor press	exato	One-Arm_Kettlebell_Floor_Press	kettlebells	chest	triceps	2
+catalog_kettlebell_row	KETTLEBELL	One-arm kettlebell row	exato	One-Arm_Kettlebell_Row	kettlebells	middle back	biceps,lats	2
+catalog_kettlebell_gorilla_row	KETTLEBELL	Kettlebell gorilla row	provavel	Alternating_Kettlebell_Row	kettlebells	middle back	biceps,lats	2
+catalog_kettlebell_high_pull	KETTLEBELL	One-arm kettlebell high pull	provavel	Kettlebell_Sumo_High_Pull	kettlebells	traps	adductors,glutes,hamstrings,quadriceps,shoulders	2
+catalog_kettlebell_halo	KETTLEBELL	Kettlebell halo	exato_sem_imagem	Kettlebell_Halo	kettlebells	shoulders	traps,middle back,abdominals,triceps	0
+catalog_kettlebell_turkish_get_up	KETTLEBELL	Kettlebell Turkish get-up	exato	Kettlebell_Turkish_Get-Up_Squat_style	kettlebells	shoulders	abdominals,calves,hamstrings,quadriceps,triceps	2
+catalog_kettlebell_windmill	KETTLEBELL	Kettlebell windmill	exato	Kettlebell_Windmill	kettlebells	abdominals	glutes,hamstrings,shoulders,triceps	2
+catalog_kettlebell_curl	KETTLEBELL	Two-hand kettlebell curl	sem_par					0
+catalog_kettlebell_triceps_overhead	KETTLEBELL	Kettlebell overhead triceps extension	exato_sem_imagem	Kettlebell_Overhead_Triceps_Extension	kettlebells	triceps	shoulders,abdominals	0
+catalog_cable_chest_fly_mid	CABLE	Standing cable chest fly	exato	Cable_Crossover	cable	chest	shoulders	2
+catalog_cable_chest_fly_high_low	CABLE	High-to-low cable chest fly	provavel	Cable_Crossover	cable	chest	shoulders	2
+catalog_cable_chest_fly_low_high	CABLE	Low-to-high cable chest fly	exato	Low_Cable_Crossover	cable	chest	shoulders	2
+catalog_cable_chest_fly_one_arm	CABLE	One-arm cable chest fly	exato	Single-Arm_Cable_Crossover	cable	chest		2
+catalog_cable_chest_fly_flat_bench	CABLE	Flat-bench cable chest fly	exato	Flat_Bench_Cable_Flyes	cable	chest		2
+catalog_cable_chest_fly_incline_bench	CABLE	Incline-bench cable chest fly	exato	Incline_Cable_Flye	cable	chest	shoulders	2
+catalog_cable_chest_press	CABLE	Standing cable chest press	exato	Standing_Cable_Chest_Press	cable	chest	shoulders,triceps	2
+catalog_cable_shoulder_press	CABLE	Seated cable shoulder press	exato	Seated_Cable_Shoulder_Press	cable	shoulders	triceps	2
+catalog_cable_row_close_neutral	CABLE	Close neutral-grip seated cable row	exato	Seated_Cable_Rows	cable	middle back	biceps,lats,shoulders	2
+catalog_cable_row_wide_overhand	CABLE	Wide overhand seated cable row	provavel	Seated_Cable_Rows	cable	middle back	biceps,lats,shoulders	2
+catalog_cable_row_underhand	CABLE	Underhand seated cable row	provavel	Seated_Cable_Rows	cable	middle back	biceps,lats,shoulders	2
+catalog_cable_row_one_arm	CABLE	One-arm seated cable row	exato	Seated_One-arm_Cable_Pulley_Rows	cable	middle back	biceps,lats,traps	2
+catalog_cable_lat_pulldown_wide	CABLE	Wide-grip lat pulldown	exato	Wide-Grip_Lat_Pulldown	cable	lats	biceps,middle back,shoulders	2
+catalog_cable_lat_pulldown_underhand	CABLE	Underhand lat pulldown	exato	Underhand_Cable_Pulldowns	cable	lats	biceps,middle back,shoulders	2
+catalog_cable_lat_pulldown_neutral	CABLE	Close neutral-grip lat pulldown	exato	V-Bar_Pulldown	cable	lats	biceps,middle back,shoulders	2
+catalog_cable_lat_pulldown_one_arm	CABLE	One-arm cable lat pulldown	exato	One_Arm_Lat_Pulldown	cable	lats	biceps,middle back	2
+catalog_cable_straight_arm_pulldown_bar	CABLE	Straight-bar straight-arm pulldown	exato	Straight-Arm_Pulldown	cable	lats		2
+catalog_cable_straight_arm_pulldown_rope	CABLE	Rope straight-arm pulldown	exato	Rope_Straight-Arm_Pulldown	cable	lats		2
+catalog_cable_face_pull	CABLE	Rope face pull	exato	Face_Pull	cable	shoulders	middle back	2
+catalog_cable_reverse_fly	CABLE	Cable reverse fly	exato	Cable_Rear_Delt_Fly	cable	shoulders		2
+catalog_cable_lateral_raise	CABLE	One-arm cable lateral raise	provavel	Cable_Seated_Lateral_Raise	cable	shoulders	middle back,traps	2
+catalog_cable_front_raise	CABLE	One-arm cable front raise	exato	Front_Cable_Raise	cable	shoulders		2
+catalog_cable_upright_row	CABLE	Straight-bar cable upright row	exato	Upright_Cable_Row	cable	traps	shoulders	2
+catalog_cable_external_rotation	CABLE	Cable external shoulder rotation	exato	External_Rotation_with_Cable	cable	shoulders		2
+catalog_cable_curl_straight_bar	CABLE	Straight-bar cable curl	exato	Standing_Biceps_Cable_Curl	cable	biceps		2
+catalog_cable_curl_rope	CABLE	Rope cable hammer curl	exato	Cable_Hammer_Curls_-_Rope_Attachment	cable	biceps		2
+catalog_cable_curl_one_arm	CABLE	One-arm cable curl	exato	Standing_One-Arm_Cable_Curl	cable	biceps		2
+catalog_cable_curl_behind_body	CABLE	Behind-body cable curl	sem_par					0
+catalog_cable_curl_high	CABLE	High cable biceps curl	exato	High_Cable_Curls	cable	biceps		2
+catalog_cable_curl_preacher	CABLE	Cable preacher curl	exato	Cable_Preacher_Curl	cable	biceps	forearms	2
+catalog_cable_triceps_pushdown_rope	CABLE	Rope triceps pushdown	exato	Triceps_Pushdown_-_Rope_Attachment	cable	triceps		2
+catalog_cable_triceps_pushdown_bar	CABLE	Straight-bar triceps pushdown	exato	Triceps_Pushdown	cable	triceps		2
+catalog_cable_triceps_pushdown_reverse	CABLE	Reverse-grip triceps pushdown	exato	Reverse_Grip_Triceps_Pushdown	cable	triceps		2
+catalog_cable_triceps_overhead_rope	CABLE	Overhead rope triceps extension	exato	Triceps_Overhead_Extension_with_Rope	cable	triceps		2
+catalog_cable_triceps_pushdown_one_arm	CABLE	One-arm cable triceps pushdown	provavel	Cable_One_Arm_Tricep_Extension	cable	triceps		2
+catalog_cable_triceps_cross_body	CABLE	Cross-body cable triceps extension	sem_par					0
+catalog_cable_pull_through	CABLE	Cable pull-through	exato	Pull_Through	cable	glutes	hamstrings,lower back	2
+catalog_cable_glute_kickback	CABLE	Cable glute kickback	exato	One-Legged_Cable_Kickback	cable	glutes	hamstrings	2
+catalog_cable_hip_abduction	CABLE	Standing cable hip abduction	sem_par					0
+catalog_cable_hip_adduction	CABLE	Standing cable hip adduction	exato	Cable_Hip_Adduction	cable	quadriceps		2
+catalog_cable_leg_curl	CABLE	Standing cable leg curl	provavel	Standing_Leg_Curl	machine	hamstrings		2
+catalog_cable_crunch_kneeling	CABLE	Kneeling cable crunch	exato	Cable_Crunch	cable	abdominals		2
+catalog_cable_crunch_standing	CABLE	Standing cable crunch	exato	Standing_Rope_Crunch	cable	abdominals		2
+catalog_cable_woodchop_high_low	CABLE	High-to-low cable woodchop	exato	Standing_Cable_Wood_Chop	cable	abdominals	shoulders	2
+catalog_cable_woodchop_low_high	CABLE	Low-to-high cable woodchop	exato	Standing_Cable_Lift	cable	abdominals	shoulders	2
+catalog_cable_pallof_press	CABLE	Cable Pallof press	exato	Pallof_Press	cable	abdominals	chest,shoulders,triceps	2
+catalog_bodyweight_push_up	BODYWEIGHT	Push-up	exato	Pushups	body only	chest	shoulders,triceps	2
+catalog_bodyweight_push_up_incline	BODYWEIGHT	Incline push-up	exato	Incline_Push-Up	body only	chest	shoulders,triceps	2
+catalog_bodyweight_push_up_decline	BODYWEIGHT	Decline push-up	exato	Decline_Push-Up	None	chest	shoulders,triceps	2
+catalog_bodyweight_push_up_wide	BODYWEIGHT	Wide-grip push-up	exato	Push-Up_Wide	body only	chest	abdominals,shoulders,triceps	2
+catalog_bodyweight_push_up_diamond	BODYWEIGHT	Diamond push-up	provavel	Push-Ups_-_Close_Triceps_Position	body only	triceps	chest,shoulders	2
+catalog_bodyweight_push_up_archer	BODYWEIGHT	Archer push-up	sem_par					0
+catalog_bodyweight_push_up_pike	BODYWEIGHT	Pike push-up	sem_par					0
+catalog_bodyweight_push_up_handstand	BODYWEIGHT	Wall handstand push-up	exato	Handstand_Push-Ups	body only	shoulders	triceps	2
+catalog_bodyweight_dip_chest	BODYWEIGHT	Chest dip	exato	Dips_-_Chest_Version	other	chest	shoulders,triceps	2
+catalog_bodyweight_dip_triceps	BODYWEIGHT	Upright triceps dip	exato	Dips_-_Triceps_Version	body only	triceps	chest,shoulders	2
+catalog_bodyweight_bench_dip	BODYWEIGHT	Bench dip	exato	Bench_Dips	body only	triceps	chest,shoulders	2
+catalog_bodyweight_pull_up	BODYWEIGHT	Overhand pull-up	exato	Pullups	body only	lats	biceps,middle back	2
+catalog_bodyweight_pull_up_wide	BODYWEIGHT	Wide-grip pull-up	provavel	Wide-Grip_Rear_Pull-Up	body only	lats	biceps,middle back,shoulders	2
+catalog_bodyweight_pull_up_neutral	BODYWEIGHT	Neutral-grip pull-up	provavel	V-Bar_Pullup	body only	lats	biceps,middle back,shoulders	2
+catalog_bodyweight_chin_up	BODYWEIGHT	Chin-up	exato	Chin-Up	body only	lats	biceps,forearms,middle back	2
+catalog_bodyweight_row_inverted	BODYWEIGHT	Overhand inverted row	exato	Inverted_Row	None	middle back	lats	2
+catalog_bodyweight_row_inverted_underhand	BODYWEIGHT	Underhand inverted row	provavel	Inverted_Row	None	middle back	lats	2
+catalog_bodyweight_squat	BODYWEIGHT	Bodyweight squat	exato	Bodyweight_Squat	body only	quadriceps	glutes,hamstrings	2
+catalog_bodyweight_split_squat	BODYWEIGHT	Bodyweight split squat	provavel	Split_Squats	None	hamstrings	calves,glutes,quadriceps	2
+catalog_bodyweight_bulgarian_split_squat	BODYWEIGHT	Bodyweight Bulgarian split squat	sem_par					0
+catalog_bodyweight_lunge_reverse	BODYWEIGHT	Bodyweight reverse lunge	provavel	Crossover_Reverse_Lunge	None	lower back	abdominals,abductors,glutes,hamstrings,quadriceps	2
+catalog_bodyweight_lunge_forward	BODYWEIGHT	Bodyweight forward lunge	provavel	Bodyweight_Walking_Lunge	None	quadriceps	calves,glutes,hamstrings	2
+catalog_bodyweight_lunge_lateral	BODYWEIGHT	Bodyweight lateral lunge	sem_par					0
+catalog_bodyweight_step_up	BODYWEIGHT	Bodyweight step-up	provavel	Step-up_with_Knee_Raise	body only	glutes	hamstrings,quadriceps	2
+catalog_bodyweight_pistol_squat	BODYWEIGHT	Pistol squat	provavel	Kettlebell_Pistol_Squat	kettlebells	quadriceps	calves,glutes,hamstrings,shoulders	2
+catalog_bodyweight_squat_jump	BODYWEIGHT	Jump squat	exato	Freehand_Jump_Squat	body only	quadriceps	calves,glutes,hamstrings	2
+catalog_bodyweight_reverse_nordic	BODYWEIGHT	Reverse Nordic curl	sem_par					0
+catalog_bodyweight_glute_bridge	BODYWEIGHT	Bodyweight glute bridge	exato	Butt_Lift_Bridge	body only	glutes	hamstrings	2
+catalog_bodyweight_glute_bridge_one_leg	BODYWEIGHT	Single-leg glute bridge	exato	Single_Leg_Glute_Bridge	body only	glutes	hamstrings	2
+catalog_bodyweight_hip_thrust	BODYWEIGHT	Bodyweight hip thrust	sem_par					0
+catalog_bodyweight_nordic_curl	BODYWEIGHT	Nordic hamstring curl	exato	Natural_Glute_Ham_Raise	body only	hamstrings	calves,glutes,lower back	2
+catalog_bodyweight_hamstring_walkout	BODYWEIGHT	Hamstring walkout	sem_par					0
+catalog_bodyweight_calf_raise	BODYWEIGHT	Bodyweight calf raise	sem_par					0
+catalog_bodyweight_calf_raise_one_leg	BODYWEIGHT	Single-leg bodyweight calf raise	sem_par					0
+catalog_bodyweight_crunch	BODYWEIGHT	Crunch	exato	Crunches	body only	abdominals		2
+catalog_bodyweight_reverse_crunch	BODYWEIGHT	Reverse crunch	exato	Reverse_Crunch	body only	abdominals		2
+catalog_bodyweight_sit_up	BODYWEIGHT	Sit-up	exato	Sit-Up	body only	abdominals		2
+catalog_bodyweight_bicycle_crunch	BODYWEIGHT	Bicycle crunch	exato	Air_Bike	body only	abdominals		2
+catalog_bodyweight_hanging_knee_raise	BODYWEIGHT	Hanging knee raise	provavel	Hanging_Leg_Raise	body only	abdominals		2
+catalog_bodyweight_hanging_leg_raise	BODYWEIGHT	Hanging leg raise	exato	Hanging_Leg_Raise	body only	abdominals		2
+catalog_bodyweight_captains_chair_knee_raise	BODYWEIGHT	Captain's chair knee raise	exato	Knee_Hip_Raise_On_Parallel_Bars	other	abdominals		2
+catalog_bodyweight_lying_leg_raise	BODYWEIGHT	Lying leg raise	provavel	Flat_Bench_Lying_Leg_Raise	body only	abdominals		2
+catalog_bodyweight_dead_bug	BODYWEIGHT	Dead bug	exato	Dead_Bug	body only	abdominals		2
+catalog_bodyweight_bird_dog	BODYWEIGHT	Bird dog	sem_par					0
+catalog_bodyweight_back_extension	BODYWEIGHT	Bodyweight back extension	exato	Hyperextensions_Back_Extensions	other	lower back	glutes,hamstrings	2
+catalog_bodyweight_glute_ham_raise	BODYWEIGHT	Glute-ham raise	exato	Glute_Ham_Raise	machine	hamstrings	calves,glutes	2
+catalog_smith_bench_flat	SMITH_MACHINE	Smith machine flat bench press	exato	Smith_Machine_Bench_Press	machine	chest	shoulders,triceps	2
+catalog_smith_bench_incline	SMITH_MACHINE	Smith machine incline bench press	exato	Smith_Machine_Incline_Bench_Press	machine	chest	shoulders,triceps	2
+catalog_smith_bench_decline	SMITH_MACHINE	Smith machine decline bench press	exato	Smith_Machine_Decline_Press	machine	chest	shoulders,triceps	2
+catalog_smith_bench_close_grip	SMITH_MACHINE	Smith machine close-grip bench press	exato	Smith_Machine_Close-Grip_Bench_Press	machine	triceps	chest,shoulders	2
+catalog_smith_shoulder_press	SMITH_MACHINE	Smith machine seated shoulder press	exato	Smith_Machine_Overhead_Shoulder_Press	machine	shoulders	triceps	2
+catalog_smith_upright_row	SMITH_MACHINE	Smith machine upright row	exato	Smith_Machine_Upright_Row	machine	traps	biceps,middle back,shoulders	2
+catalog_smith_shrug	SMITH_MACHINE	Smith machine shrug	provavel	Smith_Machine_Behind_the_Back_Shrug	machine	traps	shoulders	2
+catalog_smith_bent_over_row	SMITH_MACHINE	Smith machine bent-over row	exato	Smith_Machine_Bent_Over_Row	machine	middle back	biceps,lats,shoulders	2
+catalog_smith_squat	SMITH_MACHINE	Smith machine back squat	exato	Smith_Machine_Squat	machine	quadriceps	calves,glutes,hamstrings,lower back	2
+catalog_smith_front_squat	SMITH_MACHINE	Smith machine front squat	sem_par					0
+catalog_smith_split_squat	SMITH_MACHINE	Smith machine split squat	exato	Smith_Single-Leg_Split_Squat	machine	quadriceps	calves,glutes,hamstrings	2
+catalog_smith_lunge_reverse	SMITH_MACHINE	Smith machine reverse lunge	sem_par					0
+catalog_smith_deadlift_romanian	SMITH_MACHINE	Smith machine Romanian deadlift	provavel	Smith_Machine_Stiff-Legged_Deadlift	machine	hamstrings	glutes,lower back	2
+catalog_smith_hip_thrust	SMITH_MACHINE	Smith machine hip thrust	sem_par					0
+catalog_smith_calf_raise	SMITH_MACHINE	Smith machine standing calf raise	exato	Smith_Machine_Calf_Raise	machine	calves		2
+catalog_selectorized_chest_press	SELECTORIZED_MACHINE	Selectorized chest press	exato	Machine_Bench_Press	machine	chest	shoulders,triceps	2
+catalog_selectorized_chest_press_incline	SELECTORIZED_MACHINE	Selectorized incline chest press	provavel	Leverage_Incline_Chest_Press	machine	chest	shoulders,triceps	2
+catalog_selectorized_pec_fly	SELECTORIZED_MACHINE	Pec deck fly	exato	Butterfly	machine	chest		2
+catalog_selectorized_shoulder_press	SELECTORIZED_MACHINE	Seated Overhead Press (Machine)	exato	Machine_Shoulder_Military_Press	machine	shoulders	triceps	2
+catalog_selectorized_lateral_raise	SELECTORIZED_MACHINE	Selectorized lateral raise	sem_par					0
+catalog_selectorized_reverse_fly	SELECTORIZED_MACHINE	Reverse pec deck fly	exato	Reverse_Machine_Flyes	machine	shoulders		2
+catalog_selectorized_lat_pulldown	SELECTORIZED_MACHINE	Selectorized lever lat pulldown	provavel	Wide-Grip_Lat_Pulldown	cable	lats	biceps,middle back,shoulders	2
+catalog_selectorized_seated_row	SELECTORIZED_MACHINE	Selectorized seated row	provavel	Leverage_Iso_Row	machine	lats	biceps,middle back	2
+catalog_selectorized_high_row	SELECTORIZED_MACHINE	Selectorized high row	provavel	Leverage_High_Row	machine	middle back	lats	2
+catalog_selectorized_pullover	SELECTORIZED_MACHINE	Selectorized pullover	sem_par					0
+catalog_selectorized_assisted_pull_up	SELECTORIZED_MACHINE	Assisted pull-up machine	sem_par					0
+catalog_selectorized_assisted_dip	SELECTORIZED_MACHINE	Assisted dip machine	provavel	Dip_Machine	machine	triceps	chest,shoulders	2
+catalog_selectorized_biceps_curl	SELECTORIZED_MACHINE	Selectorized biceps curl	exato	Machine_Bicep_Curl	machine	biceps		2
+catalog_selectorized_triceps_extension	SELECTORIZED_MACHINE	Selectorized triceps extension	exato	Machine_Triceps_Extension	machine	triceps		2
+catalog_selectorized_triceps_press	SELECTORIZED_MACHINE	Selectorized seated dip press	exato	Dip_Machine	machine	triceps	chest,shoulders	2
+catalog_selectorized_leg_press	SELECTORIZED_MACHINE	Selectorized seated leg press	provavel	Leg_Press	machine	quadriceps	calves,glutes,hamstrings	2
+catalog_selectorized_leg_extension	SELECTORIZED_MACHINE	Selectorized leg extension	exato	Leg_Extensions	machine	quadriceps		2
+catalog_selectorized_leg_curl_seated	SELECTORIZED_MACHINE	Selectorized seated leg curl	exato	Seated_Leg_Curl	machine	hamstrings		2
+catalog_selectorized_leg_curl_lying	SELECTORIZED_MACHINE	Selectorized lying leg curl	exato	Lying_Leg_Curls	machine	hamstrings		2
+catalog_selectorized_leg_curl_standing	SELECTORIZED_MACHINE	Selectorized single-leg standing curl	exato	Standing_Leg_Curl	machine	hamstrings		2
+catalog_selectorized_hip_abduction	SELECTORIZED_MACHINE	Selectorized hip abduction	exato	Thigh_Abductor	machine	abductors	glutes	2
+catalog_selectorized_hip_adduction	SELECTORIZED_MACHINE	Selectorized hip adduction	exato	Thigh_Adductor	machine	adductors	glutes,hamstrings	2
+catalog_selectorized_glute_kickback	SELECTORIZED_MACHINE	Selectorized glute kickback	sem_par					0
+catalog_selectorized_calf_raise_standing	SELECTORIZED_MACHINE	Selectorized standing calf raise	exato	Standing_Calf_Raises	machine	calves		2
+catalog_selectorized_calf_raise_seated	SELECTORIZED_MACHINE	Selectorized seated calf press	exato	Calf_Press	machine	calves		2
+catalog_selectorized_abdominal_crunch	SELECTORIZED_MACHINE	Selectorized abdominal crunch	exato	Ab_Crunch_Machine	machine	abdominals		2
+catalog_selectorized_back_extension	SELECTORIZED_MACHINE	Selectorized back extension	sem_par					0
+catalog_selectorized_torso_rotation	SELECTORIZED_MACHINE	Selectorized torso rotation	sem_par					0
+catalog_plate_chest_press	PLATE_LOADED_MACHINE	Plate-loaded chest press	exato	Leverage_Chest_Press	machine	chest	shoulders,triceps	2
+catalog_plate_chest_press_incline	PLATE_LOADED_MACHINE	Plate-loaded incline chest press	exato	Leverage_Incline_Chest_Press	machine	chest	shoulders,triceps	2
+catalog_plate_chest_press_decline	PLATE_LOADED_MACHINE	Plate-loaded decline chest press	exato	Leverage_Decline_Chest_Press	machine	chest	shoulders,triceps	2
+catalog_plate_chest_press_one_arm	PLATE_LOADED_MACHINE	One-arm plate-loaded chest press	provavel	Leverage_Chest_Press	machine	chest	shoulders,triceps	2
+catalog_plate_shoulder_press	PLATE_LOADED_MACHINE	Plate-loaded shoulder press	exato	Leverage_Shoulder_Press	machine	shoulders	triceps	2
+catalog_plate_row_chest_supported	PLATE_LOADED_MACHINE	Plate-loaded chest-supported row	provavel	Leverage_Iso_Row	machine	lats	biceps,middle back	2
+catalog_plate_row_high	PLATE_LOADED_MACHINE	Plate-loaded high row	exato	Leverage_High_Row	machine	middle back	lats	2
+catalog_plate_row_low	PLATE_LOADED_MACHINE	Plate-loaded low row	provavel	Leverage_Iso_Row	machine	lats	biceps,middle back	2
+catalog_plate_row_one_arm	PLATE_LOADED_MACHINE	One-arm plate-loaded row	provavel	Leverage_Iso_Row	machine	lats	biceps,middle back	2
+catalog_plate_lat_pulldown	PLATE_LOADED_MACHINE	Plate-loaded lat pulldown	sem_par					0
+catalog_plate_t_bar_row_supported	PLATE_LOADED_MACHINE	Chest-supported T-bar row machine	exato	Lying_T-Bar_Row	machine	middle back	biceps,lats	2
+catalog_plate_hack_squat	PLATE_LOADED_MACHINE	Plate-loaded hack squat	exato	Hack_Squat	machine	quadriceps	calves,glutes,hamstrings	2
+catalog_plate_pendulum_squat	PLATE_LOADED_MACHINE	Pendulum squat	sem_par					0
+catalog_plate_belt_squat	PLATE_LOADED_MACHINE	Plate-loaded belt squat	sem_par					0
+catalog_plate_leverage_squat	PLATE_LOADED_MACHINE	Leverage squat machine	sem_par					0
+catalog_plate_leg_press_45	PLATE_LOADED_MACHINE	45-degree plate-loaded leg press	exato	Leg_Press	machine	quadriceps	calves,glutes,hamstrings	2
+catalog_plate_leg_press_horizontal	PLATE_LOADED_MACHINE	Horizontal plate-loaded leg press	sem_par					0
+catalog_plate_leg_press_one_leg	PLATE_LOADED_MACHINE	Single-leg plate-loaded leg press	provavel	Leg_Press	machine	quadriceps	calves,glutes,hamstrings	2
+catalog_plate_leg_extension	PLATE_LOADED_MACHINE	Plate-loaded leg extension	provavel	Leg_Extensions	machine	quadriceps		2
+catalog_plate_leg_curl	PLATE_LOADED_MACHINE	Plate-loaded leg curl	provavel	Lying_Leg_Curls	machine	hamstrings		2
+catalog_plate_hip_thrust	PLATE_LOADED_MACHINE	Plate-loaded hip thrust machine	sem_par					0
+catalog_plate_calf_raise_seated	PLATE_LOADED_MACHINE	Plate-loaded seated calf raise	exato	Seated_Calf_Raise	machine	calves		2
+catalog_plate_calf_raise_standing	PLATE_LOADED_MACHINE	Plate-loaded standing calf raise	provavel	Standing_Calf_Raises	machine	calves		2
+catalog_plate_biceps_curl	PLATE_LOADED_MACHINE	Plate-loaded preacher curl	provavel	Machine_Preacher_Curls	machine	biceps		2
+catalog_plate_triceps_dip	PLATE_LOADED_MACHINE	Plate-loaded seated dip press	provavel	Dip_Machine	machine	triceps	chest,shoulders	2
+catalog_trap_bar_deadlift	OTHER	Trap-bar deadlift	exato	Trap_Bar_Deadlift	other	quadriceps	glutes,hamstrings	2

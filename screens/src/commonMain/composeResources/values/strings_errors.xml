@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the new screens say for each UiError, instead of the raw UiState.error. English is the base; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="error_save_failed">Couldn't save the last change. Your data is still on this phone.</string>
+    <string name="error_timer_storage">The rest timer can't reach storage. Your workout is saved.</string>
+    <string name="error_local_data_unavailable">Couldn't open the data on this phone. Close and reopen the app.</string>
+    <string name="error_blocked_by_update">An update is installing. Training will be back in a moment.</string>
+    <string name="error_set_gone">This set no longer exists.</string>
+    <string name="error_exercise_gone">This exercise is no longer in the workout.</string>
+    <string name="error_workout_gone">This workout is no longer in progress.</string>
+    <string name="error_set_limit">Each exercise can have up to 100 sets.</string>
+    <string name="error_invalid_value">Check the value: it couldn't be saved.</string>
+    <string name="error_needs_completed_set">Complete at least one set to finish.</string>
+    <string name="error_set_not_restored">The set couldn't come back.</string>
+</resources>

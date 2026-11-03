@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- As palavras da melhor série (pt-BR), as mesmas no cartão e no resumo. -->
+<resources>
+    <string name="best_set_bodyweight">Peso corporal × %1$d</string>
+    <string name="best_set_warmup_only">Só aquecimento</string>
+    <string name="best_set_assistance_only">Só assistência</string>
+    <string name="best_set_no_working_set">Sem série de trabalho</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rest_channel_name">Timer de descanso</string>
+    <string name="rest_channel_description">Avisa quando o descanso de um exercício acaba</string>
+    <string name="rest_progress_channel_name">Descanso em andamento</string>
+    <string name="rest_progress_channel_description">Mostra a contagem do descanso enquanto o Mooscles está em segundo plano</string>
+    <string name="rest_progress_title">Descanso</string>
+    <string name="rest_progress_text">%1$s · a seguir série %2$d</string>
+    <string name="rest_progress_paused">%1$s · pausado</string>
+    <string name="rest_action_skip">Pular</string>
+    <string name="rest_finished_title">Descanso acabou</string>
+    <string name="rest_finished_text">Próxima: %1$s, série %2$d</string>
+</resources>

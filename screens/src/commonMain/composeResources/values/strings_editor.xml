@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 4B task 13: the routine editor (English). Every key also exists in values-pt-rBR with the same arguments. -->
+<resources>
+    <string name="editor_more">Routine options</string>
+    <string name="editor_delete">Delete routine</string>
+    <string name="editor_add_exercises">Add exercises</string>
+    <string name="editor_start">Start workout</string>
+    <string name="editor_rest_chip">Rest %1$s</string>
+    <string name="editor_empty">Routine without exercises</string>
+    <string name="editor_empty_body">Add the exercises you want to do in this routine.</string>
+    <string name="editor_replace">Replace exercise</string>
+    <string name="editor_about">About the exercise</string>
+    <string name="editor_remove_exercise">Remove from routine</string>
+    <string name="editor_remove_title">Remove %1$s from the routine?</string>
+    <plurals name="editor_remove_body">
+        <item quantity="one">Its planned set goes.</item>
+        <item quantity="other">Its %1$d planned sets go.</item>
+    </plurals>
+    <string name="editor_remove_confirm">Remove</string>
+    <string name="editor_replace_title">Replace the exercise?</string>
+    <string name="editor_replace_body">Its manual targets go back to following your record and its warm-ups are emptied.</string>
+    <string name="editor_replace_confirm">Replace</string>
+    <string name="editor_exercise_more">Options for %1$s</string>
+    <!-- The label of a planned warm-up set in the set list (the working sets are numbered). -->
+    <string name="editor_set_warmup_short">W</string>
+    <string name="editor_rest_note">Applies to workouts you start from this routine.</string>
+    <!-- Task 14: the planned sets of the editor. -->
+    <string name="editor_set_follows_record">follows the record</string>
+    <string name="editor_set_no_load">No load</string>
+    <string name="editor_set_bodyweight">Bodyweight</string>
+    <string name="editor_set_type">Set type</string>
+    <string name="editor_set_normal">Normal</string>
+    <string name="editor_set_warmup">Warm-up</string>
+    <string name="editor_set_follow_record">Follow the record</string>
+    <string name="editor_set_remove">Remove set</string>
+    <string name="editor_set_last">A routine needs at least one set per exercise.</string>
+    <string name="editor_set_limit">Up to 50 sets per exercise.</string>
+    <string name="editor_set_label">Set %1$d</string>
+    <string name="editor_set_warmup_label">Warm-up %1$d</string>
+    <string name="editor_warmup_load_of_set">Load of warm-up %1$d</string>
+    <string name="editor_warmup_reps_of_set">Reps of warm-up %1$d</string>
+    <string name="editor_editing_warmup_load">Editing load of warm-up %1$d</string>
+    <string name="editor_editing_warmup_reps">Editing reps of warm-up %1$d</string>
+    <string name="editor_warmup_removed">Warm-up %1$d removed</string>
+    <!-- (2026-10-31, owner's request) A set's load and reps on every other working set of the exercise, with undo. -->
+    <string name="editor_set_copy_all">Copy to all sets</string>
+    <plurals name="editor_set_copied">
+        <item quantity="one">Copied to %1$d set</item>
+        <item quantity="other">Copied to %1$d sets</item>
+    </plurals>
+</resources>

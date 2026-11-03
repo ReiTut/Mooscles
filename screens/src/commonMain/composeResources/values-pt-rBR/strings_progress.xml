@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exercise progress texts (pt-BR). Every key also exists in the other language with the same arguments. -->
+<resources>
+    <string name="progress_title">Progresso do exercício</string>
+    <string name="progress_more">Opções do exercício</string>
+    <string name="progress_about">Sobre o exercício</string>
+    <string name="progress_metric_load">Carga</string>
+    <string name="progress_metric_added">Peso adicional</string>
+    <string name="progress_metric_assistance">Assistência</string>
+    <string name="progress_metric_e1rm">1RM estimado</string>
+    <string name="progress_metric_volume">Volume</string>
+    <string name="progress_metric_reps">Repetições</string>
+    <string name="progress_period_3m">3 meses</string>
+    <string name="progress_period_6m">6 meses</string>
+    <string name="progress_period_1y">1 ano</string>
+    <string name="progress_period_all">Tudo</string>
+    <string name="progress_period_spoken_3m">últimos 3 meses</string>
+    <string name="progress_period_spoken_6m">últimos 6 meses</string>
+    <string name="progress_period_spoken_1y">último ano</string>
+    <string name="progress_period_spoken_all">todo o período</string>
+    <string name="progress_highlight">%1$s · %2$s</string>
+    <string name="progress_since">%1$s desde %2$s</string>
+    <string name="progress_since_week">%1$s desde a semana de %2$s</string>
+    <string name="progress_readout">%1$s · %2$s · %3$s</string>
+    <string name="progress_summary">%1$s, %2$s: de %3$s em %4$s a %5$s em %6$s; máximo %7$s em %8$s</string>
+    <string name="progress_summary_lowest">%1$s, %2$s: de %3$s em %4$s a %5$s em %6$s; mínimo %7$s em %8$s</string>
+    <string name="progress_summary_weekly">%1$s, %2$s: de %3$s na semana de %4$s a %5$s na semana de %6$s; máximo %7$s na semana de %8$s</string>
+    <string name="progress_summary_lowest_weekly">%1$s, %2$s: de %3$s na semana de %4$s a %5$s na semana de %6$s; mínimo %7$s na semana de %8$s</string>
+    <string name="progress_summary_part">%1$s; %2$s</string>
+    <string name="progress_trend_up">tendência em alta</string>
+    <string name="progress_trend_down">tendência em baixa</string>
+    <string name="progress_trend_flat">tendência estável</string>
+    <plurals name="progress_workouts">
+        <item quantity="one">%1$d treino</item>
+        <item quantity="other">%1$d treinos</item>
+    </plurals>
+    <plurals name="progress_reps_count">
+        <item quantity="one">%1$d repetição</item>
+        <item quantity="other">%1$d repetições</item>
+    </plurals>
+    <string name="progress_week_of">Semana de %1$s</string>
+    <string name="progress_weekly_note">Um ponto por semana: o melhor da semana.</string>
+    <string name="progress_weekly_note_volume">Um ponto por semana: o melhor treino da semana, não a soma.</string>
+    <string name="progress_this_week">esta semana (em andamento)</string>
+    <string name="progress_one_session">O gráfico aparece a partir de 2 treinos.</string>
+    <string name="progress_no_estimate">Sem séries de até 10 repetições para estimar o 1RM neste período.</string>
+    <string name="progress_no_points">Nenhum treino com essa medida neste período.</string>
+    <string name="progress_assistance_legend">Menos assistência, menos ajuda da máquina.</string>
+    <string name="progress_other_convention">Os treinos registrados como %1$s não entram neste gráfico.</string>
+    <string name="progress_records">Recordes deste exercício</string>
+    <string name="progress_records_reps_assisted">Repetições assistidas</string>
+    <plurals name="progress_view_all_records">
+        <item quantity="one">Ver todos os %1$d</item>
+        <item quantity="other">Ver todos os %1$d</item>
+    </plurals>
+    <string name="progress_sessions">Sessões</string>
+    <string name="progress_session_spoken">%1$s, %2$s: %3$s</string>
+    <string name="progress_empty_title">Você ainda não fez este exercício.</string>
+    <string name="progress_empty_body">Registre este exercício num treino para ver o progresso aqui.</string>
+    <string name="progress_empty_action">Ver na biblioteca</string>
+    <string name="progress_missing">Exercício não encontrado</string>
+    <string name="progress_short_thousands">%1$s mil</string>
+</resources>

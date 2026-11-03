@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brazilian Portuguese translation of values/strings_errors.xml, with the same keys and arguments. -->
+<resources>
+    <string name="error_save_failed">Não foi possível salvar a última mudança. Seus dados continuam no aparelho.</string>
+    <string name="error_timer_storage">O timer de descanso não conseguiu acessar o armazenamento. Seu treino está salvo.</string>
+    <string name="error_local_data_unavailable">Não foi possível abrir os dados do aparelho. Feche e abra o app.</string>
+    <string name="error_blocked_by_update">Uma atualização está sendo instalada. O treino volta em instantes.</string>
+    <string name="error_set_gone">Esta série não existe mais.</string>
+    <string name="error_exercise_gone">Este exercício não está mais no treino.</string>
+    <string name="error_workout_gone">Este treino não está mais em andamento.</string>
+    <string name="error_set_limit">Cada exercício tem no máximo 100 séries.</string>
+    <string name="error_invalid_value">Confira o valor: ele não pôde ser salvo.</string>
+    <string name="error_needs_completed_set">Conclua pelo menos uma série para finalizar.</string>
+    <string name="error_set_not_restored">A série não pôde voltar.</string>
+</resources>

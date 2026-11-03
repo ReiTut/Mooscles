@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same launcher artwork, retaining the preview build's amber identifier. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <bitmap android:src="@drawable/launcher_logo" android:gravity="fill" />
+    </item>
+    <item android:drawable="@drawable/preview_launcher_marker" />
+</layer-list>

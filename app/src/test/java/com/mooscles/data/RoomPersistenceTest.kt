@@ -2,11 +2,19 @@ package com.mooscles.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.domain.WorkoutCalculations
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -24,12 +32,98 @@ class RoomPersistenceTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
     @Before fun setup() = runBlocking {
-        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).build()
+        database = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java).setDriver(AndroidSQLiteDriver()).build()
         repo = WorkoutRepository(database)
         repo.initialize()
     }
 
     @After fun close() { database.close() }
+
+    @Test fun nestedRepositoryCommandsJoinTheOuterTransactionAndFailAllOrNothing() = runBlocking {
+        val before = repo.snapshot()
+        val error = runCatching {
+            database.writeTransaction {
+                val routine = repo.createRoutine("Inside the outer transaction")
+                // A nested command reads the outer, uncommitted write on the same connection.
+                assertTrue(repo.snapshot().routines.any { it.id == routine })
+                repo.createRoutine("Rejected", folderId = "missing-folder")
+            }
+        }.exceptionOrNull()
+        assertEquals("Folder not found.", error?.message)
+        assertEquals(before, repo.snapshot())
+    }
+
+    @Test fun aCaughtNestedFailureStillRollsBackTheOuterTransaction() = runBlocking {
+        val before = repo.snapshot()
+        val error = runCatching {
+            database.writeTransaction {
+                repo.createRoutine("A")
+                val nested = runCatching {
+                    database.writeTransaction {
+                        repo.createRoutine("B")
+                        error("Nested failure")
+                    }
+                }.exceptionOrNull()
+                assertEquals("Nested failure", nested?.message)
+                // The caller swallows the nested failure and returns normally.
+            }
+        }.exceptionOrNull()
+        assertTrue(error is IllegalStateException)
+        // Coroutine stack-trace recovery may wrap the exception in a copy, so walk the causes.
+        val causes = generateSequence(error) { it.cause }.map { it.message }.toList()
+        assertTrue(causes.toString(), "A nested write transaction failed, so the enclosing one is rolled back" in causes)
+        assertTrue(causes.toString(), "Nested failure" in causes)
+        assertEquals(before, repo.snapshot())
+        assertTrue(repo.snapshot().routines.none { it.name == "A" || it.name == "B" })
+    }
+
+    /**
+     * A nested command must run on the enclosing transaction's connection without starting its own
+     * connection use: Room refreshes the invalidation tracker after every `useWriterConnection`, and
+     * each refresh would park a Room IO thread on the connection pool until the outer commit.
+     *
+     * Scoped to this test's own database: its driver records the thread of every statement it
+     * prepares. A refresh prepares its `BEGIN` before it blocks, so while the outer transaction
+     * holds the connection, any statement prepared on another thread is a use that has to wait.
+     * Room's IO threads are shared by every database in the JVM, so stacks alone do not say whose
+     * pool a thread is waiting on.
+     */
+    @Test fun nestedCommandsDoNotUseThisDatabaseFromOtherThreadsDuringTheTransaction() = runBlocking {
+        val statements = CopyOnWriteArrayList<Pair<String, Thread>>()
+        val db = Room.inMemoryDatabaseBuilder(context, WorkoutDatabase::class.java)
+            .setDriver(RecordingDriver { sql -> statements += sql to Thread.currentThread() }).build()
+        val repository = WorkoutRepository(db)
+        val observed = Channel<AppData>(Channel.CONFLATED)
+        val collector = launch(Dispatchers.Default) { repository.data.collect { observed.send(it) } }
+        try {
+            repository.initialize()
+            withTimeout(10_000) { observed.receive() }
+            // Quiescence: earlier top-level commands' refreshes and reloads are finished.
+            withTimeout(10_000) {
+                do { val count = statements.size; delay(300) } while (statements.size != count)
+            }
+            val foreign = db.writeTransaction {
+                val owner = Thread.currentThread()
+                val start = statements.size
+                repository.createRoutine("Inside the outer transaction")
+                repeat(6) { repository.snapshot() }
+                repository.localState()
+                // Give any refresh started by a nested call time to reach the connection.
+                var found = emptyList<String>()
+                for (attempt in 0 until 50) {
+                    found = statements.drop(start).filter { it.second !== owner }.map { "${it.second.name}: ${it.first}" }
+                    if (found.isNotEmpty()) break
+                    Thread.sleep(20)
+                }
+                found
+            }
+            assertEquals("Statements on this database from other threads during the transaction", emptyList<String>(), foreign)
+            withTimeout(10_000) { while (observed.receive().routines.none { it.name == "Inside the outer transaction" }) Unit }
+        } finally {
+            collector.cancel()
+            db.close()
+        }
+    }
 
     @Test fun routineEditsPreserveWorkoutSnapshotsAndDuplicateIndependentPlans() = runBlocking {
         val exercise = repo.createCustomExercise("Original press", MuscleGroup.CHEST, Equipment.DUMBBELL, LoadConvention.PER_HAND)
@@ -161,7 +255,7 @@ class RoomPersistenceTest {
 
     @Test fun onDiskReopenRestoresActiveDecimalSetsAndDiscardCascades() = runBlocking {
         val filename = "reopen-${newId()}.db"
-        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
         try {
             val first = WorkoutRepository(disk)
             first.initialize()
@@ -171,7 +265,7 @@ class RoomPersistenceTest {
             first.updateSet(set.copy(reps = 7, weightKg = 42.125, completed = true))
             first.updateWorkoutExerciseRest(exercise, 135)
             disk.close()
-            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
             val second = WorkoutRepository(disk)
             second.initialize()
             val restored = second.snapshot()
@@ -269,7 +363,7 @@ class RoomPersistenceTest {
 
     @Test fun bodyweightZeroLoadCompletesAndSurvivesDiskReopenAndHistory() = runBlocking {
         val filename = "bodyweight-${newId()}.db"
-        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
         try {
             var saved = WorkoutRepository(disk)
             saved.initialize()
@@ -279,7 +373,7 @@ class RoomPersistenceTest {
             val set = saved.snapshot().exerciseSets(entry).first()
             saved.updateSet(set.copy(reps = 12, weightKg = 0.0, completed = true))
             disk.close()
-            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
             saved = WorkoutRepository(disk)
             saved.initialize()
             val restored = saved.snapshot().sets.first { it.id == set.id }

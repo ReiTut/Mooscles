@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Existing share-preview layout; translated independently of the deferred redesign. -->
 <resources>
     <string name="share_workout">Share workout</string>
     <string name="share_preview_title">Workout preview</string>

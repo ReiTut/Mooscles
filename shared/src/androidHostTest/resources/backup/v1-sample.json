@@ -1,0 +1,30 @@
+{
+    "format": "mooscles-backup",
+    "formatVersion": 1,
+    "exportedAt": "2026-10-27T12:00:00Z",
+    "app": {"versionName": "1.4.5", "versionCode": 16, "platform": "android"},
+    "preferences": {"pounds": false, "theme": "system", "autoRest": true, "defaultRestSeconds": 90, "selectedRoutineFolderId": "default"},
+    "data": {
+        "exercises": [{"id": "e1", "name": "Bench press", "muscle": "CHEST", "equipment": "BARBELL", "convention": "TOTAL_LOAD", "custom": true}],
+        "routineFolders": [{"id": "default", "name": "My routines", "position": 0}],
+        "routines": [{"id": "r1", "name": "Push", "position": 0, "folderId": "default"}],
+        "routineExercises": [
+            {"id": "re1", "routineId": "r1", "exerciseId": "e1", "position": 0, "plannedSets": 3, "targetReps": 8, "targetWeightKg": 22.75, "restSeconds": 120},
+            {"id": "re2", "routineId": "r1", "exerciseId": "e1", "position": 1, "plannedSets": 2, "targetReps": 0, "targetWeightKg": null, "restSeconds": null}
+        ],
+        "routineSets": [
+            {"id": "rs1", "routineExerciseId": "re1", "position": 0, "targetReps": 8, "targetWeightKg": 22.75, "inheritPr": true},
+            {"id": "rs2", "routineExerciseId": "re1", "position": 1, "targetReps": 0, "targetWeightKg": null, "inheritPr": false}
+        ],
+        "workouts": [
+            {"id": "w1", "name": "Push", "startedAt": 1000, "endedAt": 2000, "status": "FINISHED", "sourceRoutineId": "r1"},
+            {"id": "w2", "name": "Open", "startedAt": 3000, "endedAt": null, "status": "ACTIVE", "sourceRoutineId": null}
+        ],
+        "workoutExercises": [{"id": "we1", "workoutId": "w1", "exerciseId": "e1", "name": "Bench press", "muscle": "CHEST", "equipment": "BARBELL", "convention": "TOTAL_LOAD", "position": 0, "restSeconds": 90}],
+        "workoutSets": [{"id": "ws1", "workoutExerciseId": "we1", "position": 0, "reps": 8, "weightKg": 22.75, "completed": true, "warmup": false, "assistance": false}],
+        "routineTargetCheckpoints": [
+            {"exerciseId": "e1", "convention": "TOTAL_LOAD", "weightKg": 22.75, "reps": 8},
+            {"exerciseId": "e1", "convention": "BODYWEIGHT", "weightKg": null, "reps": 5}
+        ]
+    }
+}

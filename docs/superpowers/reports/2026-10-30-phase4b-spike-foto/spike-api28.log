@@ -1,0 +1,75 @@
+
+
+SPIKE undecodable api=28 path=legacy out=null
+SPIKE decoder failed direct=false header=: android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+SPIKE undecodable api=28 path=decoder out=null
+SPIKE decoder failed direct=true header=: android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+SPIKE undecodable api=28 path=decoderDirect out=null
+SPIKE input api=28 case=noise-o6 inputBytes=9040009
+SPIKE photo api=28 case=noise-o6 path=legacy out=810x1080 bytes=187203 thumb=2776 peakNativeKb=15922 peakJavaKb=782 ms=199 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=28 case=noise-o6 path=legacy q85=186707 q75=154853 q65=62693 q55=55198
+SPIKE input api=28 case=noise-o6 inputBytes=9040009
+SPIKE photo api=28 case=noise-o6 path=decoder out=810x1080 bytes=184137 thumb=3356 peakNativeKb=98403 peakJavaKb=17720 ms=414 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=28 case=noise-o6 path=decoder q85=183250 q75=152575 q65=62346 q55=54620
+SPIKE input api=28 case=noise-o6 inputBytes=9040009
+SPIKE decoder failed direct=true header=3000x4000: java.io.IOException: getPixels failed with error invalid scale
+SPIKE photo api=28 case=noise-o6 path=decoderDirect out=nullxnull bytes=null thumb=null peakNativeKb=7 peakJavaKb=17688 ms=17 oom=false upright=false thumbUpright=false outExif=null detail=null quadrants=null
+SPIKE input api=28 case=fullnoise-1440 inputBytes=1500952
+SPIKE photo api=28 case=fullnoise-1440 path=legacy out=1080x810 bytes=298501 thumb=12124 peakNativeKb=9718 peakJavaKb=3161 ms=78 oom=false upright=true thumbUpright=false outExif=0 detail=legacy(sample=1,exif=0),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=28 case=fullnoise-1440 path=legacy q85=368644 q75=315399 q65=297846 q55=282260
+SPIKE input api=28 case=fullnoise-1440 inputBytes=1500952
+SPIKE photo api=28 case=fullnoise-1440 path=decoder out=1080x810 bytes=299055 thumb=12678 peakNativeKb=9739 peakJavaKb=5781 ms=75 oom=false upright=true thumbUpright=false outExif=0 detail=decoder(header=1440x1080,sample=1),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=28 case=fullnoise-1440 path=decoder q85=368644 q75=315399 q65=297846 q55=282260
+SPIKE input api=28 case=fullnoise-1440 inputBytes=1500952
+SPIKE photo api=28 case=fullnoise-1440 path=decoderDirect out=1080x810 bytes=299055 thumb=12678 peakNativeKb=9733 peakJavaKb=5780 ms=71 oom=false upright=true thumbUpright=false outExif=0 detail=decoderDirect(header=1440x1080),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=28 case=fullnoise-1440 path=decoderDirect q85=368644 q75=315399 q65=297846 q55=282260
+SPIKE orientation api=28 o=1 path=legacy out=1080x810 upright=true
+SPIKE orientation api=28 o=1 path=decoder out=1080x810 upright=true
+SPIKE orientation api=28 o=1 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=28 o=2 path=legacy out=1080x810 upright=true
+SPIKE orientation api=28 o=2 path=decoder out=1080x810 upright=true
+SPIKE orientation api=28 o=2 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=28 o=3 path=legacy out=1080x810 upright=true
+SPIKE orientation api=28 o=3 path=decoder out=1080x810 upright=true
+SPIKE orientation api=28 o=3 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=28 o=4 path=legacy out=1080x810 upright=true
+SPIKE orientation api=28 o=4 path=decoder out=1080x810 upright=true
+SPIKE orientation api=28 o=4 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=28 o=5 path=legacy out=810x1080 upright=true
+SPIKE orientation api=28 o=5 path=decoder out=810x1080 upright=true
+SPIKE orientation api=28 o=5 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=28 o=6 path=legacy out=810x1080 upright=true
+SPIKE orientation api=28 o=6 path=decoder out=810x1080 upright=true
+SPIKE orientation api=28 o=6 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=28 o=7 path=legacy out=810x1080 upright=true
+SPIKE orientation api=28 o=7 path=decoder out=810x1080 upright=true
+SPIKE orientation api=28 o=7 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=28 o=8 path=legacy out=810x1080 upright=true
+SPIKE orientation api=28 o=8 path=decoder out=810x1080 upright=true
+SPIKE orientation api=28 o=8 path=decoderDirect out=810x1080 upright=true
+SPIKE input api=28 case=heic-o6 inputBytes=54896 streamExif=0 fdExif=0
+SPIKE photo api=28 case=heic-o6 path=legacy out=1080x810 bytes=79655 peakNativeKb=16496 ms=438 upright=false detail=legacy(sample=2,exif=0)
+SPIKE photo api=28 case=heic-o6 path=decoder out=810x1080 bytes=85151 peakNativeKb=102451 ms=502 upright=true detail=decoder(header=3000x4000,sample=2)
+SPIKE decoder failed direct=true header=3000x4000: java.io.IOException: getPixels failed with error invalid scale
+SPIKE photo api=28 case=heic-o6 path=decoderDirect out=nullxnull bytes=null peakNativeKb=28679 ms=389 upright=null detail=null
+SPIKE input api=28 case=jpeg-o6 inputBytes=3656937
+SPIKE photo api=28 case=jpeg-o6 path=legacy out=810x1080 bytes=236172 thumb=13472 peakNativeKb=15906 peakJavaKb=781 ms=87 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE photo api=28 case=jpeg-o6 path=decoder out=810x1080 bytes=234566 thumb=14011 peakNativeKb=98391 peakJavaKb=7200 ms=278 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE decoder failed direct=true header=3000x4000: java.io.IOException: getPixels failed with error invalid scale
+SPIKE photo api=28 case=jpeg-o6 path=decoderDirect out=nullxnull bytes=null thumb=null peakNativeKb=8 peakJavaKb=7176 ms=6 oom=false upright=false thumbUpright=false outExif=null detail=null quadrants=null
+SPIKE input api=28 case=jpeg-o8 inputBytes=3723707
+SPIKE photo api=28 case=jpeg-o8 path=legacy out=810x1080 bytes=238292 thumb=13481 peakNativeKb=15898 peakJavaKb=785 ms=79 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=8) quadrants=red/green/blue/yellow
+SPIKE photo api=28 case=jpeg-o8 path=decoder out=810x1080 bytes=236791 thumb=14006 peakNativeKb=98390 peakJavaKb=7336 ms=229 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE decoder failed direct=true header=3000x4000: java.io.IOException: getPixels failed with error invalid scale
+SPIKE photo api=28 case=jpeg-o8 path=decoderDirect out=nullxnull bytes=null thumb=null peakNativeKb=12295 peakJavaKb=7304 ms=5 oom=false upright=false thumbUpright=false outExif=null detail=null quadrants=null
+SPIKE input api=28 case=jpeg-o1 inputBytes=3742304
+SPIKE photo api=28 case=jpeg-o1 path=legacy out=1080x810 bytes=240273 thumb=13639 peakNativeKb=15924 peakJavaKb=785 ms=66 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE photo api=28 case=jpeg-o1 path=decoder out=1080x810 bytes=240827 thumb=14193 peakNativeKb=15880 peakJavaKb=7368 ms=82 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=4000x3000,sample=2) quadrants=red/green/blue/yellow
+SPIKE photo api=28 case=jpeg-o1 path=decoderDirect out=1080x810 bytes=234192 thumb=14144 peakNativeKb=9816 peakJavaKb=8132 ms=83 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=4000x3000) quadrants=red/green/blue/yellow
+SPIKE input api=28 case=png inputBytes=9512744
+SPIKE photo api=28 case=png path=legacy out=1080x810 bytes=221312 thumb=12767 peakNativeKb=15938 peakJavaKb=770 ms=340 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE png-center api=28 path=legacy rgb=255,255,255
+SPIKE photo api=28 case=png path=decoder out=1080x810 bytes=221312 thumb=12767 peakNativeKb=15917 peakJavaKb=18624 ms=328 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=4000x3000,sample=2) quadrants=red/green/blue/yellow
+SPIKE png-center api=28 path=decoder rgb=255,255,255
+SPIKE photo api=28 case=png path=decoderDirect out=1080x810 bytes=211989 thumb=12646 peakNativeKb=9750 peakJavaKb=18624 ms=400 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=4000x3000) quadrants=red/green/blue/yellow
+SPIKE png-center api=28 path=decoderDirect rgb=255,255,255

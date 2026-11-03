@@ -1,0 +1,71 @@
+
+SPIKE undecodable api=35 path=legacy out=null
+SPIKE decoder failed direct=false header=: android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+SPIKE undecodable api=35 path=decoder out=null
+SPIKE decoder failed direct=true header=: android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+SPIKE undecodable api=35 path=decoderDirect out=null
+SPIKE input api=35 case=noise-o6 inputBytes=9040305
+SPIKE photo api=35 case=noise-o6 path=legacy out=810x1080 bytes=187884 thumb=3271 peakNativeKb=15171 peakJavaKb=812 ms=313 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=noise-o6 path=legacy q85=187337 q75=155414 q65=63335 q55=55778
+SPIKE input api=35 case=noise-o6 inputBytes=9040305
+SPIKE photo api=35 case=noise-o6 path=decoder out=810x1080 bytes=187863 thumb=3273 peakNativeKb=23536 peakJavaKb=18404 ms=247 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=noise-o6 path=decoder q85=187377 q75=155525 q65=63353 q55=55782
+SPIKE input api=35 case=noise-o6 inputBytes=9040305
+SPIKE photo api=35 case=noise-o6 path=decoderDirect out=810x1080 bytes=293517 thumb=6323 peakNativeKb=8823 peakJavaKb=19024 ms=230 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=3000x4000) quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=noise-o6 path=decoderDirect q85=292986 q75=244591 q65=130654 q55=119115
+SPIKE input api=35 case=fullnoise-1440 inputBytes=1501426
+SPIKE photo api=35 case=fullnoise-1440 path=legacy out=1080x810 bytes=298603 thumb=12600 peakNativeKb=9516 peakJavaKb=3032 ms=89 oom=false upright=true thumbUpright=false outExif=0 detail=legacy(sample=1,exif=0),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=fullnoise-1440 path=legacy q85=368605 q75=315505 q65=297941 q55=282350
+SPIKE input api=35 case=fullnoise-1440 inputBytes=1501426
+SPIKE photo api=35 case=fullnoise-1440 path=decoder out=1080x810 bytes=298603 thumb=12600 peakNativeKb=9516 peakJavaKb=7220 ms=103 oom=false upright=true thumbUpright=false outExif=0 detail=decoder(header=1440x1080,sample=1),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=fullnoise-1440 path=decoder q85=368605 q75=315505 q65=297941 q55=282350
+SPIKE input api=35 case=fullnoise-1440 inputBytes=1501426
+SPIKE photo api=35 case=fullnoise-1440 path=decoderDirect out=1080x810 bytes=295816 thumb=12530 peakNativeKb=9589 peakJavaKb=7212 ms=89 oom=false upright=true thumbUpright=false outExif=0 detail=decoderDirect(header=1440x1080),q=65 quadrants=red/green/blue/yellow
+SPIKE noise-quality api=35 case=fullnoise-1440 path=decoderDirect q85=365384 q75=312689 q65=295326 q55=279863
+SPIKE orientation api=35 o=1 path=legacy out=1080x810 upright=true
+SPIKE orientation api=35 o=1 path=decoder out=1080x810 upright=true
+SPIKE orientation api=35 o=1 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=35 o=2 path=legacy out=1080x810 upright=true
+SPIKE orientation api=35 o=2 path=decoder out=1080x810 upright=true
+SPIKE orientation api=35 o=2 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=35 o=3 path=legacy out=1080x810 upright=true
+SPIKE orientation api=35 o=3 path=decoder out=1080x810 upright=true
+SPIKE orientation api=35 o=3 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=35 o=4 path=legacy out=1080x810 upright=true
+SPIKE orientation api=35 o=4 path=decoder out=1080x810 upright=true
+SPIKE orientation api=35 o=4 path=decoderDirect out=1080x810 upright=true
+SPIKE orientation api=35 o=5 path=legacy out=810x1080 upright=true
+SPIKE orientation api=35 o=5 path=decoder out=810x1080 upright=true
+SPIKE orientation api=35 o=5 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=35 o=6 path=legacy out=810x1080 upright=true
+SPIKE orientation api=35 o=6 path=decoder out=810x1080 upright=true
+SPIKE orientation api=35 o=6 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=35 o=7 path=legacy out=810x1080 upright=true
+SPIKE orientation api=35 o=7 path=decoder out=810x1080 upright=true
+SPIKE orientation api=35 o=7 path=decoderDirect out=810x1080 upright=true
+SPIKE orientation api=35 o=8 path=legacy out=810x1080 upright=true
+SPIKE orientation api=35 o=8 path=decoder out=810x1080 upright=true
+SPIKE orientation api=35 o=8 path=decoderDirect out=810x1080 upright=true
+SPIKE input api=35 case=heic-o6 inputBytes=54896 streamExif=6 fdExif=6
+SPIKE photo api=35 case=heic-o6 path=legacy out=810x1080 bytes=82609 peakNativeKb=15866 ms=673 upright=true detail=legacy(sample=2,exif=6)
+SPIKE photo api=35 case=heic-o6 path=decoder out=810x1080 bytes=82145 peakNativeKb=27580 ms=317 upright=true detail=decoder(header=3000x4000,sample=2)
+SPIKE photo api=35 case=heic-o6 path=decoderDirect out=810x1080 bytes=80075 peakNativeKb=12766 ms=362 upright=true detail=decoderDirect(header=3000x4000)
+SPIKE input api=35 case=jpeg-o6 inputBytes=3657475
+SPIKE photo api=35 case=jpeg-o6 path=legacy out=810x1080 bytes=236768 thumb=13928 peakNativeKb=15159 peakJavaKb=896 ms=120 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=6) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o6 path=decoder out=810x1080 bytes=236717 thumb=13948 peakNativeKb=23531 peakJavaKb=7932 ms=134 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o6 path=decoderDirect out=810x1080 bytes=230776 thumb=13908 peakNativeKb=8824 peakJavaKb=8000 ms=114 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=3000x4000) quadrants=red/green/blue/yellow
+SPIKE input api=35 case=jpeg-o8 inputBytes=3724434
+SPIKE photo api=35 case=jpeg-o8 path=legacy out=810x1080 bytes=238852 thumb=13956 peakNativeKb=15159 peakJavaKb=864 ms=163 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=8) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o8 path=decoder out=810x1080 bytes=238881 thumb=13960 peakNativeKb=23531 peakJavaKb=8144 ms=149 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=3000x4000,sample=2) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o8 path=decoderDirect out=810x1080 bytes=231975 thumb=13875 peakNativeKb=8823 peakJavaKb=8064 ms=122 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=3000x4000) quadrants=red/green/blue/yellow
+SPIKE input api=35 case=jpeg-o1 inputBytes=3742601
+SPIKE photo api=35 case=jpeg-o1 path=legacy out=1080x810 bytes=240773 thumb=14114 peakNativeKb=15160 peakJavaKb=864 ms=112 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o1 path=decoder out=1080x810 bytes=240773 thumb=14114 peakNativeKb=15160 peakJavaKb=8104 ms=109 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=4000x3000,sample=2) quadrants=red/green/blue/yellow
+SPIKE photo api=35 case=jpeg-o1 path=decoderDirect out=1080x810 bytes=234044 thumb=14086 peakNativeKb=8823 peakJavaKb=8100 ms=114 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=4000x3000) quadrants=red/green/blue/yellow
+SPIKE input api=35 case=png inputBytes=9514553
+SPIKE photo api=35 case=png path=legacy out=1080x810 bytes=221762 thumb=13236 peakNativeKb=15160 peakJavaKb=19512 ms=338 oom=false upright=true thumbUpright=true outExif=0 detail=legacy(sample=2,exif=0) quadrants=red/green/blue/yellow
+SPIKE png-center api=35 path=legacy rgb=255,255,255
+SPIKE photo api=35 case=png path=decoder out=1080x810 bytes=221762 thumb=13236 peakNativeKb=15160 peakJavaKb=19360 ms=332 oom=false upright=true thumbUpright=true outExif=0 detail=decoder(header=4000x3000,sample=2) quadrants=red/green/blue/yellow
+SPIKE png-center api=35 path=decoder rgb=255,255,255
+SPIKE photo api=35 case=png path=decoderDirect out=1080x810 bytes=212288 thumb=13141 peakNativeKb=8718 peakJavaKb=19348 ms=327 oom=false upright=true thumbUpright=true outExif=0 detail=decoderDirect(header=4000x3000) quadrants=red/green/blue/yellow
+SPIKE png-center api=35 path=decoderDirect rgb=255,255,255

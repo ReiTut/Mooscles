@@ -1,0 +1,721 @@
+{
+ "start": {
+  "main-start-1": {
+   "next_frame_ms": 79.6,
+   "next_frame_dur": 44.9,
+   "session_ms": 275.4,
+   "editable_ms": 323.5,
+   "editable_frame_dur": 20.8,
+   "presents": [
+    13.5
+   ],
+   "frames": 11,
+   "max_frame": 47.1,
+   "main_db_before_editable": 0
+  },
+  "main-start-2": {
+   "next_frame_ms": 46.9,
+   "next_frame_dur": 16.1,
+   "session_ms": 208.5,
+   "editable_ms": 240.0,
+   "editable_frame_dur": 25.8,
+   "presents": [
+    8.5
+   ],
+   "frames": 10,
+   "max_frame": 40.1,
+   "main_db_before_editable": 0
+  },
+  "main-start-3": {
+   "next_frame_ms": 48.8,
+   "next_frame_dur": 36.8,
+   "session_ms": 198.4,
+   "editable_ms": 221.0,
+   "editable_frame_dur": 13.3,
+   "presents": [
+    9.9
+   ],
+   "frames": 10,
+   "max_frame": 36.8,
+   "main_db_before_editable": 0
+  },
+  "main-start-4": {
+   "next_frame_ms": 48.0,
+   "next_frame_dur": 32.0,
+   "session_ms": 225.9,
+   "editable_ms": 256.5,
+   "editable_frame_dur": 24.1,
+   "presents": [
+    9.5
+   ],
+   "frames": 12,
+   "max_frame": 40.1,
+   "main_db_before_editable": 0
+  },
+  "main-start-5": {
+   "next_frame_ms": 42.5,
+   "next_frame_dur": 28.0,
+   "session_ms": 164.4,
+   "editable_ms": 178.7,
+   "editable_frame_dur": 12.5,
+   "presents": [
+    8.1
+   ],
+   "frames": 9,
+   "max_frame": 28.0,
+   "main_db_before_editable": 0
+  },
+  "main-start-6": {
+   "next_frame_ms": 69.3,
+   "next_frame_dur": 9.9,
+   "session_ms": 302.8,
+   "editable_ms": 353.9,
+   "editable_frame_dur": 32.7,
+   "presents": [
+    12.5
+   ],
+   "frames": 12,
+   "max_frame": 58.4,
+   "main_db_before_editable": 0
+  },
+  "main-start-7": {
+   "next_frame_ms": 63.7,
+   "next_frame_dur": 9.5,
+   "session_ms": 252.8,
+   "editable_ms": 322.8,
+   "editable_frame_dur": 57.5,
+   "presents": [
+    16.7
+   ],
+   "frames": 11,
+   "max_frame": 57.5,
+   "main_db_before_editable": 0
+  },
+  "main-start-8": {
+   "next_frame_ms": 66.4,
+   "next_frame_dur": 13.8,
+   "session_ms": 223.9,
+   "editable_ms": 263.8,
+   "editable_frame_dur": 20.2,
+   "presents": [
+    17.3
+   ],
+   "frames": 12,
+   "max_frame": 22.3,
+   "main_db_before_editable": 0
+  },
+  "main-start-9": {
+   "next_frame_ms": 70.7,
+   "next_frame_dur": 12.8,
+   "session_ms": 228.3,
+   "editable_ms": 247.3,
+   "editable_frame_dur": 17.7,
+   "presents": [
+    12.6
+   ],
+   "frames": 9,
+   "max_frame": 40.0,
+   "main_db_before_editable": 0
+  },
+  "main-start-10": {
+   "next_frame_ms": 55.9,
+   "next_frame_dur": 6.4,
+   "session_ms": 179.4,
+   "editable_ms": 200.0,
+   "editable_frame_dur": 18.9,
+   "presents": [
+    12.3
+   ],
+   "frames": 8,
+   "max_frame": 33.2,
+   "main_db_before_editable": 0
+  },
+  "branch-start-1": {
+   "next_frame_ms": 63.5,
+   "next_frame_dur": 12.1,
+   "session_ms": 248.2,
+   "editable_ms": 345.2,
+   "editable_frame_dur": 90.2,
+   "presents": [
+    11.1
+   ],
+   "frames": 9,
+   "max_frame": 90.2,
+   "main_db_before_editable": 0
+  },
+  "branch-start-2": {
+   "next_frame_ms": 36.9,
+   "next_frame_dur": 20.9,
+   "session_ms": 201.7,
+   "editable_ms": 230.2,
+   "editable_frame_dur": 26.6,
+   "presents": [
+    11.1
+   ],
+   "frames": 10,
+   "max_frame": 40.1,
+   "main_db_before_editable": 0
+  },
+  "branch-start-3": {
+   "next_frame_ms": 101.0,
+   "next_frame_dur": 63.2,
+   "session_ms": 262.2,
+   "editable_ms": 313.4,
+   "editable_frame_dur": 36.1,
+   "presents": [
+    12.9
+   ],
+   "frames": 10,
+   "max_frame": 63.2,
+   "main_db_before_editable": 0
+  },
+  "branch-start-4": {
+   "next_frame_ms": 31.6,
+   "next_frame_dur": 20.0,
+   "session_ms": 150.5,
+   "editable_ms": 181.6,
+   "editable_frame_dur": 26.6,
+   "presents": [
+    9.8
+   ],
+   "frames": 9,
+   "max_frame": 26.6,
+   "main_db_before_editable": 0
+  },
+  "branch-start-5": {
+   "next_frame_ms": 40.9,
+   "next_frame_dur": 18.9,
+   "session_ms": 267.5,
+   "editable_ms": 299.3,
+   "editable_frame_dur": 27.4,
+   "presents": [
+    41.3
+   ],
+   "frames": 14,
+   "max_frame": 27.4,
+   "main_db_before_editable": 0
+  },
+  "branch-start-6": {
+   "next_frame_ms": 77.3,
+   "next_frame_dur": 17.2,
+   "session_ms": 404.2,
+   "editable_ms": 535.2,
+   "editable_frame_dur": 125.5,
+   "presents": [
+    47.1
+   ],
+   "frames": 17,
+   "max_frame": 125.5,
+   "main_db_before_editable": 0
+  },
+  "branch-start-7": {
+   "next_frame_ms": 71.9,
+   "next_frame_dur": 11.3,
+   "session_ms": 252.0,
+   "editable_ms": 286.2,
+   "editable_frame_dur": 33.1,
+   "presents": [
+    11.9
+   ],
+   "frames": 10,
+   "max_frame": 42.3,
+   "main_db_before_editable": 0
+  },
+  "branch-start-8": {
+   "next_frame_ms": 56.6,
+   "next_frame_dur": 10.5,
+   "session_ms": 230.7,
+   "editable_ms": 268.1,
+   "editable_frame_dur": 29.6,
+   "presents": [
+    18.7
+   ],
+   "frames": 13,
+   "max_frame": 29.6,
+   "main_db_before_editable": 0
+  },
+  "branch-start-9": {
+   "next_frame_ms": 90.4,
+   "next_frame_dur": 20.7,
+   "session_ms": 286.8,
+   "editable_ms": 337.4,
+   "editable_frame_dur": 35.1,
+   "presents": [
+    20.4
+   ],
+   "frames": 12,
+   "max_frame": 39.5,
+   "main_db_before_editable": 0
+  },
+  "branch-start-10": {
+   "next_frame_ms": 59.5,
+   "next_frame_dur": 11.1,
+   "session_ms": 279.9,
+   "editable_ms": 329.0,
+   "editable_frame_dur": 36.8,
+   "presents": [
+    14.0
+   ],
+   "frames": 14,
+   "max_frame": 36.8,
+   "main_db_before_editable": 0
+  }
+ },
+ "check": {
+  "main-check-1": {
+   "next_frame_end_ms": 22.1,
+   "next_frame_dur": 5.0,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "prepare SELECT * FROM room_table_modific",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM roo",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare UPDATE room_table_modification_l",
+     "arch_disk_io_3"
+    ],
+    [
+     "execute UPDATE room_table_modification_l",
+     "arch_disk_io_3"
+    ],
+    [
+     "execute COMMIT;",
+     "arch_disk_io_3"
+    ],
+    [
+     "execute BEGIN IMMEDIATE;",
+     "arch_disk_io_0"
+    ],
+    [
+     "prepare SELECT * FROM exercises ORDER BY",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM exe",
+     "arch_disk_io_0"
+    ],
+    [
+     "prepare SELECT * FROM routines ORDER BY ",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_0"
+    ],
+    [
+     "prepare SELECT * FROM routine_exercises ",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_0"
+    ],
+    [
+     "prepare SELECT * FROM workouts ORDER BY ",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_0"
+    ],
+    [
+     "prepare SELECT * FROM workout_exercises ",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_0"
+    ]
+   ],
+   "first_db_ms": 2.8,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_3",
+   "present_start_ms": 64.0,
+   "present_dur_ms": 14.1,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "main-check-2": {
+   "next_frame_end_ms": 24.5,
+   "next_frame_dur": 17.8,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "prepare SELECT * FROM workout_sets WHERE",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ]
+   ],
+   "first_db_ms": 23.9,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_2",
+   "present_start_ms": 81.2,
+   "present_dur_ms": 16.8,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "main-check2-1": {
+   "next_frame_end_ms": 26.8,
+   "next_frame_dur": 19.5,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [],
+   "first_db_ms": 5.5,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_0",
+   "present_start_ms": 135.8,
+   "present_dur_ms": 9.2,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "main-check-3": {
+   "next_frame_end_ms": 44.2,
+   "next_frame_dur": 30.0,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [],
+   "first_db_ms": 6.8,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_2",
+   "present_start_ms": 148.8,
+   "present_dur_ms": 8.3,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "main-check-4": {
+   "next_frame_end_ms": 27.1,
+   "next_frame_dur": 9.5,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM workout_sets ORDER",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ]
+   ],
+   "first_db_ms": 1.5,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_1",
+   "present_start_ms": 89.8,
+   "present_dur_ms": 14.7,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-1": {
+   "next_frame_end_ms": 43.4,
+   "next_frame_dur": 35.6,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "prepare SELECT * FROM workout_sets WHERE",
+     "arch_disk_io_0"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_0"
+    ]
+   ],
+   "first_db_ms": 32.0,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_0",
+   "present_start_ms": 89.8,
+   "present_dur_ms": 13.3,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-3": {
+   "next_frame_end_ms": 20.9,
+   "next_frame_dur": 5.6,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "prepare UPDATE room_table_modification_l",
+     "arch_disk_io_1"
+    ],
+    [
+     "execute UPDATE room_table_modification_l",
+     "arch_disk_io_1"
+    ],
+    [
+     "execute COMMIT;",
+     "arch_disk_io_1"
+    ],
+    [
+     "execute BEGIN IMMEDIATE;",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare SELECT * FROM exercises ORDER BY",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM exe",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare SELECT * FROM routines ORDER BY ",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare SELECT * FROM routine_exercises ",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare SELECT * FROM workouts ORDER BY ",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_3"
+    ],
+    [
+     "prepare SELECT * FROM workout_exercises ",
+     "arch_disk_io_3"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_3"
+    ]
+   ],
+   "first_db_ms": 3.6,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_2",
+   "present_start_ms": 53.9,
+   "present_dur_ms": 5.5,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-5": {
+   "next_frame_end_ms": 32.4,
+   "next_frame_dur": 14.4,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "execute BEGIN IMMEDIATE;",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM exercises ORDER BY",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM exe",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM routines ORDER BY ",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM routine_exercises ",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM rou",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM workouts ORDER BY ",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM workout_exercises ",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ]
+   ],
+   "first_db_ms": 2.0,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_0",
+   "present_start_ms": 53.0,
+   "present_dur_ms": 5.4,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-6": {
+   "next_frame_end_ms": 37.8,
+   "next_frame_dur": 23.0,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "execute BEGIN IMMEDIATE;",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT * FROM workout_sets WHERE",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare UPDATE OR ABORT `workout_sets` S",
+     "arch_disk_io_2"
+    ],
+    [
+     "execute UPDATE OR ABORT `workout_sets` S",
+     "arch_disk_io_2"
+    ],
+    [
+     "prepare SELECT changes()",
+     "arch_disk_io_2"
+    ],
+    [
+     "executeForCursorWindow SELECT changes()",
+     "arch_disk_io_2"
+    ],
+    [
+     "execute COMMIT;",
+     "arch_disk_io_2"
+    ]
+   ],
+   "first_db_ms": 3.1,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_3",
+   "present_start_ms": 84.9,
+   "present_dur_ms": 6.0,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-7": {
+   "next_frame_end_ms": 30.7,
+   "next_frame_dur": 26.7,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "prepare SELECT * FROM workout_sets WHERE",
+     "arch_disk_io_1"
+    ],
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_1"
+    ]
+   ],
+   "first_db_ms": 3.9,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_1",
+   "present_start_ms": 90.1,
+   "present_dur_ms": 7.0,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-pr": {
+   "next_frame_end_ms": 31.0,
+   "next_frame_dur": 14.9,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [],
+   "first_db_ms": 14.5,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_0",
+   "present_start_ms": 122.2,
+   "present_dur_ms": 7.6,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  }
+ },
+ "uncheck_excluded": {
+  "branch-check-2": {
+   "next_frame_end_ms": 40.8,
+   "next_frame_dur": 25.4,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [],
+   "first_db_ms": 5.8,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_1",
+   "present_start_ms": 81.8,
+   "present_dur_ms": 7.5,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  },
+  "branch-check-4": {
+   "next_frame_end_ms": 16.1,
+   "next_frame_dur": 13.0,
+   "in_frame_present": 0,
+   "in_frame_db": 0,
+   "recompose_in_frame": 1,
+   "overlap_any_thread": [
+    [
+     "executeForCursorWindow SELECT * FROM wor",
+     "arch_disk_io_2"
+    ]
+   ],
+   "first_db_ms": 2.9,
+   "first_db": "prepare SELECT * FROM workout_sets WHERE id = ?",
+   "first_db_thread": "arch_disk_io_2",
+   "present_start_ms": 40.9,
+   "present_dur_ms": 5.5,
+   "present_thread": "DefaultDispatch",
+   "n_present": 1,
+   "main_db_after_tap": 0
+  }
+ }
+}

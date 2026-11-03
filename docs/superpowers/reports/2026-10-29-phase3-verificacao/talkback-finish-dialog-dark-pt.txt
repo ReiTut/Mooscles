@@ -1,0 +1,4 @@
+1. "Finalizar treino? · 1 série em 1 exercício · 1 min. / 8 séries não concluídas ficam de fora." — focusable [0,132][1080,2337]
+2. "Dispensar" — clickable [0,132][1080,2337]
+3. "Continuar treinando" — clickable [179,1309][672,1435]
+4. "Finalizar" — clickable [693,1309][950,1435]

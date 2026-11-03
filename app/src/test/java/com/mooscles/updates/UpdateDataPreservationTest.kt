@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.content.pm.PackageInstaller
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.AppPreferences
 import com.mooscles.data.*
@@ -71,7 +72,7 @@ class UpdateDataPreservationTest {
             override fun getApplicationContext(): Context = this
             override fun getDatabasePath(name: String): File = File(temporary, name)
         }
-        fun open(): WorkoutDatabase = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, name).build().also { databases += it }
+        fun open(): WorkoutDatabase = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, name).setDriver(AndroidSQLiteDriver()).build().also { databases += it }
         val oldDatabase = open()
         val repo = WorkoutRepository(oldDatabase)
         repo.initialize()

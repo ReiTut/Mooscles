@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the end-of-workout summary (English). Every key also exists in values-pt-rBR, with the same arguments. -->
+<resources>
+    <string name="summary_title">Workout complete</string>
+    <string name="summary_duration">Duration</string>
+    <string name="summary_sets">Sets</string>
+    <string name="summary_volume">Volume</string>
+    <string name="summary_exercises">Exercises</string>
+    <string name="summary_records">Records</string>
+    <string name="summary_first_records">First records</string>
+    <!-- Exercise name, then the record: "Bench press · 87.5 kg × 6 · before 85 kg". -->
+    <string name="summary_record_line">%1$s · %2$s</string>
+    <!-- Load, reps, the history's best load before: "87.5 kg × 6 · before 85 kg". -->
+    <string name="summary_weight_record">%1$s&#160;×&#160;%2$d · before %3$s</string>
+    <!-- Load, reps, the history's most reps at that load before: "80 kg × 8 · before 80 kg × 6". -->
+    <string name="summary_reps_record">%1$s&#160;×&#160;%2$d · before %1$s&#160;×&#160;%3$d</string>
+    <!-- Load, reps: "82.5 kg × 8", "Bodyweight × 12". -->
+    <string name="summary_set">%1$s&#160;×&#160;%2$d</string>
+    <string name="summary_bodyweight">Bodyweight</string>
+    <!-- An assistance load: "40 kg assistance". -->
+    <string name="summary_assistance_load">%1$s assistance</string>
+    <!-- Finished workouts in the last 28 calendar days, this one included. Never a reproach. -->
+    <plurals name="summary_consistency">
+        <item quantity="one">%1$d workout in the last 4 weeks</item>
+        <item quantity="other">%1$d workouts in the last 4 weeks</item>
+    </plurals>
+    <string name="summary_done">Done</string>
+    <string name="summary_share">Share</string>
+    <string name="summary_details">View details</string>
+</resources>

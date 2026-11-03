@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fase 4B, tarefa 13: o editor de rotina (pt-BR). Toda chave existe também em values com os mesmos argumentos. -->
+<resources>
+    <string name="editor_more">Opções da rotina</string>
+    <string name="editor_delete">Excluir rotina</string>
+    <string name="editor_add_exercises">Adicionar exercícios</string>
+    <string name="editor_start">Começar treino</string>
+    <string name="editor_rest_chip">Descanso %1$s</string>
+    <string name="editor_empty">Rotina sem exercícios</string>
+    <string name="editor_empty_body">Adicione os exercícios que você quer fazer nesta rotina.</string>
+    <string name="editor_replace">Trocar exercício</string>
+    <string name="editor_about">Sobre o exercício</string>
+    <string name="editor_remove_exercise">Remover da rotina</string>
+    <string name="editor_remove_title">Remover %1$s da rotina?</string>
+    <plurals name="editor_remove_body">
+        <item quantity="one">A série planejada sai.</item>
+        <item quantity="other">As %1$d séries planejadas saem.</item>
+    </plurals>
+    <string name="editor_remove_confirm">Remover</string>
+    <string name="editor_replace_title">Trocar o exercício?</string>
+    <string name="editor_replace_body">Os alvos manuais dele voltam a seguir o recorde e os aquecimentos ficam vazios.</string>
+    <string name="editor_replace_confirm">Trocar</string>
+    <string name="editor_exercise_more">Opções de %1$s</string>
+    <!-- O rótulo de uma série planejada de aquecimento na lista de séries (as de trabalho são numeradas). -->
+    <string name="editor_set_warmup_short">A</string>
+    <string name="editor_rest_note">Vale para os treinos que você começar com esta rotina.</string>
+    <!-- Task 14: as séries planejadas do editor. -->
+    <string name="editor_set_follows_record">segue o recorde</string>
+    <string name="editor_set_no_load">Sem carga</string>
+    <string name="editor_set_bodyweight">Peso corporal</string>
+    <string name="editor_set_type">Tipo da série</string>
+    <string name="editor_set_normal">Normal</string>
+    <string name="editor_set_warmup">Aquecimento</string>
+    <string name="editor_set_follow_record">Seguir o recorde</string>
+    <string name="editor_set_remove">Remover série</string>
+    <string name="editor_set_last">Uma rotina precisa de pelo menos uma série por exercício.</string>
+    <string name="editor_set_limit">Até 50 séries por exercício.</string>
+    <string name="editor_set_label">Série %1$d</string>
+    <string name="editor_set_warmup_label">Aquecimento %1$d</string>
+    <string name="editor_warmup_load_of_set">Carga do aquecimento %1$d</string>
+    <string name="editor_warmup_reps_of_set">Repetições do aquecimento %1$d</string>
+    <string name="editor_editing_warmup_load">Editando carga do aquecimento %1$d</string>
+    <string name="editor_editing_warmup_reps">Editando repetições do aquecimento %1$d</string>
+    <string name="editor_warmup_removed">Aquecimento %1$d removido</string>
+    <!-- (2026-10-31, pedido do dono) A carga e as repetições de uma série em todas as outras séries de trabalho do exercício, com desfazer. -->
+    <string name="editor_set_copy_all">Copiar para todas as séries</string>
+    <plurals name="editor_set_copied">
+        <item quantity="one">Copiado para %1$d série</item>
+        <item quantity="other">Copiado para %1$d séries</item>
+    </plurals>
+</resources>

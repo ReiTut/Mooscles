@@ -17,6 +17,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.mooscles.designsystem.components.MTabBarTag
+import com.mooscles.designsystem.components.WorkoutBarRestTag
+import com.mooscles.designsystem.components.WorkoutBarSkipTag
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
 import java.io.File
@@ -60,14 +63,15 @@ class UiFeatureSmokeTest {
             }
             MoosclesApp(state.value, actions, timer)
         }
-        tab("workout").performClick()
-        compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("set-reps-3"))
-        val closedFooter = bounds("app-footer")
-        val closedTimer = bounds("active-rest-timer")
-        assertTrue("Closed-keyboard timer must sit above the footer", closedTimer.bottom <= closedFooter.top + 1)
+        // The shell (Task 24): the workout bar carries the rest above the tab bar on every tab
+        // route. The library's search field opens the keyboard under it.
+        tab("library").performClick()
+        val closedFooter = bounds(MTabBarTag)
+        val closedTimer = bounds("shell-workout-bar")
+        assertTrue("Closed-keyboard workout bar must sit above the tab bar", closedTimer.bottom <= closedFooter.top + 1)
         val remainingBefore = timer.value.remainingSeconds
 
-        compose.onNodeWithTag("set-reps-3").performClick()
+        search().performClick()
         compose.runOnUiThread {
             ViewCompat.getWindowInsetsController(compose.activity.window.decorView)?.show(WindowInsetsCompat.Type.ime())
         }
@@ -83,7 +87,7 @@ class UiFeatureSmokeTest {
                 sawDockedKeyboard = sawDockedKeyboard || insets.second > closedFooter.height
                 val now = SystemClock.elapsedRealtime()
                 val aligned = insets.first && insets.second > closedFooter.height &&
-                    kotlin.math.abs(bounds("active-rest-timer").bottom - (windowHeight() - insets.second)) <= 2
+                    kotlin.math.abs(bounds("shell-workout-bar").bottom - (windowHeight() - insets.second)) <= 2
                 if (previousIme != insets.second) status("keyboard-opening-insets", keyboardGeometry())
                 if (!aligned || previousIme != insets.second) settledSince = now
                 previousIme = insets.second
@@ -102,24 +106,24 @@ class UiFeatureSmokeTest {
             throw AssertionError("Real IME did not align with timer after settling: $geometry", failure)
         }
         compose.waitUntil(10_000) {
-            val field = compose.onNodeWithTag("set-reps-3").fetchSemanticsNode().boundsInRoot
-            val dock = bounds("active-rest-timer")
+            val field = search().fetchSemanticsNode().boundsInRoot
+            val dock = bounds("shell-workout-bar")
             field.height > 0 && field.bottom <= dock.top + 1
         }
-        compose.onNodeWithTag("set-reps-3").assertIsFocused().assertIsDisplayed()
-        compose.onNodeWithTag("set-reps-3").performTextReplacement("9")
-        val openedTimer = bounds("active-rest-timer")
-        val openedFooter = bounds("app-footer")
+        search().assertIsFocused().assertIsDisplayed()
+        search().performTextReplacement("bench")
+        val openedTimer = bounds("shell-workout-bar")
+        val openedFooter = bounds(MTabBarTag)
         val imeBottom = keyboardInsets().second
         val windowHeight = windowHeight()
-        assertEquals("The complete timer must end at the real keyboard's top edge", (windowHeight - imeBottom).toFloat(), openedTimer.bottom, 2f)
-        assertEquals("The timer keeps its full height", closedTimer.height, openedTimer.height, 2f)
-        assertEquals("The footer must keep its previous keyboard behavior", closedFooter.top, openedFooter.top, 2f)
+        assertEquals("The complete workout bar must end at the real keyboard's top edge", (windowHeight - imeBottom).toFloat(), openedTimer.bottom, 2f)
+        assertEquals("The workout bar keeps its full height", closedTimer.height, openedTimer.height, 2f)
+        assertEquals("The tab bar must keep its previous keyboard behavior", closedFooter.top, openedFooter.top, 2f)
         assertEquals(closedFooter.bottom, openedFooter.bottom, 2f)
-        compose.onNodeWithContentDescription("Pause rest timer").assertIsDisplayed()
-        compose.onNodeWithTag("rest-timer-progress").assertIsDisplayed()
+        compose.onNodeWithTag(WorkoutBarSkipTag).assertIsDisplayed()
+        compose.onNodeWithTag(WorkoutBarRestTag, useUnmergedTree = true).assertIsDisplayed()
         screenshot("feature-smoke-keyboard-open.png")
-        status("keyboard-open", "imeBottom=$imeBottom; windowHeight=$windowHeight; timer=$openedTimer; footer=$openedFooter; field=${bounds("set-reps-3")}")
+        status("keyboard-open", "imeBottom=$imeBottom; windowHeight=$windowHeight; timer=$openedTimer; footer=$openedFooter; field=${search().fetchSemanticsNode().boundsInRoot}")
 
         compose.runOnUiThread {
             ViewCompat.getWindowInsetsController(compose.activity.window.decorView)?.hide(WindowInsetsCompat.Type.ime())
@@ -128,13 +132,13 @@ class UiFeatureSmokeTest {
         compose.waitUntil(15_000) {
             val insets = keyboardInsets()
             val settled = !insets.first && insets.second == 0 &&
-                kotlin.math.abs(bounds("active-rest-timer").bottom - closedTimer.bottom) <= 2
+                kotlin.math.abs(bounds("shell-workout-bar").bottom - closedTimer.bottom) <= 2
             val now = SystemClock.elapsedRealtime()
             if (!settled) settledSince = now
             settled && now - settledSince >= 250
         }
-        compose.onNodeWithTag("active-rest-timer").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Pause rest timer").assertIsDisplayed()
+        compose.onNodeWithTag("shell-workout-bar").assertIsDisplayed()
+        compose.onNodeWithTag(WorkoutBarSkipTag).assertIsDisplayed()
         screenshot("feature-smoke-keyboard-closed.png")
         compose.waitUntil(3_000) { timer.value.remainingSeconds < remainingBefore }
         compose.runOnIdle {
@@ -145,7 +149,7 @@ class UiFeatureSmokeTest {
             assertTrue("The isolated clock must continue rather than restart", timer.value.remainingSeconds < remainingBefore)
             assertEquals("synthetic-keyboard-workout", state.value.active?.id)
         }
-        status("keyboard-closed", "timer=${bounds("active-rest-timer")}; footer=${bounds("app-footer")}; remaining=${timer.value.remainingSeconds}; timerCommands=${timerActions.size}")
+        status("keyboard-closed", "timer=${bounds("shell-workout-bar")}; footer=${bounds(MTabBarTag)}; remaining=${timer.value.remainingSeconds}; timerCommands=${timerActions.size}")
     }
 
     @Test fun foldersAndRepeatedDiscardUseTheCorrectPageAndDoNotRestoreDiscardedSessions() {
@@ -169,29 +173,30 @@ class UiFeatureSmokeTest {
         edgeToEdgeTestActivity()
         compose.setContent { MoosclesApp(state.value, actions) }
         chooseFolder("full")
-        compose.onNodeWithTag("selected-routine-folder", useUnmergedTree = true).assertTextEquals("FULLBODY")
+        compose.onNodeWithTag("train-folder-full").assertIsSelected()
         compose.onNodeWithTag("routines-list").performScrollToNode(hasTestTag("routine-smoke-full-start"))
         compose.onNodeWithTag("routine-smoke-full-start").assertTextEquals("Start")
         compose.onNodeWithTag("routine-smoke-upper-start").assertDoesNotExist()
         compose.runOnIdle { assertSame("Switching folders must preserve the active workout", firstWorkout, state.value.active) }
         tab("history").performClick()
         tab("routines").performClick()
-        compose.onNodeWithTag("selected-routine-folder", useUnmergedTree = true).assertTextEquals("FULLBODY")
+        compose.onNodeWithTag("train-folder-full").assertIsSelected()
         chooseFolder("upper")
         compose.onNodeWithTag("routines-list").performScrollToNode(hasTestTag("routine-smoke-upper-start"))
-        compose.onNodeWithTag("routine-smoke-upper-start").assertTextEquals("Resume active")
+        compose.onNodeWithTag("routine-smoke-upper-start").assertTextEquals("Resume workout")
         repeat(2) { cycle ->
             if (cycle > 0) compose.runOnIdle {
                 state.value = state.value.copy(active = firstWorkout.copy(id = "synthetic-discard-two"))
             }
-            tab("workout").performClick()
-            compose.onNodeWithTag("active-workout-list").performScrollToNode(hasTestTag("discard-workout"))
-            compose.onNodeWithTag("discard-workout").performClick()
-            compose.onNodeWithText("Discard", substring = false).performClick()
+            compose.onNodeWithTag("shell-workout-bar").performClick()
+            compose.onNodeWithTag("workout-route").assertIsDisplayed()
+            compose.onNodeWithTag("workout-more").performClick()
+            compose.onNodeWithTag("workout-menu-discard").performClick()
+            compose.onNodeWithTag("dialog-confirm-danger").performClick()
             assertTrain()
-            compose.onNodeWithTag("active-workout-list").assertDoesNotExist()
-            compose.onNodeWithTag("active-rest-timer").assertDoesNotExist()
-            listOf("library", "history", "records", "workout", "routines").forEach { route ->
+            compose.onNodeWithTag("workout-route").assertDoesNotExist()
+            compose.onNodeWithTag("shell-workout-bar").assertDoesNotExist()
+            listOf("library", "history", "records", "routines").forEach { route ->
                 tab(route).performClick()
                 tab(route).assertIsSelected()
             }
@@ -205,7 +210,7 @@ class UiFeatureSmokeTest {
         compose.waitForIdle()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         assertTrain()
-        compose.onNodeWithTag("active-workout-list").assertDoesNotExist()
+        compose.onNodeWithTag("workout-route").assertDoesNotExist()
         screenshot("feature-smoke-discard-train.png")
         status("discard-navigation", "discardCycles=$discardCalls; selectedFolder=${state.value.preferences.selectedRoutineFolderId}; actualPage=Train; activeWorkout=null")
         // The final root Back exits only this synthetic test Activity. It cannot
@@ -220,16 +225,17 @@ class UiFeatureSmokeTest {
         compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
     }
     private fun chooseFolder(id: String) {
-        compose.onNodeWithTag("routines-list").performScrollToNode(hasTestTag("routine-folder-selector"))
-        compose.onNodeWithTag("routine-folder-selector").performClick()
-        compose.onNodeWithTag("folder-choice-$id").performClick()
+        // The new Train tab (plan 4B): the folders are chips at the top of the list.
+        compose.onNodeWithTag("routines-list").performScrollToIndex(0)
+        compose.onNodeWithTag("train-folder-$id").performClick()
     }
     private fun assertTrain() {
         tab("routines").assertIsSelected()
-        tab("workout").assertIsNotSelected()
         compose.onNodeWithTag("routines-list").assertIsDisplayed()
     }
     private fun tab(route: String) = compose.onNodeWithTag("tab-$route")
+    /** The library's search field, the text field of the library tab's first screen. */
+    private fun search() = compose.onAllNodes(hasSetTextAction()).onFirst()
     private fun bounds(tag: String) = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
     private fun keyboardInsets(): Pair<Boolean, Int> {
         var result = false to 0
@@ -263,8 +269,9 @@ class UiFeatureSmokeTest {
                 "imeActive=${focus?.let { input.isActive(it) }}; acceptingText=${input.isAcceptingText}; softInputMode=${compose.activity.window.attributes.softInputMode}"
         }
         fun safeBounds(tag: String) = runCatching { bounds(tag).toString() }.getOrElse { "unavailable:${it.javaClass.simpleName}" }
-        return "$window; timer=${safeBounds("active-rest-timer")}; footer=${safeBounds("app-footer")}; " +
-            "field=${safeBounds("set-reps-3")}; composeRoot=${runCatching { compose.onRoot().fetchSemanticsNode().boundsInRoot }.getOrNull()}"
+        val field = runCatching { search().fetchSemanticsNode().boundsInRoot.toString() }.getOrElse { "unavailable:${it.javaClass.simpleName}" }
+        return "$window; timer=${safeBounds("shell-workout-bar")}; footer=${safeBounds(MTabBarTag)}; " +
+            "field=$field; composeRoot=${runCatching { compose.onRoot().fetchSemanticsNode().boundsInRoot }.getOrNull()}"
     }
     private fun actions(block: (String, List<Any?>) -> Unit): MoosclesActions =
         Proxy.newProxyInstance(MoosclesActions::class.java.classLoader, arrayOf(MoosclesActions::class.java)) { proxy, method, args ->

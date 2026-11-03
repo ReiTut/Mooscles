@@ -1,0 +1,55 @@
+# SPIKE lines of PhotoSpikeActivity (logcat -s SPIKE), network off, temporary AVDs on emulator-5560.
+# "process death" = the app process killed while the camera app is in front:
+#   API 26: `adb shell am kill com.mooscles` left the process alive ("Invalid packageName"), so `kill -9 <pid>` as root;
+#   API 28 and 35: `adb shell am kill com.mooscles` (pidof empty afterwards).
+
+## API 26 (google_apis arm64, AOSP Camera2 + DocumentsUI)
+SPIKE activity onCreate pid=4826 restored=false camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE gallery result uri=content://com.android.providers.media.documents/document/image%3A32
+SPIKE gallery api=26 in=4000x3000 inExif=6 inputBytes=834838 out=810x1080 bytes=81664 thumb=5495 ms=136 path=legacy(sample=2,exif=6) stream=android.os.ParcelFileDescriptor$AutoCloseInputStream
+# first camera launch: Camera2 runs its own first-run (asks for ITS location permission, "Remember photo locations?") and finishes the capture activity
+SPIKE camera launch uri=content://com.mooscles.workout-shares/photo_capture/capture-250233587451.jpg file=/data/user/0/com.mooscles/cache/photo-capture/capture-250233587451.jpg pid=4826
+ActivityManager: START u0 {act=android.media.action.IMAGE_CAPTURE flg=0x3 cmp=com.android.camera2/com.android.camera.CaptureActivity clip={text/uri-list U:content://com.mooscles.workout-shares/photo_capture/capture-250233587451.jpg} (has extras)} from uid 10076
+SPIKE camera result ok=false pid=4826 saved=content://com.mooscles.workout-shares/photo_capture/capture-250233587451.jpg plain=content://com.mooscles.workout-shares/photo_capture/capture-250233587451.jpg
+# second launch, process killed (kill -9) with the camera open, then shutter + done
+SPIKE camera launch uri=content://com.mooscles.workout-shares/photo_capture/capture-306885357686.jpg file=/data/user/0/com.mooscles/cache/photo-capture/capture-306885357686.jpg pid=4826
+ActivityManager: Process com.mooscles (pid 4826) has died: prev LAST
+SPIKE activity onCreate pid=5576 restored=true camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE camera result ok=true pid=5576 saved=content://com.mooscles.workout-shares/photo_capture/capture-306885357686.jpg plain=null
+SPIKE camera api=26 in=480x640 inExif=0 inputBytes=19036 out=480x640 bytes=9714 thumb=3096 ms=42 path=legacy(sample=1,exif=0)
+# pm disable-user com.android.camera2
+SPIKE activity onCreate pid=5662 restored=false camera=null photoPicker=false
+
+## API 28 (google_apis arm64, AOSP Camera2 + DocumentsUI)
+SPIKE activity onCreate pid=5113 restored=false camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE gallery result uri=content://com.android.providers.media.documents/document/image%3A20
+SPIKE gallery api=28 in=4000x3000 inExif=6 inputBytes=834838 out=810x1080 bytes=81319 thumb=5493 ms=53 path=legacy(sample=2,exif=6) stream=android.os.ParcelFileDescriptor$AutoCloseInputStream
+# with -gpu swiftshader_indirect the emulator's FakeCamera3 timed out ("Can't connect to the camera"); ok=false came back to a restored activity:
+SPIKE activity onCreate pid=5738 restored=true camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE camera result ok=false pid=5738 saved=content://com.mooscles.workout-shares/photo_capture/capture-292674530387.jpg plain=null
+# emulator restarted with -gpu host: capture, am kill with the review screen open, done
+SPIKE activity onCreate pid=3461 restored=false camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE camera launch uri=content://com.mooscles.workout-shares/photo_capture/capture-41183111227.jpg file=/data/user/0/com.mooscles/cache/photo-capture/capture-41183111227.jpg pid=3461
+SPIKE activity onCreate pid=3750 restored=true camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=false
+SPIKE camera result ok=true pid=3750 saved=content://com.mooscles.workout-shares/photo_capture/capture-41183111227.jpg plain=null
+SPIKE camera api=28 in=720x1280 inExif=0 inputBytes=67608 out=608x1080 bytes=27743 thumb=4553 ms=53 path=decoder(header=720x1280,sample=1)
+# (that capture ran through the then-current ImageDecoder dispatch; the gallery line above is the final pipeline)
+# pm disable-user com.android.camera2
+SPIKE activity onCreate pid=3939 restored=false camera=null photoPicker=false
+
+## API 35 (google_apis arm64, AOSP Camera2 + system photo picker)
+SPIKE activity onCreate pid=3955 restored=false camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=true
+SPIKE gallery result uri=content://media/picker/0/com.android.providers.media.photopicker/media/1000000018
+SPIKE gallery api=35 in=4000x3000 inExif=6 inputBytes=834838 out=810x1080 bytes=82138 thumb=5969 ms=77 path=legacy(sample=2,exif=6) stream=android.os.ParcelFileDescriptor$AutoCloseInputStream
+SPIKE camera launch uri=content://com.mooscles.workout-shares/photo_capture/capture-235826708945.jpg file=/data/user/0/com.mooscles/cache/photo-capture/capture-235826708945.jpg pid=3955
+SPIKE activity onCreate pid=4288 restored=true camera=com.android.camera2/com.android.camera.CaptureActivity photoPicker=true
+SPIKE camera result ok=true pid=4288 saved=content://com.mooscles.workout-shares/photo_capture/capture-235826708945.jpg plain=null
+SPIKE camera api=35 in=1392x1856 inExif=1 inputBytes=75263 out=810x1080 bytes=17756 thumb=3702 ms=238 path=decoder(header=1392x1856,sample=1)
+# pm disable-user com.android.camera2 (the <queries> IMAGE_CAPTURE entry is in the manifest)
+SPIKE activity onCreate pid=4365 restored=false camera=null photoPicker=true
+
+## Permissions
+# aapt2 dump permissions app-debug.apk: POST_NOTIFICATIONS, VIBRATE, SCHEDULE_EXACT_ALARM, INTERNET, ACCESS_NETWORK_STATE,
+# REQUEST_INSTALL_PACKAGES, UPDATE_PACKAGES_WITHOUT_USER_ACTION, WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE,
+# com.mooscles.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION. No CAMERA, no READ_MEDIA_IMAGES, no READ_EXTERNAL_STORAGE.
+# No permission dialog for com.mooscles appeared on any API; the only dialog was Camera2's own location prompt (first run, API 26 and 28).

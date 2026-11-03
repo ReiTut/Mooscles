@@ -1,0 +1,19 @@
+{
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */app/schemas/*.json|*/shared/schemas/*.json|*.jks|*.keystore|*/local.properties) echo \"Arquivo protegido: $f. Schemas do Room são gerados pelo KSP no build (suba a version e escreva a Migration); chave de assinatura e local.properties são locais e não devem ser editados pelo Claude.\" >&2; exit 2;; esac",
+            "statusMessage": "Conferindo arquivos protegidos"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,8 @@
 package com.mooscles.ui
 
+import androidx.compose.ui.res.stringResource
+import com.mooscles.R
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,19 +17,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.roundToInt
 import com.mooscles.domain.RestDuration
 
 fun kgToDisplay(kg: Double, pounds: Boolean) = if (pounds) kg * 2.2046226218487757 else kg
@@ -61,47 +59,79 @@ private fun trainingFieldColors() = TextFieldDefaults.colors(
     disabledIndicatorColor = Color.Transparent,
 )
 
+/**
+ * The editing state of a rest duration typed as m:ss, shared by [RestDurationField] and
+ * [SettingsRestDurationField]. Typing goes through `RestDuration.edit`; a rejected keystroke
+ * keeps the text and sets [rejected]. A new duration is reported once through
+ * `onSecondsChange`, and an outside change of `seconds` replaces the text while unfocused.
+ */
+@Stable
+class RestDurationEditorState internal constructor(
+    private val text: MutableState<TextFieldValue>,
+    private val lastEmitted: MutableIntState,
+    private val focused: MutableState<Boolean>,
+    private val rejectedState: MutableState<Boolean>,
+    private val emit: (Int) -> Unit,
+) {
+    val value: TextFieldValue get() = text.value
+    val rejected: Boolean get() = rejectedState.value
+
+    fun onValueChange(next: TextFieldValue) {
+        val current = text.value
+        val previous = RestDuration.EditorValue(current.text, current.selection.start, current.selection.end)
+        val edited = RestDuration.edit(previous,
+            RestDuration.EditorValue(next.text, next.selection.start, next.selection.end))
+        rejectedState.value = next.text != current.text && edited == previous
+        text.value = TextFieldValue(edited.text, TextRange(edited.selectionStart, edited.selectionEnd))
+        RestDuration.parse(edited.text)?.let { duration ->
+            if (duration != lastEmitted.intValue) { lastEmitted.intValue = duration; emit(duration) }
+        }
+    }
+
+    /** Focusing selects the minutes digits, ready to be typed over. */
+    fun onFocusChange(isFocused: Boolean) {
+        if (isFocused && !focused.value) text.value = text.value.copy(selection = TextRange(0, 4))
+        focused.value = isFocused
+    }
+
+    internal fun sync(seconds: Int) {
+        if (!focused.value && RestDuration.parse(text.value.text) != seconds.coerceIn(0, RestDuration.MAX_SECONDS)) {
+            text.value = TextFieldValue(RestDuration.editor(seconds).text, TextRange(0, 4))
+            lastEmitted.intValue = seconds.coerceIn(0, RestDuration.MAX_SECONDS)
+        }
+    }
+}
+
+@Composable
+fun rememberRestDurationEditor(seconds: Int, onSecondsChange: (Int) -> Unit, key: String): RestDurationEditorState {
+    val initial = RestDuration.editor(seconds)
+    val text = rememberSaveable(key, stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initial.text, TextRange(0, 4)))
+    }
+    val lastEmitted = rememberSaveable(key) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
+    val focused = remember(key) { mutableStateOf(false) }
+    val rejected = remember(key) { mutableStateOf(false) }
+    val currentOnSecondsChange by rememberUpdatedState(onSecondsChange)
+    val state = remember(text, lastEmitted, focused, rejected) {
+        RestDurationEditorState(text, lastEmitted, focused, rejected) { currentOnSecondsChange(it) }
+    }
+    LaunchedEffect(seconds) { state.sync(seconds) }
+    return state
+}
+
 @Composable
 fun RestDurationField(
     seconds: Int, onSecondsChange: (Int) -> Unit, modifier: Modifier = Modifier,
-    label: String = "Rest duration", testTag: String = "rest-duration",
-    help: String = "Minutes, then seconds · maximum 5:00",
+    label: String = stringResource(R.string.legacy_rest_duration), testTag: String = "rest-duration",
+    help: String = stringResource(R.string.legacy_rest_help),
 ) {
-    val initial = RestDuration.editor(seconds)
-    var value by rememberSaveable(testTag, stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(initial.text, TextRange(0, 4)))
-    }
-    var lastEmitted by rememberSaveable(testTag) { mutableIntStateOf(seconds.coerceIn(0, RestDuration.MAX_SECONDS)) }
-    var focused by remember(testTag) { mutableStateOf(false) }
-    var rejected by remember(testTag) { mutableStateOf(false) }
-    LaunchedEffect(seconds) {
-        if (!focused && RestDuration.parse(value.text) != seconds.coerceIn(0, RestDuration.MAX_SECONDS)) {
-            value = TextFieldValue(RestDuration.editor(seconds).text, TextRange(0, 4))
-            lastEmitted = seconds.coerceIn(0, RestDuration.MAX_SECONDS)
-        }
-    }
-    TextField(value, { next ->
-        val previous = RestDuration.EditorValue(value.text, value.selection.start, value.selection.end)
-        val edited = RestDuration.edit(previous,
-            RestDuration.EditorValue(next.text, next.selection.start, next.selection.end))
-        rejected = next.text != value.text && edited == previous
-        value = TextFieldValue(edited.text, TextRange(edited.selectionStart, edited.selectionEnd))
-        RestDuration.parse(edited.text)?.let { duration ->
-            if (duration != lastEmitted) { lastEmitted = duration; onSecondsChange(duration) }
-        }
-    }, label = { Text(label) }, suffix = { Text("min") }, singleLine = true,
-        modifier = modifier.testTag(testTag).onFocusChanged {
-            if (it.isFocused && !focused) value = value.copy(selection = TextRange(0, 4))
-            focused = it.isFocused
-        }, shape = RoundedCornerShape(14.dp), isError = rejected,
+    val editor = rememberRestDurationEditor(seconds, onSecondsChange, testTag)
+    TextField(editor.value, editor::onValueChange, label = { Text(label) }, suffix = { Text("min") }, singleLine = true,
+        modifier = modifier.testTag(testTag).onFocusChanged { editor.onFocusChange(it.isFocused) },
+        shape = RoundedCornerShape(14.dp), isError = editor.rejected,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        supportingText = { Text(if (rejected) "Use 0:00 to 5:00, with seconds from 00 to 59." else help) },
+        supportingText = { Text(if (editor.rejected) stringResource(R.string.legacy_rest_invalid) else help) },
         colors = trainingFieldColors())
-}
-
-private fun restClock(seconds: Int): String {
-    val safe = seconds.coerceAtLeast(0)
-    return "${safe / 60}:${(safe % 60).toString().padStart(2, '0')}"
 }
 
 @Composable
@@ -145,77 +175,17 @@ fun SectionTitle(title: String, action: String? = null, onAction: () -> Unit = {
 }
 
 @Composable
-fun ConfirmDialog(title: String, text: String, confirm: String = "Delete", onDismiss: () -> Unit, onConfirm: () -> Unit) {
+fun ConfirmDialog(title: String, text: String, confirm: String = stringResource(R.string.legacy_delete), onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(text) },
         confirmButton = { TextButton(onClick = { onConfirm(); onDismiss() }) { Text(confirm, color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
 }
 
 @Composable
-fun NameDialog(title: String, initial: String = "", label: String = "Name", onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun NameDialog(title: String, initial: String = "", label: String = stringResource(R.string.legacy_name), onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var value by remember { mutableStateOf(initial) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = {
-        OutlinedTextField(value, { value = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth(), supportingText = { Text("1–80 characters") }, isError = value.length > 80)
-    }, confirmButton = { TextButton(onClick = { onSave(value.trim()); onDismiss() }, enabled = value.trim().isNotEmpty() && value.length <= 80) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-fun OrderButtons(upEnabled: Boolean, downEnabled: Boolean, onMove: (Int) -> Unit) {
-    Row {
-        IconButton(onClick = { onMove(-1) }, enabled = upEnabled) { Icon(Icons.Outlined.KeyboardArrowUp, "Move up") }
-        IconButton(onClick = { onMove(1) }, enabled = downEnabled) { Icon(Icons.Outlined.KeyboardArrowDown, "Move down") }
-    }
-}
-
-@Composable
-fun TimerPanel(timer: TimerUi, actions: MoosclesActions, defaultSeconds: Int, compact: Boolean = false) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), shape = RoundedCornerShape(22.dp)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = if (compact) 10.dp else 16.dp,
-            vertical = if (compact) 6.dp else 16.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 9.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Timer, null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(if (timer.finished) "Rest complete" else timer.exerciseName, style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (!compact) Text(if (timer.running) "Breathe. Your next set is coming." else if (timer.paused) "Timer paused" else "Ready when you are", style = MaterialTheme.typography.labelSmall)
-                }
-                Text("${restClock(timer.remainingSeconds)} min", style = MaterialTheme.typography.headlineSmall)
-            }
-            val progress = timer.progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
-            LinearProgressIndicator(progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(5.dp).testTag("rest-timer-progress").semantics {
-                    contentDescription = "Rest timer progress"
-                    stateDescription = "${(progress * 100).roundToInt()}% remaining${if (timer.paused) ", paused" else ""}"
-                }, color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.16f),
-                gapSize = 0.dp, drawStopIndicator = {})
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { actions.adjustTimer(-15) }, enabled = timer.remainingSeconds > 0,
-                    modifier = Modifier.weight(1f), contentPadding = PaddingValues(2.dp)) { Text("−0:15", maxLines = 1) }
-                if (compact) {
-                    val toggle = if (timer.running) actions::pauseTimer else if (timer.paused) actions::resumeTimer
-                        else { { actions.startTimer(timer.exerciseName, (if (timer.exerciseName == "Rest timer") defaultSeconds else timer.durationSeconds).coerceIn(0, RestDuration.MAX_SECONDS)) } }
-                    FilledTonalIconButton(onClick = toggle, modifier = Modifier.weight(1f)) {
-                        Icon(if (timer.running) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-                            if (timer.running) "Pause rest timer" else if (timer.paused) "Resume rest timer" else "Start rest timer")
-                    }
-                }
-                else if (timer.running) FilledTonalButton(onClick = actions::pauseTimer, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.Pause, "Pause rest timer", Modifier.size(18.dp)); Text("Pause") }
-                else if (timer.paused) FilledTonalButton(onClick = actions::resumeTimer, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.PlayArrow, null, Modifier.size(18.dp)); Text("Resume") }
-                else FilledTonalButton(onClick = { actions.startTimer(timer.exerciseName, (if (timer.exerciseName == "Rest timer") defaultSeconds else timer.durationSeconds).coerceIn(0, RestDuration.MAX_SECONDS)) }, modifier = Modifier.weight(2f), contentPadding = PaddingValues(6.dp)) { Icon(Icons.Outlined.PlayArrow, null, Modifier.size(18.dp)); Text("Start") }
-                TextButton(onClick = { actions.adjustTimer(15) }, enabled = timer.remainingSeconds < RestDuration.MAX_SECONDS,
-                    modifier = Modifier.weight(1f), contentPadding = PaddingValues(2.dp)) { Text("+0:15", maxLines = 1) }
-                if (compact) {
-                    IconButton(onClick = actions::resetTimer, modifier = Modifier.weight(1f)) { Icon(Icons.Outlined.RestartAlt, "Reset rest timer") }
-                    IconButton(onClick = actions::skipTimer, modifier = Modifier.weight(1f)) { Icon(Icons.Outlined.SkipNext, "Skip rest timer") }
-                }
-            }
-            if (!compact) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = actions::resetTimer) { Icon(Icons.Outlined.RestartAlt, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Reset") }
-                TextButton(onClick = actions::skipTimer) { Text("Skip rest"); Spacer(Modifier.width(4.dp)); Icon(Icons.Outlined.SkipNext, null, Modifier.size(18.dp)) }
-            }
-        }
-    }
+        OutlinedTextField(value, { value = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth(), supportingText = { Text(stringResource(R.string.legacy_name_length)) }, isError = value.length > 80)
+    }, confirmButton = { TextButton(onClick = { onSave(value.trim()); onDismiss() }, enabled = value.trim().isNotEmpty() && value.length <= 80) { Text(stringResource(R.string.legacy_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
 }

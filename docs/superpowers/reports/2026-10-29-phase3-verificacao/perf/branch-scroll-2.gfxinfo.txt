@@ -1,0 +1,18 @@
+Stats since: 18982097300009ns
+Total frames rendered: 266
+Janky frames: 10 (3.76%)
+50th percentile: 17ms
+90th percentile: 23ms
+95th percentile: 25ms
+99th percentile: 32ms
+Number Missed Vsync: 1
+Number High input latency: 342
+Number Slow UI thread: 2
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 8
+Number Frame deadline missed: 10
+Number Frame deadline missed (legacy): 2
+50th gpu percentile: 14ms
+90th gpu percentile: 20ms
+95th gpu percentile: 21ms
+99th gpu percentile: 4950ms

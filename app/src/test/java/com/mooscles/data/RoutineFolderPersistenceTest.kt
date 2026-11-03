@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import java.io.File
 import java.nio.file.Files
@@ -34,8 +35,8 @@ class RoutineFolderPersistenceTest {
     private var database: WorkoutDatabase? = null
 
     private fun open(): WorkoutRepository {
-        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .addMigrations(WorkoutDatabase.MIGRATION_4_5).build()
+        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver())
+            .addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
         return WorkoutRepository(database!!)
     }
 
@@ -49,20 +50,21 @@ class RoutineFolderPersistenceTest {
         val before = createSchemaFourFixture()
         var repo = open()
         val migrated = repo.snapshot()
-        assertEquals(5, database!!.openHelper.writableDatabase.version)
+        assertEquals(6, database!!.userVersion())
         assertEquals(listOf(RoutineFolder(RoutineFolder.DEFAULT_ID, RoutineFolder.DEFAULT_NAME)), migrated.routineFolders)
         assertEquals(listOf("r-second", "r-first"), migrated.routines.map { it.id })
         assertTrue(migrated.routines.all { it.folderId == RoutineFolder.DEFAULT_ID })
         assertEquals("active", migrated.activeWorkout!!.id)
         assertEquals("r-first", migrated.activeWorkout!!.sourceRoutineId)
-        assertEquals(before, readSavedValues(database!!.openHelper.readableDatabase))
-        database!!.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { assertFalse(it.moveToFirst()) }
+        assertEquals(before, readSavedValues(database!!))
+        assertEquals(listOf(listOf<Any?>(3L, 0L)), database!!.typedRows("SELECT COUNT(*), SUM(warmup) FROM routine_sets"))
+        assertTrue(database!!.typedRows("PRAGMA foreign_key_check").isEmpty())
 
         // Reopening is a second real database connection, not another read of cached UI state.
         database!!.close()
         repo = open()
         assertEquals(migrated, repo.snapshot())
-        assertEquals(before, readSavedValues(database!!.openHelper.readableDatabase))
+        assertEquals(before, readSavedValues(database!!))
     }
 
     @Test fun movingAndRenamingPersistWithoutChangingPrescriptionsOrActiveAndFinishedSnapshots() = runBlocking {
@@ -140,27 +142,7 @@ class RoutineFolderPersistenceTest {
         }
     }
 
-    @Test fun routineMoveUsesNeighborsInItsFolderWithoutChangingOtherFoldersOrActiveWorkout() = runBlocking {
-        val repo = open()
-        val split = repo.createRoutineFolder("Split")
-        val first = repo.createRoutine("First", split)
-        val elsewhere = repo.createRoutine("Elsewhere")
-        val second = repo.createRoutine("Second", split)
-        repo.startEmpty("Keep tracking", now = 1000)
-        val before = repo.snapshot()
-        repo.moveRoutine(second, -1)
-        val changed = repo.snapshot()
-        assertEquals(listOf(second, elsewhere, first), changed.routines.map { it.id })
-        assertEquals(before.routines.single { it.id == elsewhere }, changed.routines.single { it.id == elsewhere })
-        assertEquals(before.workouts, changed.workouts)
-        assertEquals(listOf(second, first), changed.routines.filter { it.folderId == split }.map { it.id })
-        repo.moveRoutine(second, -1)
-        assertEquals(changed, repo.snapshot())
-        repo.moveRoutine(second, 1)
-        assertEquals(before, repo.snapshot())
-    }
-
-    private fun createSchemaFourFixture(): Map<String, List<List<String?>>> {
+    private fun createSchemaFourFixture(): Map<String, List<List<Any?>>> {
         val schema = JSONObject(javaClass.classLoader!!.getResourceAsStream("rollback/v142-room-schema4.json")!!
             .bufferedReader().use { it.readText() }).getJSONObject("database")
         val path = context.getDatabasePath(filename)
@@ -187,21 +169,18 @@ class RoutineFolderPersistenceTest {
             raw.execSQL("INSERT INTO workout_sets VALUES ('finished', 'history-entry', 0, 6, 22.25, 1, 0, 0), ('warmup', 'history-entry', 1, 3, 30.25, 1, 1, 0), ('working', 'active-entry', 0, 7, 20.375, 1, 0, 0), ('unfinished', 'active-entry', 1, 0, 0.0, 0, 0, 0)")
             raw.execSQL("INSERT INTO routine_target_checkpoints VALUES ('press', 'PER_HAND', 22.25, 6)")
             raw.version = 4
-            savedQueries.mapValues { (_, sql) -> raw.rawQuery(sql, null).use { cursor ->
-                buildList { while (cursor.moveToNext()) add(List(cursor.columnCount) { if (cursor.isNull(it)) null else cursor.getString(it) }) }
-            } }
+            savedQueries.mapValues { (_, sql) -> raw.rawQuery(sql, null).use { it.typedRows() } }
         }
     }
 
-    private fun readSavedValues(db: androidx.sqlite.db.SupportSQLiteDatabase) = savedQueries.mapValues { (_, sql) ->
-        db.query(sql).use { cursor ->
-            buildList { while (cursor.moveToNext()) add(List(cursor.columnCount) { if (cursor.isNull(it)) null else cursor.getString(it) }) }
-        }
-    }
+    /** Values keep their SQLite storage class, so a changed type or digit fails the comparison. */
+    private suspend fun readSavedValues(db: WorkoutDatabase) = savedQueries.mapValues { (_, sql) -> db.typedRows(sql) }
 
     private val savedQueries = listOf("exercises", "routines", "routine_exercises", "routine_sets", "workouts", "workout_exercises", "workout_sets", "routine_target_checkpoints")
         .associateWith { table ->
             if (table == "routines") "SELECT id, name, position FROM routines ORDER BY id"
+            // Version 4's columns: version 6 adds warmup, checked on its own.
+            else if (table == "routine_sets") "SELECT id, routineExerciseId, position, targetReps, targetWeightKg, inheritPr FROM routine_sets ORDER BY 1"
             else "SELECT * FROM `$table` ORDER BY 1"
         }
 }

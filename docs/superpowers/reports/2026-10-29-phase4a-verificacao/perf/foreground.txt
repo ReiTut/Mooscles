@@ -1,0 +1,7 @@
+(no active workout)
+foreground idle 5 s: frames=66
+foreground 4 s atrace: doFrame=240
+background 5 s: gfx frames=0 doFrame on main thread=0 recompositions=0 pid=29489
+after return, idle 5 s: frames=65
+two captures 0.7 s apart after return: differ (figure moving)
+[110, 441, 971, 1302] text='' desc='Illustration: start and end of Barbell hip thrust' id=

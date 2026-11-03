@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="6" failures="0" errors="0" skipped="0" time="10.075" timestamp="2026-10-30T01:21:38" hostname="localhost">
+  <testsuite name="com.mooscles.designsystem.spike.BodyMapSpikeTest" tests="6" failures="0" errors="0" skipped="0" time="9.358" timestamp="2026-10-30T01:21:38" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":designsystem" />
+    </properties>
+    <testcase name="timesBothFormsWarm" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="0.208" />
+    <testcase name="capturesBothFormsAlike" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="6.317" />
+    <testcase name="timesFormAFirstInProcess" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="0.027" />
+    <testcase name="capturesEachRegionAlone" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="2.804" />
+    <testcase name="printsContrast" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="0.001" />
+    <testcase name="timesFormBFirstInProcess" classname="com.mooscles.designsystem.spike.BodyMapSpikeTest" time="0.001" />
+  </testsuite>
+</testsuites>

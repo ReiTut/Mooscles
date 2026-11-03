@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brazilian Portuguese translation of values/strings_catalog.xml, with the same keys and arguments. -->
+<resources>
+    <string name="catalog_muscle_chest">Peito</string>
+    <string name="catalog_muscle_back">Costas</string>
+    <string name="catalog_muscle_shoulders">Ombros</string>
+    <string name="catalog_muscle_biceps">Bíceps</string>
+    <string name="catalog_muscle_triceps">Tríceps</string>
+    <string name="catalog_muscle_quadriceps">Quadríceps</string>
+    <string name="catalog_muscle_hamstrings">Posteriores de coxa</string>
+    <string name="catalog_muscle_glutes">Glúteos</string>
+    <string name="catalog_muscle_calves">Panturrilhas</string>
+    <string name="catalog_muscle_core">Abdômen</string>
+    <string name="catalog_muscle_forearms">Antebraços</string>
+    <string name="catalog_muscle_full_body">Corpo inteiro</string>
+
+    <string name="catalog_equipment_barbell">Barra</string>
+    <string name="catalog_equipment_dumbbell">Halter</string>
+    <string name="catalog_equipment_kettlebell">Kettlebell</string>
+    <string name="catalog_equipment_cable">Polia</string>
+    <string name="catalog_equipment_bodyweight">Peso corporal</string>
+    <string name="catalog_equipment_smith_machine">Smith</string>
+    <string name="catalog_equipment_selectorized_machine">Máquina de placas</string>
+    <string name="catalog_equipment_plate_loaded_machine">Máquina de anilhas</string>
+    <string name="catalog_equipment_other">Outro</string>
+
+    <string name="catalog_convention_total_load">Carga total</string>
+    <string name="catalog_convention_per_hand">Por mão</string>
+    <string name="catalog_convention_one_side">Um lado</string>
+    <string name="catalog_convention_added_weight">Peso adicional</string>
+    <string name="catalog_convention_assistance">Assistência</string>
+
+    <string name="catalog_convention_caption_per_hand">Por mão: registre a carga de um halter.</string>
+    <string name="catalog_convention_caption_one_side">Um lado: registre a carga usada em um lado.</string>
+    <string name="catalog_convention_caption_added_weight">Peso adicional: deixe 0 para só o peso do corpo.</string>
+    <string name="catalog_convention_caption_assistance">Assistência: registre a assistência da máquina.</string>
+
+    <string name="catalog_convention_explanation_total_load">Registre a carga externa total; volume = carga registrada × repetições.</string>
+    <string name="catalog_convention_explanation_per_hand">Registre a carga e as repetições de um halter. O volume é por mão; nunca é dobrado.</string>
+    <string name="catalog_convention_explanation_one_side">Registre a carga externa usada em um lado e as repetições desse lado. O volume é por lado; nunca é dobrado.</string>
+    <string name="catalog_convention_explanation_added_weight">Deixe a carga em 0 para só o peso do corpo, ou registre o peso externo adicional. O peso do corpo não entra no peso movido.</string>
+    <string name="catalog_convention_explanation_assistance">Registre a assistência à parte. Assistência não gera recorde de carga externa nem entra no peso movido.</string>
+
+    <string name="catalog_names_language">pt-BR</string>
+
+    <string name="catalog_default_folder">Minhas rotinas</string>
+</resources>

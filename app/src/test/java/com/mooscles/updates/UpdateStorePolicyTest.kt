@@ -8,6 +8,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.AppPreferences
 import com.mooscles.data.WorkoutDatabase
@@ -340,7 +341,7 @@ class UpdateStorePolicyTest {
             override fun getApplicationContext(): Context = this
             override fun getDatabasePath(name: String): File = File(file.parentFile, name)
         }
-        var database = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, databaseName).build()
+        var database = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, databaseName).setDriver(AndroidSQLiteDriver()).build()
         try {
             val repo = WorkoutRepository(database)
             repo.initialize()
@@ -379,7 +380,7 @@ class UpdateStorePolicyTest {
             assertTrue(directory.listFiles().orEmpty().isEmpty())
             assertEquals("preserve me", outside.readText())
             database.close()
-            database = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, databaseName).build()
+            database = Room.databaseBuilder(databaseContext, WorkoutDatabase::class.java, databaseName).setDriver(AndroidSQLiteDriver()).build()
             assertEquals(before, WorkoutRepository(database).snapshot())
             assertEquals(preferencesBefore, AppPreferences(context).flow.first())
             outside.delete()

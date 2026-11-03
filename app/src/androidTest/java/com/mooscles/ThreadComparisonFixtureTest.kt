@@ -1,7 +1,6 @@
 package com.mooscles
 
 import android.os.Bundle
-import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -23,7 +22,7 @@ class ThreadComparisonFixtureTest {
         val repo = app.repository
         // Do not initialize, synchronize PRs, or read/write settings here.
         // Initialization could legitimately modify other routines' inherited targets.
-        val added = app.database.withTransaction {
+        val added = app.database.writeTransaction {
             val before = repo.snapshot()
             val builtIns = before.exercises.filterNot { it.custom }.sortedBy { it.id }
             val weighted = builtIns.filter { it.convention == LoadConvention.TOTAL_LOAD }.take(7)
@@ -35,7 +34,7 @@ class ThreadComparisonFixtureTest {
             val existing = before.routines.firstOrNull { it.id == ROUTINE_ID }
             if (existing != null) {
                 verifyRoutine(before, catalog)
-                return@withTransaction false
+                return@writeTransaction false
             }
             val dao = app.database.dao()
             val newEntryIds = catalog.indices.mapTo(hashSetOf()) { "$ROUTINE_ID-exercise-$it" }

@@ -31,8 +31,10 @@ class UpdateManager(
     private val trainingBusy: suspend () -> Boolean,
     val store: UpdateStore = UpdateStore(context.updateStore),
     private val client: ReleaseClient = ReleaseClient(),
+    /** False in the side-by-side `preview` build: it never checks, downloads or installs anything. */
+    private val enabled: Boolean = BuildConfig.UPDATER_ENABLED,
     private val now: () -> Long = System::currentTimeMillis,
-) {
+) : UpdateCoordinator {
     private val checkGate = Mutex()
     private val installGate = Mutex()
     private val downloadGate = Mutex()
@@ -42,7 +44,7 @@ class UpdateManager(
     private val directory get() = File(context.filesDir, "updates").also { it.mkdirs() }
     private fun apkFile(code: Long) = File(directory, "update-$code.apk")
 
-    val ui = store.flow.map { s ->
+    override val ui = store.flow.map { s ->
         val installed = installedVersion(context)
         UpdateUi(installed.second, installed.first, s.checkedAt.takeIf { it > 0 },
             s.automatic, s.wifiOnly, s.prereleases, s.phase,
@@ -52,6 +54,7 @@ class UpdateManager(
     }.flowOn(Dispatchers.IO)
 
     suspend fun onForeground() = withContext(Dispatchers.IO) {
+        if (!enabled) return@withContext
         try {
             reconcile()
             schedulePeriodic()
@@ -70,7 +73,8 @@ class UpdateManager(
         } catch (e: Exception) { if (e is CancellationException) throw e; report(e) }
     }
 
-    suspend fun onTrainingChanged() {
+    override suspend fun onTrainingChanged() {
+        if (!enabled) return
         val state = store.snapshot()
         if (state.phase == UpdatePhase.DEFERRED && !trainingBusy()) {
             store.change { if (it.phase == UpdatePhase.DEFERRED) it.copy(
@@ -80,8 +84,8 @@ class UpdateManager(
         if (store.snapshot().phase in setOf(UpdatePhase.READY, UpdatePhase.DEFERRED)) attemptInstall(false)
     }
 
-    suspend fun assertTrainingMayStart() {
-        require(store.snapshot().phase != UpdatePhase.INSTALLING) { "An update is being installed. Training will be available again shortly." }
+    override suspend fun assertTrainingMayStart() {
+        if (store.snapshot().phase == UpdatePhase.INSTALLING) throw TrainingBlockedException("An update is being installed. Training will be available again shortly.")
     }
 
     private fun schedulePeriodic() {
@@ -91,7 +95,8 @@ class UpdateManager(
         work.enqueueUniquePeriodicWork(PERIODIC_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
-    suspend fun requestCheck(manual: Boolean) {
+    override suspend fun requestCheck(manual: Boolean) {
+        if (!enabled) return
         val s = store.snapshot()
         if (!UpdatePolicy.canCheck(s, manual, now())) {
             if (manual) store.change { it.copy(message = if (now() < it.retryAt)
@@ -109,6 +114,7 @@ class UpdateManager(
 
     /** Foreground, periodic and manual work share one gate and the persisted throttle. */
     suspend fun check(manual: Boolean): Boolean = withContext(Dispatchers.IO) {
+        if (!enabled) return@withContext false
         if (!checkGate.tryLock()) return@withContext false
         try {
             val old = store.snapshot()
@@ -153,7 +159,7 @@ class UpdateManager(
         } finally { checkGate.unlock() }
     }
 
-    suspend fun setAutomatic(enabled: Boolean) {
+    override suspend fun setAutomatic(enabled: Boolean) {
         store.change { it.copy(automatic = enabled) }
         if (!enabled && store.snapshot().phase in DOWNLOAD_PHASES) cancelDownload(markCancelled = false)
         else if (enabled) {
@@ -163,7 +169,7 @@ class UpdateManager(
         }
     }
 
-    suspend fun setWifiOnly(enabled: Boolean) {
+    override suspend fun setWifiOnly(enabled: Boolean) {
         val previous = store.change { it.copy(wifiOnly = enabled) }
         if (previous.phase in DOWNLOAD_PHASES) {
             cancelDownload(markCancelled = false)
@@ -171,7 +177,7 @@ class UpdateManager(
         }
     }
 
-    suspend fun setPrereleases(enabled: Boolean) {
+    override suspend fun setPrereleases(enabled: Boolean) {
         installGate.withLock {
             if (store.snapshot().phase == UpdatePhase.INSTALLING) return
             cancelDownloadLocked(markCancelled = false)
@@ -181,7 +187,8 @@ class UpdateManager(
         requestCheck(true)
     }
 
-    suspend fun enqueueDownload(manual: Boolean = false) {
+    override suspend fun enqueueDownload(manual: Boolean) {
+        if (!enabled) return
         val state = store.snapshot()
         val candidate = state.available ?: return
         if (candidate.metadata.versionCode <= installedVersion(context).first) { reconcile(); return }
@@ -202,6 +209,7 @@ class UpdateManager(
     }
 
     suspend fun download(runAttempt: Int, expectedGeneration: Long): Boolean = withContext(Dispatchers.IO) {
+        if (!enabled) return@withContext false
         downloadGate.withLock {
             val initial = store.snapshot()
             currentCoroutineContext().ensureActive()
@@ -247,7 +255,7 @@ class UpdateManager(
         }
     }
 
-    suspend fun cancelDownload(markCancelled: Boolean = true) = installGate.withLock { cancelDownloadLocked(markCancelled) }
+    override suspend fun cancelDownload(markCancelled: Boolean) = installGate.withLock { cancelDownloadLocked(markCancelled) }
 
     private suspend fun cancelDownloadLocked(markCancelled: Boolean) {
         val old = store.snapshot()
@@ -264,6 +272,7 @@ class UpdateManager(
 
     /** User gesture only. Returns a system Settings/approval activity; never opens it itself. */
     suspend fun requestInstall(): Intent? = withContext(Dispatchers.IO) {
+        if (!enabled) return@withContext null
         installGate.withLock {
             if (trainingBusy()) { defer(); return@withContext null }
             val s = store.snapshot()
@@ -303,6 +312,7 @@ class UpdateManager(
         message = "Update ready. Installation will wait until your workout is saved and your rest timer has stopped.") }
 
     private suspend fun attemptInstall(userInitiated: Boolean) = withContext(Dispatchers.IO) {
+        if (!enabled) return@withContext
         if (!installGate.tryLock()) return@withContext
         var preparedSession = -1
         try {

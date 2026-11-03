@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Labels of the exercise catalog's fixed lists (muscle groups, equipment, load conventions).
+     English is the base; every key also exists in values-pt-rBR. The catalog's exercise names are
+     not here: ExerciseNames (:shared) keeps them, in the language catalog_names_language names. -->
+<resources>
+    <string name="catalog_muscle_chest">Chest</string>
+    <string name="catalog_muscle_back">Back</string>
+    <string name="catalog_muscle_shoulders">Shoulders</string>
+    <string name="catalog_muscle_biceps">Biceps</string>
+    <string name="catalog_muscle_triceps">Triceps</string>
+    <string name="catalog_muscle_quadriceps">Quadriceps</string>
+    <string name="catalog_muscle_hamstrings">Hamstrings</string>
+    <string name="catalog_muscle_glutes">Glutes</string>
+    <string name="catalog_muscle_calves">Calves</string>
+    <string name="catalog_muscle_core">Core</string>
+    <string name="catalog_muscle_forearms">Forearms</string>
+    <string name="catalog_muscle_full_body">Full body</string>
+
+    <string name="catalog_equipment_barbell">Barbell</string>
+    <string name="catalog_equipment_dumbbell">Dumbbell</string>
+    <string name="catalog_equipment_kettlebell">Kettlebell</string>
+    <string name="catalog_equipment_cable">Cable</string>
+    <string name="catalog_equipment_bodyweight">Bodyweight</string>
+    <string name="catalog_equipment_smith_machine">Smith machine</string>
+    <string name="catalog_equipment_selectorized_machine">Selectorized machine</string>
+    <string name="catalog_equipment_plate_loaded_machine">Plate-loaded machine</string>
+    <string name="catalog_equipment_other">Other</string>
+
+    <string name="catalog_convention_total_load">Total load</string>
+    <string name="catalog_convention_per_hand">Per hand</string>
+    <string name="catalog_convention_one_side">One side</string>
+    <string name="catalog_convention_added_weight">Added weight</string>
+    <string name="catalog_convention_assistance">Assistance</string>
+
+    <!-- The one-line caption under an exercise whose load is not the total load. -->
+    <string name="catalog_convention_caption_per_hand">Per hand: log one dumbbell's load.</string>
+    <string name="catalog_convention_caption_one_side">One side: log the load used on one side.</string>
+    <string name="catalog_convention_caption_added_weight">Added weight: leave 0 for bodyweight only.</string>
+    <string name="catalog_convention_caption_assistance">Assistance: log the machine's assistance.</string>
+
+    <!-- The full explanation of each convention. -->
+    <string name="catalog_convention_explanation_total_load">Log the total external load; volume = logged load × reps.</string>
+    <string name="catalog_convention_explanation_per_hand">Log one dumbbell's load and reps. Volume is per hand; it is never doubled.</string>
+    <string name="catalog_convention_explanation_one_side">Log the total external load used on one side and the reps for that side. Volume is per side; it is never doubled.</string>
+    <string name="catalog_convention_explanation_added_weight">Leave the load at 0 for bodyweight, or log the added external weight. Bodyweight is not counted in weight moved.</string>
+    <string name="catalog_convention_explanation_assistance">Log the assistance separately. Assistance earns no external-weight record and is not counted in weight moved.</string>
+
+    <!-- The language of the catalog texts (exercise names, cues): "pt-BR" turns them Portuguese. -->
+    <string name="catalog_names_language">en</string>
+
+    <!-- The default routine folder while its stored name is still RoutineFolder.DEFAULT_NAME. -->
+    <string name="catalog_default_folder">My routines</string>
+</resources>

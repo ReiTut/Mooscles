@@ -2,6 +2,7 @@ package com.mooscles.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -29,7 +30,7 @@ class WorkoutRoutineSourcePersistenceTest {
     }
 
     private fun open() {
-        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).build()
+        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
         repo = WorkoutRepository(database)
     }
 

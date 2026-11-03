@@ -1,0 +1,4 @@
+1. "Descartar treino? · A 1 série registrada será apagada." — focusable [0,132][1080,2337]
+2. "Dispensar" — clickable [0,132][1080,2337]
+3. "Continuar treinando" — clickable [151,1278][644,1404]
+4. "Descartar" — clickable [665,1278][950,1404]

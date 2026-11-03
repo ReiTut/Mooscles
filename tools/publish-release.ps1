@@ -12,6 +12,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$appBuild = Join-Path (Join-Path $projectRoot 'app') 'build'
 $notesPath = (Resolve-Path -LiteralPath $NotesFile).Path
 if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf) -or
     [string]::IsNullOrWhiteSpace((Get-Content -LiteralPath $notesPath -Raw))) {
@@ -21,7 +22,10 @@ $gitCommand = Get-Command git -ErrorAction SilentlyContinue
 if (-not $gitCommand) { throw 'Git is required. Install Git and retry.' }
 $gitExecutable = $gitCommand.Source
 $githubCommand = Get-Command gh -ErrorAction SilentlyContinue
-$githubExecutable = if ($githubCommand) { $githubCommand.Source } else { Join-Path $projectRoot '.tooling\github-cli\bin\gh.exe' }
+# Windows PowerShell 5.x defines neither $IsLinux nor $IsMacOS and only runs on Windows.
+$isWindowsHost = -not ($IsLinux -or $IsMacOS)
+$bundledGitHubCli = Join-Path (Join-Path (Join-Path (Join-Path $projectRoot '.tooling') 'github-cli') 'bin') $(if ($isWindowsHost) { 'gh.exe' } else { 'gh' })
+$githubExecutable = if ($githubCommand) { $githubCommand.Source } else { $bundledGitHubCli }
 if (-not (Test-Path -LiteralPath $githubExecutable -PathType Leaf)) { throw 'GitHub CLI is required. Install it and sign in with gh auth login.' }
 
 function Invoke-GitChecked([string[]]$Arguments) {
@@ -92,7 +96,7 @@ try {
     [void](Assert-CleanCommit -ExpectedCommit $testedCommit)
     Assert-ExactRemoteTag -ExpectedCommit $testedCommit
 
-    $testReports = @(Get-ChildItem -LiteralPath (Join-Path $projectRoot 'app\build\test-results\testDebugUnitTest') -Filter 'TEST-*.xml' -File)
+    $testReports = @(Get-ChildItem -LiteralPath (Join-Path $appBuild (Join-Path 'test-results' 'testDebugUnitTest')) -Filter 'TEST-*.xml' -File)
     if ($testReports.Count -eq 0) { throw 'No unit-test results were generated.' }
     $testCount = 0
     foreach ($report in $testReports) {
@@ -103,13 +107,13 @@ try {
         $testCount += [int]$testXml.testsuite.tests
     }
     if ($testCount -eq 0) { throw 'The release must have executed unit tests.' }
-    [xml]$lintXml = Get-Content -LiteralPath (Join-Path $projectRoot 'app\build\reports\lint-results-debug.xml') -Raw
+    [xml]$lintXml = Get-Content -LiteralPath (Join-Path $appBuild (Join-Path 'reports' 'lint-results-debug.xml')) -Raw
     if (-not $lintXml.issues -or @($lintXml.issues.issue | Where-Object { $_.severity -in @('Error', 'Fatal') }).Count -gt 0) {
         throw 'Lint results are missing or contain errors.'
     }
-    $assets = & (Join-Path $projectRoot 'tools\prepare-release.ps1') `
-        -ApkPath (Join-Path $projectRoot 'app\build\outputs\apk\debug\app-debug.apk') `
-        -OutputDirectory (Join-Path $projectRoot 'app\build\outputs\release') `
+    $assets = & (Join-Path (Join-Path $projectRoot 'tools') 'prepare-release.ps1') `
+        -ApkPath (Join-Path (Join-Path (Join-Path $appBuild 'outputs') 'apk') (Join-Path 'debug' 'app-debug.apk')) `
+        -OutputDirectory (Join-Path (Join-Path $appBuild 'outputs') 'release') `
         -PreviousVersionCode $PreviousVersionCode -IncludeVersionCode:$UseBuildTag
     $metadata = Get-Content -LiteralPath $assets.MetadataPath -Raw | ConvertFrom-Json
     $expectedTag = 'v' + $metadata.versionName
@@ -148,7 +152,7 @@ try {
     Assert-ReleaseAssets -Release $release -ExpectedAssets $expectedAssets
 
     # Verify actual uploaded bytes, including when GitHub omits asset digests.
-    $verificationDirectory = Join-Path $projectRoot ('.tooling\release-publish-check\' + $Tag + '-' + [Guid]::NewGuid().ToString('N'))
+    $verificationDirectory = Join-Path (Join-Path (Join-Path $projectRoot '.tooling') 'release-publish-check') ($Tag + '-' + [Guid]::NewGuid().ToString('N'))
     [void][IO.Directory]::CreateDirectory($verificationDirectory)
     $downloadArguments = @('release', 'download', $Tag, '--repo', $Repository, '--dir', $verificationDirectory)
     foreach ($expected in $expectedAssets) { $downloadArguments += @('--pattern', $expected.Name) }

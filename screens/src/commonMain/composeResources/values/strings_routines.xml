@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The routine target line (English), "Target 3×8 · 80 kg". Every key also exists in values-pt-rBR with the same arguments. -->
+<resources>
+    <string name="routines_target_prefix">Target</string>
+    <plurals name="routines_target_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="routines_target_reps">%1$s reps</string>
+    <plurals name="routines_target_warmups">
+        <item quantity="one">+ %1$d warm-up</item>
+        <item quantity="other">+ %1$d warm-up</item>
+    </plurals>
+    <!-- Phase 4B task 11: the Train tab. -->
+    <string name="routines_title">Train</string>
+    <string name="routines_settings">Settings</string>
+    <string name="routines_folders">Folders</string>
+    <plurals name="routines_exercise_count">
+        <item quantity="one">%1$d exercise</item>
+        <item quantity="other">%1$d exercises</item>
+    </plurals>
+    <plurals name="routines_set_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="routines_summary">%1$s · %2$s</string>
+    <string name="routines_last_today">Last done: today</string>
+    <string name="routines_last_yesterday">Last done: yesterday</string>
+    <plurals name="routines_last_days">
+        <item quantity="one">Last done: %1$d day ago</item>
+        <item quantity="other">Last done: %1$d days ago</item>
+    </plurals>
+    <string name="routines_last_date">Last done: %1$s</string>
+    <string name="routines_never">Never done</string>
+    <string name="routines_start">Start</string>
+    <string name="routines_resume">Resume workout</string>
+    <string name="routines_more">Options for %1$s</string>
+    <string name="routines_edit">Edit</string>
+    <string name="routines_rename">Rename</string>
+    <string name="routines_duplicate">Duplicate</string>
+    <string name="routines_copy_name">%1$s (copy)</string>
+    <string name="routines_duplicated">Routine duplicated</string>
+    <string name="routines_open">Open</string>
+    <string name="routines_move_to_folder">Move to folder</string>
+    <string name="routines_current_folder">Current folder</string>
+    <string name="routines_delete">Delete</string>
+    <string name="routines_delete_title">Delete %1$s?</string>
+    <string name="routines_delete_body">Workouts already done with it stay in your history.</string>
+    <string name="routines_new">New routine</string>
+    <string name="routines_new_name">New routine</string>
+    <string name="routines_create">Create</string>
+    <string name="routines_name_field">Routine name</string>
+    <string name="routines_empty_workout">Empty workout</string>
+    <string name="routines_empty_folder">No routines in this folder</string>
+    <string name="routines_empty_folder_body">Create a routine here or move one in from another folder.</string>
+    <string name="routines_active_title">A workout is in progress</string>
+    <string name="routines_active_body">Finish or discard “%1$s” before starting another.</string>
+    <string name="routines_cancel">Cancel</string>
+    <!-- Phase 4B task 12: the folder manager. -->
+    <string name="folders_title">Folders</string>
+    <plurals name="folders_routine_count">
+        <item quantity="one">%1$d routine</item>
+        <item quantity="other">%1$d routines</item>
+    </plurals>
+    <string name="folders_new">New folder</string>
+    <string name="folders_name_field">Folder name</string>
+    <string name="folders_more">Options for %1$s</string>
+    <string name="folders_rename">Rename</string>
+    <string name="folders_delete">Delete</string>
+    <string name="folders_delete_title">Delete the %1$s folder?</string>
+    <plurals name="folders_delete_body">
+        <item quantity="one">Its routine moves to %2$s.</item>
+        <item quantity="other">Its %1$d routines move to %2$s.</item>
+    </plurals>
+</resources>

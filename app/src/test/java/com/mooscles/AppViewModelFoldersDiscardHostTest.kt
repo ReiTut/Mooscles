@@ -1,5 +1,7 @@
 package com.mooscles
 
+import androidx.room.execSQL
+import androidx.room.useWriterConnection
 import android.Manifest
 import android.app.AlarmManager
 import android.app.Notification
@@ -12,6 +14,8 @@ import com.mooscles.data.LoadConvention
 import com.mooscles.data.RoutineFolder
 import com.mooscles.data.WorkoutDatabase
 import com.mooscles.data.WorkoutRepository
+import com.mooscles.data.open
+import com.mooscles.timer.RestNotifications
 import com.mooscles.timer.RestTimerPersistence
 import com.mooscles.ui.UiState
 import kotlinx.coroutines.Dispatchers
@@ -132,10 +136,19 @@ class AppViewModelFoldersDiscardHostTest {
             assertEquals(1, snapshot().workouts.size)
             model.startTimer("Discard cycle $cycle", 120)
             awaitUi(model) { it.timer.running && it.timer.exerciseName == "Discard cycle $cycle" }
-            assertEquals(1, shadowOf(alarms).scheduledAlarms.size)
+            // The timer UI reads DataStore, which shows "running" before RestTimerController.schedule()
+            // registers the alarm, and the session observer cancels then sets it again. So wait for
+            // exactly one alarm (bounded) instead of counting at the first running state.
+            awaitCondition({ "Expected one rest alarm, saw ${shadowOf(alarms).scheduledAlarms.size}" }) {
+                shadowOf(alarms).scheduledAlarms.size == 1
+            }
             notifications.notify(1, Notification.Builder(app, "rest")
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("Rest complete").build())
-            assertEquals(1, shadowOf(notifications).allNotifications.size)
+            // No Activity is in front here, so the running rest also has its ongoing notification (D16).
+            awaitCondition({ "Expected the finished and the progress notifications" }) {
+                shadowOf(notifications).getNotification(RestNotifications.PROGRESS_ID) != null
+            }
+            assertEquals(2, shadowOf(notifications).allNotifications.size)
 
             repeat(15) { model.discardWorkout() }
             awaitUi(model) { !it.discardingWorkout && it.active == null &&
@@ -168,8 +181,8 @@ class AppViewModelFoldersDiscardHostTest {
         val before = snapshot()
         val previousEvent = model.contentUi.value.discardNavigationRequest
         runBlocking(Dispatchers.IO) {
-            app.database.openHelper.writableDatabase.execSQL(
-                "CREATE TRIGGER reject_discard_for_test BEFORE DELETE ON workouts BEGIN SELECT RAISE(ABORT, 'Injected discard failure'); END")
+            app.database.useWriterConnection { it.execSQL(
+                "CREATE TRIGGER reject_discard_for_test BEFORE DELETE ON workouts BEGIN SELECT RAISE(ABORT, 'Injected discard failure'); END") }
         }
         try {
             repeat(10) { model.discardWorkout() }
@@ -181,7 +194,7 @@ class AppViewModelFoldersDiscardHostTest {
             assertEquals(before.sets, snapshot().sets)
         } finally {
             runBlocking(Dispatchers.IO) {
-                app.database.openHelper.writableDatabase.execSQL("DROP TRIGGER IF EXISTS reject_discard_for_test")
+                app.database.useWriterConnection { it.execSQL("DROP TRIGGER IF EXISTS reject_discard_for_test") }
             }
         }
         model.clearError()
@@ -209,11 +222,16 @@ class AppViewModelFoldersDiscardHostTest {
     }
 
     private fun awaitUi(model: AppViewModel, predicate: (UiState) -> Boolean) {
+        awaitCondition({ "Expected state was not published: ${model.ui.value.error}" }) { predicate(model.ui.value) }
+    }
+
+    /** Polls a condition other threads make true, bounded so a real failure still fails. */
+    private fun awaitCondition(message: () -> String, condition: () -> Boolean) {
         val deadline = System.nanoTime() + 15_000_000_000L
-        while (!predicate(model.ui.value) && System.nanoTime() < deadline) {
+        while (!condition() && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(10)
         }
-        assertTrue("Expected state was not published: ${model.ui.value.error}", predicate(model.ui.value))
+        assertTrue(message(), condition())
     }
 }

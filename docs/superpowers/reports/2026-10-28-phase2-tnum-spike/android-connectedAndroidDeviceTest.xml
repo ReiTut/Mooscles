@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="7" failures="0" errors="0" skipped="0" time="42.133" timestamp="2026-10-28T13:06:53" hostname="localhost">
+  <testsuite name="com.mooscles.fontspike.TnumSpikeTest" tests="7" failures="0" errors="0" skipped="0" time="33.228" timestamp="2026-10-28T13:06:53" hostname="localhost">
+    <properties>
+      <property name="device" value="Mooscles_Pixel8_API35(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":fontspike" />
+    </properties>
+    <testcase name="interWithoutTnumIsProportional" classname="com.mooscles.fontspike.TnumSpikeTest" time="5.646" />
+    <testcase name="interWeightAxisApplies" classname="com.mooscles.fontspike.TnumSpikeTest" time="3.301" />
+    <testcase name="barlowTimerKeepsWidthWithTnum" classname="com.mooscles.fontspike.TnumSpikeTest" time="3.164" />
+    <testcase name="barlowIsReallyLoaded" classname="com.mooscles.fontspike.TnumSpikeTest" time="2.864" />
+    <testcase name="interWithTnumIsTabular" classname="com.mooscles.fontspike.TnumSpikeTest" time="4.285" />
+    <testcase name="barlowWithTnumIsTabular" classname="com.mooscles.fontspike.TnumSpikeTest" time="3.276" />
+    <testcase name="barlowDefaultFiguresAreRecorded" classname="com.mooscles.fontspike.TnumSpikeTest" time="10.692" />
+  </testsuite>
+</testsuites>

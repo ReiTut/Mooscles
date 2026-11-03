@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the Settings screen. English is the base and equals the copy the app shipped before; every key also exists in values-pt-rBR. -->
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_weight_units">Weight units</string>
+    <string name="settings_unit_kg">Kilograms · kg</string>
+    <string name="settings_unit_lb">Pounds · lb</string>
+    <string name="settings_units_hint">Records keep their original precision when you change units.</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_auto_rest">Automatic rest</string>
+    <string name="settings_auto_rest_desc">Start after completing a set</string>
+    <string name="settings_auto_rest_hint">Completing another set restarts rest using that exercise’s duration.</string>
+    <string name="settings_default_rest">Default rest duration</string>
+    <string name="settings_rest_each_exercise">Each exercise can use its own rest duration.</string>
+    <string name="settings_rest_duration">Rest duration</string>
+    <string name="settings_rest_help">Minutes, then seconds · maximum 5:00</string>
+    <string name="settings_rest_error">Use 0:00 to 5:00, with seconds from 00 to 59.</string>
+    <string name="settings_rest_suffix">min</string>
+    <string name="settings_privacy_title">Just you and your progress</string>
+    <string name="settings_privacy_body">Your routines, workout history, and records stay on this device. Training works offline. App connections check and download updates from GitHub. Sharing creates a workout image on your device and opens the app you choose, where you select the recipient and confirm sending. Workout data is excluded from automatic cloud backups. Use Export data above to keep your own copy.</string>
+    <string name="settings_component_gallery">Component gallery</string>
+
+    <string name="settings_data_title">Your data</string>
+    <string name="settings_data_desc">Save a copy of your workouts, routines and settings to a file, or restore one.</string>
+    <string name="settings_export">Export data</string>
+    <string name="settings_import">Import data</string>
+    <string name="settings_import_blocked">Finish or discard the active workout to import</string>
+    <string name="settings_data_export_photos_note">Photos of custom exercises are not included in the file.</string>
+    <string name="settings_data_dismiss">Dismiss</string>
+    <string name="settings_data_footer">Backups contain your full workout history without encryption. Keep the file somewhere private.</string>
+    <string name="settings_import_title">Import backup?</string>
+    <string name="settings_import_nothing_new">Everything in this backup is already on this phone.</string>
+    <string name="settings_import_ok">OK</string>
+    <string name="settings_import_confirm">Import</string>
+    <string name="settings_import_cancel">Cancel</string>
+    <plurals name="settings_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <plurals name="settings_routines">
+        <item quantity="one">%1$d routine</item>
+        <item quantity="other">%1$d routines</item>
+    </plurals>
+    <plurals name="settings_custom_exercises">
+        <item quantity="one">%1$d custom exercise</item>
+        <item quantity="other">%1$d custom exercises</item>
+    </plurals>
+    <plurals name="settings_workouts_kept">
+        <item quantity="one">%1$d workout is already on this phone and will be kept as it is.</item>
+        <item quantity="other">%1$d workouts are already on this phone and will be kept as they are.</item>
+    </plurals>
+    <string name="settings_import_counts">%1$s, %2$s and %3$s</string>
+    <string name="settings_import_add">Add %1$s.</string>
+    <string name="settings_import_prefs">Your units, theme and rest settings will also be restored.</string>
+
+    <string name="settings_updates_title">App updates</string>
+    <string name="settings_updates_reading_version">Reading installed version</string>
+    <string name="settings_updates_installed">Installed %1$s · build %2$s</string>
+    <string name="settings_updates_build">%1$s · build %2$s</string>
+    <string name="settings_updates_automatic">Automatic updates</string>
+    <string name="settings_updates_automatic_desc">Download available updates automatically</string>
+    <string name="settings_updates_wifi_only">Wi-Fi-only downloads</string>
+    <string name="settings_updates_wifi_only_desc">Wait for Wi-Fi before downloading an APK</string>
+    <string name="settings_updates_prereleases">Include prereleases</string>
+    <string name="settings_updates_prereleases_desc">Get preview and debug releases as well as stable releases</string>
+    <string name="settings_updates_channel_prerelease">Channel: stable + prerelease. Preview releases may be less tested.</string>
+    <string name="settings_updates_channel_stable">Channel: stable. Drafts and prereleases are excluded.</string>
+    <string name="settings_updates_last_checked">Last checked</string>
+    <string name="settings_updates_not_checked">Not checked yet</string>
+    <string name="settings_updates_checking">Checking…</string>
+    <string name="settings_updates_check">Check for updates</string>
+    <string name="settings_updates_schedule">Checks run when you open the app and about every six hours in the background. Android may delay background checks. Workout tracking stays available offline.</string>
+    <string name="settings_updates_approval_note">Android may ask you to approve an installation. Updates wait until your workout and rest timer finish. A phone running an older version without this updater needs this updater-enabled APK installed once.</string>
+    <string name="settings_updates_status_idle">Ready to check</string>
+    <string name="settings_updates_status_checking">Checking GitHub Releases</string>
+    <string name="settings_updates_status_available">Update available</string>
+    <string name="settings_updates_status_waiting_for_wifi">Waiting for Wi-Fi</string>
+    <string name="settings_updates_status_downloading">Downloading update</string>
+    <string name="settings_updates_status_verifying">Verifying update</string>
+    <string name="settings_updates_status_ready">Update ready</string>
+    <string name="settings_updates_status_deferred">Update ready · installation deferred</string>
+    <string name="settings_updates_status_permission_required">Installation permission needed</string>
+    <string name="settings_updates_status_approval_required">Update ready · approval needed</string>
+    <string name="settings_updates_status_installing">Installing update</string>
+    <string name="settings_updates_status_succeeded">Update successful</string>
+    <string name="settings_updates_status_failed">Update could not finish</string>
+    <string name="settings_updates_status_cancelled">Update cancelled</string>
+    <string name="settings_updates_idle_note">Published updates come from ReiTut/Mooscles on GitHub.</string>
+    <string name="settings_updates_download">Download update</string>
+    <string name="settings_updates_wifi_note">Downloading will begin when Wi-Fi is available. You can change the Wi-Fi preference above.</string>
+    <string name="settings_updates_install">Install update</string>
+    <string name="settings_updates_deferred_note">Your download is safe. Installation will wait until your workout is saved and your rest timer finishes.</string>
+    <string name="settings_updates_permission_note">Android requires permission to install an APK from Mooscles. Enable “Allow from this source” on the next screen, then return here. Your choice is only requested when you install.</string>
+    <string name="settings_updates_allow_source">Allow from this source</string>
+    <string name="settings_updates_approval_note_short">Android needs your approval. Open the system confirmation when you are ready.</string>
+    <string name="settings_updates_review_install">Review installation</string>
+    <string name="settings_updates_retry_install">Retry installation</string>
+    <string name="settings_updates_retry">Retry</string>
+    <string name="settings_updates_download_again">Download again</string>
+    <string name="settings_updates_succeeded_note">The installed version is ready. Your training data stays on this device.</string>
+    <string name="settings_updates_cancel">Cancel download</string>
+    <string name="settings_updates_release_notes">Release notes</string>
+    <string name="settings_updates_show_less">Show less</string>
+    <string name="settings_updates_read_all">Read all notes</string>
+    <string name="settings_updates_progress">%1$s · %2$s / %3$s</string>
+    <string name="settings_updates_size_mb">%1$s MB</string>
+    <string name="settings_updates_size_kb">%1$s KB</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_portuguese">Português (Brasil)</string>
+</resources>

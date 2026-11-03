@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Records tab texts (pt-BR). Every key also exists in the other language with the same arguments. -->
+<resources>
+    <string name="records_title">Recordes</string>
+    <string name="records_settings">Configurações</string>
+    <string name="records_rules">Como contamos recordes</string>
+    <string name="records_rule_weight">Carga: a série de trabalho mais pesada.</string>
+    <string name="records_rule_reps">Repetições: mais repetições na mesma carga, inclusive peso corporal.</string>
+    <string name="records_rule_excluded">Aquecimento e séries incompletas não contam.</string>
+    <string name="records_rule_assistance">Séries assistidas têm recordes à parte.</string>
+    <string name="records_search">Buscar exercício</string>
+    <string name="records_current_only">Só atuais</string>
+    <string name="records_first">Primeiros registros</string>
+    <string name="records_month">%1$s · %2$s</string>
+    <plurals name="records_count">
+        <item quantity="one">%1$d recorde</item>
+        <item quantity="other">%1$d recordes</item>
+    </plurals>
+    <string name="records_kind_weight">Carga</string>
+    <string name="records_kind_reps">Repetições</string>
+    <string name="records_was_load">%1$s · antes %2$s</string>
+    <plurals name="records_was_reps">
+        <item quantity="one">%1$s · antes %2$d repetição</item>
+        <item quantity="other">%1$s · antes %2$d repetições</item>
+    </plurals>
+    <string name="records_spoken_was_load">antes %1$s</string>
+    <plurals name="records_spoken_was_reps">
+        <item quantity="one">antes %1$d repetição</item>
+        <item quantity="other">antes %1$d repetições</item>
+    </plurals>
+    <string name="records_spoken">%1$s, %2$s: %3$s, %4$s</string>
+    <string name="records_spoken_join">%1$s, %2$s</string>
+    <string name="records_current">Atual</string>
+    <string name="records_first_badge">Primeiro registro</string>
+    <string name="records_open_workout">Abrir treino</string>
+    <string name="records_empty_title">Seu primeiro recorde aparece aqui</string>
+    <string name="records_empty_body">Conclua séries de trabalho para registrar recordes de carga e de repetições.</string>
+    <string name="records_none_found">Nenhum recorde encontrado</string>
+    <string name="records_assisted_set">%1$s de assistência × %2$d</string>
+    <string name="records_spoken_assistance">%1$s de assistência</string>
+    <string name="records_spoken_bodyweight">peso corporal</string>
+    <string name="records_first_short">Primeiro</string>
+    <string name="records_only_first_title">Nenhum recorde batido ainda</string>
+    <string name="records_only_first_body">Seus primeiros registros ficam em “Primeiros registros”.</string>
+    <string name="records_only_first_action">Ver primeiros registros</string>
+</resources>

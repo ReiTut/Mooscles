@@ -1,5 +1,6 @@
 package com.mooscles.timer
 
+import android.app.Application
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -22,8 +23,16 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-/** Host JVM tests against real persisted files, independent of Android or an emulator. */
+/**
+ * Host tests against real persisted files. The Android DataStore dependency needs Android file
+ * APIs for atomic replacement; Robolectric supplies them consistently on Windows as well.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = Application::class)
 class RestTimerPersistenceTest {
     private lateinit var file: File
     private lateinit var store: DataStore<Preferences>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.mooscles.domain.RoutineTargetRecords
 import com.mooscles.domain.WeightUnits
@@ -112,18 +113,14 @@ class RollbackV142DataCompatibilityTest {
         assertEquals(actual, open().snapshot())
     }
 
-    private fun open(): WorkoutRepository {
-        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename)
-            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5)
+    private fun open(): WorkoutRepository = runBlocking {
+        database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver())
+            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6)
             .build()
-        assertEquals(5, database!!.openHelper.writableDatabase.version)
-        database!!.openHelper.readableDatabase.query("SELECT identity_hash FROM room_master_table WHERE id = 42").use {
-            assertTrue(it.moveToFirst())
-            val schema = File("schemas/com.mooscles.data.WorkoutDatabase/5.json").takeIf { file -> file.isFile }
-                ?: File("app/schemas/com.mooscles.data.WorkoutDatabase/5.json")
-            assertEquals(JSONObject(schema.readText()).getJSONObject("database").getString("identityHash"), it.getString(0))
-        }
-        return WorkoutRepository(database!!)
+        assertEquals(6, database!!.userVersion())
+        assertEquals(listOf(listOf<Any?>(exportedIdentityHash(6))),
+            database!!.typedRows("SELECT identity_hash FROM room_master_table WHERE id = 42"))
+        WorkoutRepository(database!!)
     }
 
     private fun assertFixtureEquals(expected: AppData, actual: AppData) {
