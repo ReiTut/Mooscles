@@ -59,6 +59,8 @@ class ShareCardTextsTest {
         assertEquals("Bodyweight × 12", card.rows.single().bestSet)
         assertEquals("Duration", card.labels.duration)
         assertEquals("PR", card.labels.recordBadge)
+        assertEquals("PRs", card.labels.prs)
+        assertEquals("1", card.prsText)
         assertEquals(false, texts("en").catalogPortuguese)
     }
 
@@ -68,6 +70,8 @@ class ShareCardTextsTest {
         assertEquals("ter., 29 de out. de 2024 · 18:02–18:44", card.dateText)
         assertEquals("Peso corporal × 12", card.rows.single().bestSet)
         assertEquals("Duração", card.labels.duration)
+        assertEquals("PRs", card.labels.prs)
+        assertEquals("1", card.prsText)
         assertEquals("Nenhuma série concluída", card.labels.noCompletedSets)
         // The catalog's names follow the card's language (plan decision 11).
         assertEquals(true, texts("pt-BR").catalogPortuguese)

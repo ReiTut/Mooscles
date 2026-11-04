@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -149,18 +150,23 @@ class WorkoutSummaryScreenTest {
             onNodeWithText("4").shown()
             val duration = onNodeWithTag(summaryStatTag(SummaryStat.DURATION)).getUnclippedBoundsInRoot()
             val sets = onNodeWithTag(summaryStatTag(SummaryStat.SETS)).getUnclippedBoundsInRoot()
+            val prs = onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assertContentDescriptionEquals("3 exercícios com recordes pessoais").getUnclippedBoundsInRoot()
             val volume = onNodeWithTag(summaryStatTag(SummaryStat.VOLUME)).getUnclippedBoundsInRoot()
-            assertEquals(duration.top, sets.top, "Sets sits beside Duration")
-            assertTrue(sets.left > duration.left, "Sets is the second column")
-            assertTrue(volume.top >= duration.bottom, "Volume opens the second row")
+            assertTrue(sets.top >= duration.bottom, "Duration opens the card")
+            assertEquals(sets.top, prs.top, "PRs sits beside Sets")
+            assertTrue(prs.left > sets.left, "PRs is the second column")
+            assertTrue(volume.top >= sets.bottom, "Volume opens the third row")
             assertEquals(duration.left, volume.left)
         }
         runComposeUiTest {
             summary(fontScale = 1.5f)
             val duration = onNodeWithTag(summaryStatTag(SummaryStat.DURATION)).getUnclippedBoundsInRoot()
             val sets = onNodeWithTag(summaryStatTag(SummaryStat.SETS)).getUnclippedBoundsInRoot()
+            val prs = onNodeWithTag(summaryStatTag(SummaryStat.PRS)).getUnclippedBoundsInRoot()
             assertEquals(duration.left, sets.left, "One column at 1.5")
             assertTrue(sets.top >= duration.bottom, "Sets under Duration at 1.5")
+            assertEquals(sets.left, prs.left)
+            assertTrue(prs.top >= sets.bottom, "PRs follows Sets at 1.5")
         }
     }
 
@@ -177,6 +183,8 @@ class WorkoutSummaryScreenTest {
     @Test
     fun firstRecordsSection() = runComposeUiTest {
         summary(workout(records = listOf(firstRecord)))
+        onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("1"))
+            .assertContentDescriptionEquals("1 exercício com recorde pessoal")
         val first = hasAnyAncestor(hasTestTag(SummaryFirstRecordsTag))
         onNode(hasText("Primeiros registros") and first).shown()
         onNode(hasText("Remada curvada · 82,5\u00A0kg\u00A0×\u00A08") and first).shown()
@@ -189,6 +197,8 @@ class WorkoutSummaryScreenTest {
     @Test
     fun noRecordsHidesTheSection() = runComposeUiTest {
         summary(workout(records = emptyList()))
+        onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("0"))
+            .assertContentDescriptionEquals("0 exercícios com recordes pessoais")
         assertEquals(0, onAllNodes(hasTestTag(SummaryRecordsTag)).fetchSemanticsNodes().size)
         assertEquals(0, onAllNodes(hasTestTag(SummaryFirstRecordsTag)).fetchSemanticsNodes().size)
         assertEquals(0, onAllNodes(hasTestTag(PrBadgeTag), useUnmergedTree = true).fetchSemanticsNodes().size)
@@ -277,11 +287,24 @@ class WorkoutSummaryScreenTest {
         for ((scale, density, width) in cases) {
             runComposeUiTest {
                 summary(fontScale = scale, density = density, size = DpSize(width.dp, 640.dp))
-                // Four stats and the best sets of three exercises.
-                assertNumbersWhole(atLeast = 7)
+                // Five stats and the best sets of three exercises.
+                assertNumbersWhole(atLeast = 8)
             }
             LocalAppLocale.restore()
         }
+    }
+
+    @Test
+    fun prStatisticCountsVariationsOnceInEnglish() = runComposeUiTest {
+        val records = listOf(weightRecord, weightRecord.copy(kind = RecordKind.REPS), firstRecord) +
+            (1..9).map { firstRecord.copy(exercise = exercise("variant-$it", "Variation $it")) }
+        summary(workout(records = records), locale = "en", size = DpSize(320.dp, 640.dp))
+        onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("11"))
+            .assert(hasText("PRs")).assertContentDescriptionEquals("11 exercises with personal records")
+        val sets = onNodeWithTag(summaryStatTag(SummaryStat.SETS)).getUnclippedBoundsInRoot()
+        val prs = onNodeWithTag(summaryStatTag(SummaryStat.PRS)).getUnclippedBoundsInRoot()
+        assertEquals(sets.top, prs.top)
+        assertTrue(prs.left >= sets.right)
     }
 
     /** Plan decision 11: the exercise lines and the records show the catalog's pt-BR name, never the stored English one. */

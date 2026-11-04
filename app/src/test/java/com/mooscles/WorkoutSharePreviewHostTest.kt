@@ -31,8 +31,9 @@ class WorkoutSharePreviewHostTest {
 
     @Test fun previewShowsTheGeneratedImageBeforeExplicitDestinationSelection() {
         val calls = mutableListOf<String?>()
-        show(WorkoutSharePreviewState.Ready(listOf(image())), setOf(WorkoutShareIntent.WHATSAPP, WorkoutShareIntent.WHATSAPP_BUSINESS), onShare = { calls += it })
+        show(WorkoutSharePreviewState.Ready(listOf(image()), prCount = 11), setOf(WorkoutShareIntent.WHATSAPP, WorkoutShareIntent.WHATSAPP_BUSINESS), onShare = { calls += it })
         awaitImage()
+        compose.onNodeWithTag("share-preview-page-0").assertContentDescriptionEquals("Workout image 1 of 1 · 11 exercises with personal records")
         assertEquals(emptyList<String?>(), calls)
         compose.onNodeWithTag("share-whatsapp").assertIsEnabled().performClick()
         compose.onNodeWithTag("share-whatsapp-business").assertIsEnabled().performClick()
@@ -56,6 +57,14 @@ class WorkoutSharePreviewHostTest {
         compose.onNodeWithText("Cancel").performClick()
         compose.onNodeWithTag("share-other-apps").assertDoesNotExist()
         compose.runOnIdle { assertEquals(1, closed) }
+    }
+
+    @Test @Config(sdk = [35], qualifiers = "pt-rBR")
+    fun zeroPrsUsePortuguesePluralInPreviewDescription() {
+        show(WorkoutSharePreviewState.Ready(listOf(image()), prCount = 0))
+        awaitImage()
+        compose.onNodeWithTag("share-preview-page-0")
+            .assertContentDescriptionEquals("Imagem do treino 1 de 1 · 0 exercícios com recordes pessoais")
     }
 
     @Test fun generationFailureOffersRetryAndCloseWithoutSharing() {

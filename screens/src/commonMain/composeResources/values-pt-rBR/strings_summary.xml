@@ -4,6 +4,11 @@
     <string name="summary_title">Treino concluído</string>
     <string name="summary_duration">Duração</string>
     <string name="summary_sets">Séries</string>
+    <string name="summary_prs">PRs</string>
+    <plurals name="summary_pr_count">
+        <item quantity="one">%1$d exercício com recorde pessoal</item>
+        <item quantity="other">%1$d exercícios com recordes pessoais</item>
+    </plurals>
     <string name="summary_volume">Volume</string>
     <string name="summary_exercises">Exercícios</string>
     <string name="summary_records">Recordes</string>

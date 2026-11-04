@@ -313,7 +313,11 @@ jobs:
           # Language/icon: AppLanguageHostTest 6, AppLanguageUiHostTest 1, LegacyStringsHostTest 2,
           # PlannedSetDraftsTest +3, SetRowEditorLocaleTest 2: +14 over 1264.
           # Shared wordmark: WorkoutCardRendererTest +1 Portuguese export check.
-          MIN_HOST_TESTS: 1279
+          # Startup PR fast path: WorkoutPresentationTest +2 (:shared commonTest). 1279 + 2 = 1281.
+          # Workout PR statistic: WorkoutPresentationTest +1 (:shared common), ShareCardDataTest +3
+          # (:screens common), HistoryRecordsHostTest +2 and WorkoutSharePreviewHostTest +1
+          # (:app host). 1281 + 7 = 1288.
+          MIN_HOST_TESTS: 1288
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -446,7 +450,9 @@ jobs:
           # Phase 4B task 1: BackupCodecTest +3, ImportPlannerTest +1 (commonTest), IosDatabaseTest +1 (iosTest). 259 + 5 = 264.
           # Phase 4B task 3: WorkoutPresentationTest +10, UiErrorsTest +1 (commonTest). 264 + 11 = 275.
           # Phase 5A task 2: EstimatedOneRepMaxTest 5 (commonTest). 275 + 5 = 280.
-          MIN_IOS_TESTS: 280
+          # Startup PR fast path: WorkoutPresentationTest +2 (commonTest). 280 + 2 = 282.
+          # Workout PR statistic: WorkoutPresentationTest +1. 282 + 1 = 283.
+          MIN_IOS_TESTS: 283
         run: |
           $files = @(Get-ChildItem -Path 'shared/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @(); $platform = @()
@@ -719,7 +725,9 @@ jobs:
           # assertions off tableRows, weekOf and recordLine (deleted, unused by the screens) onto tableRow, chartWeekOf and
           # recordWasText: no test retired. 886 + 6 = 892.
           # Language/icon: PlannedSetDraftsTest +3 common tests, 892 + 3 = 895.
-          MIN_SCREENS_IOS_TESTS: 895
+          # Workout PR statistic: ShareCardDataTest +3 (common), ShareCardPainterTest +3 and
+          # WorkoutSummaryScreenTest +1 (UI). 895 + 7 = 902.
+          MIN_SCREENS_IOS_TESTS: 902
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

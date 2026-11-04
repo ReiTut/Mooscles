@@ -2,6 +2,18 @@
 
 A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. App network requests only discover and download public GitHub updates. Optional sharing creates a workout image locally and opens the user's chosen destination; it never selects a recipient or sends automatically. No account, subscriptions or analytics.
 
+## Current release
+
+**1.5.3 / Build 25** brings the previous startup prerelease changes and adds **PRs beside Sets** in the completed-workout summary, saved detail, share preview and every exported card page. It counts each exercise variation with a qualifying first or beaten record once. English/Portuguese descriptions and responsive layouts keep the count readable and accessible. [Release notes](docs/superpowers/releases/v1.5.3.md) · [PR-statistic verification](docs/superpowers/reports/2026-11-04-workout-pr-statistic-verification.md).
+
+This is a full stable-channel release using the existing debug-signed APK. Its higher build number is eligible for stable Build 23 and beta Build 24 installations without enabling prereleases. Package, signing identity and saved-data formats remain unchanged. Phase 5/5B stays paused.
+
+## Routine-startup changes (first published in beta)
+
+**1.5.3-beta.1 / Build 24** skips historical PR calculations until an active workout has an eligible completed working set, and removes only the forward workout-entry fade. Existing Back navigation, workout data, language selection, launcher artwork and Phase 5A features are preserved; Phase 5/5B remains paused.
+
+Phone measurements show reduced PR preparation CPU and an opaque editor in its first detected visible frame. They do **not** establish consistently shorter overall startup or improved first scrolling; initial layout and occasional graphics stalls remain. The current loading UI uses skeleton placeholders, not the historical literal “Starting workout…” overlay. See the [investigation](docs/superpowers/reports/2026-11-03-routine-startup-latency.md) and [prerelease notes](docs/superpowers/releases/v1.5.3-beta.1.md).
+
 ## Shared workout wordmark
 
 Version **1.5.2 / Build 23** replaces the shared-card header logo with the supplied white/lime Mooscles wordmark. The same artwork appears in the preview and every exported PNG page. Header spacing, statistics, exact values, translations, exercise order, pagination and sharing destinations retain their existing behavior. The artwork is cached outside drawing; the source is only 260×72 pixels, so enlargement can appear slightly soft. The launcher icon is unchanged, and Phase 5/5B remains paused. See the [verification report](docs/superpowers/reports/2026-11-02-share-wordmark-verification.md) and [release notes](docs/superpowers/releases/v1.5.2.md).
@@ -75,7 +87,9 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 The current release is **1.5.2 / Build 23**: the new shared-workout wordmark in previews and exported PNGs, preserving existing workouts, routines, folders, settings and the previous release's language selection and launcher artwork.
 
-[v1.5.2 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.2) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.2/Mooscles-v1.5.2-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.2/update.json)
+[v1.5.3 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/Mooscles-v1.5.3-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/update.json)
+
+The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
 This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.5.2` and version code `23`, and requires Android 8.0 or newer. Distributed updaters select the highest compatible metadata version code, so Build 22 and older compatible installations can discover Build 23 on the stable channel. **Include prereleases** is not required. Automatic downloads respect saved preferences, and Android may require installation approval. APKs are attached as release assets; previous tags and releases remain intact. Full GitHub release status does not change the APK build type or signing certificate.
 

@@ -45,7 +45,7 @@ import kotlinx.datetime.TimeZone
 internal sealed interface WorkoutSharePreviewState {
     data object Loading : WorkoutSharePreviewState
     data object Failed : WorkoutSharePreviewState
-    data class Ready(val files: List<File>) : WorkoutSharePreviewState
+    data class Ready(val files: List<File>, val prCount: Int = 0) : WorkoutSharePreviewState
 }
 
 /**
@@ -79,7 +79,7 @@ fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Uni
                 val measurer = TextMeasurer(fonts, ShareCardDensity, LayoutDirection.Ltr)
                 val files = WorkoutCardRenderer().export(context.applicationContext, card, ShareCardPainter(styles, loadShareWordmark()), measurer)
                 check(files.isNotEmpty())
-                WorkoutSharePreviewState.Ready(files)
+                WorkoutSharePreviewState.Ready(files, card.prCount)
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -141,7 +141,7 @@ internal fun WorkoutSharePreviewContent(
                     if (state.files.size > 1) Text(pluralStringResource(R.plurals.share_preview_pages, state.files.size, state.files.size), style = MaterialTheme.typography.bodySmall)
                     LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("share-preview-pages"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         itemsIndexed(state.files, key = { _, file -> file.absolutePath }) { index, file ->
-                            WorkoutSharePage(file, index, state.files.size, onLoaded = { if (index == 0) previewVisible = true }, onFailed = { previewFailed = true })
+                            WorkoutSharePage(file, index, state.files.size, state.prCount, onLoaded = { if (index == 0) previewVisible = true }, onFailed = { previewFailed = true })
                         }
                     }
                     if (previewFailed) {
@@ -172,7 +172,7 @@ internal fun WorkoutSharePreviewContent(
 
 /** Only visible pages are decoded, keeping very long workouts from retaining every bitmap. */
 @Composable
-private fun WorkoutSharePage(file: File, index: Int, count: Int, onLoaded: () -> Unit, onFailed: () -> Unit) {
+private fun WorkoutSharePage(file: File, index: Int, count: Int, prCount: Int, onLoaded: () -> Unit, onFailed: () -> Unit) {
     var preview by remember(file) { mutableStateOf<Result<Bitmap>?>(null) }
     LaunchedEffect(file) {
         preview = withContext(Dispatchers.IO) {
@@ -195,7 +195,8 @@ private fun WorkoutSharePage(file: File, index: Int, count: Int, onLoaded: () ->
             if (preview == null) CircularProgressIndicator()
         }
     } else {
-        Image(bitmap.asImageBitmap(), stringResource(R.string.share_preview_image, index + 1, count),
+        Image(bitmap.asImageBitmap(), stringResource(R.string.share_preview_image, index + 1, count) + " · " +
+            pluralStringResource(R.plurals.legacy_pr_count, if (prCount == 0) 2 else prCount, prCount),
             Modifier.fillMaxWidth().aspectRatio(bitmap.width.toFloat() / bitmap.height).testTag("share-preview-page-$index"),
             contentScale = ContentScale.Fit)
     }

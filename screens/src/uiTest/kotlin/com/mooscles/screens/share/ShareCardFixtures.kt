@@ -26,7 +26,7 @@ internal suspend fun captureShareCardInputs(dark: Boolean = true): ShareCardInpu
 }
 
 private val fixtureLabels = ShareCardLabels(
-    duration = "Duration", sets = "Sets", volume = "Volume", records = "Records",
+    duration = "Duration", sets = "Sets", prs = "PRs", volume = "Volume", records = "Records",
     exercises = "Exercises", bestSet = "Best set", noCompletedSets = "No completed sets", recordBadge = "PR",
     setCountOne = "%1\$d set", setCountOther = "%1\$d sets",
 )
@@ -45,6 +45,8 @@ internal fun longWorkoutCard(): ShareCardData {
         dateText = "Thu, Oct 22, 2026 · 20:55–21:39",
         durationText = "44:00",
         setsText = "144",
+        prCount = rows.count { it.hasRecord },
+        prsText = rows.count { it.hasRecord }.toString(),
         volumeText = "12,450\u00A0kg",
         records = rows.filter { it.hasRecord }.map { ShareRecordRow(it.name, it.bestSet) },
         rows = rows,

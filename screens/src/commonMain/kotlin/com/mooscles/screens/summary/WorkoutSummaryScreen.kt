@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -66,6 +67,8 @@ import com.mooscles.screens.resources.summary_done
 import com.mooscles.screens.resources.summary_duration
 import com.mooscles.screens.resources.summary_exercises
 import com.mooscles.screens.resources.summary_first_records
+import com.mooscles.screens.resources.summary_pr_count
+import com.mooscles.screens.resources.summary_prs
 import com.mooscles.screens.resources.summary_record_line
 import com.mooscles.screens.resources.summary_records
 import com.mooscles.screens.resources.summary_reps_record
@@ -87,7 +90,7 @@ import kotlinx.datetime.TimeZone
 import com.mooscles.screens.workout.bestSetText
 import org.jetbrains.compose.resources.stringResource
 
-/** The card of the four numbers; it carries [SummaryEntrance] when this composition played its entrance. */
+/** The statistics card; it carries [SummaryEntrance] when this composition played its entrance. */
 const val SummaryStatsTag = "summary-stats"
 
 /** The "Records" section (records beaten); absent without one. */
@@ -96,8 +99,8 @@ const val SummaryRecordsTag = "summary-records"
 /** The "First records" section; absent without one. */
 const val SummaryFirstRecordsTag = "summary-first-records"
 
-/** The four numbers of the summary, in reading order. */
-enum class SummaryStat { DURATION, SETS, VOLUME, EXERCISES }
+/** The numbers of the summary, in reading order. */
+enum class SummaryStat { DURATION, SETS, PRS, VOLUME, EXERCISES }
 
 /** The test tag of one number of the stats card. */
 fun summaryStatTag(stat: SummaryStat): String = "summary-stat-${stat.name.lowercase()}"
@@ -113,7 +116,7 @@ private const val ONE_COLUMN_FONT_SCALE = 1.5f
 
 /**
  * The end of a finished [workout] (spec D19): "Workout complete", its name and date range; the
- * duration, completed sets, volume (`WorkoutUi.volumeKg`) and exercises, sets and exercises
+ * duration, completed sets, PR exercises, volume (`WorkoutUi.volumeKg`) and exercises, sets and exercises
  * counted over the valid completed sets ([SummaryStats.completedSets]) as the share card does; the records beaten,
  * then the first records (each section only when it has one); how many workouts were finished in
  * the last 28 calendar days of [zone] ([ScreenDates.finishedInLast28Days] over [history], this
@@ -167,6 +170,8 @@ fun WorkoutSummaryScreen(
             values = listOf(
                 StatValue(SummaryStat.DURATION, stringResource(Res.string.summary_duration), durationText((end - workout.startedAt) / 1000L)),
                 StatValue(SummaryStat.SETS, stringResource(Res.string.summary_sets), MoosclesNumbers.localize(counted.sumOf { (_, sets) -> sets.size }.toString(), locale)),
+                StatValue(SummaryStat.PRS, stringResource(Res.string.summary_prs), MoosclesNumbers.localize(workout.prExerciseCount.toString(), locale),
+                    pluralCount(Res.plurals.summary_pr_count, workout.prExerciseCount)),
                 StatValue(SummaryStat.VOLUME, stringResource(Res.string.summary_volume), weightText(workout.volumeKg, pounds, locale)),
                 StatValue(SummaryStat.EXERCISES, stringResource(Res.string.summary_exercises), MoosclesNumbers.localize(counted.size.toString(), locale)),
             ),
@@ -211,10 +216,11 @@ private fun Modifier.card(): Modifier {
 }
 
 /** One number of the stats card, with its label. */
-private class StatValue(val stat: SummaryStat, val label: String, val value: String)
+private class StatValue(val stat: SummaryStat, val label: String, val value: String, val description: String? = null)
 
 /**
- * The four numbers, two columns (one from [ONE_COLUMN_FONT_SCALE]), with the entrance. Every value
+ * The numbers, two columns (one from [ONE_COLUMN_FONT_SCALE]), with the entrance. Duration spans
+ * the first row so Sets and PRs stay together. Every value
  * gets the same style: the largest of `num.lg`, `num.md` and `num.sm` in which all of them fit
  * their column on one line (`num.sm` when none does).
  */
@@ -275,13 +281,14 @@ private fun StatsCard(values: List<StatValue>, oneColumn: Boolean) {
             values.all { measurer.measure(it.value, style, softWrap = false, maxLines = 1).size.width <= columnWidth }
         } ?: candidates.last()
         val cells = values.map { stat ->
-            @Composable { cellModifier: Modifier -> StatCell(stat.stat, stat.label, stat.value, numberStyle, cellModifier) }
+            @Composable { cellModifier: Modifier -> StatCell(stat.stat, stat.label, stat.value, numberStyle, cellModifier, stat.description) }
         }
         if (oneColumn) {
             Column(verticalArrangement = Arrangement.spacedBy(gap)) { cells.forEach { it(Modifier.fillMaxWidth()) } }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                cells.chunked(2).forEach { pair ->
+                cells.first()(Modifier.fillMaxWidth())
+                cells.drop(1).chunked(2).forEach { pair ->
                     Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                         pair.forEach { it(Modifier.weight(1f)) }
                     }
@@ -292,9 +299,11 @@ private fun StatsCard(values: List<StatValue>, oneColumn: Boolean) {
 }
 
 @Composable
-private fun StatCell(stat: SummaryStat, label: String, value: String, numberStyle: TextStyle, modifier: Modifier) {
+private fun StatCell(stat: SummaryStat, label: String, value: String, numberStyle: TextStyle, modifier: Modifier, description: String?) {
     Column(
-        modifier.testTag(summaryStatTag(stat)).semantics(mergeDescendants = true) {},
+        modifier.testTag(summaryStatTag(stat)).semantics(mergeDescendants = true) {
+            description?.let { contentDescription = it }
+        },
         verticalArrangement = Arrangement.spacedBy(MTheme.space.s1),
     ) {
         MText(label, MTheme.type.labelCaps, color = MTheme.colors.textSecondary)

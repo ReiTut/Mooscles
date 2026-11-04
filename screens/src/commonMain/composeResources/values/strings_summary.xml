@@ -4,6 +4,11 @@
     <string name="summary_title">Workout complete</string>
     <string name="summary_duration">Duration</string>
     <string name="summary_sets">Sets</string>
+    <string name="summary_prs">PRs</string>
+    <plurals name="summary_pr_count">
+        <item quantity="one">%1$d exercise with a personal record</item>
+        <item quantity="other">%1$d exercises with personal records</item>
+    </plurals>
     <string name="summary_volume">Volume</string>
     <string name="summary_exercises">Exercises</string>
     <string name="summary_records">Records</string>

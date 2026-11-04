@@ -12,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.mooscles.R
@@ -86,10 +89,18 @@ fun WorkoutDetailScreen(workout: WorkoutUi, state: UiState, actions: MoosclesAct
                     Text(dateText(workout.startedAt, "EEEE, MMMM d, yyyy"), style = MaterialTheme.typography.titleMedium)
                     Text("${dateText(workout.startedAt, "HH:mm")} – ${dateText(workout.endedAt ?: workout.startedAt, "HH:mm")} · " + stringResource(R.string.legacy_elapsed, durationText(((workout.endedAt ?: workout.startedAt) - workout.startedAt) / 1000)), style = MaterialTheme.typography.bodyMedium)
                     HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .15f))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Metric(workout.completedExercises.toString(), stringResource(R.string.legacy_exercises))
-                        Metric(workout.completedSets.toString(), stringResource(R.string.legacy_sets))
-                        Metric(workout.prExerciseCount.toString(), stringResource(R.string.legacy_exercises_with_prs), Modifier.testTag("workout-pr-exercise-count"))
+                    val prDescription = androidx.compose.ui.res.pluralStringResource(
+                        R.plurals.legacy_pr_count, if (workout.prExerciseCount == 0) 2 else workout.prExerciseCount, workout.prExerciseCount)
+                    val metrics: @Composable (Modifier) -> Unit = { cell ->
+                        Metric(workout.completedExercises.toString(), stringResource(R.string.legacy_exercises), cell)
+                        Metric(workout.completedSets.toString(), stringResource(R.string.legacy_sets), cell.testTag("workout-set-count"))
+                        Metric(workout.prExerciseCount.toString(), stringResource(R.string.legacy_prs),
+                            cell.testTag("workout-pr-exercise-count").semantics(mergeDescendants = true) { contentDescription = prDescription })
+                    }
+                    if (LocalDensity.current.fontScale >= 1.5f) {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { metrics(Modifier.fillMaxWidth()) }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) { metrics(Modifier.weight(1f)) }
                     }
                     Metric(weight(workout.volumeKg, state.preferences.pounds), stringResource(R.string.legacy_weight_moved))
                 }

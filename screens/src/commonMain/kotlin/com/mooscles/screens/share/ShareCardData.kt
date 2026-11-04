@@ -47,6 +47,7 @@ import com.mooscles.screens.resources.share_date_format
 import com.mooscles.screens.resources.share_duration
 import com.mooscles.screens.resources.share_exercises
 import com.mooscles.screens.resources.share_no_completed_sets
+import com.mooscles.screens.resources.share_prs
 import com.mooscles.screens.resources.share_records
 import com.mooscles.screens.resources.share_set_count
 import com.mooscles.screens.resources.share_sets
@@ -72,6 +73,7 @@ data class ShareCardRow(val name: String, val completedSets: Int, val bestSet: S
 data class ShareCardLabels(
     val duration: String,
     val sets: String,
+    val prs: String,
     val volume: String,
     val records: String,
     val exercises: String,
@@ -121,6 +123,10 @@ data class ShareCardData(
     val dateText: String,
     val durationText: String,
     val setsText: String,
+    /** Distinct exercise variations with first or beaten records, from the domain summary. */
+    val prCount: Int,
+    /** Localized display of [prCount]; retain the numeric count for accessible preview descriptions. */
+    val prsText: String,
     val volumeText: String,
     val records: List<ShareRecordRow>,
     val rows: List<ShareCardRow>,
@@ -209,6 +215,8 @@ object ShareCards {
             dateText = dateRange(workout.startedAt, end, zone, texts),
             durationText = Durations.clock(summary.durationMillis / 1000),
             setsText = MoosclesNumbers.localize(summary.completedSetCount.toString(), locale),
+            prCount = summary.prExerciseCount,
+            prsText = MoosclesNumbers.localize(summary.prExerciseCount.toString(), locale),
             volumeText = weight(summary.volumeKg),
             records = records,
             rows = rows,
@@ -273,6 +281,7 @@ fun rememberShareCardTexts(): ShareCardTexts {
         labels = ShareCardLabels(
             duration = stringResource(Res.string.share_duration),
             sets = stringResource(Res.string.share_sets),
+            prs = stringResource(Res.string.share_prs),
             volume = stringResource(Res.string.share_volume),
             records = stringResource(Res.string.share_records),
             exercises = stringResource(Res.string.share_exercises),

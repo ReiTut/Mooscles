@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Localization only: existing legacy layouts and behavior are preserved. -->
 <resources>
+    <string name="legacy_prs">PRs</string>
+    <plurals name="legacy_pr_count">
+        <item quantity="one">%1$d exercise with a personal record</item>
+        <item quantity="other">%1$d exercises with personal records</item>
+    </plurals>
     <string name="legacy_back">Back</string>
     <string name="legacy_settings">Settings</string>
     <string name="legacy_workout_unavailable">Workout unavailable</string>
@@ -20,7 +25,6 @@
     <string name="legacy_session_breakdown">Session breakdown</string>
     <string name="legacy_exercises">Exercises</string>
     <string name="legacy_sets">Sets</string>
-    <string name="legacy_exercises_with_prs">Exercises with PRs</string>
     <string name="legacy_weight_moved">Total weight moved · logged load × reps</string>
     <string name="legacy_new_milestones">New milestones</string>
     <string name="legacy_done_editing">Done editing</string>
