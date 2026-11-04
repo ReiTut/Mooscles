@@ -81,6 +81,10 @@ class WorkoutCardRendererTest {
                 assertEquals(1080, bitmap.width)
                 assertEquals(pages[index].height, bitmap.height)
                 assertBrand(bitmap, pages[index].brandBounds)
+                val statistic = pages[index].statisticBounds[2]
+                val pixels = IntArray(statistic.width * statistic.height)
+                bitmap.getPixels(pixels, 0, statistic.width, statistic.left, statistic.top, statistic.width, statistic.height)
+                assertTrue("PR value and label must be present in every exported PNG", pixels.count { it != background } > 100)
             } finally {
                 bitmap.recycle()
             }
@@ -115,7 +119,7 @@ class WorkoutCardRendererTest {
     }
 
     @Test fun emptyWorkoutStillDrawsOnePage() {
-        val pages = layout(example().copy(rows = emptyList(), records = emptyList()))
+        val pages = layout(example().copy(rows = emptyList(), records = emptyList(), prCount = 0, prsText = "0"))
         assertEquals(1, pages.size)
         assertEquals(listOf(ShareCardSlice.Kind.Section, ShareCardSlice.Kind.Empty), pages.single().slices.map { it.kind })
     }
@@ -178,7 +182,7 @@ class WorkoutCardRendererTest {
         val output = previewDirectory()
         val fixtures = linkedMapOf(
             "short-kg" to example(),
-            "multiple-pr" to example().copy(workoutNumber = 72, workoutName = "Milestone session",
+            "multiple-pr" to example().copy(workoutNumber = 72, workoutName = "Milestone session", prCount = 3, prsText = "3",
                 records = listOf(
                     ShareRecordRow("Barbell bench press", "105\u00A0kg × 3"),
                     ShareRecordRow("Wide-grip pull-up", "Bodyweight × 12"),
@@ -189,7 +193,7 @@ class WorkoutCardRendererTest {
                     ShareCardRow("Wide-grip pull-up", 4, "Bodyweight × 12", true),
                     ShareCardRow("Dumbbell curl", 2, "22\u00A0kg × 6", true),
                 )),
-            "long-names-lb" to example().copy(workoutNumber = 73, workoutName = "Upper body · Strength and control",
+            "long-names-lb" to example().copy(workoutNumber = 73, workoutName = "Upper body · Strength and control", prCount = 1, prsText = "1",
                 volumeText = "10,283.75\u00A0lb", records = listOf(
                     ShareRecordRow("Single-arm alternating dumbbell incline bench press with neutral grip", "48.5\u00A0lb × 6"),
                 ), rows = listOf(
@@ -199,6 +203,11 @@ class WorkoutCardRendererTest {
                     ShareCardRow("Very long variation name containing an uninterrupted word: VeryLongUnbrokenExerciseVariationNameForWrappingVerification", 2, "77.125\u00A0lb × 123", false),
                 )),
             "long-workout" to longWorkout(),
+            "eleven-prs" to example().copy(workoutName = "Upper A", durationText = "1:24:25", setsText = "12",
+                prCount = 11, prsText = "11", volumeText = "6,561\u00A0kg",
+                rows = List(11) { ShareCardRow("Exercise ${it + 1}", if (it == 0) 2 else 1, "22\u00A0kg × 8", true) },
+                records = List(11) { ShareRecordRow("Exercise ${it + 1}", "22\u00A0kg × 8") }),
+            "zero-prs" to example().copy(prCount = 0, prsText = "0", records = emptyList(), rows = example().rows.map { it.copy(hasRecord = false) }),
         )
         fixtures.forEach { (name, card) ->
             val files = export(card)
@@ -214,10 +223,12 @@ class WorkoutCardRendererTest {
         val portuguese = compose.captureShareCardInputs("pt-BR")
         assertEquals("Duração", portuguese.texts.labels.duration)
         assertEquals("Séries", portuguese.texts.labels.sets)
+        assertEquals("PRs", portuguese.texts.labels.prs)
         val card = ShareCardData(
             workoutName = "Treino de força · nomes e valores preservados",
             dateText = "seg., 2 de nov. de 2026 · 13:33–13:34",
             durationText = "1:00", setsText = "2", volumeText = "1.234,567\u00A0kg",
+            prCount = 1, prsText = "1",
             records = listOf(ShareRecordRow("Leg press 45°", "100\u00A0kg × 10")),
             rows = listOf(ShareCardRow("Leg press 45°", 2, "100\u00A0kg × 10", true)),
             workoutNumber = 75, labels = portuguese.texts.labels,
@@ -283,7 +294,8 @@ class WorkoutCardRendererTest {
                 if (index % 4 == 0) "Bodyweight × 12" else "${20 + index}\u00A0kg × 8", index % 5 == 0)
         }
         return example().copy(workoutNumber = 74, workoutName = "Full-body training", volumeText = "12,450\u00A0kg",
-            setsText = "144", rows = rows, records = rows.filter { it.hasRecord }.map { ShareRecordRow(it.name, it.bestSet) })
+            setsText = "144", prCount = rows.count { it.hasRecord }, prsText = rows.count { it.hasRecord }.toString(),
+            rows = rows, records = rows.filter { it.hasRecord }.map { ShareRecordRow(it.name, it.bestSet) })
     }
 
     private fun example() = ShareCardData(
@@ -291,6 +303,8 @@ class WorkoutCardRendererTest {
         dateText = "Thu, Oct 22, 2026 · 20:55–21:39",
         durationText = "44:00",
         setsText = "8",
+        prCount = 2,
+        prsText = "2",
         volumeText = "4,443\u00A0kg",
         records = listOf(ShareRecordRow("Dumbbell curl", "22\u00A0kg × 6"), ShareRecordRow("Wide-grip pull-up", "Bodyweight × 12")),
         rows = listOf(

@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **2026-11-04 follow-up:** [v1.5.3 / Build 25](releases/v1.5.3.md) combines the startup beta and workout PR statistic as a full release. This is a localized follow-up, not progress on Phase 5/5B; those phases remain paused.
+
 Atualizado em 2026-10-29. Este é o mapa de onde o produto vai. Cada fase vira uma ou mais specs (`specs/`), planos (`plans/`) e releases (`releases/`), seguindo o fluxo do [AGENTS.md](../../AGENTS.md). Quando uma fase termina, marque-a aqui e ligue os documentos que a entregaram.
 
 > **Para continuar o desenvolvimento:** comece pelo [HANDOFF.md](HANDOFF.md), com o estado atual, a próxima etapa (5B) e como trabalhar nesta máquina. Desde 2026-11-01 (release 1.5.0), o desenvolvimento segue direto neste repositório (`ReiTut/Mooscles`).

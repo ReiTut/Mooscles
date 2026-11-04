@@ -249,6 +249,59 @@ class WorkoutPresentationTest {
         assertTrue(reps > 20, "reps records: $reps")
     }
 
+    @Test fun workoutPrCountMatchesDomainForFirstRepeatedAndIndependentVariations() {
+        val old = entry("old-bench", "old", bench, 0)
+        val current = entry("new-bench", "new", bench, 0)
+        val duplicate = entry("new-bench-again", "new", bench, 1)
+        val perHand = entry("new-per-hand", "new", bench, 2).copy(convention = LoadConvention.PER_HAND)
+        val pullup = entry("new-pull", "new", pull, 3)
+        val currentSet = WorkoutSet("current", current.id, reps = 6, weightKg = 22.0, completed = true)
+        val data = AppData(
+            exercises = listOf(bench, pull),
+            workouts = listOf(
+                Workout("old", "Old", 1000, 1500, WorkoutStatus.FINISHED),
+                Workout("new", "New", 2000, 2500, WorkoutStatus.FINISHED),
+            ),
+            workoutExercises = listOf(old, current),
+            sets = listOf(WorkoutSet("baseline", old.id, reps = 10, weightKg = 20.0, completed = true), currentSet),
+        )
+        val repeated = data.copy(
+            workoutExercises = data.workoutExercises + duplicate,
+            sets = data.sets + WorkoutSet("duplicate", duplicate.id, reps = 8, weightKg = 22.0, completed = true) +
+                WorkoutSet("reps", current.id, reps = 11, weightKg = 20.0, completed = true),
+        )
+        val conventions = repeated.copy(
+            workoutExercises = repeated.workoutExercises + perHand,
+            sets = repeated.sets + WorkoutSet("per-hand", perHand.id, reps = 8, weightKg = 10.0, completed = true),
+        )
+        val variations = conventions.copy(
+            workoutExercises = conventions.workoutExercises + pullup,
+            sets = conventions.sets + WorkoutSet("bodyweight", pullup.id, reps = 12, completed = true),
+        )
+        val first = data.copy(workouts = data.workouts.filter { it.id == "new" },
+            workoutExercises = listOf(current), sets = listOf(currentSet))
+        val noPr = data.copy(sets = listOf(data.sets.first(), currentSet.copy(weightKg = 20.0, reps = 10),
+            currentSet.copy(id = "warmup", weightKg = 100.0, warmup = true),
+            currentSet.copy(id = "unfinished", weightKg = 100.0, completed = false)))
+        val scenarios = listOf(
+            Triple("other workout records do not count", noPr, 0),
+            Triple("first weight and repetition records count once", first, 1),
+            Triple("weight and repetition records count once", data, 1),
+            Triple("repeated entries and multiple repetition records count once", repeated, 1),
+            Triple("same exercise with different conventions counts separately", conventions, 2),
+            Triple("bodyweight variation stays independent", variations, 3),
+        )
+        for ((name, scenario, expected) in scenarios) {
+            val domainCount = WorkoutCalculations.summary(scenario, "new")!!.prExerciseCount
+            assertEquals(expected, domainCount, name)
+            for (pounds in listOf(false, true)) {
+                val shown = WorkoutPresentation().present(scenario, PreferencesUi(pounds = pounds))
+                    .history.single { it.id == "new" }
+                assertEquals(domainCount, shown.prExerciseCount, "$name, pounds=$pounds")
+            }
+        }
+    }
+
     @Test fun activeWorkoutRecordsStillComputedAgainstHistory() {
         val data = AppData(
             exercises = listOf(bench),

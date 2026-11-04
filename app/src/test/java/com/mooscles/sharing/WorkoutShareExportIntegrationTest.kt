@@ -87,6 +87,8 @@ class WorkoutShareExportIntegrationTest {
         assertEquals("272\u00A0kg", card.volumeText)
         assertEquals("44:00", card.durationText)
         assertEquals("5", card.setsText)
+        assertEquals("2", card.prsText)
+        assertEquals(2, card.prCount)
 
         val png = WorkoutCardRenderer().export(context, card, inputs.painter, inputs.measurer).single()
         assertEquals("Mooscles-workout-2-1.png", png.name)

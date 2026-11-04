@@ -10,8 +10,8 @@ android {
         applicationId = "com.mooscles"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "1.5.3-beta.1"
+        versionCode = 25
+        versionName = "1.5.3"
         // The updater runs everywhere except the side-by-side `preview` build (below).
         buildConfigField("boolean", "UPDATER_ENABLED", "true")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

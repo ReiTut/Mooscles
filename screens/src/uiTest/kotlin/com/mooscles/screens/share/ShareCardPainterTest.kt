@@ -92,4 +92,81 @@ class ShareCardPainterTest {
                 "incomplete wordmark: checked=$checked lime=$lime letters=$letters gaps=$gaps")
         }
     }
+
+    @Test
+    fun everyPageRepeatsTheWorkoutWidePrStatisticAndDrawsIt() = runTest {
+        val inputs = captureShareCardInputs()
+        val card = longWorkoutCard()
+        val painter = ShareCardPainter(inputs.styles, inputs.wordmark)
+        val layouts = withContext(Dispatchers.Default) { painter.layout(card, inputs.measurer) }
+        assertTrue(layouts.size > 1)
+        layouts.forEach { layout ->
+            assertEquals(listOf(card.durationText, card.setsText, card.prsText, card.volumeText),
+                layout.header.stats.map { it.value.layoutInput.text.text })
+            assertEquals(listOf("DURATION", "SETS", "PRS", "VOLUME"),
+                layout.header.stats.map { it.label.layoutInput.text.text })
+            val bounds = layout.statisticBounds[2]
+            val image = withContext(Dispatchers.Default) { painter.paint(layout) }
+            val pixels = image.toPixelMap(bounds.left, bounds.top, bounds.width, bounds.height)
+            var ink = 0
+            for (y in 0 until bounds.height) for (x in 0 until bounds.width) {
+                if (pixels[x, y] != MoosclesColors.Dark.bgBase) ink++
+            }
+            assertTrue(ink > 100, "The PR value and label must actually be drawn on page ${layout.index}")
+        }
+    }
+
+    @Test
+    fun typicalFourStatisticsStayInOneRowWithSetsBesidePrs() = runTest {
+        val inputs = captureShareCardInputs()
+        val card = longWorkoutCard().copy(durationText = "1:24:25", setsText = "12", prCount = 11, prsText = "11",
+            volumeText = "6,561\u00A0kg")
+        val page = withContext(Dispatchers.Default) {
+            ShareCardPainter(inputs.styles, inputs.wordmark).layout(card, inputs.measurer).first()
+        }
+        assertEquals(1, page.statisticBounds.map { it.top }.distinct().size)
+        assertTrue(page.statisticBounds.zipWithNext().all { (left, right) -> left.right <= right.left })
+        assertWholeStatistics(page)
+    }
+
+    @Test
+    fun wideValuesAndLargerStylesReflowWithoutShrinkingOrClipping() = runTest {
+        val inputs = captureShareCardInputs()
+        val larger = inputs.styles.let { style -> ShareCardStyles(style.brand, style.title, style.date,
+            style.statValue.copy(fontSize = style.statValue.fontSize * 2f), style.statLabel.copy(fontSize = style.statLabel.fontSize * 2f),
+            style.section, style.rowName, style.rowValue, style.rowCaption, style.badge, style.footer) }
+        val card = longWorkoutCard().copy(durationText = "123:45:56", setsText = "12", prCount = 11, prsText = "11",
+            volumeText = "1.234.567,89\u00A0kg", labels = longWorkoutCard().labels.copy(duration = "Duração", sets = "Séries"))
+        val page = withContext(Dispatchers.Default) {
+            ShareCardPainter(larger, inputs.wordmark).layout(card, inputs.measurer).first()
+        }
+        val (duration, sets, prs, volume) = page.statisticBounds
+        assertTrue(duration.bottom <= sets.top)
+        assertEquals(sets.top, prs.top)
+        assertTrue(sets.right <= prs.left)
+        assertTrue(maxOf(sets.bottom, prs.bottom) <= volume.top)
+        assertTrue(page.header.stats.all { it.value.layoutInput.style.fontSize == larger.statValue.fontSize },
+            "Wide statistics reflow instead of shrinking")
+        assertWholeStatistics(page)
+        val extreme = card.copy(setsText = Int.MAX_VALUE.toString(), prCount = Int.MAX_VALUE,
+            prsText = Int.MAX_VALUE.toString())
+        val extremePages = withContext(Dispatchers.Default) {
+            ShareCardPainter(larger, inputs.wordmark).layout(extreme, inputs.measurer)
+        }
+        extremePages.forEach { part ->
+            assertEquals(4, part.statisticBounds.map { it.top }.distinct().size,
+                "Extremely wide set and PR counts stack in reading order")
+            assertTrue(part.height <= ShareCardPainter.MAX_PAGE_HEIGHT)
+            assertWholeStatistics(part)
+        }
+    }
+
+    private fun assertWholeStatistics(page: ShareCardPage) {
+        page.header.stats.forEach { stat ->
+            assertTrue(!stat.value.hasVisualOverflow, "Value ${stat.value.layoutInput.text.text} is clipped")
+            assertTrue(!stat.label.hasVisualOverflow, "Label ${stat.label.layoutInput.text.text} is clipped")
+            assertTrue(stat.left >= 0 && stat.left + stat.width <= ShareCardPainter.WIDTH)
+            assertTrue(stat.labelTop + stat.label.size.height < page.bodyTop)
+        }
+    }
 }

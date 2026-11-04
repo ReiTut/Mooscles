@@ -1,5 +1,15 @@
 # Verification — 2026-10-25
 
+## Full release 1.5.3 / Build 25 — 2026-11-04
+
+Combines the unchanged startup fast path/forward-entry fade removal from beta Build 24 with the [PR-statistic follow-up](docs/superpowers/reports/2026-11-04-workout-pr-statistic-verification.md). Fresh release checks select all relevant host classes across startup, state preservation, navigation, summary/sharing/localization and updater/signing, plus the retained affected Android screen classes, lint, common metadata, design tokens, clean packaging and APK budgets. Prior performance traces and real preview/chooser observations remain separately identified; they do not establish a general performance improvement.
+
+The PC-only backup is outside the project and excluded from all commits and assets. Package `com.mooscles`, original debug signer, minimum API 26, schema 6 and saved formats stay compatible. Build 25 exceeds published beta 24 and the connected phone's stable 23. Final metadata must come from the fresh Build 25 APK, followed by independent draft/public asset downloads and actual stable-channel update discovery for installed Builds 23 and 24. Discovery is not installation verification.
+
+The normal PR process is used for stable main. The release helper's broad default test run and clean-tree requirement are unsuitable for the preserved unrelated `gradle.properties` edit, so publication uses the equivalent guarded draft/upload/download-verify/publish path with the existing `prepare-release.ps1` signer checks. The final publication is explicitly `draft=false`, `prerelease=false`, Latest. [Release notes](docs/superpowers/releases/v1.5.3.md).
+
+Fresh local release verification passed **163 relevant host tests**, **22 affected Android 15 emulator screen tests**, common metadata, clean debug build, design tokens (169 files) and APK/font/icon budgets. Lint has **0 errors / 21 existing warnings**. The final APK is **24,964,066 bytes**, SHA-256 `2fd38c9bb10a8c7e0c7ecab3c35c7219ddf1b3c0cec8cb8e6ef1c41ce791784c`; its original `0cd093b2…bb35` signer is retained. Updater source matches both distributed v1.5.2 and beta Build 24. Final public discovery is exercised against the actual unchanged implementation after publication. Physical-phone production data remains untouched; prior phone evidence and final-version release checks are separate.
+
 ## Prerelease 1.5.3-beta.1 / Build 24
 
 Reuses the unchanged implementation's [70 passing focused host tests, optimized Redmi Note 12 / Android 15 measurements, decoded early frames and state-preservation checks](docs/superpowers/reports/2026-11-03-routine-startup-latency.md). These established less PR preparation CPU and removal of translucent forward-entry overlap, **not** a consistent overall startup or scrolling speedup. Initial layout and occasional shader compilation remain. The old literal starting overlay is not present in this checkout; skeleton placeholders are preserved.

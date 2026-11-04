@@ -61,6 +61,8 @@ class ShareCardDataTest {
         assertEquals("708\u00A0kg", result.volumeText)
         assertEquals("2:03", result.durationText)
         assertEquals("3", result.setsText)
+        assertEquals(1, result.prCount)
+        assertEquals("1", result.prsText, "Several record-setting sets still count one variation")
     }
 
     @Test fun warmupAssistanceUnfinishedAndInvalidSetsCannotBecomeBestWorkingSet() {
@@ -139,6 +141,8 @@ class ShareCardDataTest {
         val result = card(AppData(workouts = listOf(workout()), workoutExercises = listOf(bench, pullup, duplicate),
             sets = listOf(set(bench, 22.0, 6), set(duplicate, 22.0, 8), set(pullup, 0.0, 12))))
         assertEquals(2, result.records.size)
+        assertEquals(2, result.prCount)
+        assertEquals("2", result.prsText, "First records, either kind, count each variation once")
         assertEquals(listOf(false, true, true), result.rows.map { it.hasRecord })
         assertEquals(listOf(ShareRecordRow("Saved bench", "22\u00A0kg × 8"), ShareRecordRow("Saved pullup", "Bodyweight × 12")),
             result.records)
@@ -151,6 +155,8 @@ class ShareCardDataTest {
             sets = listOf(set(losing, 22.0, 6), set(winning, 22.0, 8))))
         assertEquals(listOf(false, true), result.rows.map { it.hasRecord })
         assertEquals(1, result.records.size)
+        assertEquals(1, result.prCount)
+        assertEquals("1", result.prsText)
     }
 
     @Test fun warmupDuplicateCannotInheritAWorkingSetRecordBadge() {
@@ -183,6 +189,47 @@ class ShareCardDataTest {
         assertEquals(listOf(ShareRecordRow("Saved pullup", "Bodyweight × 12")), result.records)
         assertFalse(result.rows[0].hasRecord)
         assertTrue(result.rows[1].hasRecord)
+        assertEquals(1, result.prCount)
+        assertEquals("1", result.prsText)
+    }
+
+    @Test fun prStatisticIsZeroWithoutANewRecordAndIgnoresOtherWorkouts() {
+        val old = exercise(id = "old", workout = "old")
+        val selected = exercise()
+        val result = card(AppData(workouts = listOf(workout("old", 0), workout()),
+            workoutExercises = listOf(old, selected),
+            sets = listOf(set(old, 60.0, 8), set(selected, 60.0, 8))))
+        assertEquals(0, result.prCount)
+        assertEquals("0", result.prsText)
+        val empty = card(AppData(workouts = listOf(workout())))
+        assertEquals(0, empty.prCount)
+        assertEquals("0", empty.prsText)
+    }
+
+    @Test fun prStatisticKeepsDifferentConventionsAndExerciseVariationsSeparate() {
+        val total = exercise(id = "total")
+        val perHand = exercise(id = "per-hand", position = 1, convention = LoadConvention.PER_HAND)
+        val cable = exercise(id = "cable", variation = "cable-bench", position = 2)
+        val source = AppData(workouts = listOf(workout()), workoutExercises = listOf(total, perHand, cable),
+            sets = listOf(set(total, 20.0, 8), set(perHand, 20.0, 8), set(cable, 20.0, 8)))
+        for ((locale, texts) in listOf(NumberLocale.EN to EnglishTexts, NumberLocale.PT_BR to PortugueseTexts)) {
+            val result = card(source, locale = locale, texts = texts)
+            assertEquals(3, result.prCount)
+            assertEquals("3", result.prsText)
+        }
+    }
+
+    @Test fun screenshotWorkoutShowsElevenPrsBesideTwelveSetsInBothLanguages() {
+        val entries = List(11) { exercise(id = "entry-$it", variation = "variation-$it", position = it) }
+        val source = AppData(workouts = listOf(workout()), workoutExercises = entries,
+            sets = entries.map { set(it, 22.0, 8) } + set(entries.first(), 22.0, 7, position = 1))
+        for ((locale, texts) in listOf(NumberLocale.EN to EnglishTexts, NumberLocale.PT_BR to PortugueseTexts)) {
+            val result = card(source, locale = locale, texts = texts)
+            assertEquals("12", result.setsText)
+            assertEquals(11, result.prCount)
+            assertEquals("11", result.prsText)
+            assertEquals("PRs", result.labels.prs)
+        }
     }
 
     /**
@@ -328,7 +375,7 @@ internal val EnglishTexts = ShareCardTexts(
     assistanceOnly = "Assistance only",
     noWorkingSet = "No working set",
     labels = ShareCardLabels(
-        duration = "Duration", sets = "Sets", volume = "Volume", records = "Records",
+        duration = "Duration", sets = "Sets", prs = "PRs", volume = "Volume", records = "Records",
         exercises = "Exercises", bestSet = "Best set", noCompletedSets = "No completed sets", recordBadge = "PR",
         setCountOne = "%1\$d set", setCountOther = "%1\$d sets",
     ),
@@ -345,7 +392,7 @@ internal val PortugueseTexts = ShareCardTexts(
     assistanceOnly = "Só assistência",
     noWorkingSet = "Sem série de trabalho",
     labels = ShareCardLabels(
-        duration = "Duração", sets = "Séries", volume = "Volume", records = "Recordes",
+        duration = "Duração", sets = "Séries", prs = "PRs", volume = "Volume", records = "Recordes",
         exercises = "Exercícios", bestSet = "Melhor série", noCompletedSets = "Nenhuma série concluída", recordBadge = "PR",
         setCountOne = "%1\$d série", setCountOther = "%1\$d séries",
     ),

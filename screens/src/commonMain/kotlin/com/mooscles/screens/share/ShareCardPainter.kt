@@ -48,7 +48,7 @@ class ShareCardStyles(
     val brand: TextStyle,
     val title: TextStyle,
     val date: TextStyle,
-    /** Duration, sets and volume, Barlow Condensed. */
+    /** Duration, sets, PRs and volume, Barlow Condensed. */
     val statValue: TextStyle,
     val statLabel: TextStyle,
     val section: TextStyle,
@@ -115,11 +115,16 @@ class ShareCardPage internal constructor(
 ) {
     /** The actual supplied wordmark's destination rectangle, in page pixels. */
     val brandBounds: IntRect get() = header.brandBounds
+
+    /** Value and label bounds in reading order (Duration, Sets, PRs, Volume), in page pixels. */
+    val statisticBounds: List<IntRect> get() = header.stats.map { stat ->
+        IntRect(stat.left, stat.top, stat.left + stat.width, stat.labelTop + stat.label.size.height)
+    }
 }
 
 /**
  * Draws a [ShareCardData] as PNG-ready pages of [WIDTH] px, each at most [MAX_PAGE_HEIGHT] px
- * (the rule of the Android card it replaced): the header (brand, name, date and the three
+ * (the rule of the Android card it replaced): the header (brand, name, date and the four
  * statistics) on every page, then the records and the exercises, a row continued on the next page
  * at a line boundary when it cannot fit whole. Always on the dark graphite of the brand, whatever
  * the app theme. Common code (`CanvasDrawScope`, `TextMeasurer`); call it off the main thread, one
@@ -238,7 +243,7 @@ class ShareCardPainter(
                 density = density, layoutDirection = LayoutDirection.Ltr)
     }
 
-    /** Brand, workout name, date, then the three statistics and a rule: the top of every page. */
+    /** Brand, workout name, date, then the four statistics and a rule: the top of every page. */
     private fun header(card: ShareCardData, measure: Measure): Header {
         val brandTop = px(space.s6)
         val brandM = measure(BRAND_FIRST, styles.brand, inner)
@@ -263,28 +268,44 @@ class ShareCardPainter(
 
         val statsTop = dateTop + date.size.height + px(space.s5)
         val gap = px(space.s4)
-        val statWidth = (inner - 2 * gap) / 3
         val pairs = listOf(
             card.durationText to card.labels.duration,
             card.setsText to card.labels.sets,
+            card.prsText to card.labels.prs,
             card.volumeText to card.labels.volume,
         )
-        // Each value stays on one line: a value wider than its column ("10,283.75 lb") shrinks all three alike.
-        var valueStyle = styles.statValue
-        for (attempt in 1..FIT_ATTEMPTS) {
-            val widest = pairs.maxOf { (value, _) -> measure(value, valueStyle, Int.MAX_VALUE, maxLines = 1).size.width }
-            if (widest <= statWidth) break
-            val fit = statWidth.toFloat() / (widest + 1)
-            valueStyle = valueStyle.copy(fontSize = valueStyle.fontSize * fit, lineHeight = valueStyle.lineHeight * fit)
+        // Allocate the natural width of each statistic, rather than shrinking all four to fit
+        // equal columns. If the row is too wide, keep Sets and PRs together between full-width
+        // Duration and Volume. Extreme counts can stack too; typography never becomes tiny.
+        val naturalWidths = pairs.map { (value, label) ->
+            max(measure(value, styles.statValue, Int.MAX_VALUE).size.width,
+                measure(label.uppercase(), styles.statLabel, Int.MAX_VALUE).size.width)
         }
-        val stats = pairs.map { (value, label) ->
-            measure(value, valueStyle, statWidth, maxLines = 1) to measure(label.uppercase(), styles.statLabel, statWidth)
+        val rows = when {
+            naturalWidths.sum() + gap * (pairs.size - 1) <= inner -> listOf(pairs.indices.toList())
+            naturalWidths[1] + gap + naturalWidths[2] <= inner -> listOf(listOf(0), listOf(1, 2), listOf(3))
+            else -> pairs.indices.map { listOf(it) }
         }
-        val statsHeight = stats.maxOf { (value, label) -> value.size.height + px(space.s1) + label.size.height }
-        val ruleY = statsTop + statsHeight + px(space.s5)
+        var rowTop = statsTop
+        val stats = rows.flatMap { indices ->
+            val spare = (inner - gap * (indices.size - 1) - indices.sumOf { naturalWidths[it] }).coerceAtLeast(0)
+            val widths = indices.map { (naturalWidths[it] + spare / indices.size).coerceAtMost(inner) }
+            val measured = indices.mapIndexed { column, index ->
+                val (value, label) = pairs[index]
+                measure(value, styles.statValue, widths[column]) to measure(label.uppercase(), styles.statLabel, widths[column])
+            }
+            val labelTop = rowTop + measured.maxOf { it.first.size.height } + px(space.s1)
+            var left = margin
+            val rowStats = measured.mapIndexed { column, (value, label) ->
+                HeaderStat(value, label, left, rowTop, labelTop, widths[column]).also { left += widths[column] + gap }
+            }
+            rowTop = labelTop + measured.maxOf { it.second.size.height } + gap
+            rowStats
+        }
+        val ruleY = rowTop - gap + px(space.s5)
         val height = ruleY + px(sizes.border) + px(space.s4)
         return Header(height, brandBounds, title, titleTop, date,
-            dateTop, stats, statsTop, statWidth + gap, ruleY)
+            dateTop, stats, ruleY)
     }
 
     private fun DrawScope.drawHeader(header: Header) {
@@ -293,10 +314,9 @@ class ShareCardPainter(
             dstSize = IntSize(header.brandBounds.width, header.brandBounds.height), filterQuality = FilterQuality.High)
         drawText(header.title, colors.textPrimary, Offset(x, header.titleTop.toFloat()))
         drawText(header.date, colors.textSecondary, Offset(x, header.dateTop.toFloat()))
-        header.stats.forEachIndexed { i, (value, label) ->
-            val sx = x + i * header.statWidth
-            drawText(value, colors.textPrimary, Offset(sx, header.statsTop.toFloat()))
-            drawText(label, colors.textSecondary, Offset(sx, (header.statsTop + value.size.height + px(space.s1)).toFloat()))
+        header.stats.forEach { stat ->
+            drawText(stat.value, colors.textPrimary, Offset(stat.left.toFloat(), stat.top.toFloat()))
+            drawText(stat.label, colors.textSecondary, Offset(stat.left.toFloat(), stat.labelTop.toFloat()))
         }
         drawRect(colors.borderSubtle, Offset(x, header.ruleY.toFloat()), Size(inner.toFloat(), px(sizes.border).toFloat()))
     }
@@ -450,9 +470,6 @@ class ShareCardPainter(
         private const val MIN_BODY = 400
         /** The widest a best set or a record's load may be before it wraps, in percent of the content width. */
         private const val VALUE_MAX_PERCENT = 45
-        /** Shrinking a statistic converges in one or two steps (glyph widths do not scale exactly). */
-        private const val FIT_ATTEMPTS = 4
-
         private const val BRAND_FIRST = "M"
         private const val BRAND_REST = "SCLES"
         private const val CAP_HEIGHT_EM = 0.7f
@@ -477,10 +494,18 @@ internal class Header(
     val titleTop: Int,
     val date: TextLayoutResult,
     val dateTop: Int,
-    val stats: List<Pair<TextLayoutResult, TextLayoutResult>>,
-    val statsTop: Int,
-    val statWidth: Int,
+    val stats: List<HeaderStat>,
     val ruleY: Int,
+)
+
+/** A statistic is measured once with the header, then drawn at the same position on every page. */
+internal class HeaderStat(
+    val value: TextLayoutResult,
+    val label: TextLayoutResult,
+    val left: Int,
+    val top: Int,
+    val labelTop: Int,
+    val width: Int,
 )
 
 /** One body row of the card before it is split into page parts. */

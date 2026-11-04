@@ -3,7 +3,10 @@ package com.mooscles
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -116,6 +119,25 @@ class HistoryRecordsHostTest {
         compose.onNodeWithText("New milestones").assertDoesNotExist()
     }
 
+    @Test fun narrowLargeFontKeepsPrsAfterSetsWithoutDuplicatingTheStatistic() {
+        val records = (1..11).map { RecordUi(bench.copy(id = "variation-$it"), 22.0, 8) }
+        showDetail(workout(records), fontScale = 2f, width = 320)
+        compose.onNodeWithTag("workout-pr-exercise-count").performScrollTo().assertIsDisplayed()
+            .assert(hasText("11")).assertContentDescriptionEquals("11 exercises with personal records")
+        compose.onAllNodesWithTag("workout-pr-exercise-count").assertCountEquals(1)
+        val sets = compose.onNodeWithTag("workout-set-count").getUnclippedBoundsInRoot()
+        val prs = compose.onNodeWithTag("workout-pr-exercise-count").getUnclippedBoundsInRoot()
+        assertEquals(sets.left, prs.left)
+        org.junit.Assert.assertTrue(prs.top >= sets.bottom)
+    }
+
+    @Test @Config(sdk = [35], qualifiers = "pt-rBR")
+    fun zeroPrsUsePortuguesePluralInSavedDetail() {
+        showDetail(workout(emptyList()))
+        compose.onNodeWithTag("workout-pr-exercise-count").performScrollTo()
+            .assert(hasText("0")).assertContentDescriptionEquals("0 exercícios com recordes pessoais")
+    }
+
     private fun workout(records: List<RecordUi>): WorkoutUi {
         val entries = records.groupBy { it.exercise.id to it.exercise.convention }.values.map { achievements ->
             val record = achievements.first()
@@ -127,13 +149,15 @@ class HistoryRecordsHostTest {
             exercises = entries, records = records)
     }
 
-    private fun showDetail(workout: WorkoutUi) {
+    private fun showDetail(workout: WorkoutUi, fontScale: Float = 1f, width: Int = 430) {
         compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
             MaterialTheme {
-                Box(Modifier.size(430.dp, 900.dp)) {
+                Box(Modifier.size(width.dp, 900.dp)) {
                     WorkoutDetailScreen(workout, UiState(loading = false), noActions,
                         onDeleted = {}, onExerciseHistory = {})
                 }
+            }
             }
         }
     }
@@ -144,8 +168,13 @@ class HistoryRecordsHostTest {
 
     private fun assertDisplayedPrExerciseCount(expected: Int) {
         compose.onNodeWithTag("workout-pr-exercise-count").performScrollTo()
-            .assert(hasAnyDescendant(hasText(expected.toString())))
-            .assert(hasAnyDescendant(hasText("Exercises with PRs")))
+            .assert(hasText(expected.toString()))
+            .assert(hasText("PRs"))
+            .assertContentDescriptionEquals("$expected " + if (expected == 1) "exercise with a personal record" else "exercises with personal records")
+        compose.onAllNodesWithTag("workout-pr-exercise-count").assertCountEquals(1)
+        val sets = compose.onNodeWithTag("workout-set-count").getUnclippedBoundsInRoot()
+        val prs = compose.onNodeWithTag("workout-pr-exercise-count").getUnclippedBoundsInRoot()
+        assertEquals(sets.top, prs.top)
     }
 
     private fun assertMilestoneText(text: String) {

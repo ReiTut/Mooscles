@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Localization only: existing legacy layouts and behavior are preserved. -->
 <resources>
+    <string name="legacy_prs">PRs</string>
+    <plurals name="legacy_pr_count">
+        <item quantity="one">%1$d exercício com recorde pessoal</item>
+        <item quantity="many">%1$d exercícios com recordes pessoais</item>
+        <item quantity="other">%1$d exercícios com recordes pessoais</item>
+    </plurals>
     <string name="legacy_back">Voltar</string>
     <string name="legacy_settings">Configurações</string>
     <string name="legacy_workout_unavailable">Treino indisponível</string>
@@ -20,7 +26,6 @@
     <string name="legacy_session_breakdown">Detalhes do treino</string>
     <string name="legacy_exercises">Exercícios</string>
     <string name="legacy_sets">Séries</string>
-    <string name="legacy_exercises_with_prs">Exercícios com recordes</string>
     <string name="legacy_weight_moved">Peso total movimentado · carga registrada × repetições</string>
     <string name="legacy_new_milestones">Novas marcas</string>
     <string name="legacy_done_editing">Concluir edição</string>
