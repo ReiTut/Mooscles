@@ -3,6 +3,7 @@ package com.mooscles.screens.progress
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -28,6 +29,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -54,6 +58,13 @@ class ProgressIndexComposeTest {
             computed.incrementAndFetch()
             check(!fail) { "query failed on purpose" }
             return "sessions:${index.sessions(key).size}"
+        }
+    }
+
+    private data class CalendarQuery(val calendar: ProgressCalendar, val computed: AtomicInt) : ProgressQuery<String> {
+        override fun compute(index: ProgressIndex): String {
+            computed.incrementAndFetch()
+            return "${calendar.zone.id}:${calendar.today}"
         }
     }
 
@@ -249,6 +260,60 @@ class ProgressIndexComposeTest {
         assertEquals("index:2", text(INDEX))
         query.value = Sessions(key, computed)
         waitForText(QUERY, "sessions:2")
+    }
+
+    @Test
+    fun foregroundRefreshReadsChangedDateAndZoneWithoutRebuildingAnUnchangedIndex() = runComposeUiTest {
+        val held = HeldCache()
+        try {
+            val clock = object {
+                var now = LocalDateTime(2026, 11, 4, 12, 0).toInstant(TimeZone.UTC).toEpochMilliseconds()
+                var zone: TimeZone = TimeZone.UTC
+            }
+            val seams = ProgressSeams({ clock.now }, { clock.zone })
+            val foreground = mutableStateOf(0)
+            val history = history(2)
+            val records = emptyList<RecordUi>()
+            val computed = AtomicInt(0)
+            val initial = "${TimeZone.UTC.id}:2026-11-04"
+            withScreen {
+                CompositionLocalProvider(LocalProgressIndexCache provides held.cache,
+                    LocalProgressCalendarRefresh provides foreground.value) {
+                    val calendar = rememberProgressCalendar(seams)
+                    val index = rememberProgressIndex(history, records, false)
+                    val query = rememberProgressQuery(index, CalendarQuery(calendar, computed))
+                    Column {
+                        MText("${calendar.zone.id}:${calendar.today}", MTheme.type.bodyMd, Modifier.testTag(INDEX))
+                        MText(query.text { it }, MTheme.type.bodyMd, Modifier.testTag(QUERY))
+                    }
+                }
+            }
+            waitForText(QUERY, initial)
+            assertEquals(1, held.builds.load())
+            assertEquals(1, computed.load())
+
+            // These are plain clock/zone inputs, not Compose state. The old midnight wait has not elapsed:
+            // only the host's foreground pulse can refresh a screen which stayed composed while asleep.
+            runOnIdle {
+                clock.now = LocalDateTime(2026, 11, 7, 1, 0).toInstant(TimeZone.UTC).toEpochMilliseconds()
+                clock.zone = TimeZone.of("America/Sao_Paulo")
+            }
+            waitForIdle()
+            assertEquals(initial, text(INDEX))
+            runOnIdle { foreground.value++ }
+            waitForText(INDEX, "America/Sao_Paulo:2026-11-06")
+            waitForText(QUERY, "America/Sao_Paulo:2026-11-06")
+            assertEquals(1, held.builds.load(), "Date and zone changes requery the same historical index")
+            assertEquals(2, computed.load())
+
+            // Another foreground entry with equal calendar values keeps the memoized query too.
+            runOnIdle { foreground.value++ }; waitForIdle()
+            assertEquals("America/Sao_Paulo:2026-11-06", text(INDEX))
+            assertEquals(1, held.builds.load())
+            assertEquals(2, computed.load())
+        } finally {
+            held.close()
+        }
     }
 
     private companion object {

@@ -361,8 +361,9 @@ jobs:
           # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (:screens common), CalendarMonthGridTest7
           # (:designsystem common), AppViewModelSavedWorkoutTimerHostTest3 and ShellNavigationHostTest+1.
           # SetDraftsTest+1 (scoped failed writes, :screens common), WorkoutSharePreviewHostTest+1.
-          # Legacy coverage is ported, none retired. 1288 + 27 + 7 + 7 + 3 + 1 + 1 + 1 = 1335.
-          MIN_HOST_TESTS: 1335
+          # HistoryModelTest+2 (metadata cache parity/invalidation). Legacy coverage is ported, none retired.
+          # 1288 + 29 + 7 + 7 + 3 + 1 + 1 + 1 = 1337.
+          MIN_HOST_TESTS: 1337
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -461,7 +462,20 @@ jobs:
           restore-keys: konan-${{ runner.os }}-
 
       - name: Compile for iOS and run the simulator tests
-        run: ./gradlew :shared:compileKotlinIosArm64 :shared:iosSimulatorArm64Test :designsystem:compileKotlinIosArm64 :designsystem:iosSimulatorArm64Test :screens:compileKotlinIosArm64 :screens:iosSimulatorArm64Test --console=plain --continue
+        run: |
+          # Name the active native test and fail a stalled task while report uploads can still run.
+          # The job's 60-minute ceiling and every test assertion/count guard remain unchanged.
+          cat > "$RUNNER_TEMP/ios-diagnostics.init.gradle" <<'INIT'
+          allprojects {
+              tasks.withType(org.gradle.api.tasks.testing.AbstractTestTask).configureEach {
+                  testLogging { events 'started', 'passed', 'skipped', 'failed' }
+              }
+              tasks.matching { it.name == 'iosSimulatorArm64Test' }.configureEach {
+                  timeout.set(java.time.Duration.ofMinutes(20))
+              }
+          }
+          INIT
+          ./gradlew :shared:compileKotlinIosArm64 :shared:iosSimulatorArm64Test :designsystem:compileKotlinIosArm64 :designsystem:iosSimulatorArm64Test :screens:compileKotlinIosArm64 :screens:iosSimulatorArm64Test --console=plain --continue --init-script "$RUNNER_TEMP/ios-diagnostics.init.gradle"
 
       # kspIosArm64 and kspIosSimulatorArm64 run only here, so an iOS-only divergence in the
       # exported schema (and its identityHash) is caught here, not in the host job.
@@ -776,8 +790,10 @@ jobs:
           # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (common); HistoryScreenTest17,
           # WorkoutDetailScreenTest28, SharePreviewSheetTest11, HistoryFlowTest2, RecordsScreenTest+3,
           # HistoryTapBudgetTest2, HistoryAccessibilityTest3 (UI); SetDraftsTest+1 (common).
-          # 902 + 35 + 66 = 1003.
-          MIN_SCREENS_IOS_TESTS: 1003
+          # ProgressIndexComposeTest+1 (foreground date/zone refresh without rebuilding the index).
+          # HistoryModelTest+2 (metadata cache parity/invalidation).
+          # 902 + 37 + 66 + 1 = 1006.
+          MIN_SCREENS_IOS_TESTS: 1006
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

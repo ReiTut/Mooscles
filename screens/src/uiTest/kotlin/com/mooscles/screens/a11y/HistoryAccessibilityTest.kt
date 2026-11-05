@@ -7,18 +7,27 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -26,6 +35,10 @@ import com.mooscles.designsystem.charts.BarChartTag
 import com.mooscles.designsystem.charts.CalendarCollapseTag
 import com.mooscles.designsystem.charts.ChartDataButtonTag
 import com.mooscles.designsystem.charts.calendarDayTag
+import com.mooscles.designsystem.components.SetRowCheckTag
+import com.mooscles.designsystem.components.SetRowLoadTag
+import com.mooscles.designsystem.components.SetRowRepsTag
+import com.mooscles.designsystem.components.StepperIncreaseTag
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.screens.LINEAR_TWO_X_FONT_SCALE
 import com.mooscles.screens.RecordingActions
@@ -33,6 +46,7 @@ import com.mooscles.screens.assertAtLeast
 import com.mooscles.screens.assertButtonTextsWhole
 import com.mooscles.screens.assertClickablesLabeledAndSized
 import com.mooscles.screens.assertNumbersWhole
+import com.mooscles.screens.assertWorkoutTargets
 import com.mooscles.screens.flow.await
 import com.mooscles.screens.flow.exists
 import com.mooscles.screens.history.HistoryContent
@@ -43,6 +57,7 @@ import com.mooscles.screens.share.SharePreviewDestination
 import com.mooscles.screens.share.SharePreviewState
 import com.mooscles.screens.spokenLabel
 import com.mooscles.screens.withScreen
+import com.mooscles.screens.workout.workoutSetRowTag
 import com.mooscles.screens.workoutdetail.WorkoutDetailRoute
 import com.mooscles.screens.workoutdetail.WorkoutDetailScreenState
 import com.mooscles.screens.workoutdetail.WorkoutDetailTags
@@ -62,7 +77,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** Focused Phase5B accessibility additions. Existing sweeps cover charts, inputs and the shell.
- * These checks exercise their new History/detail/preview composition at default and narrow2x sizes.
+ * Every new screen is checked in both themes and languages, at320/412dp and1/1.3/2/2.01font scales.
+ * History and progress visit top/middle/end; saved detail covers reading and editing, including the
+ * keyboard focus/IME action path. The iOS simulator does not display its real keyboard: these tests
+ * prove focus and IME semantics, not physical keyboard geometry or screen-reader speech.
  * They check semantics/layout, not actual TalkBack or VoiceOver speech.
  */
 @OptIn(ExperimentalTestApi::class)
@@ -70,12 +88,13 @@ class HistoryAccessibilityTest {
     @AfterTest fun restoreLanguage() { LocalAppLocale.restore() }
 
     private data class Look(val locale: String, val dark: Boolean, val scale: Float, val size: DpSize)
-    private val looks = listOf(
-        Look("en", false, 1f, DpSize(412.dp, 800.dp)),
-        Look("en", true, 1f, DpSize(412.dp, 800.dp)),
-        Look("pt-BR", false, LINEAR_TWO_X_FONT_SCALE, DpSize(320.dp, 800.dp)),
-        Look("pt-BR", true, LINEAR_TWO_X_FONT_SCALE, DpSize(320.dp, 800.dp)),
-    )
+    private val looks = listOf("en", "pt-BR").flatMap { locale ->
+        listOf(false, true).flatMap { dark ->
+            listOf(1f, 1.3f, 2f, LINEAR_TWO_X_FONT_SCALE).flatMap { scale ->
+                listOf(320, 412).map { width -> Look(locale, dark, scale, DpSize(width.dp, 800.dp)) }
+            }
+        }
+    }
     private val utc = TimeZone.UTC
     private val at = LocalDateTime(2026, 11, 3, 10, 0).toInstant(utc).toEpochMilliseconds()
     private val exercise = ExerciseUi("custom", "Remada articulada com apoio e pegada neutra", "Back", "Dumbbell", "Per hand", custom = true)
@@ -97,6 +116,9 @@ class HistoryAccessibilityTest {
             assertTrue(spokenLabel(marked).contains(workout.name), "The calendar must say its workout name")
             // The approved calendar exception is40dp; ordinary controls remain48dp.
             assertAtLeast(marked, 40f, 40f, "calendar ${look.locale} ${look.scale}")
+            val unmarked = onNodeWithTag(calendarDayTag(2)).fetchSemanticsNode()
+            assertTrue(unmarked.config.getOrNull(SemanticsProperties.Role) == null,
+                "Unmarked calendar days must not become screen-reader buttons")
             onNodeWithTag(CalendarCollapseTag).performClick(); waitForIdle()
             historyScroll("history-filter-pr")
             assertClickablesLabeledAndSized("history filters $look")
@@ -134,34 +156,91 @@ class HistoryAccessibilityTest {
             assertTrue(rows.isNotEmpty(), "View data must expose the actual weekly values")
             assertClickablesLabeledAndSized("overall data $look")
             assertButtonTextsWhole("overall data $look")
+            progressScroll("history-frequent-${exercise.id}")
+            onNodeWithTag("history-frequent-${exercise.id}").assertIsDisplayed()
+            assertClickablesLabeledAndSized("overall end $look")
+            assertButtonTextsWhole("overall end $look")
         }
     }
 
     @Test fun savedDetailAndPreviewKeepStatisticsAndSharingActionsAccessible() {
         for (look in looks) {
             runComposeUiTest {
+                val screen = WorkoutDetailScreenState()
+                val actions = RecordingActions()
                 withScreen(locale = look.locale, dark = look.dark, fontScale = look.scale, size = look.size, reducedMotion = true) {
-                    WorkoutDetailRoute("saved", state, RecordingActions(), {}, {}, {}, {}, screen = WorkoutDetailScreenState())
+                    WorkoutDetailRoute("saved", state, actions, {}, {}, {}, {}, screen = screen)
                 }
                 onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.PRS))
                 val prs = onNodeWithTag(WorkoutDetailTags.PRS).fetchSemanticsNode()
                 assertTrue(spokenLabel(prs).contains("1"))
                 assertNumbersWhole(atLeast = 2)
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.readingSet("set")))
+                onNodeWithTag(WorkoutDetailTags.readingSet("set")).assertIsDisplayed()
+                assertClickablesLabeledAndSized("saved reading middle $look")
+                assertButtonTextsWhole("saved reading middle $look")
                 onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag("share-workout"))
                 onNodeWithTag("share-workout").assertIsDisplayed()
                 assertClickablesLabeledAndSized("saved detail $look")
                 assertButtonTextsWhole("saved detail $look")
+
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.EDIT))
+                onNodeWithTag(WorkoutDetailTags.EDIT).performClick()
+                onNodeWithTag("dialog-confirm").performClick(); waitForIdle()
+                onNodeWithTag(WorkoutDetailTags.DONE).assertIsDisplayed()
+                assertClickablesLabeledAndSized("saved editing top $look")
+                assertButtonTextsWhole("saved editing top $look")
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(workoutSetRowTag("set")))
+                val load = hasSetTextAction() and hasAnyAncestor(hasTestTag(SetRowLoadTag)) and
+                    hasAnyAncestor(hasTestTag(workoutSetRowTag("set")))
+                val reps = hasSetTextAction() and hasAnyAncestor(hasTestTag(SetRowRepsTag)) and
+                    hasAnyAncestor(hasTestTag(workoutSetRowTag("set")))
+                val check = hasTestTag(SetRowCheckTag) and hasAnyAncestor(hasTestTag(workoutSetRowTag("set")))
+                assertTrue(spokenLabel(onNode(check).fetchSemanticsNode()).isNotBlank())
+                onNode(load, useUnmergedTree = true).performClick(); waitForIdle()
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(StepperIncreaseTag))
+                onNodeWithTag(StepperIncreaseTag).assertIsDisplayed()
+                assertClickablesLabeledAndSized("saved editing stepper $look")
+                assertWorkoutTargets("saved editing stepper $look")
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(workoutSetRowTag("set")))
+                onNode(load, useUnmergedTree = true).performClick(); waitForIdle()
+                onNode(load, useUnmergedTree = true).assertIsFocused().assertIsDisplayed()
+                assertTrue(spokenLabel(onNode(load, useUnmergedTree = true).fetchSemanticsNode()).isNotBlank())
+                onNode(load, useUnmergedTree = true).performTextReplacement("22,"); waitForIdle()
+                onNode(load, useUnmergedTree = true).assertTextEquals("22,")
+                // Next reaches the same row's repetitions; Done releases focus instead of leaving a stale target.
+                onNode(load, useUnmergedTree = true).performImeAction(); waitForIdle()
+                onNode(reps, useUnmergedTree = true).assertIsFocused()
+                onNode(reps, useUnmergedTree = true).performImeAction(); waitForIdle()
+                onNode(reps, useUnmergedTree = true).assertIsNotFocused()
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.ADD_EXERCISE))
+                onNodeWithTag(WorkoutDetailTags.ADD_EXERCISE).assertIsDisplayed()
+                assertClickablesLabeledAndSized("saved editing end $look")
+                assertButtonTextsWhole("saved editing end $look")
+                onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(workoutSetRowTag("set")))
+                onNode(load, useUnmergedTree = true).assertTextEquals("22,")
+                assertEquals(22.5, state.history.single().exercises.single().sets.single().weightKg)
+                assertTrue(actions.calls.none { it.startsWith("updateSet:") || it.startsWith("startTimer:") },
+                    "The invalid draft must not overwrite saved values or start a timer")
+                onNodeWithTag(WorkoutDetailTags.DONE).performClick(); waitForIdle()
+                onNodeWithTag(WorkoutDetailTags.DONE).assertDoesNotExist()
             }
             runComposeUiTest {
                 withScreen(locale = look.locale, dark = look.dark, fontScale = look.scale, size = look.size, reducedMotion = true) {
                     SharePreviewContent(SharePreviewState.Ready(2, 1), setOf(SharePreviewDestination.WhatsApp), false, {}, {}, {},
-                        page = { index, _, ready, _ ->
+                        page = { index, description, ready, _ ->
                             SideEffect { ready() }
-                            Box(Modifier.fillMaxWidth().height(100.dp).testTag("a11y-preview-$index"))
+                            Box(Modifier.fillMaxWidth().height(100.dp).testTag("a11y-preview-$index")
+                                .semantics { contentDescription = description })
                         })
                 }
                 waitForIdle()
                 onNodeWithTag("a11y-preview-0").assertIsDisplayed()
+                onNodeWithTag("share-preview-pages").performScrollToIndex(1)
+                onNodeWithTag("a11y-preview-1").assertIsDisplayed()
+                assertTrue(spokenLabel(onNodeWithTag("a11y-preview-1").fetchSemanticsNode()).contains("1"),
+                    "Each preview page must retain the workout-wide spoken PR total")
+                onNodeWithTag("share-whatsapp").performScrollTo().assertIsDisplayed()
                 onNodeWithTag("share-other-apps").performScrollTo().assertIsDisplayed()
                 assertClickablesLabeledAndSized("sharing preview $look")
                 assertButtonTextsWhole("sharing preview $look")

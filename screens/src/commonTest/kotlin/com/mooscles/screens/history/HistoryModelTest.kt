@@ -1,6 +1,8 @@
 package com.mooscles.screens.history
 
 import com.mooscles.data.MuscleRegion
+import com.mooscles.data.ExerciseNames
+import com.mooscles.data.SearchFolding
 import com.mooscles.screens.progress.ProgressIndex
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.RecordUi
@@ -57,6 +59,60 @@ class HistoryModelTest {
         assertEquals(listOf("bench"), query(index, search = "barbell bench").workouts.map { it.id })
         assertEquals(listOf("bench"), query(index, search = "supino barra").workouts.map { it.id })
         assertEquals(listOf("row"), query(index, search = "remada joao").workouts.map { it.id })
+    }
+
+    @Test fun cachedNamePiecesExactlyMatchTheOriginalWholeStringFold() {
+        val definitions = listOf(
+            bench.copy(name = "  Legácy—Supino / Cafe\u0301  "),
+            row.copy(name = "João’s \u0301Remada 👩🏽‍🚀 / Łódź ß ۱۲"),
+            bench.copy(name = "CUSTOM — M\u0301áquina", custom = true),
+            bench.copy(id = "catalog_no_longer_available", name = "  Desconhecido\tＡＢＣ…  "),
+            row.copy(id = "empty-name", name = "\u0301💪—\n\uD800"),
+        )
+        val names = listOf("  Upper—A / Cafe\u0301  ", "\u0301💪—\uD800", "", "Straße/İSTANBUL\t2026")
+        val workouts = names.mapIndexed { n, name ->
+            workout("fold-$n", name = name, entries = (definitions + definitions.map { it.copy() })
+                .mapIndexed { e, exercise -> entry(exercise, set("fold-$n-$e")).copy(id = "fold-$n-entry-$e") })
+        }
+        val indexed = index(*workouts.toTypedArray()).historyData.items.associateBy { it.workout.id }
+        for (workout in workouts) {
+            // Frozen pre-cache algorithm: fold one raw concatenation, including repeated stored/EN/PT names.
+            val original = StringBuilder(workout.name)
+            workout.exercises.forEach { entry ->
+                val exercise = entry.exercise
+                original.append(' ').append(exercise.name)
+                    .append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, false))
+                    .append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, true))
+            }
+            assertEquals(SearchFolding.fold(original.toString()), indexed.getValue(workout.id).searchText)
+        }
+    }
+
+    @Test fun exerciseMetadataUsesTheWholeSnapshotAndDoesNotOutliveItsIndex() {
+        val original = ExerciseUi("shared-custom-id", "Original press", "Chest", "Barbell", "Total load", custom = true)
+        val renamed = original.copy(name = "Renamed pull", muscle = "Back", equipment = "Machine", convention = "Assistance")
+        val fullBody = original.copy(name = "Whole-body complex", muscle = "Full body", equipment = "Bodyweight")
+        val before = index(workout("original", name = "Session", entries = listOf(entry(original, set()))),
+            workout("renamed", name = "Session", entries = listOf(entry(renamed, set(kg = 50.0, reps = 10)))),
+            workout("full", name = "Session", entries = listOf(entry(fullBody, set()))))
+        val items = before.historyData.items.associateBy { it.workout.id }
+        assertEquals(listOf("original"), query(before, search = "original press").workouts.map { it.id })
+        assertEquals(listOf("renamed"), query(before, search = "renamed pull").workouts.map { it.id })
+        assertEquals(mapOf(MuscleRegion.CHEST to 1.0), items.getValue("original").muscleSets)
+        assertEquals(mapOf(MuscleRegion.LATS to 1.0), items.getValue("renamed").muscleSets)
+        assertEquals(160.0, items.getValue("original").volumeKg)
+        assertEquals(0.0, items.getValue("renamed").volumeKg)
+        assertTrue(items.getValue("full").muscleSets.isEmpty())
+        assertEquals(1.0, items.getValue("full").fullBodySets)
+
+        val updated = original.copy(name = "Updated raise", muscle = "Shoulders", equipment = "Dumbbell")
+        val after = index(workout("original", name = "Session", entries = listOf(entry(updated, set(kg = 22.123456789)))))
+        assertEquals(listOf("original"), query(after, search = "updated raise").workouts.map { it.id })
+        assertTrue(query(after, search = "original press").workouts.isEmpty())
+        assertEquals(mapOf(MuscleRegion.SHOULDERS to 1.0), after.historyData.items.single().muscleSets)
+        assertEquals(22.123456789 * 8, after.historyData.items.single().volumeKg)
+        assertEquals(listOf("original"), query(before, search = "original press").workouts.map { it.id })
+        assertEquals(mapOf(MuscleRegion.CHEST to 1.0), items.getValue("original").muscleSets)
     }
 
     @Test fun allSearchWordsMustBelongToOneWorkoutButMaySpanItsNameAndExercises() {

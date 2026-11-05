@@ -50,7 +50,12 @@ class HistoryIndex private constructor(val items: List<HistoryWorkout>) {
     val sourceRoutineIds: Set<String> = items.mapNotNull { it.workout.sourceRoutineId }.toSet()
 
     companion object {
-        fun build(history: List<WorkoutUi>): HistoryIndex = HistoryIndex(history
+        fun build(history: List<WorkoutUi>): HistoryIndex {
+            // Repeated sessions normally share a small number of definitions. Cache by the entire historical
+            // snapshot, never only its id: renamed/reclassified exercises can coexist in the same history.
+            // This map belongs only to this build, so the existing ProgressIndex invalidation stays authoritative.
+            val definitions = HashMap<ExerciseUi, HistoryExerciseMetadata>()
+            return HistoryIndex(history
             .sortedWith(compareByDescending<WorkoutUi> { it.startedAt }.thenByDescending { it.id })
             .map { workout ->
                 var completedSets = 0
@@ -59,13 +64,17 @@ class HistoryIndex private constructor(val items: List<HistoryWorkout>) {
                 val muscles = LinkedHashMap<MuscleRegion, Double>()
                 val sessionExercises = LinkedHashMap<String, ExerciseUi>()
                 val previews = ArrayList<ExerciseUi>()
-                val names = StringBuilder(workout.name)
+                val names = StringBuilder(SearchFolding.fold(workout.name))
                 for (entry in workout.exercises) {
                     val exercise = entry.exercise
-                    names.append(' ').append(exercise.name)
-                        .append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, false))
-                        .append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, true))
-                    val convention = WorkingSets.convention(exercise.convention)
+                    val prepared = definitions.getOrPut(exercise) { HistoryExerciseMetadata(exercise) }
+                    // Every raw piece was separated by a space. Joining nonempty folded pieces with one space
+                    // exactly matches folding the old complete string, including empty/combining-only names.
+                    if (prepared.searchText.isNotEmpty()) {
+                        if (names.isNotEmpty()) names.append(' ')
+                        names.append(prepared.searchText)
+                    }
+                    val convention = prepared.convention
                     var valid = 0
                     var working = 0
                     entry.sets.forEach { set ->
@@ -81,20 +90,33 @@ class HistoryIndex private constructor(val items: List<HistoryWorkout>) {
                         if (previews.size < 3) previews += exercise
                     }
                     if (working > 0) {
-                        val anatomy = ExerciseAnatomy.forExercise(exercise.id, exercise.muscle)
+                        val anatomy = prepared.anatomy
                         if (anatomy != null) {
                             anatomy.primary.forEach { region -> muscles[region] = (muscles[region] ?: 0.0) + working }
                             anatomy.secondary.forEach { region -> muscles[region] = (muscles[region] ?: 0.0) + working * 0.5 }
-                        } else if (MuscleGroup.fromLabelOrName(exercise.muscle) == MuscleGroup.FULL_BODY) {
+                        } else if (prepared.fullBody) {
                             fullBody += working
                         }
                     }
                 }
                 HistoryWorkout(workout, completedSets, volume, workout.prExerciseCount, workout.beatenPrExerciseCount,
-                    workout.firstRecordExerciseCount, previews.toList(), SearchFolding.fold(names.toString()),
+                    workout.firstRecordExerciseCount, previews.toList(), names.toString(),
                     workout.exercises.map { it.exercise.id }.toSet(), sessionExercises.values.toList(), muscles.toMap(), fullBody)
             })
+        }
     }
+}
+
+/** Preparation reused only within one index build; no state or lifecycle independent of that index. */
+private class HistoryExerciseMetadata(exercise: ExerciseUi) {
+    val searchText: String = SearchFolding.fold(buildString {
+        append(exercise.name)
+        append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, false))
+        append(' ').append(ExerciseNames.display(exercise.id, exercise.name, exercise.custom, true))
+    })
+    val convention = WorkingSets.convention(exercise.convention)
+    val anatomy = ExerciseAnatomy.forExercise(exercise.id, exercise.muscle)
+    val fullBody: Boolean = anatomy == null && MuscleGroup.fromLabelOrName(exercise.muscle) == MuscleGroup.FULL_BODY
 }
 
 /** Filter categories are AND; selected routines are OR. Unknown/deleted source routines belong to [otherRoutines]. */
