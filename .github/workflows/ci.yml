@@ -64,7 +64,48 @@ jobs:
       - name: Test, lint and assemble
         # :shared, :designsystem and :screens register no lint report task of their own (AGP 9.3.3
         # KMP library: only lintAnalyzeAndroidHostTest, which writes no report).
-        run: ./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest :designsystem:testAndroidHostTest :screens:testAndroidHostTest :app:lintDebug :app:assembleDebug --console=plain --continue
+        run: |
+          # Keep a stalled host test diagnosable before the job's 45-minute ceiling cancels uploads.
+          mkdir -p build/ci-diagnostics
+          cat > "$RUNNER_TEMP/test-diagnostics.init.gradle" <<'INIT'
+          allprojects {
+              tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+                  testLogging { events 'started', 'passed', 'skipped', 'failed' }
+              }
+          }
+          INIT
+          ./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest :designsystem:testAndroidHostTest :screens:testAndroidHostTest :app:lintDebug :app:assembleDebug --console=plain --continue --init-script "$RUNNER_TEMP/test-diagnostics.init.gradle" > build/ci-diagnostics/host.log 2>&1 &
+          build_pid=$!
+          tail --pid="$build_pid" -n +1 -F build/ci-diagnostics/host.log &
+          tail_pid=$!
+          (
+            sleep 1200
+            if kill -0 "$build_pid" 2>/dev/null; then
+              echo 'Host checks exceeded 20 minutes; capturing Java threads before stopping this runner-only build.'
+              jcmd -l > build/ci-diagnostics/java-processes.txt
+              while read -r java_pid; do
+                jcmd "$java_pid" Thread.print > "build/ci-diagnostics/threads-$java_pid.txt" 2>&1 || true
+              done < <(awk '!/sun.tools.jcmd.JCmd/ {print $1}' build/ci-diagnostics/java-processes.txt)
+              touch build/ci-diagnostics/watchdog-expired
+              # Every listed JVM belongs to this disposable GitHub-hosted job; no user device is involved.
+              while read -r java_pid; do kill -TERM "$java_pid" 2>/dev/null || true; done < <(awk '!/sun.tools.jcmd.JCmd/ {print $1}' build/ci-diagnostics/java-processes.txt)
+            fi
+          ) > build/ci-diagnostics/watchdog.log 2>&1 &
+          watchdog_pid=$!
+          result=0
+          wait "$build_pid" || result=$?
+          pkill -TERM -P "$watchdog_pid" 2>/dev/null || true
+          kill "$watchdog_pid" "$tail_pid" 2>/dev/null || true
+          if test -f build/ci-diagnostics/watchdog-expired; then exit 1; fi
+          exit "$result"
+
+      - name: Upload host diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: host-diagnostics
+          path: build/ci-diagnostics/
+          if-no-files-found: ignore
 
       # Phase 3 budget: APK growth over the phase's base (main after phase 2), the fonts, and
       # fonts plus icons.
