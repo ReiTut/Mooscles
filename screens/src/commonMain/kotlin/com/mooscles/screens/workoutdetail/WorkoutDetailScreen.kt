@@ -217,7 +217,9 @@ fun WorkoutDetailRoute(
     Box(modifier.fillMaxSize().background(MTheme.colors.bgBase)) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))) {
             TopBar(
-                stringResource(if (screen.editing) Res.string.detail_editing else Res.string.detail_title),
+                // Keep the editor viewport usable when the localized Done action needs most of a
+                // narrow, large-text bar. The design-system pattern puts a long title in the list.
+                if (screen.editing) null else stringResource(Res.string.detail_title),
                 onBack = back,
             ) {
                 if (screen.editing) MButton(
@@ -245,6 +247,8 @@ fun WorkoutDetailRoute(
                     ) {
                         item("heading", "detail-heading") {
                             Column(Modifier.detailWidth().padding(bottom = padding), verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
+                                if (screen.editing) MText(stringResource(Res.string.detail_editing), MTheme.type.titleLg,
+                                    Modifier.semantics { heading() })
                                 MText(workout.name, MTheme.type.titleMd, Modifier.semantics { heading() })
                                 MText(summaryDateRange(workout.startedAt, workout.endedAt ?: workout.startedAt), MTheme.type.bodyMd,
                                     color = MTheme.colors.textSecondary)

@@ -48,6 +48,7 @@ import com.mooscles.screens.assertClickablesLabeledAndSized
 import com.mooscles.screens.assertNumbersWhole
 import com.mooscles.screens.assertWorkoutTargets
 import com.mooscles.screens.flow.await
+import com.mooscles.screens.flow.capture
 import com.mooscles.screens.flow.exists
 import com.mooscles.screens.history.HistoryContent
 import com.mooscles.screens.history.HistoryScreenTag
@@ -165,6 +166,7 @@ class HistoryAccessibilityTest {
 
     @Test fun savedDetailAndPreviewKeepStatisticsAndSharingActionsAccessible() {
         for (look in looks) {
+            println("HISTORY_A11Y saved editor/preview start: $look")
             runComposeUiTest {
                 val screen = WorkoutDetailScreenState()
                 val actions = RecordingActions()
@@ -188,6 +190,9 @@ class HistoryAccessibilityTest {
                 onNodeWithTag(WorkoutDetailTags.EDIT).performClick()
                 onNodeWithTag("dialog-confirm").performClick(); waitForIdle()
                 onNodeWithTag(WorkoutDetailTags.DONE).assertIsDisplayed()
+                // A wrapping title must not consume the entire screen above the lazy editor.
+                assertAtLeast(onNodeWithTag(WorkoutDetailTags.LIST).fetchSemanticsNode(), 0f, 56f,
+                    "saved editing viewport $look")
                 assertClickablesLabeledAndSized("saved editing top $look")
                 assertButtonTextsWhole("saved editing top $look")
                 onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(workoutSetRowTag("set")))
@@ -211,6 +216,9 @@ class HistoryAccessibilityTest {
                 // Next reaches the same row's repetitions; Done releases focus instead of leaving a stale target.
                 onNode(load, useUnmergedTree = true).performImeAction(); waitForIdle()
                 onNode(reps, useUnmergedTree = true).assertIsFocused()
+                if (look.locale == "pt-BR" && look.size.width == 320.dp && look.scale == LINEAR_TWO_X_FONT_SCALE) {
+                    capture("phase5b-saved-editor-pt-320-2x-${if (look.dark) "dark" else "light"}")
+                }
                 onNode(reps, useUnmergedTree = true).performImeAction(); waitForIdle()
                 onNode(reps, useUnmergedTree = true).assertIsNotFocused()
                 onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.ADD_EXERCISE))
@@ -245,6 +253,7 @@ class HistoryAccessibilityTest {
                 assertClickablesLabeledAndSized("sharing preview $look")
                 assertButtonTextsWhole("sharing preview $look")
             }
+            println("HISTORY_A11Y saved editor/preview passed: $look")
         }
     }
 

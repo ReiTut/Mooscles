@@ -1,5 +1,12 @@
 # Fase 5: progresso e histórico
 
+**2026-11-05 Phase 5B accessibility correction:** at 320 dp / large Portuguese text, the saved
+editor's title plus Back, Done and menu could wrap the title one character per line and consume
+the entire editor viewport. Editing now follows the existing `TopBar(null)` contract: actions stay
+in the bar and the full localized editing heading moves into the scrolling content. Reading mode
+is unchanged. The 32-configuration accessibility check asserts a usable editor viewport before
+scrolling; no title is truncated, no action removed and no timeout or target-size budget increased.
+
 Data: 2026-10-31. Status: **decisões delegadas pelo dono** ("pode avançar e fazer as melhores escolhas decidindo por mim"); não houve rodada de perguntas. Item da fase 5 do [ROADMAP](../ROADMAP.md). Sistema visual: [spec da fase 2](2026-10-27-phase2-design-system-design.md) ("Giz & Ferro": tokens `chart.*`, regra "gráficos têm uma descrição resumida e uma tabela alternativa", voz sem culpa). Telas e casca: [spec da fase 3](2026-10-29-phase3-active-workout-design.md) (módulo `:screens`, D2 das abas, D17–D20 de recordes, resumo e cartão) e [spec da fase 4](2026-10-29-phase4-library-routines-design.md) (detalhe do exercício, `ExerciseAnatomy`, mapa corporal, D16 da linha de alvo). Pesquisas: [P1, UX de apps de treino](../reports/2026-10-27-referencias-ux-apps-treino.md) e [P3, bibliotecas](../reports/2026-10-27-bibliotecas-cmp-graficos-animacao-midia.md). Código de referência: `main` do fork em `6a4ffa3`.
 
 **Todas as decisões abaixo são minhas.** Cada uma aparece como **Dn (minha)** com uma linha de motivo, e todas são revisáveis. Elas partem do ROADMAP, das pesquisas e do código atual (`HistoryScreens.kt`, `WorkoutScreens.kt`, `LibraryScreens.kt`, `WorkoutSharePreview.kt` e `MoosclesApp.kt` no `:app`; `WorkoutCalculations.kt`, `WorkoutPresentation.kt`, `UiContract.kt`, `ExerciseAnatomy.kt` no `:shared`; `summary/`, `share/`, `shell/`, `format/` e `exercise/` no `:screens`; os componentes, tokens e o `BodyMap` do `:designsystem`).
