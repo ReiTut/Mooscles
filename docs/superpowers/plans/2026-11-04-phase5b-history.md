@@ -17,16 +17,24 @@ The owner's attached instruction explicitly resumes Phase 5B, including planning
 ## Tasks and acceptance
 
 1. [x] Inspect local and fetched remote state, instructions, approved spec and 5A evidence; identify no existing 5B plan/branch/implementation. Baseline only dirty file is the unrelated Gradle edit. No connected devices at inventory.
-2. [ ] Implement S2 `MonthCalendar`: pure geometry/semantics, 320/412 widths, four/six-week months, both themes, large fonts, accessible day buttons and non-focusable empty days. Add focused tests and named tokens; prove S2 before integrating the History tab. Use the documented visual-only/day-filter fallback if required.
-3. [ ] Add immutable history metadata to the existing index and pure memoized queries: bilingual AND search, OR routine selection, exercise/beaten-record/day filters, month groups/calendar marks, period buckets/totals, muscle weighting and most-performed exercises. Add deterministic common tests for date/time-zone/bucket/filter/domain parity edges.
-4. [ ] Build shared History Workouts/Progress screens on those results, preserving saveable selection/filter/month/list/data-table state, catalog localization, data tables, empty/error/loading states and semantic labels.
-5. [ ] Build shared saved-workout detail and editing using existing actions. Test each old capability, rest editing/cancellation, exact drafts/conversions, confirm destructive edits, and prove historical completion never starts a timer. Preserve inclusive PR statistics.
-6. [ ] Move only sharing-preview UI to shared screens. Keep Android snapshot/PNG/decode/intent ownership, stable tags and all existing export behavior. Port preview states/destination coverage.
-7. [ ] Integrate routes and own placeholders; port legacy behavior tests before removing genuinely unused old screens/components. Record old/new tap budgets and ensure navigation/focus/state restoration parity.
-8. [ ] Verify 5A carryovers against current code: foreground date refresh, list-top assertion, cache-start dispatch assumption, record convention label, long-range year labels and region behavior; handle relevant unresolved items with focused tests.
+2. [x] Implement S2 `MonthCalendar`: pure geometry/semantics, 320/412 widths, four/six-week months, both themes, large fonts, accessible day buttons and non-focusable empty days. Add focused tests and named tokens; prove S2 before integrating the History tab. Use the documented visual-only/day-filter fallback if required.
+3. [x] Add immutable history metadata to the existing index and pure memoized queries: bilingual AND search, OR routine selection, exercise/beaten-record/day filters, month groups/calendar marks, period buckets/totals, muscle weighting and most-performed exercises. Add deterministic common tests for date/time-zone/bucket/filter/domain parity edges.
+4. [x] Build shared History Workouts/Progress screens on those results, preserving saveable selection/filter/month/list/data-table state, catalog localization, data tables, empty/error/loading states and semantic labels.
+5. [x] Build shared saved-workout detail and editing using existing actions. Test each old capability, rest editing/cancellation, exact drafts/conversions, confirm destructive edits, and prove historical completion never starts a timer. Preserve inclusive PR statistics.
+6. [x] Move only sharing-preview UI to shared screens. Keep Android snapshot/PNG/decode/intent ownership, stable tags and all existing export behavior. Port preview states/destination coverage.
+7. [x] Integrate routes and own placeholders; port legacy behavior tests before removing genuinely unused old screens/components. Record old/new tap budgets and ensure navigation/focus/state restoration parity.
+8. [x] Verify 5A carryovers against current code: foreground date refresh, list-top assertion, cache-start dispatch assumption and localized record convention label are covered. Long-range short axis labels and fresh pre-33/real-iOS region changes remain explicitly documented limitations; no extra redesign is bundled.
 9. [ ] Run focused tests during each change, resource parity/tokens/metadata/lint/debug packaging, and final required device suites once. Validate offline/compatible upgrade on isolated emulator data, restoration, shared history flow, performance in optimized build and clean APK budgets. Physical checks trigger the owner's stop-and-approval gate.
 10. [ ] Review full feature diff, update CI minima by actual added/ported tests, run feature-branch CI (including iOS), visual critique and compatibility audit. Report actual evidence/limitations and final debug/preview APK paths; keep feature branch unmerged and version unchanged.
 
 ## Evidence
 
 Keep heavy captures/traces and command logs in ignored `.tooling/phase5b-20261104/`. A phase verification report will link their absolute local paths and distinguish fresh, reused, pending and unverified results. Do not claim phone/iOS execution from host tests or code inspection.
+
+## Final implementation checkpoint
+
+- Source through `7fc1b2e` includes the narrow/large-font saved-editor fix: keep Back/Done/menu in `TopBar(null)` and the full editing heading in scrolling content. A 56 dp viewport regression assertion prevents another timeout from a zero-height lazy editor; no assertions or timeout budgets were relaxed.
+- Clean debug and preview builds, common metadata, lint and APK budgets pass. Version remains 1.5.3 / 25 and the original signer is verified. Exact artifacts are in the verification report.
+- The isolated offline upgrade passed both 14-check stages, including identical real exports and raw preferences, schema 6, exact active sets and a running timer deadline.
+- Full device suites and latest-source CI evidence are recorded separately from focused retries. No blanket green claim is made for the first Windows/device attempts.
+- Tasks 9–10 remain open until their final evidence is recorded. The 5% scrolling target is currently unmet on the host-GPU emulator; navigation-to-visible-content timing and physical graphics behavior remain unverified. Do not advance to Phase 6/7 or merge/release this branch while presenting these as completed criteria.

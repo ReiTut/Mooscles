@@ -1,6 +1,6 @@
 # Phase 5B — screen and compatibility review in progress
 
-Reviewed on 5 November 2026, feature source `9a0740a`, Android 15/API 35 emulator
+Reviewed on 5 November 2026, feature source `9a0740a` and metadata-cache follow-up `26a8889`, Android 15/API 35 emulator
 `emulator-5560` with host GPU. This is a checkpoint review, not phase completion.
 Large local evidence stays in ignored `.tooling/phase5b-20261104/`.
 
@@ -34,6 +34,12 @@ Large local evidence stays in ignored `.tooling/phase5b-20261104/`.
   `long-workout-3.png` were inspected. The supplied M/barbell wordmark, Portuguese number
   precision, PR statistic, final-page header, exercise order and page number remain visible,
   without overlap. Renderer tests cover all pages and pixel/geometry assertions.
+  Copies retained before the final clean build are in ignored `exported-pngs/` under the evidence root.
+- Actual optimized-app offline captures (`offline-history.png`, `offline-progress.png`,
+  `offline-detail.png`, `offline-preview.png`) show Portuguese/pounds with 208 completed workouts
+  and an independently preserved active workout. Calendar, full workout labels, period totals,
+  saved set values and the real two-page PNG preview render without overlapping controls.
+  The preview image viewport is scrollable; it does not imply that the entire long card fits at once.
 - New accessibility coverage checks spoken labels, whole numbers, ordinary 48 dp targets,
   the calendar's approved 40 dp exception, charts and their data-table alternatives. These
   checks passed at EN/default and PT/320 dp/200% in both themes. They do not prove actual
@@ -46,10 +52,34 @@ application identity and version. Native timer implementation and saved data are
 Saved editing remains scoped to historical IDs and uses the existing exact-value/draft machinery;
 automatic rest still requires an ACTIVE workout. No new network code or runtime dependency was added.
 The unused Material icons library was removed after its last production callers disappeared.
-The clean APK passes font/icon/growth budgets and verifies with the original signing certificate.
+Earlier clean APKs passed font/icon/growth budgets and verified with the original signing certificate;
+the source-matching final artifact is recorded in the verification report.
 
 ## Still pending
 
-Final full emulator suites/captures, iOS compile/simulator CI and its visual review, optimized
-History/progress measurements, and the isolated offline on-top data comparison remain pending.
-Phone-specific checks require the owner's explicit approval and a complete work stop while waiting.
+Full emulator design-system coverage passed 428 cases; the 1,009-case screens run passed every
+functional case but failed its debuggable index timing check. The focused post-cache timing rerun
+passes, and the expanded saved-editor matrix passes after its viewport correction. Earlier iOS compilation/simulator tests and narrow
+calendar/detail/preview captures passed; final-source CI is recorded separately in the verification report.
+
+The isolated offline on-top comparison passed both 14-check stages. The optimized index cache has
+a measured standalone CPU benefit; completed controls and traces show graphics-handoff waits plus some layout outliers. Scrolling remains above target, and hardware/emulator attribution remains unresolved.
+No visual impression is substituted for that unmet performance criterion.
+
+Physical TalkBack/VoiceOver, finger gestures, haptics, 120 Hz and S23 performance remain unverified,
+as allowed by the approved specification. Any phone-dependent follow-up requires the owner's
+explicit approval and a complete work stop while waiting. No phone test has been performed.
+
+## Saved-editor correction, final Android rerun
+
+The expanded matrix exposed a zero-height editor at Portuguese / 320 dp / 2.01 font scale:
+the editing title wrapped almost one character per line between Back, Done and the menu.
+`7fc1b2e` follows the existing design-system long-heading pattern: actions remain in the bar,
+and the full editing heading moves into scrolling content. Reading mode is unchanged.
+The 28 detail regressions and all 32 looks of the saved-editor/preview case passed (29 methods,
+194.013 seconds). A direct 56 dp minimum viewport assertion now diagnoses this failure promptly.
+
+Both `final-editor-captures/phase5b-saved-editor-pt-320-2x-light.png` and its dark variant were
+inspected. Back/Done/menu, exact intermediate `22,` text, repetitions focus and stepper controls
+remain usable. These are deliberately scrolled editing captures; content beyond the viewport
+remains reachable by scrolling. They do not prove real TalkBack speech or physical keyboard behavior.
