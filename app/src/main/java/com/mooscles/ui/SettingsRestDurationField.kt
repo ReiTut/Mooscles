@@ -16,9 +16,8 @@ import com.mooscles.designsystem.resources.settings_rest_suffix
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The rest duration field of Settings, drawn with the design system. It edits exactly like
- * [RestDurationField] (same editor state, same accepted input, same calls), with the texts
- * in resources.
+ * The rest duration field of Settings, drawn with the design system. Its shared
+ * [RestDurationEditorState] preserves fixed-colon input, selection and accepted-value callbacks.
  */
 @Composable
 fun SettingsRestDurationField(

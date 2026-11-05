@@ -1,0 +1,54 @@
+<resources>
+    <string name="history_title">History</string>
+    <string name="history_workouts">Workouts</string>
+    <string name="history_progress">Progress</string>
+    <string name="history_settings">Settings</string>
+    <string name="history_search">Search workout or exercise</string>
+    <string name="history_routine">Routine</string>
+    <string name="history_other">Other workouts</string>
+    <string name="history_exercise">Exercise</string>
+    <string name="history_with_pr">With PR</string>
+    <string name="history_clear">Clear filters</string>
+    <string name="history_done">Done</string>
+    <string name="history_remove_day">Clear day: %1$s</string>
+    <string name="history_empty">Your workouts appear here</string>
+    <string name="history_empty_body">Each finished workout appears here with its sets and records.</string>
+    <string name="history_train">Go to Train</string>
+    <string name="history_no_results">No workouts found</string>
+    <string name="history_load_failed">Could not load history</string>
+    <string name="history_retry">Try again</string>
+    <string name="history_month">%1$s · %2$s</string>
+    <string name="history_calendar_summary">%1$s. Workout days: %2$s.</string>
+    <string name="history_calendar_day">%1$s, %2$s: %3$s</string>
+    <string name="history_card_stats">%1$s · %2$s · %3$s</string>
+    <string name="history_card_spoken">%1$s, %2$s, %3$s, %4$s</string>
+    <plurals name="history_workout_count"><item quantity="one">%1$d workout</item><item quantity="other">%1$d workouts</item></plurals>
+    <plurals name="history_set_count"><item quantity="one">%1$d set</item><item quantity="other">%1$d sets</item></plurals>
+    <plurals name="history_pr_count"><item quantity="one">%1$d PR</item><item quantity="other">%1$d PRs</item></plurals>
+    <string name="history_period_4w">4 weeks</string>
+    <string name="history_per_week">Per week</string>
+    <string name="history_sets">Sets</string>
+    <string name="history_volume">Volume</string>
+    <string name="history_frequency">%1$s of %2$s weeks with a workout</string>
+    <string name="history_workouts_week">Workouts per week</string>
+    <string name="history_workouts_month">Workouts per month</string>
+    <string name="history_workouts_quarter">Workouts per quarter</string>
+    <string name="history_volume_week">Volume per week</string>
+    <string name="history_volume_month">Volume per month</string>
+    <string name="history_volume_quarter">Volume per quarter</string>
+    <string name="history_volume_legend">Logged load × repetitions</string>
+    <string name="history_partial">%1$s (in progress)</string>
+    <string name="history_chart_summary">%1$s, %2$s to %3$s. Total %4$s; average %5$s; highest %6$s on %7$s; %8$s empty periods.</string>
+    <string name="history_chart_readout">%1$s · %2$s</string>
+    <string name="history_muscles">Muscles</string>
+    <string name="history_muscle_row">%1$s · %2$s sets · %3$s per week</string>
+    <string name="history_more_muscles">View all %1$s</string>
+    <string name="history_muscle_more">More sets</string>
+    <string name="history_muscle_less">Fewer sets</string>
+    <string name="history_full_body">Full body</string>
+    <string name="history_most">Most performed</string>
+    <string name="history_no_period">No workouts in this period</string>
+    <string name="history_all">View all</string>
+    <string name="history_quarter">Q%1$s %2$s</string>
+    <string name="history_and">AND</string>
+</resources>

@@ -152,8 +152,8 @@ class UiFlowTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("history-list").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("history-list").performScrollToNode(hasText(name))
         compose.onNodeWithText(name).performScrollTo().performClick()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("SESSION BREAKDOWN").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("SESSION BREAKDOWN").assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("workout-details").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Workout details").assertIsDisplayed()
         val saved = runBlocking(Dispatchers.IO) { app.repository.snapshot() }
         assertEquals(120, saved.workoutExercises.single { it.id == workoutExercise.id }.restSeconds)
         assertEquals(135, saved.routineExercises.single { it.id == planned.id }.restSeconds)

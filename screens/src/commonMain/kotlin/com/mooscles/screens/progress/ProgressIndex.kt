@@ -6,6 +6,7 @@ import com.mooscles.data.LoadConvention
 import com.mooscles.data.SearchEntry
 import com.mooscles.domain.EstimatedOneRepMax
 import com.mooscles.screens.format.BestSets
+import com.mooscles.screens.history.HistoryIndex
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.RecordKind
 import com.mooscles.ui.RecordUi
@@ -60,6 +61,8 @@ class RecordEvent(val record: RecordUi, val workoutName: String, val order: Int,
  */
 @Immutable
 class ProgressIndex private constructor(
+    /** History metadata prepared during this same background build, sharing its identity/invalidation. */
+    val historyData: HistoryIndex,
     private val series: Map<SeriesKey, List<SessionPoint>>,
     private val conventions: Map<String, List<String>>,
     private val snapshots: Map<String, ExerciseUi>,
@@ -130,7 +133,7 @@ class ProgressIndex private constructor(
             val beaten = (events.asSequence() + currentRecords.asSequence()).map(RecordEvent::record)
                 .filterNot(RecordUi::firstRecord).groupBy(::markOf)
             val series = Series(history, beaten)
-            return ProgressIndex(series.points, series.conventions(), series.snapshots, events, currentRecords,
+            return ProgressIndex(HistoryIndex.build(history), series.points, series.conventions(), series.snapshots, events, currentRecords,
                 searchIndex(events, currentRecords), eventOrder, history, records)
         }
 

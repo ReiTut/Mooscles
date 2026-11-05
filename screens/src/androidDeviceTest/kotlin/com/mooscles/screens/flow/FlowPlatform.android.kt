@@ -1,6 +1,8 @@
 package com.mooscles.screens.flow
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import android.graphics.Bitmap
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -46,5 +48,11 @@ internal fun openFlowDatabase(directory: String): WorkoutDatabase = Room.databas
 internal fun openFlowStore(directory: String, scope: CoroutineScope): DataStore<Preferences> =
     PreferenceDataStoreFactory.create(scope = scope) { File(directory, "datastore/${MoosclesStore.FILE_NAME}") }
 
-/** On the emulator the capture is only taken (it proves `captureToImage` works); nothing is written. */
-internal fun saveFlowCapture(name: String, image: ImageBitmap) = Unit
+/** Keep Android flow captures for the same visual review as the simulator's, in test-app storage only. */
+internal fun saveFlowCapture(name: String, image: ImageBitmap) {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val directory = File(checkNotNull(context.getExternalFilesDir(null)), "flow-captures").apply { mkdirs() }
+    val file = File(directory, "$name.png")
+    file.outputStream().use { check(image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)) }
+    println("FLOW capture ${file.absolutePath}")
+}

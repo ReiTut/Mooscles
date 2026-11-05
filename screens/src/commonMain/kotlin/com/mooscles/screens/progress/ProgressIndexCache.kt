@@ -56,7 +56,9 @@ interface ProgressQuery<V : Any> {
  *
  * **Threads.** [build] and every query run in [context] ([Dispatchers.Default]), never on the caller's thread;
  * [peek] and [peekQuery] only read what is already done, so a composition can call them in the same frame. Any
- * thread may call anything here.
+ * thread may call anything here. A supplied [context] must dispatch work instead of executing it inline: do not
+ * pass `Dispatchers.Unconfined` or an immediate dispatcher. [start] starts a lazy child while holding [lock]; an
+ * inline context would run the expensive builder on that caller while the mutex is held, defeating this contract.
  *
  * **One build per history.** Callers of [get] for the same history wait for the same build. A history that is no
  * longer the latest keeps its build only while someone still waits for it (they get its own index, never a newer

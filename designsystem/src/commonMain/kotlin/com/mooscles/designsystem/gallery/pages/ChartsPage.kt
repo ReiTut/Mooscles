@@ -27,6 +27,8 @@ import com.mooscles.designsystem.charts.MBarChart
 import com.mooscles.designsystem.charts.MChartLegendRecord
 import com.mooscles.designsystem.charts.MLineChart
 import com.mooscles.designsystem.charts.MSparkline
+import com.mooscles.designsystem.charts.CalendarDayMark
+import com.mooscles.designsystem.charts.MonthCalendar
 import com.mooscles.designsystem.format.MoosclesNumbers
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.designsystem.resources.Res
@@ -37,6 +39,12 @@ import com.mooscles.designsystem.resources.gallery_sample_chart_long
 import com.mooscles.designsystem.resources.gallery_sample_chart_week
 import com.mooscles.designsystem.resources.gallery_sample_chart_workout
 import com.mooscles.designsystem.resources.gallery_section_charts
+import com.mooscles.designsystem.resources.gallery_calendar_day_one
+import com.mooscles.designsystem.resources.gallery_calendar_day_two
+import com.mooscles.designsystem.resources.gallery_calendar_long_month
+import com.mooscles.designsystem.resources.gallery_calendar_short_month
+import com.mooscles.designsystem.resources.gallery_calendar_summary
+import com.mooscles.designsystem.resources.gallery_calendar_week_days
 import com.mooscles.designsystem.theme.MTheme
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -105,6 +113,30 @@ fun ChartsPage() {
         Sample("MSparkline") {
             ChartCard { MSparkline(ChartSamples.sparkline) }
         }
+        CalendarSample()
+    }
+}
+
+/** Fixed four/six-week months for the gallery's width, theme and font-size controls (Phase 5B S2). */
+@Composable
+private fun CalendarSample() {
+    var sixWeeks by rememberSaveable { mutableStateOf(true) }
+    var collapsed by rememberSaveable { mutableStateOf(false) }
+    var selected by rememberSaveable { mutableStateOf<Int?>(null) }
+    val month = stringResource(if (sixWeeks) Res.string.gallery_calendar_long_month else Res.string.gallery_calendar_short_month)
+    val days = stringResource(Res.string.gallery_calendar_week_days)
+    val names = remember(days) { days.split(',') }
+    val marks = listOf(
+        CalendarDayMark(1, 1, stringResource(Res.string.gallery_calendar_day_one, month)),
+        CalendarDayMark(12, 2, stringResource(Res.string.gallery_calendar_day_two, month)),
+    )
+    Sample("MonthCalendar · S2") {
+        MonthCalendar(month, stringResource(Res.string.gallery_calendar_summary, month), names,
+            if (sixWeeks) 31 else 28, if (sixWeeks) 6 else 0, marks, today = 12, selectedDay = selected,
+            onDay = { selected = it },
+            onPrevious = if (sixWeeks) ({ sixWeeks = false; selected = null }) else null,
+            onNext = if (!sixWeeks) ({ sixWeeks = true; selected = null }) else null,
+            collapsed = collapsed, onToggleCollapsed = { collapsed = !collapsed })
     }
 }
 

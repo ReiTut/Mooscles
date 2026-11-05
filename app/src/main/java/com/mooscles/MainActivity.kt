@@ -10,6 +10,9 @@ import android.os.Bundle
 import android.content.Intent
 import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -28,8 +31,10 @@ import com.mooscles.timer.RestNotifications
 import com.mooscles.updates.UpdateNotifications
 import com.mooscles.ui.AppThemeBars
 import com.mooscles.ui.MoosclesApp
+import com.mooscles.screens.progress.LocalProgressCalendarRefresh
 
 class MainActivity : ComponentActivity(), AppThemeBars {
+    private var progressCalendarRefresh by mutableIntStateOf(0)
     private lateinit var language: AppLanguageController
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLanguages.wrap(newBase))
@@ -72,7 +77,8 @@ class MainActivity : ComponentActivity(), AppThemeBars {
             // stops while the Activity is not started (in the background).
             val lifecycleState = lifecycle.currentStateAsState()
             val app = application as MoosclesApplication
-            CompositionLocalProvider(LocalAppLanguageController provides language, LocalConfiguration provides language.configuration) {
+            CompositionLocalProvider(LocalAppLanguageController provides language, LocalConfiguration provides language.configuration,
+                LocalProgressCalendarRefresh provides progressCalendarRefresh) {
                 ProvideExercisePhotos(app, this) {
                     ProvideProgressIndex(app) {
                         MoosclesApp(state.value, vm, timer, workoutRequest.value, foreground = lifecycleState.value.isAtLeast(Lifecycle.State.STARTED))
@@ -100,7 +106,11 @@ class MainActivity : ComponentActivity(), AppThemeBars {
             }
         }
     }
-    override fun onStart() { super.onStart(); (application as MoosclesApplication).timer.foreground = true }
+    override fun onStart() {
+        super.onStart()
+        progressCalendarRefresh++
+        (application as MoosclesApplication).timer.foreground = true
+    }
     override fun onResume() { super.onResume(); language.refresh(); (application as MoosclesApplication).appScope.launch { (application as MoosclesApplication).updates.onForeground() } }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); openFrom(intent) }
     private fun openFrom(intent: Intent?) {

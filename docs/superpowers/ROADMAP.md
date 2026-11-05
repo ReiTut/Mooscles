@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **2026-11-05:** Phase 5B is explicitly resumed by the owner on `codex/phase5b-history`; implementation and focused verification are in progress, not complete. The dated pause below is superseded for 5B only. See the [plan](plans/2026-11-04-phase5b-history.md). Phone testing requires explicit approval followed by a full work stop while awaiting it. No version change, merge or release is authorized.
+
 > **2026-11-04 follow-up:** [v1.5.3 / Build 25](releases/v1.5.3.md) combines the startup beta and workout PR statistic as a full release. This is a localized follow-up, not progress on Phase 5/5B; those phases remain paused.
 
 Atualizado em 2026-10-29. Este é o mapa de onde o produto vai. Cada fase vira uma ou mais specs (`specs/`), planos (`plans/`) e releases (`releases/`), seguindo o fluxo do [AGENTS.md](../../AGENTS.md). Quando uma fase termina, marque-a aqui e ligue os documentos que a entregaram.

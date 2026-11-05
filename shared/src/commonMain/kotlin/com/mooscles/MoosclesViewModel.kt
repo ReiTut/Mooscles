@@ -252,7 +252,7 @@ abstract class MoosclesViewModel(
                 reps = set.reps, weightKg = set.weightKg, completed = set.completed, warmup = set.warmup, assistance = set.assistance))
         }
     }
-    override fun updateSet(setId: String, reps: Int, weightKg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) = act {
+    override fun updateSet(setId: String, reps: Int, weightKg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) = act(setId) {
         services.trainingGate.withLock {
         services.updates.assertTrainingMayStart()
         val item = dataRequireNotNull(repo.workoutSet(setId), DataError.SET_NOT_FOUND) { "Set unavailable" }
@@ -293,7 +293,7 @@ abstract class MoosclesViewModel(
             services.updates.onTrainingChanged()
         }
     }
-    override fun deleteWorkout(id: String) = act { repo.deleteWorkout(id) }
+    override fun deleteWorkout(id: String) = act(id) { repo.deleteWorkout(id) }
     override fun setPounds(pounds: Boolean) = act { services.preferences.pounds(pounds) }
     override fun setTheme(theme: String) = act { services.preferences.theme(theme.lowercase()) }
     override fun setAutoRest(enabled: Boolean) = act { services.preferences.autoRest(enabled) }

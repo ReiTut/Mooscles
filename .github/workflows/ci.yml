@@ -317,7 +317,11 @@ jobs:
           # Workout PR statistic: WorkoutPresentationTest +1 (:shared common), ShareCardDataTest +3
           # (:screens common), HistoryRecordsHostTest +2 and WorkoutSharePreviewHostTest +1
           # (:app host). 1281 + 7 = 1288.
-          MIN_HOST_TESTS: 1288
+          # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (:screens common), CalendarMonthGridTest7
+          # (:designsystem common), AppViewModelSavedWorkoutTimerHostTest3 and ShellNavigationHostTest+1.
+          # SetDraftsTest+1 (scoped failed writes, :screens common), WorkoutSharePreviewHostTest+1.
+          # Legacy coverage is ported, none retired. 1288 + 27 + 7 + 7 + 3 + 1 + 1 + 1 = 1335.
+          MIN_HOST_TESTS: 1335
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -552,7 +556,8 @@ jobs:
           # Phase 5A final fixes: ChartScaleTest +1 (commonTest: floatNoiseIsAFlatLine); SizesTimingElevationTest +1
           # (commonTest: progressPrewarmDelayIsHalfASecond); ChartsTest +1 (uiTest: lineChartWritesItsOwnTicksWithTheComposableLabel).
           # 411 + 3 = 414.
-          MIN_DS_IOS_TESTS: 414
+          # Phase 5B: CalendarMonthGridTest7 (common), MonthCalendarTest7 (UI). 414 + 14 = 428.
+          MIN_DS_IOS_TESTS: 428
         run: |
           $files = @(Get-ChildItem -Path 'designsystem/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
@@ -727,7 +732,11 @@ jobs:
           # Language/icon: PlannedSetDraftsTest +3 common tests, 892 + 3 = 895.
           # Workout PR statistic: ShareCardDataTest +3 (common), ShareCardPainterTest +3 and
           # WorkoutSummaryScreenTest +1 (UI). 895 + 7 = 902.
-          MIN_SCREENS_IOS_TESTS: 902
+          # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (common); HistoryScreenTest17,
+          # WorkoutDetailScreenTest28, SharePreviewSheetTest11, HistoryFlowTest2, RecordsScreenTest+3,
+          # HistoryTapBudgetTest2, HistoryAccessibilityTest3 (UI); SetDraftsTest+1 (common).
+          # 902 + 35 + 66 = 1003.
+          MIN_SCREENS_IOS_TESTS: 1003
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

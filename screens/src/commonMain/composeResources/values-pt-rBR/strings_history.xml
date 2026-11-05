@@ -1,0 +1,54 @@
+<resources>
+    <string name="history_title">Histórico</string>
+    <string name="history_workouts">Treinos</string>
+    <string name="history_progress">Progresso</string>
+    <string name="history_settings">Configurações</string>
+    <string name="history_search">Buscar treino ou exercício</string>
+    <string name="history_routine">Rotina</string>
+    <string name="history_other">Outros treinos</string>
+    <string name="history_exercise">Exercício</string>
+    <string name="history_with_pr">Com recorde</string>
+    <string name="history_clear">Limpar filtros</string>
+    <string name="history_done">Concluir</string>
+    <string name="history_remove_day">Limpar dia: %1$s</string>
+    <string name="history_empty">Seus treinos aparecem aqui</string>
+    <string name="history_empty_body">Cada treino finalizado aparece aqui, com as séries e os recordes.</string>
+    <string name="history_train">Ir para Treinar</string>
+    <string name="history_no_results">Nenhum treino encontrado</string>
+    <string name="history_load_failed">Não foi possível carregar o histórico</string>
+    <string name="history_retry">Tentar de novo</string>
+    <string name="history_month">%1$s · %2$s</string>
+    <string name="history_calendar_summary">%1$s. Dias com treino: %2$s.</string>
+    <string name="history_calendar_day">%1$s, %2$s: %3$s</string>
+    <string name="history_card_stats">%1$s · %2$s · %3$s</string>
+    <string name="history_card_spoken">%1$s, %2$s, %3$s, %4$s</string>
+    <plurals name="history_workout_count"><item quantity="one">%1$d treino</item><item quantity="other">%1$d treinos</item></plurals>
+    <plurals name="history_set_count"><item quantity="one">%1$d série</item><item quantity="other">%1$d séries</item></plurals>
+    <plurals name="history_pr_count"><item quantity="one">%1$d recorde</item><item quantity="other">%1$d recordes</item></plurals>
+    <string name="history_period_4w">4 semanas</string>
+    <string name="history_per_week">Por semana</string>
+    <string name="history_sets">Séries</string>
+    <string name="history_volume">Volume</string>
+    <string name="history_frequency">%1$s de %2$s semanas com treino</string>
+    <string name="history_workouts_week">Treinos por semana</string>
+    <string name="history_workouts_month">Treinos por mês</string>
+    <string name="history_workouts_quarter">Treinos por trimestre</string>
+    <string name="history_volume_week">Volume por semana</string>
+    <string name="history_volume_month">Volume por mês</string>
+    <string name="history_volume_quarter">Volume por trimestre</string>
+    <string name="history_volume_legend">Carga registrada × repetições</string>
+    <string name="history_partial">%1$s (em andamento)</string>
+    <string name="history_chart_summary">%1$s, de %2$s a %3$s. Total %4$s; média %5$s; maior %6$s em %7$s; %8$s períodos vazios.</string>
+    <string name="history_chart_readout">%1$s · %2$s</string>
+    <string name="history_muscles">Músculos</string>
+    <string name="history_muscle_row">%1$s · %2$s séries · %3$s por semana</string>
+    <string name="history_more_muscles">Ver todos os %1$s</string>
+    <string name="history_muscle_more">Mais séries</string>
+    <string name="history_muscle_less">Menos séries</string>
+    <string name="history_full_body">Corpo inteiro</string>
+    <string name="history_most">Mais feitos</string>
+    <string name="history_no_period">Nenhum treino neste período</string>
+    <string name="history_all">Ver tudo</string>
+    <string name="history_quarter">%1$sº tri %2$s</string>
+    <string name="history_and">E</string>
+</resources>

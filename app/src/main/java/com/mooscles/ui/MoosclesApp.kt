@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +25,7 @@ import com.mooscles.designsystem.licenses.LicensesScreen
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.exercise.ExerciseInfoRoute
 import com.mooscles.screens.library.LibraryRoute
+import com.mooscles.screens.history.HistoryRoute
 import com.mooscles.screens.progress.ExerciseProgressRoute
 import com.mooscles.screens.progress.LocalProgressIndexCache
 import com.mooscles.screens.progress.ProgressMetric
@@ -40,6 +39,8 @@ import com.mooscles.screens.workout.ActiveWorkoutRoute
 import com.mooscles.screens.workout.ActiveWorkoutScreenState
 import com.mooscles.screens.workout.ScreenErrorToast
 import com.mooscles.screens.workout.rememberActiveWorkoutScreenState
+import com.mooscles.screens.workoutdetail.WorkoutDetailRoute
+import com.mooscles.screens.workoutdetail.rememberWorkoutDetailScreenState
 
 /** The full-screen active workout (spec D1): the only route without the shell. */
 internal const val WORKOUT_ROUTE = "workout"
@@ -129,7 +130,7 @@ private fun NavHostController.progressFromInfo(id: String) {
  * the snackbar and the loading overlay read.
  */
 private val OWN_PLACEHOLDER_ROUTES =
-    setOf(WORKOUT_ROUTE, ShellTabs.TRAIN, ROUTINE_ROUTE, ShellTabs.LIBRARY, EXERCISE_INFO_ROUTE, ShellTabs.RECORDS, PROGRESS_ROUTE)
+    setOf(WORKOUT_ROUTE, ShellTabs.TRAIN, ROUTINE_ROUTE, ShellTabs.LIBRARY, EXERCISE_INFO_ROUTE, ShellTabs.HISTORY, DETAIL_ROUTE, ShellTabs.RECORDS, PROGRESS_ROUTE)
 
 /** The route the app's frame is drawn for, and [summary] when it is the end-of-workout summary. */
 internal data class ShownRoute(val route: String, val summary: Boolean = false) {
@@ -340,9 +341,6 @@ internal fun MoosclesApp(
                 // Settings has the design system's top bar; the gallery, the licenses and the new
                 // screens bring their own.
                 if (route == SettingsRoutes.SETTINGS) SettingsTopBar(onBack = { nav.popBackStack() })
-                else if (!newScreen && route != DeveloperGallery.ROUTE && route != SettingsRoutes.LICENSES) TopAppBar(title = { Text("mooscles", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary) },
-                    navigationIcon = { if (route !in ShellTabs.keys) IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Outlined.ArrowBack, stringResource(R.string.legacy_back)) } },
-                    actions = { IconButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) { Icon(Icons.Outlined.Tune, stringResource(R.string.legacy_settings)) } })
             },
             bottomBar = {
                 if (route != WORKOUT_ROUTE) ShellBottom(state, timer, selectedTab, ::selectTab, ::reselectTab, ::openWorkout, hosted)
@@ -389,15 +387,22 @@ internal fun MoosclesApp(
                             foreground = foreground,
                         )
                     }
-                    composable(ShellTabs.HISTORY) { HistoryScreen(state, hosted, onDetail = { nav.navigate(detailRoute(it, summary = false)) }) }
+                    composable(ShellTabs.HISTORY) {
+                        HistoryRoute(state, hosted,
+                            onOpenWorkout = { nav.navigate(detailRoute(it, summary = false)) { launchSingleTop = true } },
+                            onOpenSettings = { nav.navigate(SettingsRoutes.settings()) { launchSingleTop = true } },
+                            onOpenTrain = { selectTab(ShellTabs.TRAIN) },
+                            onOpenProgress = { nav.openProgress(it) })
+                    }
                     composable(DETAIL_ROUTE, arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument(SUMMARY_ARG) { type = NavType.BoolType; defaultValue = false })) { page ->
                         val workout = state.history.find { it.id == page.arguments?.getString("id") }
                         val asSummary = page.arguments?.getBoolean(SUMMARY_ARG) ?: false
                         when {
-                            workout == null -> MissingScreen(stringResource(R.string.legacy_workout_unavailable))
-                            asSummary -> SummaryRoute(workout, state, hosted, onDone = { selectTab(ShellTabs.TRAIN) },
+                            asSummary && workout != null -> SummaryRoute(workout, state, hosted, onDone = { selectTab(ShellTabs.TRAIN) },
                                 onDetails = { nav.navigate(detailRoute(workout.id, summary = false)) })
-                            else -> WorkoutDetailScreen(workout, state, hosted, onDeleted = { nav.popBackStack() }, onExerciseHistory = { nav.openProgress(it) })
+                            else -> SavedWorkoutRoute(page.arguments?.getString("id").orEmpty(), state, hosted,
+                                onBack = { if (!nav.popBackStack()) selectTab(ShellTabs.HISTORY) },
+                                onExercise = { nav.openProgress(it) }, onRoutine = { nav.openRoutine(it) })
                         }
                     }
                     composable(PROGRESS_ROUTE, arguments = listOf(
@@ -523,5 +528,13 @@ private fun SummaryRoute(workout: WorkoutUi, state: UiState, actions: MoosclesAc
     if (share) WorkoutSharePreview(workout.id, state.preferences.pounds, onDismiss = { share = false })
 }
 
+/** The saved editor has its own back mode; platform navigation and PNG ownership remain in Android. */
 @Composable
-private fun MissingScreen(title: String) = EmptyState(Icons.Outlined.SearchOff, title, stringResource(R.string.legacy_missing_body))
+private fun SavedWorkoutRoute(id: String, state: UiState, actions: MoosclesActions,
+    onBack: () -> Unit, onExercise: (String) -> Unit, onRoutine: (String) -> Unit) {
+    var share by rememberSaveable(id) { mutableStateOf(false) }
+    val screen = rememberWorkoutDetailScreenState(id)
+    BackHandler(enabled = screen.editing) { screen.finishEditing() }
+    WorkoutDetailRoute(id, state, actions, onBack, onExercise, onRoutine, onShare = { share = true }, screen = screen)
+    if (share) WorkoutSharePreview(id, state.preferences.pounds, onDismiss = { share = false })
+}

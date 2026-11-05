@@ -189,10 +189,16 @@ class LibraryNavigationHostTest {
     /** Pre-flight F21: a reload on these routes shows their own placeholders, not the app's spinner. */
     @Test fun loadingShowsTheirSkeletonsNotTheOverlay() {
         show()
-        // An old screen has the overlay (the tabs wait while the state loads, so it is checked first).
-        tab("history").performClick()
+        // Settings retains the generic overlay; History joins the routes with their own skeleton in Phase 5B.
+        compose.onNodeWithTag("train-settings").performClick()
         reload()
         compose.onAllNodes(spinner).assertCountEquals(1)
+        back()
+        compose.runOnIdle { state.value = state.value.copy(loading = false, exercises = catalog) }
+        tab("history").performClick()
+        reload()
+        compose.onNodeWithTag("history-skeleton").assertIsDisplayed()
+        compose.onAllNodes(spinner).assertCountEquals(0)
         compose.runOnIdle { state.value = state.value.copy(loading = false, exercises = catalog) }
         openDetail(incline)
         reload()
@@ -251,7 +257,9 @@ class LibraryNavigationHostTest {
             frames += rememberShownRoute(current?.route, current?.summary ?: false)
         }
         compose.waitForIdle()
-        for (shown in listOf(ShownRoute(ShellTabs.LIBRARY), ShownRoute(EXERCISE_INFO_ROUTE), ShownRoute("workoutDetail/{id}?summary={summary}", summary = true))) {
+        for (shown in listOf(ShownRoute(ShellTabs.LIBRARY), ShownRoute(EXERCISE_INFO_ROUTE),
+            ShownRoute(ShellTabs.HISTORY), ShownRoute("workoutDetail/{id}?summary={summary}"),
+            ShownRoute("workoutDetail/{id}?summary={summary}", summary = true))) {
             compose.runOnIdle { entry.value = shown }
             compose.waitForIdle()
             // The recreation: the new composition starts without an entry.
@@ -259,16 +267,19 @@ class LibraryNavigationHostTest {
             restoration.emulateSavedInstanceStateRestore()
             assertEquals(listOf(shown), frames.distinct())
             assertTrue(frames.last().newScreen)
-            assertEquals(shown.summary, frames.last().loadingOverlay)
+            assertFalse(frames.last().loadingOverlay)
         }
         // Train and the editor are new screens too (plan 4B, Task 15), and Records and the progress (plan 5A,
-        // Task 13); the history is still an old one.
+        // Task 13); History and saved detail now own their placeholders too (phase 5B).
         assertTrue(ShownRoute(ShellTabs.TRAIN).newScreen)
         assertTrue(ShownRoute(ROUTINE_ROUTE).newScreen)
         assertTrue(ShownRoute(ShellTabs.RECORDS).newScreen)
         assertTrue(ShownRoute(PROGRESS_ROUTE).newScreen)
         assertFalse(ShownRoute(PROGRESS_ROUTE).loadingOverlay)
-        assertFalse(ShownRoute(ShellTabs.HISTORY).newScreen)
+        assertTrue(ShownRoute(ShellTabs.HISTORY).newScreen)
+        assertFalse(ShownRoute(ShellTabs.HISTORY).loadingOverlay)
+        assertFalse(ShownRoute(SettingsRoutes.SETTINGS).newScreen)
+        assertTrue(ShownRoute(SettingsRoutes.SETTINGS).loadingOverlay)
     }
 
     private fun reload() {

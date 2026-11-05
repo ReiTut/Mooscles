@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_title">Detalhes do treino</string>
+    <string name="detail_editing">Editando treino</string>
+    <string name="detail_menu">Opções do treino</string>
+    <string name="detail_edit">Editar treino</string>
+    <string name="detail_done">Concluir</string>
+    <string name="detail_share">Compartilhar treino</string>
+    <string name="detail_rename">Renomear treino</string>
+    <string name="detail_name">Nome do treino</string>
+    <string name="detail_save">Salvar</string>
+    <string name="detail_cancel">Cancelar</string>
+    <string name="detail_delete">Excluir treino</string>
+    <string name="detail_confirm_edit">Editar treino salvo?</string>
+    <string name="detail_confirm_edit_body">As mudanças são salvas na hora e os recordes deste exercício são recalculados em todo o histórico.</string>
+    <string name="detail_confirm_delete">Excluir este treino?</string>
+    <string name="detail_confirm_delete_body">Ele sai do histórico e os recordes são recalculados.</string>
+    <string name="detail_remove_set">Remover a série %1$d?</string>
+    <string name="detail_remove_set_body">Os recordes deste exercício serão recalculados. Esta remoção não pode ser desfeita.</string>
+    <string name="detail_remove">Remover</string>
+    <string name="detail_remove_exercise">Remover %1$s?</string>
+    <string name="detail_remove_exercise_body">Suas séries saem deste treino e os recordes são recalculados.</string>
+    <string name="detail_replace_exercise">Trocar %1$s?</string>
+    <string name="detail_replace_exercise_body">As séries existentes serão removidas. Escolha o exercício substituto em seguida.</string>
+    <string name="detail_replace">Trocar exercício</string>
+    <string name="detail_add_exercise">Adicionar exercício</string>
+    <string name="detail_exercise_menu">Opções de %1$s</string>
+    <string name="detail_progress">Ver progresso</string>
+    <string name="detail_move_up">Mover para cima</string>
+    <string name="detail_move_down">Mover para baixo</string>
+    <string name="detail_routine">Rotina: %1$s</string>
+    <string name="detail_rest">Descanso %1$s min</string>
+    <string name="detail_rest_help">Use m:ss, até 5:00. Salvar aplica a mudança a este exercício.</string>
+    <string name="detail_rest_error">Informe uma duração de 0:00 a 5:00.</string>
+    <string name="detail_set_not_completed">Não concluída</string>
+    <string name="detail_set_completed">Concluída</string>
+    <string name="detail_weight_pr">Recorde de carga</string>
+    <string name="detail_reps_pr">Recorde de repetições</string>
+    <string name="detail_set_reading">Série %1$d · %2$s · %3$s</string>
+    <string name="detail_no_sets">Nenhuma série registrada</string>
+    <string name="detail_missing">Treino não encontrado</string>
+    <string name="detail_missing_body">Este treino pode ter sido excluído ou substituído por uma importação.</string>
+    <string name="detail_back_history">Voltar ao Histórico</string>
+</resources>

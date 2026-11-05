@@ -44,6 +44,22 @@ class SetDraftsTest {
     }
 
     @Test
+    fun aFailedSetKeepsOtherRowsAwaitedWritesAndAllDrafts() {
+        val state = typed("22.123456789", 22.123456789)
+        state.sent("s1", SetField.REPS, 7.0)
+        state.type("s2", SetField.LOAD, "40,")
+        state.sent("s2", SetField.LOAD, 40.123456789)
+        state.sent("s2", SetField.REPS, 9.0)
+        state.dropPendingWrites("s1")
+        assertNull(state.sent[load])
+        assertNull(state.sent["s1" to SetField.REPS])
+        assertEquals(listOf(40.123456789), state.sent["s2" to SetField.LOAD])
+        assertEquals(listOf(9.0), state.sent["s2" to SetField.REPS])
+        assertEquals("22.123456789", state.drafts[load])
+        assertEquals("40,", state.drafts["s2" to SetField.LOAD])
+    }
+
+    @Test
     fun aDraftInAnotherFormGoesOnTheEqualEcho() {
         // "80.0" typed for 80: once 80 is saved and nothing else is awaited, the saved value shows.
         val state = typed("80.0", 80.0)

@@ -122,4 +122,14 @@ data class MoosclesSizes(
     val chartSelectionRing: Dp = 8.dp,
     /** Phase 5A: the space between two bars. */
     val chartBarGap: Dp = 4.dp,
+    /** Phase 5B D12: the calendar's documented exception to the normal 48 dp touch target. */
+    val calendarCellMin: Dp = 40.dp,
+    /** A second shape, below the date, distinguishes a day with more than one workout. */
+    val calendarMultipleDot: Dp = 4.dp,
+    /** One deliberate horizontal swipe changes at most one month. */
+    val calendarSwipeDistance: Dp = 48.dp,
+    /** Phase 5B: native-decoded pages reserve this height until their image is ready. */
+    val sharePreviewPlaceholder: Dp = 180.dp,
+    /** Share actions may scroll at large fonts, while leaving room for the preview above them. */
+    val sharePreviewActionsMaxFraction: Float = 0.6f,
 )

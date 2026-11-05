@@ -294,6 +294,11 @@ class ActiveWorkoutScreenState(
         if (sent.isNotEmpty()) sent = emptyMap()
     }
 
+    /** Rejects only [setId]'s awaited writes, preserving other rows' pending values and every draft. */
+    fun dropPendingWrites(setId: String) {
+        if (sent.keys.any { it.first == setId }) sent = sent.filterKeys { it.first != setId }
+    }
+
     /** Holds [text] as the draft of [field] of [setId]. */
     internal fun type(setId: String, field: SetField, text: String) {
         val key = setId to field

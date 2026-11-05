@@ -126,11 +126,17 @@
     <string name="gallery_sample_lateral_raise">Elevação lateral</string>
     <!-- Fase 5A: a página de gráficos. Os resumos são exemplos; cada tela escreve o seu a partir dos dados. -->
     <string name="gallery_page_charts">Gráficos</string>
-    <string name="gallery_section_charts">Linha, barras e sparkline</string>
+    <string name="gallery_section_charts">Linha, barras, sparkline e calendário</string>
     <string name="gallery_sample_chart_line">1RM estimado: de 80 kg a 92,5 kg; máximo 95 kg; tendência em alta; 8 treinos.</string>
     <string name="gallery_sample_chart_flat">Carga: de 60 kg a 62,5 kg; 2 treinos.</string>
     <string name="gallery_sample_chart_long">Carga, todo o período: de 40 kg a 100 kg; tendência em alta; 300 treinos.</string>
     <string name="gallery_sample_chart_bars">Volume por semana, últimas 8 semanas: maior semana 14.200 kg; 1 semana sem treino.</string>
     <string name="gallery_sample_chart_workout">Treino %1$d</string>
     <string name="gallery_sample_chart_week">Semana %1$d</string>
+    <string name="gallery_calendar_long_month">Agosto de 2026 · 3 treinos</string>
+    <string name="gallery_calendar_short_month">Fevereiro de 2026 · 3 treinos</string>
+    <string name="gallery_calendar_summary">%1$s. Treinos nos dias 1 e 12.</string>
+    <string name="gallery_calendar_day_one">%1$s, dia 1, um treino.</string>
+    <string name="gallery_calendar_day_two">%1$s, dia 12, dois treinos.</string>
+    <string name="gallery_calendar_week_days">D,S,T,Q,Q,S,S</string>
 </resources>

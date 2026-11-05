@@ -211,7 +211,7 @@ class ShellNavigationHostTest {
         compose.runOnIdle { assertFalse(compose.activity.isFinishing) }
     }
 
-    @Test fun summaryTrueOpensTheNewSummaryAndFalseTheOldDetail() {
+    @Test fun summaryAndSavedDetailBothUseTheirSharedScreens() {
         show(activeState(completed = true))
         tab("library").performClick()
         openFromTheBar()
@@ -226,7 +226,7 @@ class ShellNavigationHostTest {
         compose.onNodeWithContentDescription("Settings").assertDoesNotExist()
         compose.onNodeWithText("View details").performScrollTo().performClick()
         compose.onNodeWithTag("workout-details").assertIsDisplayed()
-        compose.onNodeWithText("Session breakdown", substring = true, ignoreCase = true).assertExists()
+        compose.onNodeWithText("Workout details", substring = true, ignoreCase = true).assertExists()
         compose.onNodeWithText("Strong work.").assertDoesNotExist()
         back()
         compose.onNodeWithTag("summary-stats").assertExists()
@@ -235,6 +235,23 @@ class ShellNavigationHostTest {
         assertLibraryRoot()
         compose.onNodeWithTag("workout-route").assertDoesNotExist()
         compose.runOnIdle { assertEquals(listOf("finishWorkout:"), calls.filter { it.startsWith("finish") }) }
+    }
+
+    @Test fun savedDetailSystemBackLeavesEditingBeforeNavigatingAway() {
+        val initial = activeState()
+        val saved = initial.active!!.copy(id = "saved", endedAt = 61_000)
+        showWithNav(initial.copy(active = null, history = listOf(saved)))
+        openRoute("workoutDetail/saved?summary=false", "workout-details")
+        compose.onNodeWithTag("workout-details").performScrollToNode(hasTestTag("detail-edit"))
+        compose.onNodeWithTag("detail-edit").performClick()
+        compose.onNodeWithTag("dialog-confirm").performClick()
+        compose.onNodeWithTag("detail-done").assertIsDisplayed()
+        back()
+        compose.onNodeWithTag("detail-done").assertDoesNotExist()
+        compose.onNodeWithTag("workout-details").assertExists()
+        back()
+        compose.onNodeWithTag("routines-list").assertIsDisplayed()
+        tab("routines").assertIsSelected()
     }
 
     @Test fun summaryDoneGoesToTrainAndTheSummaryStaysAboveTheShell() {
@@ -391,12 +408,14 @@ class ShellNavigationHostTest {
         // The workout shows its own words for the code and hands the error back.
         compose.onNodeWithText("Couldn't save the last change", substring = true).assertExists()
         compose.runOnIdle { assertEquals(1, calls.count { it == "clearError:" }) }
-        // On a tab route, the old screens still get the snackbar (Train is a new screen since plan 4B).
+        // History now has its own localized error too; raw ViewModel text never enters its snackbar.
         compose.runOnIdle { state.value = state.value.copy(error = null, errorCode = null) }
         compose.onNodeWithTag("workout-minimize").performClick()
         tab("history").performClick()
         compose.runOnIdle { state.value = state.value.copy(error = "Raw routine failure", errorCode = UiError.GENERIC) }
-        compose.onNodeWithText("Raw routine failure").assertExists()
+        compose.onNodeWithText("Raw routine failure").assertDoesNotExist()
+        compose.onNodeWithText("Couldn't save the last change", substring = true).assertExists()
+        compose.runOnIdle { assertEquals(2, calls.count { it == "clearError:" }) }
     }
 
     @Test fun workoutRequestOpensTheWorkoutOnce() {
@@ -481,9 +500,9 @@ class ShellNavigationHostTest {
         compose.waitForIdle()
     }
 
-    private fun openRoute(route: String) {
+    private fun openRoute(route: String, screenTag: String = ExerciseProgressTag) {
         compose.runOnIdle { nav.navigate(route) }
-        compose.onNodeWithTag(ExerciseProgressTag).assertIsDisplayed()
+        compose.onNodeWithTag(screenTag).assertIsDisplayed()
     }
 
     /** The metric chips come with the chart, built off the main thread. */
