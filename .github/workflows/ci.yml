@@ -422,6 +422,21 @@ jobs:
   # can build Kotlin/Native Apple targets.
   ios:
     name: iOS compile and simulator tests
+    # Owner-approved Android-only v1.5.4 release. Match the release branch
+    # commit, same-repository PR, one main transition, and version tag.
+    if: >-
+      ${{ !(github.repository == 'ReiTut/Mooscles' && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/codex/phase5b-history' &&
+          startsWith(github.event.head_commit.message, 'ci: prepare Android-only v1.5.4 release')) ||
+        (github.event_name == 'pull_request' && github.base_ref == 'main' &&
+          github.head_ref == 'codex/phase5b-history' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.title == 'Release v1.5.4: Phase 5B (Android only)') ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          github.event.before == 'c9ba9b1a226d7cbc41acbca19dcba09ae9f6447e' &&
+          startsWith(github.event.head_commit.message, 'Release v1.5.4: Phase 5B (Android only)')) ||
+        (github.event_name == 'push' && github.ref == 'refs/tags/v1.5.4')
+      )) }}
     runs-on: macos-26
     timeout-minutes: 60
     steps:

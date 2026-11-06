@@ -6,7 +6,9 @@ See the [release notes](docs/superpowers/releases/v1.5.4.md), [Phase 5B verifica
 
 The previously verified Phase 5B source passed 20 affected Android History/Progress UI tests after the muscle-map change. The isolated offline upgrade preserved encoded data and preferences, exact set values and the running timer. Phone rendering measurements used an isolated Build 25 with synthetic data. Android-only local release preparation is separate from public delivery and installation.
 
-Publication requires a source push, PR to `main` and version tag under the normal release process. The current GitHub workflow starts iOS checks on those events. The candidate stays local under the owner's Android-only constraint.
+The local candidate passed 934 Android host tests, clean APK packaging, lint, design-token checks and APK budgets. The APK matches the previous release's signing certificate. The exact merged source is packaged again before publication.
+
+The owner approved a v1.5.4-only condition in [CI](.github/workflows/ci.yml). The release uses the `codex/phase5b-history` push with the `ci: prepare Android-only v1.5.4 release` subject, the same-repository PR titled `Release v1.5.4: Phase 5B (Android only)`, its merge to `main` from the Build 25 source using that merge subject, and the `v1.5.4` tag push. Only the iOS job is skipped for these events. Android and release-script checks stay enabled.
 
 ## Full release 1.5.3 / Build 25 — 2026-11-04
 

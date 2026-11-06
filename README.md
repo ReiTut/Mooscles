@@ -4,13 +4,9 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Current release
 
-**1.5.3 / Build 25** brings the previous startup prerelease changes and adds **PRs beside Sets** in the completed-workout summary, saved detail, share preview and every exported card page. It counts each exercise variation with a qualifying first or beaten record once. English/Portuguese descriptions and responsive layouts keep the count readable and accessible. [Release notes](docs/superpowers/releases/v1.5.3.md) · [PR-statistic verification](docs/superpowers/reports/2026-11-04-workout-pr-statistic-verification.md).
+**1.5.4 / Build 26** adds the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview. See the [release notes](docs/superpowers/releases/v1.5.4.md) and [Android verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md).
 
-This is a full stable-channel release using the existing debug-signed APK. Its higher build number is eligible for stable Build 23 and beta Build 24 installations without enabling prereleases. Package, signing identity and saved-data formats remain unchanged.
-
-## Phase 5B release candidate
-
-**1.5.4 / Build 26** adds the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview. See the [candidate notes](docs/superpowers/releases/v1.5.4.md) and [Android verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md). The download below identifies the current published build.
+The [previous Build 25 release](docs/superpowers/releases/v1.5.3.md) added **PRs beside Sets** in the completed-workout summary, saved detail, share preview and every exported card page. It counts each exercise variation with a qualifying first or beaten record once.
 
 ## Routine-startup changes (first published in beta)
 
@@ -89,9 +85,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-The current published release is **1.5.3 / Build 25**.
-
-[v1.5.3 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/Mooscles-v1.5.3-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/update.json)
+[v1.5.4 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.4) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.4/Mooscles-v1.5.4-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.4/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
