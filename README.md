@@ -6,7 +6,11 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 **1.5.3 / Build 25** brings the previous startup prerelease changes and adds **PRs beside Sets** in the completed-workout summary, saved detail, share preview and every exported card page. It counts each exercise variation with a qualifying first or beaten record once. English/Portuguese descriptions and responsive layouts keep the count readable and accessible. [Release notes](docs/superpowers/releases/v1.5.3.md) · [PR-statistic verification](docs/superpowers/reports/2026-11-04-workout-pr-statistic-verification.md).
 
-This is a full stable-channel release using the existing debug-signed APK. Its higher build number is eligible for stable Build 23 and beta Build 24 installations without enabling prereleases. Package, signing identity and saved-data formats remain unchanged. Phase 5/5B stays paused.
+This is a full stable-channel release using the existing debug-signed APK. Its higher build number is eligible for stable Build 23 and beta Build 24 installations without enabling prereleases. Package, signing identity and saved-data formats remain unchanged.
+
+## Phase 5B release candidate
+
+**1.5.4 / Build 26** adds the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview. See the [candidate notes](docs/superpowers/releases/v1.5.4.md) and [Android verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md). The download below identifies the current published build.
 
 ## Routine-startup changes (first published in beta)
 
@@ -85,15 +89,13 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-The current release is **1.5.2 / Build 23**: the new shared-workout wordmark in previews and exported PNGs, preserving existing workouts, routines, folders, settings and the previous release's language selection and launcher artwork.
+The current published release is **1.5.3 / Build 25**.
 
 [v1.5.3 full release · Latest](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/Mooscles-v1.5.3-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.3/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
-This full release is marked Latest and retains the existing debug APK and signing identity for update compatibility. It keeps application ID `com.mooscles`, uses version name `1.5.2` and version code `23`, and requires Android 8.0 or newer. Distributed updaters select the highest compatible metadata version code, so Build 22 and older compatible installations can discover Build 23 on the stable channel. **Include prereleases** is not required. Automatic downloads respect saved preferences, and Android may require installation approval. APKs are attached as release assets; previous tags and releases remain intact. Full GitHub release status does not change the APK build type or signing certificate.
-
-The release keeps the recovery build's exercise menus and workout behavior. Its presentation cache follows saved values and invalidates on history corrections, routine changes and unit switches. Saved exercise order, independent targets, routines, completed history and active sessions remain readable through the additive Room schema v5 migration. Nullable timer ownership from Build 12 remains compatible, including its persistence and cleanup. The updater remains compatible with prior builds and future higher-build updates. Installed-version reporting shows the real **Build 17**.
+The APK uses the existing debug signing identity and application ID `com.mooscles` and requires Android 8.0 or newer. Distributed updaters select the highest compatible version code available on the selected update channel. Automatic downloads respect saved preferences, and Android may require installation approval.
 
 ## Use
 

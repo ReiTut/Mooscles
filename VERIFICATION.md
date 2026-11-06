@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release candidate 1.5.4 / Build 26
+
+See the [release notes](docs/superpowers/releases/v1.5.4.md), [Phase 5B verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md) and [performance comparison](docs/superpowers/reports/2026-11-05-phase5b-performance.md). The version bump preserves package `com.mooscles`, schema 6, the original distribution signer and the updater contract. Build 26 is above the latest distributed Build 25.
+
+The previously verified Phase 5B source passed 20 affected Android History/Progress UI tests after the muscle-map change. The isolated offline upgrade preserved encoded data and preferences, exact set values and the running timer. Phone rendering measurements used an isolated Build 25 with synthetic data. Android-only local release preparation is separate from public delivery and installation.
+
+Publication requires a source push, PR to `main` and version tag under the normal release process. The current GitHub workflow starts iOS checks on those events. The candidate stays local under the owner's Android-only constraint.
+
 ## Full release 1.5.3 / Build 25 — 2026-11-04
 
 Combines the unchanged startup fast path/forward-entry fade removal from beta Build 24 with the [PR-statistic follow-up](docs/superpowers/reports/2026-11-04-workout-pr-statistic-verification.md). Fresh release checks select all relevant host classes across startup, state preservation, navigation, summary/sharing/localization and updater/signing, plus the retained affected Android screen classes, lint, common metadata, design tokens, clean packaging and APK budgets. Prior performance traces and real preview/chooser observations remain separately identified; they do not establish a general performance improvement.
