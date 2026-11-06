@@ -173,7 +173,7 @@ class MSearchFieldTest {
     }
 
     /**
-     * At 200% (and at the iOS linear 2x, ruling F23) in a 360 dp column, the placeholder of either
+     * At 200% and under linear scaling in a 360 dp column, the placeholder of either
      * language wraps inside the grown box instead of being cut, and a typed query is shown whole.
      */
     @Test

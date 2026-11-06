@@ -15,7 +15,7 @@ import com.mooscles.data.buildMooscles
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 
-// The emulator's side of FlowHarness: the same declarations as FlowPlatform.ios.kt (not expect/actual).
+// Android Room, preferences and capture helpers for FlowHarness.
 
 /** A new, empty directory of the test app's cache for one flow; [deleteFlowDirectory] removes it. */
 internal fun createFlowDirectory(): String {

@@ -85,9 +85,8 @@ import kotlin.time.Duration.Companion.minutes
  *
  * The form and the sheets are windows of their own, which take the frame's density and font scale
  * (the form, `MBottomSheet` and `MDialog` pass the host's in). The form also takes the frame's
- * width ([CustomExerciseForm]'s `pageSize`); a sheet is as wide as the screen (412 dp on the
- * emulator's Pixel 8, the simulator's on iOS), so its "320 dp" combinations check it at the
- * screen's width.
+ * width ([CustomExerciseForm]'s `pageSize`). Sheets use the emulator's screen width even when
+ * the test constrains the content frame to 320 dp.
  *
  * Plus the screen reader's order over the library ([libraryReadingOrder]: the top, the search, the
  * filters, the count, the list) and over the whole detail, laid out in a window tall enough that

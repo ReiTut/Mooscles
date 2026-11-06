@@ -17,7 +17,7 @@ import kotlinx.datetime.TimeZone
  * linearly with the history (twice the workouts in less than three times the time; a quadratic pass reads about
  * four), and a query must cost a small part of a build, which is what the one shared index buys. The absolute bounds
  * of the plan (a median build under 500 ms, queries under 20 ms) come after them and are wide on purpose; the real
- * budget is measured on the emulator with the R8 build (Task 16), and a debug Kotlin/Native build does not match the JIT.
+ * budget is measured on the emulator with the R8 build (Task 16).
  */
 class ProgressIndexTimingTest {
     private val zone = TimeZone.of("America/Sao_Paulo")

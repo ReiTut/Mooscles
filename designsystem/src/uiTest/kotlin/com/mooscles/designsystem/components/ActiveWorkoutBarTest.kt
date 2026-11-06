@@ -37,7 +37,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class ActiveWorkoutBarTest {
-    /** Long enough to overflow 412 dp at 1.0 on every platform (iOS fonts are narrower than Android's). */
+    /** Long enough to overflow 412 dp at the default font scale. */
     private val longName = "Upper body strength and conditioning, heavy week: bench press, weighted pull-ups, overhead press, barbell rows and face pulls to finish"
 
     @AfterTest
@@ -202,8 +202,8 @@ class ActiveWorkoutBarTest {
                         val where = "$width at $scale, rest=$rest"
                         val name = layoutOf(WorkoutBarNameTag)
                         assertEquals(1, name.lineCount, where)
-                        // isLineEllipsized is false on iOS for this node (its layout result comes
-                        // from a relayout at the parent's width), so check what it needs and how it ends.
+                        // A relayout at the parent's width can hide the ellipsis flag.
+                        // Check the required width and text overflow mode directly.
                         assertEquals(TextOverflow.Ellipsis, name.layoutInput.overflow, where)
                         val needed = name.multiParagraph.intrinsics.maxIntrinsicWidth
                         assertTrue(needed > name.size.width, "$where: the long name needs $needed px, has ${name.size.width}")

@@ -13,8 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * The two timing limits of [WorkoutCalculationsBatchTest], on the JVM only: they were set for the
- * JIT, which a debug Kotlin/Native build on the iOS simulator does not match.
+ * The two timing limits of [WorkoutCalculationsBatchTest] were set for the host JVM's JIT.
  */
 class WorkoutCalculationsBatchTimingTest {
     /** The common test class holds the flat-scan oracle and the conventions the histories use. */

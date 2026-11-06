@@ -737,7 +737,7 @@ class SetEditingTest {
         onNodeWithContentDescription("Editing reps of set 1").assertIsFocused()
     }
 
-    /** S3: the iOS simulator opens no keyboard, so the keyboard is 300 dp of injected insets on both platforms. */
+    /** Injects a 300 dp keyboard inset for deterministic layout. */
     @Test
     fun editingRowIsBroughtIntoViewAboveTheKeyboard() = runComposeUiTest {
         val entry = entryOf(SetUi("s1", reps = 8, weightKg = 85.0))

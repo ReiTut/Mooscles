@@ -277,8 +277,8 @@ class WorkoutSummaryScreenTest {
 
     @Test
     fun numbersWholeAtTwoHundred() {
-        // 2.0 with the device's density; just over 2 at density 1, the iOS text sizes; and the
-        // two-column layout at 1.0 and 1.3, where num.lg would not fit 320 dp.
+        // Check 2.0 at the device's density and linear scaling at density 1. The two-column
+        // layout at 1.0 and 1.3 also needs coverage because num.lg would not fit 320 dp.
         // At 412 dp, 1.0 and 2.0, the other width of the spec's text-fit rule.
         val cases = listOf(
             Triple(2f, null, 320), Triple(LINEAR_TWO_X_FONT_SCALE, 1f, 320), Triple(1f, null, 320), Triple(1.3f, null, 320),

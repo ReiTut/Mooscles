@@ -1,12 +1,16 @@
 # Handoff: como continuar o Mooscles
 
-**Phase 5B release.** The owner authorized publishing 1.5.4 / Build 26 with a release-specific iOS job exception. The normal PR-to-main process, Android checks and release-script checks still apply. The prior stable baseline is 1.5.3 / Build 25. See the [release notes](releases/v1.5.4.md) and [verification](../../VERIFICATION.md). Preserve the unrelated Gradle edit and PC backups. The older Phase 5B checkpoint below records the scope before release authorization.
+**2026-11-06 — Android-only project.** The `codex/android-only` branch starts from published 1.5.4 / Build 26 (`30de9ff`). It retains Kotlin Multiplatform and Compose Multiplatform in `:shared`, `:designsystem`, and `:screens`, with Android as their sole target. The current CI runs Android host checks, lint, APK packaging, resource and schema checks, and the release-script matrix. Follow the current [build and test instructions](../../AGENTS.md#ambiente-e-comandos).
+
+Keep this cleanup local and retain the application ID, version, distribution variant, signer, workout data, PC backups, and unrelated Gradle edit. Use an Android emulator for device checks and ask for approval before a physical-phone test.
+
+**Published Phase 5B baseline.** [Release 1.5.4 / Build 26](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.4) is the starting point for the cleanup. See the [release notes](releases/v1.5.4.md) and [verification](../../VERIFICATION.md). The dated checkpoints and Mac/fork notes below describe earlier stages.
 
 **2026-11-05 Phase 5B checkpoint:** the owner's instruction resumes Phase 5B only, superseding the pause notices below. Branch `codex/phase5b-history` starts at `c9ba9b1` (v1.5.3 / Build 25); implementation is in `9a0740a`, metadata reuse in `26a8889`, and the narrow/large-font saved-editor correction in `7fc1b2e`. Shared History/calendar/overall progress, saved detail/editing and the common share-preview interface are implemented. Read the [plan](plans/2026-11-04-phase5b-history.md), [verification](reports/2026-11-05-phase5b-verificacao.md), [performance evidence](reports/2026-11-05-phase5b-performance.md) and [critique](reports/2026-11-05-phase5b-critique.md).
 
 Final debug and preview APKs retain the original signer and Build 25. The isolated offline Build 16 → 25 upgrade preserved encoded data and preferences, exact values and a running timer. The approved isolated phone comparison reduced Overall Progress jank from 7.24% to 1.39% after giving its muscle map an offscreen layer. History, Records and the Library control also met 5% on that phone. The pre-layer emulator scrolling result exceeded 5%. The standalone index comparison reached 58.5 ms median, while in-app unit switches took 77.1 ms against a 60 ms goal. Navigation-to-visible-frame and active-workout rendering budgets remain unverified.
 
-The owner limited the final checks to Android. The final fix stays local because a push triggers iOS CI. The last pushed revision is `7fc1b2e`, with 1,337 passing Linux host tests and 29 passing affected Android cases. Earlier iOS results are historical evidence in the verification report. No version change, merge, tag, release or Phase 6/7 work is authorized. Preserve the unrelated `gradle.properties` edit and permanent PC-only backup. Any future phone test requires explicit approval and a complete work stop while awaiting it. The next Phase 5B verification target is the in-app unit-switch budget and missing visible-frame measurements.
+At this checkpoint, revision `7fc1b2e` had 1,337 passing Linux host tests and 29 passing affected Android cases. The verification report preserves the results of that configuration. The remaining Phase 5B measurements are the in-app unit-switch budget and visible-frame timings.
 
 **2026-11-04 full-release follow-up:** [v1.5.3 / Build 25](releases/v1.5.3.md) prepares the beta startup changes and PR-statistic follow-up for the stable channel through the normal PR-to-main process. The original debug signer, schema 6 and updater contract remain unchanged. Local source/APK and published beta assets were verified in a permanent PC-only backup outside the project; it is not a Git or release asset. The unrelated local `gradle.properties` edit remains excluded. Phase 5/5B stays paused, including planning.
 
@@ -22,10 +26,10 @@ Atualizado em 2026-11-01, depois da release 1.5.0 (fases 0 a 5A) no repositório
 
 Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" deste arquivo junto com o ROADMAP.
 
-## Estado
+## Estado histórico da v1.5.0
 
 - **Repositório de trabalho:** desde 2026-11-01 é o original, `ReiTut/Mooscles` (remote `upstream` neste clone), onde o dono do fork (`pedroyuuki`) é colaborador com permissão de push. O fork `pedroyuuki/Mooscles` (`origin`) virou arquivo: a `main` dele guarda o histórico completo das fases 0 a 5A (510 commits) e as capturas de verificação, que não entram no original.
-- **`main` do original:** `96336a6`, o merge squash do PR [#4](https://github.com/ReiTut/Mooscles/pull/4) com tudo das fases 0 a 5A. O CI dessa árvore rodou no fork ([41258967331](https://github.com/pedroyuuki/Mooscles/actions/runs/41258967331)): host 1264 testes; simulador iOS com `:shared` 280, `:designsystem` 414 e `:screens` 892. **O original não tem GitHub Actions rodando** (nenhum run até hoje): para ter CI, dê push da branch também no fork, ou peça ao dono do original para ligar o Actions.
+- **`main` do original na v1.5.0:** `96336a6`, o merge squash do PR [#4](https://github.com/ReiTut/Mooscles/pull/4) com tudo das fases 0 a 5A. O CI dessa árvore rodou no fork ([41258967331](https://github.com/pedroyuuki/Mooscles/actions/runs/41258967331)): host 1264 testes, simulador iOS com `:shared` 280, `:designsystem` 414 e `:screens` 892.
 - **Fases prontas e na `main` do original:** 0 (proteger os dados), 1 (base KMP), 2 (design system), 3 (treino ativo), 4 (biblioteca, rotinas e 285 figuras) e 5A (gráficos, progresso do exercício e aba Recordes).
 - **Release publicada:** [v1.5.0](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.0) (`versionCode` 21, Latest), assinada com a chave original, acima das pré-releases 1.4.7-beta.1 a beta.3 (`versionCode` 18 a 20) que o dono do original tinha publicado de outras branches (`codex/*`, que continuam lá). Quem estava na 1.4.6 ou nas betas atualiza sozinho.
 - **Próxima etapa:** a **5B** (histórico redesenhado, calendário, gráficos gerais, detalhe do treino com edição e a prévia de compartilhamento). A spec já está aprovada; falta o plano.
@@ -46,9 +50,8 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
 - **Autonomia:** o dono delegou as decisões de produto e de técnica ("pode fazer as melhores escolhas decidindo por mim"). Decida, registre a decisão e o motivo no documento da etapa e siga. Pare só para o que é irreversível, de segurança ou fora do repositório.
 - **Branches e merge:** cada etapa tem a sua branch a partir de `upstream/main` (`git fetch upstream && git switch -c feat/slug upstream/main`). Ao terminar (revisão final e CI verde), abra um PR para `ReiTut/Mooscles:main` e faça o merge **squash** (o dono do fork tem permissão; o dono do original já concordou em que a `main` siga este desenvolvimento). Nunca use force push. Não use a `main` do fork como base: a história dela diverge da do original (o PR #4 foi squash).
 - **Capturas e evidências pesadas** (PNG, traces) não entram no original: deixe em `docs/superpowers/reports/<pasta>/local/` (ignorado pelo git). Se um relatório precisar citar uma captura, publique-a num commit só de capturas na `main` do fork e use a URL absoluta, como os relatórios das fases 2 a 5A já fazem.
-- **Ritmo pedido pelo dono (da fase 5 em diante):** para cada task, rode os testes de host, a compilação dos testes iOS e, no emulador, só a classe de UI tocada (e só quando a task muda comportamento). As suítes completas de aparelho, a atualização por cima, o teste sem rede, o desempenho e o tamanho rodam **uma vez, no fim da fase**, e as correções entram num bloco. O push para o CI acontece só nos checkpoints.
+- **Ritmo de verificação:** para cada task, rode os testes de host Android e, no emulador, a classe de UI tocada quando a task muda comportamento. As suítes completas de aparelho, a atualização por cima, o teste sem rede, o desempenho e o tamanho rodam no fim da fase. O push para o CI acontece nos checkpoints autorizados.
 - **Revisões proporcionais ao risco:** use revisão completa (o modelo mais forte) para dados, navegação, concorrência e telas com comportamento novo. Para texto, testes e documentos, basta uma revisão curta ou uma checagem do controlador. Toda branch passa por uma revisão final da branch inteira e pelo `/code-review` antes do merge.
-- **iOS:** não há iPhone nem Xcode completo no Mac. O iOS só compila e roda testes no CI (job `ios`, `macos-26`). O app iOS em si (fase 7) ficou para depois, a pedido do dono ("deixa o ios pra outra hr").
 - **Celular do dono:** é um Galaxy S23 Ultra. **Nunca** instale nem desinstale nada nele: só o dono instala, e só o build `preview` (`com.mooscles.preview`, que fica ao lado do app de verdade). Entregue o preview copiando o APK para `~/Desktop/` e mandando para o dono.
 - **Segredos:** ficam no 1Password, cofre "Agentes" (veja `~/.config/op/agentes.env`). Nunca escreva o valor de um segredo em comando, arquivo, commit ou memória.
 
@@ -74,7 +77,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
   - Ele pega uma trava entre agentes e espera 60 s de emulador ocioso antes de rodar.
   - Sai com 5 ("DEVICE UNREACHABLE") quando o emulador não está online.
   - Exemplo de uma classe só: `:screens:connectedAndroidDeviceTest -Pandroid.testInstrumentationRunnerArguments.class=com.mooscles.screens.records.RecordsScreenTest`.
-- **`gh`:** está logado como `pedroyuuki`. Passe sempre `-R pedroyuuki/Mooscles`. Quando um job iOS é cancelado por falta de máquina macOS, rode de novo com `gh run rerun <id> --failed -R pedroyuuki/Mooscles`.
+- **`gh` neste clone do Mac:** estava logado como `pedroyuuki` nos registros desta etapa. Confirme o repositório e a conta no clone em uso.
 - **Fixtures locais (fora do git):** a base grande fica em `.superpowers/scratch-backup/files/mooscles-large-208.json`: 208 treinos e cerca de 12,7 mil séries.
   - Os ids de exercício dela não têm o prefixo `catalog_`, então alguns nomes aparecem em inglês, que é o nome gravado (o comportamento especificado).
   - Para testar atualização ou fixtures, desligue a rede do emulador antes (`svc wifi disable` e `svc data disable`). Sem isso, o app 1.4.5 acha a 1.4.6 publicada no original e começa a baixá-la.
@@ -89,7 +92,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
    - Um implementador por task e uma revisão por task.
    - A rodada de correção volta ao mesmo implementador.
    - Tasks independentes podem rodar em paralelo em worktrees separados (`lane/...`), com no máximo um usando o emulador. O controlador junta as lanes e **soma** os contadores do CI.
-4. **Contadores do CI:** o `ci.yml` tem `MIN_HOST_TESTS`, `MIN_IOS_TESTS`, `MIN_DS_IOS_TESTS` e `MIN_SCREENS_IOS_TESTS`, cada um com uma linha de comentário por classe. Quem acrescenta testes sobe o mínimo na mesma mudança. Um teste aposentado só desconta com o motivo escrito.
+4. **Contador do CI atual:** o `ci.yml` tem `MIN_HOST_TESTS` para os quatro módulos Android. Quem acrescenta testes sobe o mínimo na mesma mudança e registra a contagem por classe. Ao aposentar um teste, registre o motivo.
 5. **Fim da fase:**
    - as suítes completas de aparelho;
    - a atualização por cima a partir do APK da `main`, com a base grande, um treino ativo e o descanso correndo;
@@ -100,7 +103,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
    - a revisão final da branch inteira, o `/code-review`, o relatório em `reports/` e o `VERIFICATION.md` honesto (o que não foi verificado aparece como não verificado).
 6. **Depois do merge:** atualize o ROADMAP (a seção da fase e a tabela de andamento), o `releases/v1.5.0.md` (o item no PR e as pendências) e este HANDOFF. Mande ao dono um APK `preview` (`./gradlew :app:assemblePreview`).
 
-## Próxima etapa: fase 5B
+## Planejamento original da fase 5B
 
 **O quê:** histórico redesenhado (aba Histórico com os segmentos Treinos e Progresso), calendário mensal, filtros, gráficos gerais, um detalhe do treino novo com modo de edição, e a prévia de compartilhamento no design system. Tudo está na spec, seção "Telas da 5B" e decisões D2, D12, D13, D14 e D17. Branch: `feat/phase5b-history`, a partir de `upstream/main` (o `ReiTut/Mooscles`).
 
@@ -132,7 +135,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
 
 ### Ordem sugerida
 
-1. **Spike S2 primeiro:** o `MonthCalendar` a 320 dp e com fonte a 2,0, nos dois temas e nas duas plataformas (iOS pelo CI), com um mês de 6 semanas e um de 4. O critério de aprovar e reprovar está na seção "Spikes" da spec. Se reprovar, o calendário vira só visualização e o filtro de dia passa a ser o caminho.
+1. **Spike S2 primeiro:** o `MonthCalendar` a 320 dp e com fonte a 2,0, nos dois temas, com um mês de 6 semanas e um de 4. A seção "Spikes" da spec registra o critério de aprovação. A verificação da 5B registra os resultados.
 2. Antes de mexer nas telas, conte os toques nas telas antigas: ver um treino de uma data, editar uma série de um treino salvo, excluir um treino e compartilhar do histórico. Registre a contagem como `tap-baseline-5b.md`, do mesmo jeito que o `reports/2026-10-31-phase5a-verificacao/tap-baseline-5a.md`. A regra é que focar o campo de busca conta como toque e o texto digitado não conta.
 3. Depois: as consultas puras do histórico (filtros, agrupamento por mês e números do período, sobre o `ProgressIndex`), o calendário e os gráficos gerais, a aba nova, o detalhe com o modo de edição (com um teste por item de paridade), a prévia, a troca no `:app` e a saída das telas antigas, o fluxo de ponta a ponta, o orçamento de toques e a varredura de acessibilidade. Por fim, a rodada de fim de fase (ver "Como trabalhar").
 
@@ -151,7 +154,7 @@ Quando uma etapa terminar, atualize a seção "Estado" e a "Próxima etapa" dest
 - Medir de novo a rolagem do gráfico de progresso depois da `graphicsLayer` da Task 17, e a rolagem de controle da Biblioteca. A Biblioteca deu 1,75–2,3% no emulador contra cerca de 1% na 4A. A 5A não mexeu nela, e a causa provável é a memória cheia. Confira no S23 se o dono testar.
 - As consultas dos Recordes e as teclas da busca não foram medidas no build R8, só no APK de teste (p95 de 1,4 a 2,6 ms).
 - O ano não aparece nos rótulos do eixo x (deixado de propósito: a tabela, o "desde" e a leitura mostram o ano). Reavalie se o gráfico de período "Tudo" confundir.
-- Fixar o comportamento abaixo do Android 13 do `deviceRegion()` (o `Resources.getSystem()`), que nunca rodou num aparelho. O lado iOS (`NSLocale`) também só compilou.
+- Fixar o comportamento abaixo do Android 13 do `deviceRegion()` (o `Resources.getSystem()`), que ainda precisa de verificação em aparelho.
 
 ## Depois da 5B
 
@@ -164,12 +167,8 @@ As fases estão descritas no [ROADMAP](ROADMAP.md). O que importa para planejar:
   - As mensagens prontas do `MoosclesViewModel` (`UpdateUi.message`, `BackupUi.message`, `BackupUi.working`) e o nome gravado no timer do descanso, que continuam em inglês e passam para os recursos.
   - O item #11 da fase 2: o `MTextField` lê o valor antes do nome no TalkBack.
   - "Pronto quando": não sobra tela antiga, e não há medida solta em `dp` fora dos componentes.
-- **Fase 7, iOS na App Store:** precisa de iPhone, Xcode e Apple Developer Program, decisões e custo do dono.
-  - O código comum já compila e testa no simulador.
-  - Falta o projeto do app, o timer por notificação local `timeSensitive`, o compartilhamento por `UIActivityViewController`, o import do backup do Android e o privacy manifest.
-  - Antes do import, faça um teste de ida e volta do backup entre plataformas: a formatação de `Double` pode diferir entre Kotlin/Native e a JVM.
-- **Fase 8, backup na nuvem do usuário:** Google Drive `appDataFolder` e iCloud, sem servidor do projeto.
-- **Fase 9, extras:** só com motivo claro e spec própria (widgets, Health Connect e HealthKit, Live Activity, relógio, treino guiado, sincronização).
+- **Fase 8, backup na nuvem do usuário:** Google Drive `appDataFolder`, sem servidor do projeto.
+- **Fase 9, extras:** só com motivo claro e spec própria (widgets, Health Connect, relógio, treino guiado, sincronização).
 - **Cada release** segue a seção "Releases" do AGENTS.md e o `UPDATES.md`, como a [v1.5.0](releases/v1.5.0.md) fez (ver "Como publicar uma release" abaixo).
 
 ## Como publicar uma release
@@ -199,7 +198,6 @@ As fases estão descritas no [ROADMAP](ROADMAP.md). O que importa para planejar:
   - fluidez a 120 Hz e o arraste no gráfico.
 
   Registre o que o dono relatar no `VERIFICATION.md`.
-- **Decisões de custo:** iPhone e Xcode completo (cerca de 10 GB) para a fase 7, e o Apple Developer Program.
 
 ## Armadilhas já pagas (não repita)
 
@@ -208,7 +206,6 @@ As fases estão descritas no [ROADMAP](ROADMAP.md). O que importa para planejar:
   - Anote o estado do teste onde a composição lê, não num `SideEffect` não rastreado: isso já fez uma asserção passar sobre uma lista vazia.
   - Uma linha posta no padding do topo de uma lista conta como "posta", então "a primeira linha está no topo" precisa comparar posições na tela.
   - O Robolectric roda fora do modo de toque, e lá o `clearFocus()` entrega o foco à primeira linha focável, o que causa uma rolagem falsa. Ponha a janela em modo de toque nos testes de host que simulam toques.
-  - Para fonte a 2,0 no iOS, use `LINEAR_TWO_X_FONT_SCALE`. No simulador iOS o teclado não abre: injete `WindowInsets(bottom = 300.dp)`.
   - Os testes de recriação usam `locale = null` (limite do `LocaleEpoch` do harness).
   - Use `kotlin.concurrent.Volatile`, nunca o `kotlin.jvm`.
 - **Idioma:** o idioma por app reescreve também o `Resources.getSystem()`. A região do aparelho vem do `LocaleManager.getSystemLocales()` (API 33+).

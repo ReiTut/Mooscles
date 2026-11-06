@@ -150,7 +150,7 @@ class MTabBarTest {
 
     @Test
     fun selectedLabelIsWholeAtTwoHundred() {
-        // 2.0 on the emulator's density, and 2.01 at density 1, the linear scaling iOS gets.
+        // Use the emulator's density at 2.0 and density 1 for the linear scaling case.
         for ((scale, density) in listOf(2f to null, LINEAR_TWO_X_FONT_SCALE to 1f)) {
             for (tabs in listOf(english, portuguese)) {
                 for (selected in tabs) {

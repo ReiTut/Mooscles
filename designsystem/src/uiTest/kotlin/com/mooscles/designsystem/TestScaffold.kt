@@ -13,7 +13,7 @@ import com.mooscles.designsystem.theme.MoosclesDesignTheme
 /**
  * Sets [content] inside the design system theme. [fontScale] replaces the density's font
  * scale, so a test can render at 2x text; [density], when given, replaces the screen density
- * (1 is the iOS simulator's, where a dp is a pixel). v2 queues the composition: call `waitForIdle()`.
+ * (at density 1, a dp is a pixel). Call `waitForIdle()` after v2 queues the composition.
  */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.withTheme(
@@ -33,8 +33,7 @@ fun ComposeUiTest.withTheme(
 }
 
 /**
- * Android scales large text by less than the font scale up to 2x (non-linear font scaling: 28 sp
- * at 2x is about 37 dp, not 56); past its last table, 2x, it scales linearly, and iOS always
- * does. Just over 2x, then, every platform draws 28 sp at 56 dp, the text sizes iOS gets at 2x.
+ * Android's nonlinear scaling can draw 28 sp at about 37 dp at 2x. A scale just above 2x
+ * produces a larger, linearly scaled case for layout stress tests.
  */
 const val LINEAR_TWO_X_FONT_SCALE = 2.01f

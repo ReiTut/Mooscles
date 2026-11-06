@@ -7,8 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * The real license files of phase 4A, read from the repository (JVM only: `commonTest` runs on the
- * iOS simulator too, where these files are not at hand). Each becomes blocks without losing a word.
+ * Reads the license files directly from the repository on the JVM.
+ * Each becomes blocks without losing a word.
  */
 class LicenseFilesTest {
     private val licenses = File("src/commonMain/composeResources/files/licenses")

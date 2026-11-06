@@ -258,7 +258,7 @@ class SetRowSwipeTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun cancelledDragPastTheThresholdDoesNothing() = runComposeUiTest {
-        // Only the emulator can send a cancel; on the iOS simulator this is proven nowhere yet.
+        // This case needs touch cancellation support from the test environment.
         if (!INJECTS_TOUCH_CANCEL) return@runComposeUiTest
         val haptics = RecordingHaptics()
         val calls = Calls()

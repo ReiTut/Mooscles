@@ -16,9 +16,8 @@ import kotlin.test.assertTrue
 
 /**
  * Tabular figures and the Inter weight axis, measured with the platform text stack (the
- * phase 2 spike, now against the design system families). Runs on the iOS simulator
- * (iosSimulatorArm64Test) and on the emulator (connectedAndroidDeviceTest), so a font swap
- * that loses `tnum` or the `wght` axis fails there. Widths are in px at Density(2f), 48 sp.
+ * phase 2 spike, now against the design system families). The Android device test catches font
+ * swaps that lose `tnum` or the `wght` axis. Widths are in px at Density(2f), 48 sp.
  */
 class TnumRegressionTest {
 

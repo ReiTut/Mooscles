@@ -49,8 +49,7 @@ try {
 }
 finally { $zip.Dispose() }
 
-# Icons: the upper bound described above. Only the Android target's classes (kotlin/ and
-# the AGP javac output), never the iOS klib.
+# Estimate the icon upper bound using the Android target's Kotlin and javac outputs.
 $iconFiles = @()
 if (Test-Path -LiteralPath $DesignSystemBuild -PathType Container) {
     $iconFiles = @(Get-ChildItem -LiteralPath $DesignSystemBuild -Recurse -Filter '*.class' -File |

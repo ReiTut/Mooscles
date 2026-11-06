@@ -61,10 +61,10 @@ import kotlin.time.Duration.Companion.minutes
  * [com.mooscles.MoosclesViewModel], Room through the platform's own driver and DataStore, each in a
  * fresh directory ([FlowHarness]), with [LibraryRoute] and [ExerciseInfoRoute] as the app hosts
  * them ([LibraryFlowApp]: a plain screen switch, no NavHost, whose saved state survives a visit to
- * the detail as a back stack entry's does). It runs on the emulator and on the iOS simulator.
+ * the detail as a back stack entry's does). It runs as an Android device test.
  *
- * Twice: Portuguese, light, at 1.0, and English, dark, at 2.0 (2.01 on every platform, the linear
- * 200% iOS draws: [LINEAR_TWO_X_FONT_SCALE]). Each run seeds the routine "Treino A" and a finished
+ * Two runs cover Portuguese in light mode at 1.0 and English in dark mode at
+ * [LINEAR_TWO_X_FONT_SCALE]. Each run seeds the routine "Treino A" and a finished
  * workout with the incline dumbbell bench press, then: searches it ("supino inclinado halter" or
  * "incline dumbbell") and opens it; sees its figure or icon, the muscle sentence, the cues and the
  * history card with the seeded best set; "Add to routine" → "Treino A", whose toast comes only
@@ -75,7 +75,7 @@ import kotlin.time.Duration.Companion.minutes
  * prefilled, with a muscle and an equipment chosen, saved; and the new exercise's detail. Each step
  * is checked in the view model's state, which comes from the database. In each main state
  * ([sweep]): every clickable node has a label and a 48 dp target, every number is shown whole and
- * a capture is taken (a PNG on iOS, `screens/build/ios-captures/library-<state>.png`).
+ * a capture is taken when supported.
  */
 @OptIn(ExperimentalTestApi::class)
 class LibraryFlowTest {

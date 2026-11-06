@@ -208,7 +208,7 @@ class AppShellBottomTest {
 
     @Test
     fun workoutBarNumbersAreWholeAtTwoHundredOnANarrowPhone() {
-        // 2.01 with density 1 is the text iOS draws at 200% (see LINEAR_TWO_X_FONT_SCALE).
+        // Use density 1 for the linear scaling case.
         for ((scale, density) in listOf(1f to null, LINEAR_TWO_X_FONT_SCALE to 1f)) {
             runComposeUiTest {
                 shell(fontScale = scale, density = density, size = DpSize(320.dp, 800.dp), timer = mutableStateOf(resting))

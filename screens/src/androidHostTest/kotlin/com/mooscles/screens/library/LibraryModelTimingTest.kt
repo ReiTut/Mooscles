@@ -10,8 +10,8 @@ import kotlin.test.assertTrue
 
 /**
  * The library's search timing on the JVM only: the limits are wide on purpose (the
- * WorkoutCalculationsBatchTimingTest showed that tight wall-clock limits are flaky on CI), and a
- * debug Kotlin/Native build on the iOS simulator does not match the JIT. The real budget (4 ms
+ * WorkoutCalculationsBatchTimingTest showed that tight wall-clock limits are flaky on CI).
+ * The real budget (4 ms
  * median, 8 ms p95 per keystroke) is measured on the emulator with the R8 build (plan Task 22).
  */
 class LibraryModelTimingTest {

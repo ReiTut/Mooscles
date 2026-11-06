@@ -59,7 +59,7 @@ private const val INITIAL_FOCUS_FRAMES = 60
  * The caller removes the sheet from composition in [onDismiss].
  *
  * Like [MDialog] it is a common `Dialog` window (no Material 3), full screen with our own
- * scrim, so it works unchanged on Android and iOS. It enters with `motion.slow` and
+ * scrim. It enters with `motion.slow` and
  * `ease.drawer` and leaves with `motion.slowExit`; with reduced motion it fades instead of
  * sliding. The content is laid out in a plain column: a long list should scroll itself
  * (the drag listens on the whole sheet, so keep scrollable content out of the handle area).

@@ -488,7 +488,7 @@ class WorkoutAccessibilitySweepTest {
         val fake = Fake(stateOf(workout))
         // Tall enough for the three cards (the list composes only what its viewport shows), from the
         // window's top: a taller frame is centered and would put the header and the toast above a
-        // smaller window (the iOS simulator's), where the toast is not displayed.
+        // smaller window, where the toast would be out of view.
         setContent {
             ScreenFrame(locale = "pt-BR") {
                 Box(Modifier.wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(412.dp, 1200.dp)) { WorkoutRoute(fake, resting) }

@@ -17,8 +17,8 @@ val LocalOverlayWindowSetup = staticCompositionLocalOf<@Composable () -> Unit> {
 
 /**
  * The window every overlay opens ([MDialog], [MBottomSheet], and the screens' full-screen pages: the
- * custom exercise form, the expanded rest timer): a common `Dialog` (a window on Android, a layer on
- * iOS) that Back dismisses through [onDismissRequest], with no outside tap (the overlay draws and
+ * custom exercise form, the expanded rest timer). Back dismisses its `Dialog` window through
+ * [onDismissRequest]. The window has no outside tap (the overlay draws and
  * handles its own scrim or covers the screen) and the whole screen's width.
  *
  * Its [content] takes the host's density and font scale. On Android the window would take its own

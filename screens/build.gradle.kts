@@ -1,7 +1,7 @@
 import org.jetbrains.compose.resources.ResourcesExtension.ResourceClassGeneration
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// The redesigned Mooscles screens, in commonMain for Android and iOS. They read the UI contract
+// The redesigned Mooscles screens, in commonMain for Android. They read the UI contract
 // of :shared (state and actions) and draw it with the :designsystem components only: Compose
 // Multiplatform foundation, no Material 3. Their strings are their own Compose resources.
 plugins {
@@ -27,9 +27,6 @@ kotlin {
         }
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
-    iosArm64()
-    iosSimulatorArm64()
-
     sourceSets {
         commonMain.dependencies {
             // api: the screens take the contract's types and the design system's in their signatures.
@@ -48,7 +45,7 @@ kotlin {
             // api: the share card (ShareCards.from) takes the device's TimeZone from :app.
             api("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
         }
-        // Pure tests (mappings, formatting, rules): the JVM host and the iOS simulator.
+        // Pure tests (mappings, formatting, rules) run on the JVM host.
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
@@ -57,14 +54,7 @@ kotlin {
             implementation(kotlin("test-junit"))
             implementation("junit:junit:4.13.2")
         }
-        // UI tests (runComposeUiTest) in src/uiTest: the iOS simulator and the emulator, never
-        // the JVM host, where runComposeUiTest would need Robolectric.
-        iosTest {
-            kotlin.srcDir("src/uiTest/kotlin")
-            dependencies {
-                implementation("org.jetbrains.compose.ui:ui-test:1.12.2")
-            }
-        }
+        // UI tests in src/uiTest run on Android.
         getByName("androidDeviceTest") {
             kotlin.srcDir("src/uiTest/kotlin")
             dependencies {

@@ -54,7 +54,7 @@ internal object RenameSheetTags {
  * is open (the keyboard opens), so typing replaces it. What is typed survives recreation.
  *
  * The sheet stands on [bottomInsets] (the keyboard, or what else covers the bottom of the window), so the field and
- * the button stay above the keyboard the field opens; tests pass a fixed inset, as the iOS simulator has no keyboard.
+ * the button stay above the keyboard the field opens. Tests pass a fixed inset for deterministic layout.
  */
 @Composable
 internal fun RenameSheet(

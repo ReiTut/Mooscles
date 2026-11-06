@@ -40,18 +40,16 @@ import kotlin.time.Duration.Companion.minutes
  * The progress from the Records tab to the exercise detail over the real stack (spec D6): the common
  * [com.mooscles.MoosclesViewModel], Room (v6) through the platform's own driver and DataStore, each in a fresh directory
  * ([FlowHarness]), with the Records tab, the exercise progress and the detail as the app hosts them
- * ([ProgressFlowApp]: a plain screen switch under the tab bar, no NavHost). It runs on the emulator and on the iOS
- * simulator.
+ * ([ProgressFlowApp]: a plain screen switch under the tab bar, no NavHost). It runs as an Android device test.
  *
- * Twice: Portuguese, light, at 1.0, and English, dark, at 2.0 (2.01 on every platform, the linear 200% iOS draws:
- * [LINEAR_TWO_X_FONT_SCALE]). Each run seeds, through the repository, six finished bench press workouts with the load
+ * Two runs cover Portuguese in light mode at 1.0 and English in dark mode at [LINEAR_TWO_X_FONT_SCALE].
+ * Each run seeds, through the repository, six finished bench press workouts with the load
  * going up and, in the newest, a reps record, the back squat in the last two ([seedBenchProgress]), then: the timeline
  * opens with the squat's record on top; the search ("supino" or "bench") puts the bench's current load record on top,
  * with "Current"; a tap on it opens the progress on the load, the chart drawn with the record mark (one image node with
  * its summary); "Estimated 1RM" swaps the chart, without the mark; "View data" lists one row per session; and the menu's
  * "About the exercise" opens the detail, whose history card has the sparkline. In each state ([sweep]): every
- * clickable node has a label and a 48 dp target, every number is shown whole and a capture is taken (a PNG on iOS,
- * `screens/build/ios-captures/progress-<run>-<state>.png`).
+ * clickable node has a label and a 48 dp target, every number is shown whole and a capture is taken when supported.
  */
 @OptIn(ExperimentalTestApi::class)
 class ProgressFlowTest {

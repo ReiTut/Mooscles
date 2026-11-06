@@ -19,9 +19,9 @@ import com.mooscles.screens.workout.LocalRecompositionProbe
 /**
  * Sets [content] inside the design system theme, as a screen sees it in the app.
  *
- * [fontScale] replaces the density's font scale (use [LINEAR_TWO_X_FONT_SCALE] for the iOS text
- * sizes at 2x on Android); [density], when given, replaces the screen density (1 is the iOS
- * simulator's, where a dp is a pixel). [locale] is a BCP 47 tag such as `pt-BR`, applied with
+ * [fontScale] replaces the density's font scale. Use [LINEAR_TWO_X_FONT_SCALE] to test linear
+ * scaling. When provided, [density] replaces the screen density. [locale] is a BCP 47 tag such
+ * as `pt-BR`, applied with
  * [ProvideAppLocale]; a class that passes it should call `LocalAppLocale.restore()` in an
  * `@AfterTest`, so a failure cannot leak the language into the next test. [size] gives the screen
  * exactly that size, as a phone of that width would. [probe] receives every key reported by
@@ -80,9 +80,8 @@ fun ScreenFrame(
 }
 
 /**
- * Android scales large text by less than the font scale up to 2x (non-linear font scaling: 28 sp
- * at 2x is about 37 dp, not 56); past its last table, 2x, it scales linearly, and iOS always
- * does. Just over 2x, then, every platform draws 28 sp at 56 dp, the text sizes iOS gets at 2x.
+ * Android's nonlinear scaling can draw 28 sp at about 37 dp at 2x. A scale just above 2x
+ * produces a larger, linearly scaled case for layout stress tests.
  * The same value as the design system's test constant.
  */
 const val LINEAR_TWO_X_FONT_SCALE = 2.01f

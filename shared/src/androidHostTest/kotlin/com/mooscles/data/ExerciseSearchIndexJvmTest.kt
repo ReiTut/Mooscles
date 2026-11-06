@@ -4,9 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * The exhaustive form of `ExerciseSearchIndexTest.everyLegacyMatchStillMatches`, on the JVM only:
- * about 130 000 legacy searches, seconds here but minutes on the iOS simulator, where commonTest
- * runs a fixed sample of the same property instead.
+ * The exhaustive form of `ExerciseSearchIndexTest.everyLegacyMatchStillMatches` runs about
+ * 130 000 legacy searches. The common test covers a fixed sample.
  */
 class ExerciseSearchIndexJvmTest {
     @Test

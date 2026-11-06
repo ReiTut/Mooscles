@@ -65,8 +65,7 @@ class ExerciseSearchIndexTest {
 
     @Test
     fun everyLegacyMatchStillMatches() {
-        // A fixed sample that keeps the iOS simulator run short; ExerciseSearchIndexJvmTest
-        // (androidHostTest) checks every name, alias, label and word.
+        // Keep this sample fixed. ExerciseSearchIndexJvmTest checks every name, alias, label and word.
         val names = catalog.map(Exercise::name)
         val aliases = ExerciseSearch.aliases.values.flatten()
         val words = (names + aliases).flatMap { it.split(' ', '-', '(', ')', '/') }.filter(String::isNotBlank)

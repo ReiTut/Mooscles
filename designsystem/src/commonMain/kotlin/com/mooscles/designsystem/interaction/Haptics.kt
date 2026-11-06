@@ -29,8 +29,7 @@ class RecordingHaptics : MoosclesHaptics {
 }
 
 /**
- * The platform haptics. Android: `LocalHapticFeedback` with the [androidHapticPlan] steps.
- * iOS: the UIKit feedback generators, chosen by [iosHapticFor].
+ * Plays the [androidHapticPlan] steps through `LocalHapticFeedback`.
  */
 @Composable
 expect fun rememberPlatformHaptics(): MoosclesHaptics

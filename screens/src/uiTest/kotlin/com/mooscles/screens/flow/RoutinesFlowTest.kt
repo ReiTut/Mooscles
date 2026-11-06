@@ -48,11 +48,10 @@ import kotlin.time.Duration.Companion.minutes
  * The routines from the library to the workout over the real stack (spec D6): the common
  * [com.mooscles.MoosclesViewModel], Room through the platform's own driver and DataStore, each in a fresh
  * directory ([FlowHarness]), with the library, the exercise detail, the Train tab, the routine editor and the
- * workout as the app hosts them ([RoutinesFlowApp]: a plain screen switch, no NavHost). It runs on the emulator and
- * on the iOS simulator.
+ * workout as the app hosts them ([RoutinesFlowApp]: a plain screen switch, no NavHost). It runs as an Android device test.
  *
- * Twice: Portuguese, light, at 1.0, and English, dark, at 2.0 (2.01 on every platform, the linear 200% iOS draws:
- * [LINEAR_TWO_X_FONT_SCALE]). Each run seeds the empty routine "Treino A", then: searches the bench press ("supino"
+ * Two runs cover Portuguese in light mode at 1.0 and English in dark mode at [LINEAR_TWO_X_FONT_SCALE].
+ * Each run seeds the empty routine "Treino A", then searches the bench press ("supino"
  * or "bench") in the library and opens it; "Add to routine" → "Treino A" (checked in the state, which comes from the
  * database); the Train tab, where "New routine" is created with its default name and opens its editor; "Add
  * exercises" with three marked in the multiple picker, which the routine holds in the order of the taps; the third
@@ -60,7 +59,7 @@ import kotlin.time.Duration.Companion.minutes
  * and lifting collapses the cards until the list's end comes into view) and the first down one place by its menu; the first set of the
  * first exercise marked as a warm-up through its menu; and "Start workout", whose first card shows the target line
  * with "+ 1 warm-up". In each main state ([sweep]): every clickable node has a label and a 48 dp target, every number
- * is shown whole and a capture is taken (a PNG on iOS, `screens/build/ios-captures/routines-<state>.png`).
+ * is shown whole and a capture is taken when supported.
  */
 @OptIn(ExperimentalTestApi::class)
 class RoutinesFlowTest {

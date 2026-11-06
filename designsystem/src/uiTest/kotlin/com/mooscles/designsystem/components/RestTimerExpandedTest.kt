@@ -257,8 +257,7 @@ class RestTimerExpandedTest {
      * complete"); the exercise is in the title. A screen's dock label ("Rest · Barbell bench
      * press") drawn there ran over the ring's stroke. Every corner of the status, of the time (or,
      * done, of the check) and of the total stays within the ring's clear circle, in both languages,
-     * at 1.0, 1.3 and 2.0 and at the iOS sizes of 2x (linear scaling, CI run 40937989893: "Paused"
-     * ran out of it), on 320 and 360 dp.
+     * at 1.0, 1.3 and 2.0 and under linear scaling, on 320 and 360 dp.
      */
     @OptIn(ExperimentalTestApi::class)
     @Test
@@ -286,7 +285,7 @@ class RestTimerExpandedTest {
                                 .fetchSemanticsNode().boundsInRoot
                             val total = onNodeWithTag(TimerTotalTag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
                             val ring = onNodeWithTag(TimerRingTag).fetchSemanticsNode().boundsInRoot
-                            // In the content's density (1 for the iOS-sized case), not the device's.
+                            // Use the density applied to the rendered content.
                             val px = density ?: this.density.density
                             val sizes = MoosclesSizes()
                             val clear = ring.height / 2f - (sizes.tickLength + 4.dp + sizes.expandedRingStroke).value * px
@@ -311,7 +310,7 @@ class RestTimerExpandedTest {
         }
     }
 
-    /** Spec "Expandido": done, the full ring shows the check, inside the ring even with iOS-sized 2x text. */
+    /** The completed ring keeps its check inside the circle even with linearly scaled 2x text. */
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun doneShowsTheCheckInsideTheRing() {
@@ -336,7 +335,7 @@ class RestTimerExpandedTest {
                 val total = onNodeWithTag(TimerTotalTag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
                 // The check stands for the time, and the ring's middle (status to total) stays within its clear circle.
                 onNodeWithTag(TimerTimeTag, useUnmergedTree = true).assertDoesNotExist()
-                // In the content's density (1 for the iOS-sized case), not the device's.
+                // Use the density applied to the rendered content.
                 val px = density ?: this.density.density
                 val sizes = MoosclesSizes()
                 val clear = ring.height / 2f - (sizes.tickLength + 4.dp + sizes.expandedRingStroke).value * px

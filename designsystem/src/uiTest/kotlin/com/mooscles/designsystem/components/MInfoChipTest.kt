@@ -51,7 +51,7 @@ class MInfoChipTest {
         return results.first()
     }
 
-    /** At 200%, and at the iOS linear 2x (ruling F23), the label is whole and the chip grows around it. */
+    /** The label stays whole and the chip grows at 200% and under linear scaling. */
     @Test
     fun textStaysWholeAtTwoX() {
         for (label in listOf("Total load", "Carga adicional")) {
@@ -66,7 +66,7 @@ class MInfoChipTest {
                     val chip = onNodeWithTag("info").fetchSemanticsNode().boundsInRoot
                     val text = onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
                     assertTrue(text.top >= chip.top - 0.5f && text.bottom <= chip.bottom + 0.5f && text.right <= chip.right + 0.5f, "$where: text $text outside chip $chip")
-                    // In px at the density the chip was drawn at (1 for the iOS case).
+                    // Convert to pixels using the density applied to this chip.
                     val minPx = MoosclesSizes().infoChipHeight.value * (density ?: this.density.density)
                     assertTrue(chip.height > minPx, "$where: the chip did not grow with the text (${chip.height} px, min $minPx)")
                 }
