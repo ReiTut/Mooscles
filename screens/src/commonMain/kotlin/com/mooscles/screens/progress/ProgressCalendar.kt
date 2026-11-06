@@ -8,6 +8,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.format.ScreenDates
@@ -58,14 +59,22 @@ internal class ProgressSeams(
 internal data class ProgressCalendar(val zone: TimeZone, val today: LocalDate)
 
 /**
- * The [ProgressCalendar] of [seams]: read once when the screen opens (and again when [key] changes), then again at
+ * Incremented by the app host on foreground entry. It refreshes calendar dates after device sleep without
+ * coupling the common screens to an Android lifecycle or retaining an activity in the shared cache.
+ */
+val LocalProgressCalendarRefresh = compositionLocalOf { 0 }
+
+/**
+ * The [ProgressCalendar] of [seams]: read once when the screen opens (and again when [key] or the host's
+ * [LocalProgressCalendarRefresh] changes), then again at
  * each local midnight, so a screen left open overnight says "this week", the periods and the years of the new day.
  * The refresh is an effect that waits for midnight (a wait computed from the clock, not a design duration); the
  * composition never reads the clock again.
  */
 @Composable
 internal fun rememberProgressCalendar(seams: ProgressSeams, key: Any? = null): ProgressCalendar {
-    val calendar = remember(seams, key) { mutableStateOf(seams.calendar()) }
+    val foreground = LocalProgressCalendarRefresh.current
+    val calendar = remember(seams, key, foreground) { mutableStateOf(seams.calendar()) }
     LaunchedEffect(calendar) {
         while (true) {
             delay(seams.untilMidnight())

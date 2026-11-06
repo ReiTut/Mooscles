@@ -3,30 +3,18 @@ package com.mooscles.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.mooscles.MoosclesApplication
-import com.mooscles.R
 import com.mooscles.designsystem.format.currentNumberLocale
 import com.mooscles.screens.share.ShareCardDensity
 import com.mooscles.screens.share.ShareCardPainter
@@ -34,6 +22,12 @@ import com.mooscles.screens.share.ShareCards
 import com.mooscles.screens.share.rememberShareCardStyles
 import com.mooscles.screens.share.rememberShareCardTexts
 import com.mooscles.screens.share.loadShareWordmark
+import com.mooscles.screens.share.SharePreviewContent
+import com.mooscles.screens.share.SharePreviewDestination
+import com.mooscles.screens.share.SharePreviewPagePlaceholder
+import com.mooscles.screens.share.SharePreviewSheet
+import com.mooscles.screens.share.SharePreviewState
+import com.mooscles.screens.share.shareWorkoutChooserTitle
 import com.mooscles.sharing.WorkoutCardRenderer
 import com.mooscles.sharing.WorkoutShareIntent
 import java.io.File
@@ -70,6 +64,8 @@ fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Uni
     val locale = currentNumberLocale()
     // The texts, fonts and number style are keys too: a language change redraws the card in it.
     LaunchedEffect(workoutId, pounds, attempt, texts, styles, fonts, locale) {
+        state = WorkoutSharePreviewState.Loading
+        shareFailed = false
         state = try {
             withContext(Dispatchers.IO) {
                 val app = context.applicationContext as MoosclesApplication
@@ -87,19 +83,20 @@ fun WorkoutSharePreview(workoutId: String, pounds: Boolean, onDismiss: () -> Uni
             WorkoutSharePreviewState.Failed
         }
     }
-    val chooserTitle = stringResource(R.string.share_workout)
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        WorkoutSharePreviewContent(state, available, shareFailed,
-            onRetry = { attempt++ }, onDismiss = onDismiss,
-            onShare = { packageName ->
-                val files = (state as? WorkoutSharePreviewState.Ready)?.files.orEmpty()
-                shareFailed = try {
-                    !WorkoutShareIntent.launch(context, files, chooserTitle, packageName)
-                } catch (_: Exception) {
-                    true
-                }
-            })
-    }
+    val chooserTitle = shareWorkoutChooserTitle()
+    val ready = state as? WorkoutSharePreviewState.Ready
+    SharePreviewSheet(state.shared(), available.destinations(), shareFailed,
+        onRetry = { attempt++ }, onDismiss = onDismiss,
+        onShare = { destination ->
+            shareFailed = try {
+                !WorkoutShareIntent.launch(context, ready?.files.orEmpty(), chooserTitle, destination.packageName())
+            } catch (_: Exception) {
+                true
+            }
+        },
+        page = { index, description, onLoaded, onFailed ->
+            ready?.files?.getOrNull(index)?.let { WorkoutSharePage(it, index, description, onLoaded, onFailed) }
+        })
 }
 
 @Composable
@@ -111,68 +108,34 @@ internal fun WorkoutSharePreviewContent(
     onDismiss: () -> Unit,
     onShare: (String?) -> Unit,
 ) {
-    var previewVisible by remember(state) { mutableStateOf(false) }
-    var previewFailed by remember(state) { mutableStateOf(false) }
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.share_preview_title), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-                IconButton(onClick = onDismiss, modifier = Modifier.testTag("share-preview-close")) {
-                    Icon(Icons.Outlined.Close, stringResource(R.string.share_close))
-                }
-            }
-            when (state) {
-                WorkoutSharePreviewState.Loading -> {
-                    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(Modifier.testTag("share-preview-loading"))
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.share_preview_loading))
-                    }
-                    TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.share_cancel)) }
-                }
-                WorkoutSharePreviewState.Failed -> {
-                    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center) {
-                        Text(stringResource(R.string.share_preview_failed), color = MaterialTheme.colorScheme.error)
-                        Button(onClick = onRetry, modifier = Modifier.testTag("share-preview-retry")) { Text(stringResource(R.string.share_retry)) }
-                    }
-                    TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.share_cancel)) }
-                }
-                is WorkoutSharePreviewState.Ready -> {
-                    if (state.files.size > 1) Text(pluralStringResource(R.plurals.share_preview_pages, state.files.size, state.files.size), style = MaterialTheme.typography.bodySmall)
-                    LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("share-preview-pages"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        itemsIndexed(state.files, key = { _, file -> file.absolutePath }) { index, file ->
-                            WorkoutSharePage(file, index, state.files.size, state.prCount, onLoaded = { if (index == 0) previewVisible = true }, onFailed = { previewFailed = true })
-                        }
-                    }
-                    if (previewFailed) {
-                        Text(stringResource(R.string.share_preview_page_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = onRetry, modifier = Modifier.testTag("share-preview-retry")) { Text(stringResource(R.string.share_retry)) }
-                    }
-                    if (shareFailed) Text(stringResource(R.string.share_open_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    Text(stringResource(R.string.share_preview_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    val preferred = WorkoutShareIntent.preferredWhatsApp(availablePackages)
-                    if (preferred != null) Button(onClick = { onShare(preferred) }, enabled = previewVisible && !previewFailed, modifier = Modifier.fillMaxWidth().testTag("share-whatsapp")) {
-                        Icon(Icons.Outlined.Share, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(if (preferred == WorkoutShareIntent.WHATSAPP_BUSINESS) R.string.share_whatsapp_business else R.string.share_whatsapp))
-                    }
-                    if (WorkoutShareIntent.WHATSAPP in availablePackages && WorkoutShareIntent.WHATSAPP_BUSINESS in availablePackages) {
-                        OutlinedButton(onClick = { onShare(WorkoutShareIntent.WHATSAPP_BUSINESS) }, enabled = previewVisible && !previewFailed, modifier = Modifier.fillMaxWidth().testTag("share-whatsapp-business")) {
-                            Text(stringResource(R.string.share_whatsapp_business))
-                        }
-                    }
-                    OutlinedButton(onClick = { onShare(null) }, enabled = previewVisible && !previewFailed, modifier = Modifier.fillMaxWidth().testTag("share-other-apps")) {
-                        Text(stringResource(if (preferred == null) R.string.share_choose_app else R.string.share_other_apps))
-                    }
-                }
-            }
-        }
-    }
+    val ready = state as? WorkoutSharePreviewState.Ready
+    SharePreviewContent(state.shared(), availablePackages.destinations(), shareFailed, onRetry, onDismiss,
+        onShare = { onShare(it.packageName()) },
+        page = { index, description, onLoaded, onFailed ->
+            ready?.files?.getOrNull(index)?.let { WorkoutSharePage(it, index, description, onLoaded, onFailed) }
+        })
+}
+
+private fun WorkoutSharePreviewState.shared(): SharePreviewState = when (this) {
+    WorkoutSharePreviewState.Loading -> SharePreviewState.Loading
+    WorkoutSharePreviewState.Failed -> SharePreviewState.Failed
+    is WorkoutSharePreviewState.Ready -> SharePreviewState.Ready(files.size, prCount, files.firstOrNull()?.absolutePath.orEmpty())
+}
+
+private fun Set<String>.destinations(): Set<SharePreviewDestination> = buildSet {
+    if (WorkoutShareIntent.WHATSAPP in this@destinations) add(SharePreviewDestination.WhatsApp)
+    if (WorkoutShareIntent.WHATSAPP_BUSINESS in this@destinations) add(SharePreviewDestination.WhatsAppBusiness)
+}
+
+private fun SharePreviewDestination.packageName(): String? = when (this) {
+    SharePreviewDestination.WhatsApp -> WorkoutShareIntent.WHATSAPP
+    SharePreviewDestination.WhatsAppBusiness -> WorkoutShareIntent.WHATSAPP_BUSINESS
+    SharePreviewDestination.Other -> null
 }
 
 /** Only visible pages are decoded, keeping very long workouts from retaining every bitmap. */
 @Composable
-private fun WorkoutSharePage(file: File, index: Int, count: Int, prCount: Int, onLoaded: () -> Unit, onFailed: () -> Unit) {
+private fun WorkoutSharePage(file: File, index: Int, description: String, onLoaded: () -> Unit, onFailed: () -> Unit) {
     var preview by remember(file) { mutableStateOf<Result<Bitmap>?>(null) }
     LaunchedEffect(file) {
         preview = withContext(Dispatchers.IO) {
@@ -191,12 +154,9 @@ private fun WorkoutSharePage(file: File, index: Int, count: Int, prCount: Int, o
     }
     val bitmap = preview?.getOrNull()
     if (bitmap == null) {
-        Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-            if (preview == null) CircularProgressIndicator()
-        }
+        SharePreviewPagePlaceholder(loading = preview == null)
     } else {
-        Image(bitmap.asImageBitmap(), stringResource(R.string.share_preview_image, index + 1, count) + " · " +
-            pluralStringResource(R.plurals.legacy_pr_count, if (prCount == 0) 2 else prCount, prCount),
+        Image(bitmap.asImageBitmap(), description,
             Modifier.fillMaxWidth().aspectRatio(bitmap.width.toFloat() / bitmap.height).testTag("share-preview-page-$index"),
             contentScale = ContentScale.Fit)
     }

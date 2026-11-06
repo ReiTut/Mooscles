@@ -10,17 +10,23 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
+import com.mooscles.designsystem.i18n.LocalAppLocale
+import com.mooscles.designsystem.i18n.ProvideAppLocale
+import com.mooscles.designsystem.theme.MoosclesDesignTheme
+import com.mooscles.screens.workoutdetail.WorkoutDetailRoute
 import com.mooscles.sharing.WorkoutShareIntent
 import com.mooscles.ui.*
 import java.io.File
 import java.lang.reflect.Proxy
 import java.util.UUID
 import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.LooperMode
 
 @RunWith(RobolectricTestRunner::class)
@@ -28,6 +34,8 @@ import org.robolectric.annotation.LooperMode
 @LooperMode(LooperMode.Mode.PAUSED)
 class WorkoutSharePreviewHostTest {
     @get:Rule val compose = createComposeRule()
+
+    @After fun restoreLocale() { LocalAppLocale.restore() }
 
     @Test fun previewShowsTheGeneratedImageBeforeExplicitDestinationSelection() {
         val calls = mutableListOf<String?>()
@@ -79,16 +87,33 @@ class WorkoutSharePreviewHostTest {
 
     @Test fun completedHistoryDetailsExposeShareWorkout() {
         val workout = WorkoutUi("saved-workout", "Strength", startedAt = 1_000, endedAt = 61_000)
-        compose.setContent { MaterialTheme { Box(Modifier.size(430.dp, 900.dp)) {
-            WorkoutDetailScreen(workout, UiState(loading = false), noActions, onDeleted = {}, onExerciseHistory = {})
+        var shared: String? = null
+        compose.setContent { MoosclesDesignTheme(dark = false, reducedMotion = true) { Box(Modifier.size(430.dp, 900.dp)) {
+            WorkoutDetailRoute(workout.id, UiState(loading = false, history = listOf(workout)), noActions,
+                onBack = {}, onExerciseProgress = {}, onRoutine = {}, onShare = { shared = it })
         } } }
         compose.onNodeWithTag("workout-details").performScrollToNode(hasTestTag("share-workout"))
-        compose.onNodeWithTag("share-workout").assertIsDisplayed()
+        compose.onNodeWithTag("share-workout").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(workout.id, shared) }
+    }
+
+    @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun unreadableExportDisablesSharingAndOffersRetry() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val file = File(context.cacheDir, "unreadable-preview-${UUID.randomUUID()}.png").apply { writeText("not an image") }
+        show(WorkoutSharePreviewState.Ready(listOf(file)))
+        compose.waitUntil(timeoutMillis = 10_000) { compose.onAllNodesWithTag("share-preview-retry").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("share-other-apps").assertIsNotEnabled()
+        compose.onNodeWithTag("share-preview-retry").assertExists()
     }
 
     private fun show(state: WorkoutSharePreviewState, packages: Set<String> = emptySet(), onRetry: () -> Unit = {}, onDismiss: () -> Unit = {}, onShare: (String?) -> Unit = {}) {
-        compose.setContent { MaterialTheme { Box(Modifier.size(430.dp, 900.dp)) {
-            WorkoutSharePreviewContent(state, packages, false, onRetry, onDismiss, onShare)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val locale = context.resources.configuration.locales[0].toLanguageTag()
+        compose.setContent { MaterialTheme { MoosclesDesignTheme(dark = false, reducedMotion = true) {
+            ProvideAppLocale(locale) { Box(Modifier.size(430.dp, 900.dp)) {
+                WorkoutSharePreviewContent(state, packages, false, onRetry, onDismiss, onShare)
+            } }
         } } }
     }
 

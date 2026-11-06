@@ -10,9 +10,17 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
+import android.content.Context
+import com.mooscles.designsystem.i18n.LocalAppLocale
+import com.mooscles.designsystem.i18n.ProvideAppLocale
+import com.mooscles.designsystem.theme.MoosclesDesignTheme
+import com.mooscles.screens.workoutdetail.WorkoutDetailRoute
+import com.mooscles.screens.workoutdetail.WorkoutDetailTags
 import com.mooscles.ui.*
 import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,6 +33,7 @@ import org.robolectric.annotation.LooperMode
 @LooperMode(LooperMode.Mode.PAUSED)
 class HistoryRecordsHostTest {
     @get:Rule val compose = createComposeRule()
+    @After fun restoreLocale() { LocalAppLocale.restore() }
 
     private val bench = ExerciseUi("bench", "Bench press", "Chest", "Barbell", "Total load")
     private val pullup = ExerciseUi("pullup", "Pull-up", "Back", "Bodyweight", "Added weight")
@@ -38,14 +47,12 @@ class HistoryRecordsHostTest {
         showDetail(workout)
 
         assertDisplayedPrExerciseCount(2)
-        scrollToMilestones()
-        assertMilestoneText("Bench press")
-        assertMilestoneText("Weight PR")
-        assertMilestoneText("100 kg → 105 kg × 3")
-        assertMilestoneText("Pull-up")
+        scrollToRecords()
+        assertMilestoneText("Bench press · 105\u00a0kg\u00a0×\u00a03 · before 100\u00a0kg")
+        compose.onNode(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.RECORDS))).performScrollTo().assertIsDisplayed()
+        assertMilestoneText("Pull-up · Bodyweight\u00a0×\u00a012 · before Bodyweight\u00a0×\u00a08")
         assertMilestoneText("Reps PR")
-        assertMilestoneText("8 → 12 reps · Bodyweight")
-        compose.onNodeWithText("separate from records beaten", substring = true).assertDoesNotExist()
+        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertDoesNotExist()
     }
 
     @Test fun exerciseWithBothRecordTypesDisplaysBothAndCountsOnce() {
@@ -56,12 +63,12 @@ class HistoryRecordsHostTest {
         assertEquals(1, workout.prExerciseCount)
         showDetail(workout)
         assertDisplayedPrExerciseCount(1)
-        scrollToMilestones()
+        scrollToRecords()
 
         assertMilestoneText("Weight PR")
-        assertMilestoneText("100 kg → 105 kg × 3")
+        assertMilestoneText("Bench press · 105\u00a0kg\u00a0×\u00a03 · before 100\u00a0kg")
         assertMilestoneText("Reps PR")
-        assertMilestoneText("10 → 11 reps · 100 kg")
+        assertMilestoneText("Bench press · 100\u00a0kg\u00a0×\u00a011 · before 100\u00a0kg\u00a0×\u00a010")
     }
 
     @Test fun firstRecordsHaveTheirOwnLabelsAndDoNotIncreaseTheBeatenExerciseCount() {
@@ -75,14 +82,15 @@ class HistoryRecordsHostTest {
         assertEquals(1, workout.firstRecordExerciseCount)
         showDetail(workout)
         assertDisplayedPrExerciseCount(2)
-        scrollToMilestones()
+        scrollToRecords()
 
-        assertMilestoneText("Weight PR")
-        assertMilestoneText("2 first records · separate from records beaten")
-        assertMilestoneText("Weight PR · First record")
-        assertMilestoneText("Reps PR · First record")
-        assertMilestoneText("10 kg × 5")
-        assertMilestoneText("5 reps · 10 kg")
+        compose.onNode(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.RECORDS))).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.FIRST))
+        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertIsDisplayed()
+        compose.onNodeWithText("First records").assertIsDisplayed()
+        compose.onAllNodes(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
+        compose.onAllNodes(hasText("Reps PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
+        compose.onAllNodes(hasText("Pull-up · 10\u00a0kg\u00a0×\u00a05") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
     }
 
     @Test fun firstBenchWeightAndRepsRecordsAndFirstBodyweightPullupRecordCountTwoExercises() {
@@ -99,13 +107,13 @@ class HistoryRecordsHostTest {
         showDetail(workout)
 
         assertDisplayedPrExerciseCount(2)
-        scrollToMilestones()
-        assertMilestoneText("3 first records · separate from records beaten")
-        assertMilestoneText("Weight PR · First record")
-        compose.onAllNodesWithText("Reps PR · First record").assertCountEquals(2)
-        assertMilestoneText("20 kg × 10")
-        assertMilestoneText("10 reps · 20 kg")
-        assertMilestoneText("10 reps · Bodyweight")
+        compose.onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.FIRST))
+        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertIsDisplayed()
+        compose.onNodeWithTag(WorkoutDetailTags.RECORDS).assertDoesNotExist()
+        compose.onAllNodes(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
+        compose.onAllNodes(hasText("Reps PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
+        compose.onAllNodes(hasText("Barbell bench press · 20\u00a0kg\u00a0×\u00a010") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
+        assertMilestoneText("Wide-grip pull-up · Bodyweight\u00a0×\u00a010")
     }
 
     @Test fun workoutWithoutRecordsDisplaysZeroExercisesWithPrs() {
@@ -116,7 +124,8 @@ class HistoryRecordsHostTest {
         showDetail(workout)
 
         assertDisplayedPrExerciseCount(0)
-        compose.onNodeWithText("New milestones").assertDoesNotExist()
+        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertDoesNotExist()
+        compose.onNodeWithTag(WorkoutDetailTags.RECORDS).assertDoesNotExist()
     }
 
     @Test fun narrowLargeFontKeepsPrsAfterSetsWithoutDuplicatingTheStatistic() {
@@ -150,20 +159,26 @@ class HistoryRecordsHostTest {
     }
 
     private fun showDetail(workout: WorkoutUi, fontScale: Float = 1f, width: Int = 430) {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val locale = context.resources.configuration.locales[0].toLanguageTag()
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
-            MaterialTheme {
-                Box(Modifier.size(width.dp, 900.dp)) {
-                    WorkoutDetailScreen(workout, UiState(loading = false), noActions,
-                        onDeleted = {}, onExerciseHistory = {})
+                MaterialTheme {
+                    MoosclesDesignTheme(dark = false, reducedMotion = true) {
+                        ProvideAppLocale(locale) {
+                            Box(Modifier.size(width.dp, 900.dp)) {
+                                WorkoutDetailRoute(workout.id, UiState(loading = false, history = listOf(workout)), noActions,
+                                    onBack = {}, onExerciseProgress = {}, onRoutine = {}, onShare = {})
+                            }
+                        }
+                    }
                 }
-            }
             }
         }
     }
 
-    private fun scrollToMilestones() {
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("New milestones"))
+    private fun scrollToRecords() {
+        compose.onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.RECORDS))
     }
 
     private fun assertDisplayedPrExerciseCount(expected: Int) {

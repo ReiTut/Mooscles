@@ -46,6 +46,7 @@ import com.mooscles.screens.isPlaced
 import com.mooscles.screens.library.TALL
 import com.mooscles.screens.library.TopAnchored
 import com.mooscles.screens.progress.LocalProgressIndexCache
+import com.mooscles.screens.progress.LocalProgressCalendarRefresh
 import com.mooscles.screens.progress.ProgressIndex
 import com.mooscles.screens.progress.ProgressIndexCache
 import com.mooscles.screens.progress.ProgressMetric
@@ -79,6 +80,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.math.abs
 
 /** The Records tab (spec "Recordes (aba)" and D11): the timeline, its rows, chips, search, states and the rules, in pt-BR. */
 @OptIn(ExperimentalTestApi::class)
@@ -166,11 +168,13 @@ class RecordsScreenTest {
         locale: String? = "pt-BR",
         probe: ((String) -> Unit)? = null,
         seams: ProgressSeams = this@RecordsScreenTest.seams,
+        calendarRefresh: MutableState<Int> = mutableStateOf(0),
     ): Calls {
         val calls = Calls()
         withScreen(locale = locale, reducedMotion = true, fontScale = fontScale, size = size, restoration = restoration, probe = probe) {
             TopAnchored(if (tall) TALL else null) {
-                CompositionLocalProvider(LocalProgressIndexCache provides cache) {
+                CompositionLocalProvider(LocalProgressIndexCache provides cache,
+                    LocalProgressCalendarRefresh provides calendarRefresh.value) {
                     RecordsScreen(
                         state = state.value,
                         actions = RecordingActions(),
@@ -208,6 +212,21 @@ class RecordsScreenTest {
         onAllNodes(headerMatcher and isPlaced).fetchSemanticsNodes()
             .sortedBy { it.boundsInRoot.top }
             .map { node -> node.config[SemanticsProperties.Text].joinToString("") { it.text } }
+
+    /** A newest row being composed does not prove that its month is actually at the start of the viewport. */
+    private fun ComposeUiTest.assertAtTop(year: Int, month: Int) {
+        val headerTag = RecordsTags.month(year, month)
+        waitUntil(timeoutMillis = 5_000) {
+            if (onAllNodesWithTag(headerTag).fetchSemanticsNodes().isEmpty()) false else {
+                val list = onNodeWithTag(RecordsScreenTag).getUnclippedBoundsInRoot()
+                val header = onNodeWithTag(headerTag).getUnclippedBoundsInRoot()
+                // The list's top content padding is space.s2 (8 dp). A pinned, partly-scrolled header sits at 0,
+                // so checking equality here distinguishes an actual reset from a header merely being present.
+                abs(header.top.value - (list.top + 8.dp).value) <= 0.5f
+            }
+        }
+        onNodeWithTag(headerTag).assertIsDisplayed()
+    }
 
     private fun ComposeUiTest.waitForRows() {
         waitUntil(timeoutMillis = 5_000) { onAllNodes(rowMatcher).fetchSemanticsNodes().isNotEmpty() }
@@ -262,9 +281,10 @@ class RecordsScreenTest {
         waitForRows()
         val name = ExerciseNames.display(bench.id, bench.name, custom = false, portuguese = true)
         assertEquals("Supino reto com barra", name)
-        assertEquals("$name, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual", spoken(benchW875))
+        assertEquals("$name, Carga total, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro, Atual", spoken(benchW875))
         part(benchW875, RecordsTags.ROW_NAME).assertTextEquals(name)
         part(benchW875, RecordsTags.ROW_KIND).assertTextEquals("Carga")
+        part(benchW875, RecordConventionTag).assertTextEquals("Carga total")
         part(benchW875, RecordsTags.ROW_VALUE).assertTextEquals("87,5 kg × 6 · antes 85 kg".nb())
         part(benchW875, RecordsTags.ROW_DATE).assertTextEquals("28 out")
         part(benchW875, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
@@ -287,7 +307,7 @@ class RecordsScreenTest {
         part(benchR8, RecordsTags.ROW_KIND).assertTextEquals("Repetições")
         part(benchR8, RecordsTags.ROW_VALUE).assertTextEquals("80 kg × 8 · antes 6 repetições".nb())
         part(benchR8, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
-        assertEquals("Supino reto com barra, Repetições: 80 quilos por 8, antes 6 repetições, 28 de outubro, Atual", spoken(benchR8))
+        assertEquals("Supino reto com barra, Carga total, Repetições: 80 quilos por 8, antes 6 repetições, 28 de outubro, Atual", spoken(benchR8))
     }
 
     @Test
@@ -587,6 +607,7 @@ class RecordsScreenTest {
         // A new search scrolls the list to the top while the field still has the focus.
         search("supino")
         waitUntil(timeoutMillis = 5_000) { rows().firstOrNull() == rowTag(many.first().records.single()) }
+        assertAtTop(2026, 6)
         onNode(hasSetTextAction()).assertIsFocused()
         onNodeWithTag(RecordsScreenTag).performTouchInput { swipeUp() }
         waitForIdle()
@@ -616,6 +637,7 @@ class RecordsScreenTest {
             show(mutableStateOf(stateOf(history = history, records = emptyList())), cache = ProgressIndexCache(scope, gate))
             waitForRows()
             assertEquals("junho de 2026 · 1 recorde", headers().first())
+            assertAtTop(2026, 6)
             onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
             waitForIdle()
 
@@ -628,9 +650,7 @@ class RecordsScreenTest {
             // On screen, inside the list: a header placed above it (in the list's top padding) is not shown.
             onNodeWithTag(RecordsTags.month(2026, 10)).assertIsDisplayed()
             onNodeWithTag(rowTag(squatFirst)).assertIsDisplayed()
-            val list = onNodeWithTag(RecordsScreenTag).getUnclippedBoundsInRoot()
-            val october = onNodeWithTag(RecordsTags.month(2026, 10)).getUnclippedBoundsInRoot()
-            assertTrue(october.top >= list.top, "the October header is at the list's top: ${october.top} vs ${list.top}")
+            assertAtTop(2026, 10)
         } finally {
             gate.hold?.complete(Unit)
             scope.cancel()
@@ -664,6 +684,48 @@ class RecordsScreenTest {
         clock = midnight + 1_000
         mainClock.advanceTimeBy(1_500)
         waitUntil(timeoutMillis = 5_000) { spoken(benchW875).endsWith("28 de outubro de 2026, Atual") }
+    }
+
+    @Test
+    fun foregroundRefreshReadsTodayAfterSleepWithoutWaitingForTheOldMidnightDelay() = runComposeUiTest {
+        var clock = LocalDateTime(2026, 12, 31, 12, 0).toInstant(utc).toEpochMilliseconds()
+        val refresh = mutableStateOf(0)
+        show(seams = ProgressSeams(nowMillis = { clock }, zone = { utc }), calendarRefresh = refresh)
+        waitForRows()
+        assertTrue(spoken(benchW875).endsWith("28 de outubro, Atual"), spoken(benchW875))
+        // The device slept for two weeks; only a few milliseconds of awake/test time have elapsed.
+        runOnIdle { clock = LocalDateTime(2027, 1, 15, 12, 0).toInstant(utc).toEpochMilliseconds() }
+        mainClock.advanceTimeBy(32)
+        assertTrue(spoken(benchW875).endsWith("28 de outubro, Atual"), spoken(benchW875))
+        runOnIdle { refresh.value++ }
+        waitUntil(timeoutMillis = 5_000) { spoken(benchW875).endsWith("28 de outubro de 2026, Atual") }
+    }
+
+    @Test
+    fun recordConventionsAreVisibleAndSpokenInPortuguese() = runComposeUiTest {
+        val perHand = bench.copy(id = "custom-hand", name = "Custom press", convention = "Per hand", custom = true)
+        val added = pushUp.copy(id = "custom-added", name = "Custom pull-up", custom = true)
+        val handRecord = RecordUi(perHand, 22.0, 6, previousKg = 20.0, workoutId = "conventions", date = end(2026, 10, 30))
+        val addedRecord = RecordUi(added, 10.0, 6, previousKg = 5.0, workoutId = "conventions", date = end(2026, 10, 30))
+        val history = listOf(workout("conventions", at(2026, 10, 30), perHand to listOf(22.0 to 6),
+            added to listOf(10.0 to 6), records = listOf(handRecord, addedRecord)))
+        show(mutableStateOf(stateOf(history = history, records = emptyList())), tall = true)
+        waitForRows()
+        part(handRecord, RecordConventionTag).assertTextEquals("Por mão")
+        part(addedRecord, RecordConventionTag).assertTextEquals("Peso adicional")
+        assertTrue(spoken(handRecord).contains("Por mão"), spoken(handRecord))
+        assertTrue(spoken(addedRecord).contains("Peso adicional"), spoken(addedRecord))
+    }
+
+    @Test
+    fun recordConventionIsVisibleAndSpokenInEnglish() = runComposeUiTest {
+        val perHand = bench.copy(id = "custom-hand", name = "Custom press", convention = "Per hand", custom = true)
+        val record = RecordUi(perHand, 22.0, 6, previousKg = 20.0, workoutId = "hand", date = end(2026, 10, 30))
+        val history = listOf(workout("hand", at(2026, 10, 30), perHand to listOf(22.0 to 6), records = listOf(record)))
+        show(mutableStateOf(stateOf(history = history, records = emptyList())), tall = true, locale = "en")
+        waitForRows()
+        part(record, RecordConventionTag).assertTextEquals("Per hand")
+        assertTrue(spoken(record).contains("Per hand"), spoken(record))
     }
 
     @Test
@@ -730,6 +792,7 @@ class RecordsScreenTest {
         onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
         waitForIdle()
         val top = rows().first()
+        val topOffset = onNodeWithTag(top).getUnclippedBoundsInRoot().top
 
         restoration.emulateSaveAndRestore()
         waitForRows()
@@ -738,6 +801,10 @@ class RecordsScreenTest {
         onNodeWithTag(RecordsTags.FIRST).assertIsOn()
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOff()
         assertEquals(top, rows().first())
+        // This is a restored scrolled position, not the start: retain the actual row offset, not just its identity.
+        waitUntil(timeoutMillis = 5_000) {
+            abs(onNodeWithTag(top).getUnclippedBoundsInRoot().top.value - topOffset.value) <= 0.5f
+        }
 
         // A new choice starts the list from the top again.
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
@@ -745,6 +812,7 @@ class RecordsScreenTest {
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOn()
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
         waitUntil(timeoutMillis = 5_000) { rows().firstOrNull() == rowTag(many.first().records.single()) }
+        assertAtTop(2026, 6)
 
         // "Só atuais" and the open rules sheet come back too.
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()

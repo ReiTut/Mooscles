@@ -1,69 +1,23 @@
 package com.mooscles.ui
 
-import androidx.compose.ui.res.stringResource
-import com.mooscles.R
-
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.compose.ui.text.input.TextFieldValue
 import com.mooscles.domain.RestDuration
 
-fun kgToDisplay(kg: Double, pounds: Boolean) = if (pounds) kg * 2.2046226218487757 else kg
-fun displayToKg(weight: Double, pounds: Boolean) = if (pounds) weight / 2.2046226218487757 else weight
-fun number(value: Double): String = if (value == value.toLong().toDouble()) value.toLong().toString() else String.format(Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
-fun weight(kg: Double, pounds: Boolean) = "${number(kgToDisplay(kg, pounds))} ${if (pounds) "lb" else "kg"}"
-fun dateText(time: Long, pattern: String = "EEE, MMM d") = SimpleDateFormat(pattern, Locale.getDefault()).format(Date(time))
-fun durationText(seconds: Long): String {
-    val safe = seconds.coerceAtLeast(0)
-    return if (safe >= 3600) "%d:%02d:%02d".format(safe / 3600, safe / 60 % 60, safe % 60) else "%d:%02d".format(safe / 60, safe % 60)
-}
-fun human(text: String) = text.lowercase().replace('_', ' ').replaceFirstChar { it.titlecase() }
-
-/** A consistently sized, filled entry field shared by routine targets and logged sets. */
-@Composable
-fun TrainingNumberField(
-    value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
-    isError: Boolean = false, help: String? = null, decimal: Boolean = false,
-) {
-    TextField(value, onValueChange, label = { Text(label) }, singleLine = true, isError = isError,
-        modifier = modifier, shape = RoundedCornerShape(14.dp),
-        supportingText = help?.let { { Text(it) } },
-        keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
-        colors = trainingFieldColors())
-}
-
-@Composable
-private fun trainingFieldColors() = TextFieldDefaults.colors(
-    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-    focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-    disabledIndicatorColor = Color.Transparent,
-)
-
 /**
- * The editing state of a rest duration typed as m:ss, shared by [RestDurationField] and
- * [SettingsRestDurationField]. Typing goes through `RestDuration.edit`; a rejected keystroke
- * keeps the text and sets [rejected]. A new duration is reported once through
- * `onSecondsChange`, and an outside change of `seconds` replaces the text while unfocused.
+ * Saveable fixed-colon editor state used by [SettingsRestDurationField]. A rejected keystroke
+ * keeps the last accepted value. Changes are reported once; an outside update replaces unfocused text.
  */
 @Stable
 class RestDurationEditorState internal constructor(
@@ -117,75 +71,4 @@ fun rememberRestDurationEditor(seconds: Int, onSecondsChange: (Int) -> Unit, key
     }
     LaunchedEffect(seconds) { state.sync(seconds) }
     return state
-}
-
-@Composable
-fun RestDurationField(
-    seconds: Int, onSecondsChange: (Int) -> Unit, modifier: Modifier = Modifier,
-    label: String = stringResource(R.string.legacy_rest_duration), testTag: String = "rest-duration",
-    help: String = stringResource(R.string.legacy_rest_help),
-) {
-    val editor = rememberRestDurationEditor(seconds, onSecondsChange, testTag)
-    TextField(editor.value, editor::onValueChange, label = { Text(label) }, suffix = { Text("min") }, singleLine = true,
-        modifier = modifier.testTag(testTag).onFocusChanged { editor.onFocusChange(it.isFocused) },
-        shape = RoundedCornerShape(14.dp), isError = editor.rejected,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        supportingText = { Text(if (editor.rejected) stringResource(R.string.legacy_rest_invalid) else help) },
-        colors = trainingFieldColors())
-}
-
-@Composable
-fun PageHeading(eyebrow: String, title: String, subtitle: String? = null, trailing: @Composable (() -> Unit)? = null) {
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
-        Text(eyebrow.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.displaySmall, modifier = Modifier.weight(1f))
-            trailing?.invoke()
-        }
-        subtitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
-}
-
-@Composable
-fun EmptyState(icon: ImageVector, title: String, body: String, action: String? = null, onAction: () -> Unit = {}) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 38.dp, horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-            Icon(icon, null, Modifier.padding(20.dp).size(36.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-        }
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        action?.let { Button(onClick = onAction) { Text(it) } }
-    }
-}
-
-@Composable
-fun Metric(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun SectionTitle(title: String, action: String? = null, onAction: () -> Unit = {}) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-        if (action != null) TextButton(onClick = onAction) { Text(action) }
-    }
-}
-
-@Composable
-fun ConfirmDialog(title: String, text: String, confirm: String = stringResource(R.string.legacy_delete), onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(text) },
-        confirmButton = { TextButton(onClick = { onConfirm(); onDismiss() }) { Text(confirm, color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
-}
-
-@Composable
-fun NameDialog(title: String, initial: String = "", label: String = stringResource(R.string.legacy_name), onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var value by remember { mutableStateOf(initial) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = {
-        OutlinedTextField(value, { value = it }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth(), supportingText = { Text(stringResource(R.string.legacy_name_length)) }, isError = value.length > 80)
-    }, confirmButton = { TextButton(onClick = { onSave(value.trim()); onDismiss() }, enabled = value.trim().isNotEmpty() && value.length <= 80) { Text(stringResource(R.string.legacy_save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.legacy_cancel)) } })
 }

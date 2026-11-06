@@ -64,7 +64,48 @@ jobs:
       - name: Test, lint and assemble
         # :shared, :designsystem and :screens register no lint report task of their own (AGP 9.3.3
         # KMP library: only lintAnalyzeAndroidHostTest, which writes no report).
-        run: ./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest :designsystem:testAndroidHostTest :screens:testAndroidHostTest :app:lintDebug :app:assembleDebug --console=plain --continue
+        run: |
+          # Keep a stalled host test diagnosable before the job's 45-minute ceiling cancels uploads.
+          mkdir -p build/ci-diagnostics
+          cat > "$RUNNER_TEMP/test-diagnostics.init.gradle" <<'INIT'
+          allprojects {
+              tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+                  testLogging { events 'started', 'passed', 'skipped', 'failed' }
+              }
+          }
+          INIT
+          ./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest :designsystem:testAndroidHostTest :screens:testAndroidHostTest :app:lintDebug :app:assembleDebug --console=plain --continue --init-script "$RUNNER_TEMP/test-diagnostics.init.gradle" > build/ci-diagnostics/host.log 2>&1 &
+          build_pid=$!
+          tail --pid="$build_pid" -n +1 -F build/ci-diagnostics/host.log &
+          tail_pid=$!
+          (
+            sleep 1200
+            if kill -0 "$build_pid" 2>/dev/null; then
+              echo 'Host checks exceeded 20 minutes; capturing Java threads before stopping this runner-only build.'
+              jcmd -l > build/ci-diagnostics/java-processes.txt
+              while read -r java_pid; do
+                jcmd "$java_pid" Thread.print > "build/ci-diagnostics/threads-$java_pid.txt" 2>&1 || true
+              done < <(awk '!/sun.tools.jcmd.JCmd/ {print $1}' build/ci-diagnostics/java-processes.txt)
+              touch build/ci-diagnostics/watchdog-expired
+              # Every listed JVM belongs to this disposable GitHub-hosted job; no user device is involved.
+              while read -r java_pid; do kill -TERM "$java_pid" 2>/dev/null || true; done < <(awk '!/sun.tools.jcmd.JCmd/ {print $1}' build/ci-diagnostics/java-processes.txt)
+            fi
+          ) > build/ci-diagnostics/watchdog.log 2>&1 &
+          watchdog_pid=$!
+          result=0
+          wait "$build_pid" || result=$?
+          pkill -TERM -P "$watchdog_pid" 2>/dev/null || true
+          kill "$watchdog_pid" "$tail_pid" 2>/dev/null || true
+          if test -f build/ci-diagnostics/watchdog-expired; then exit 1; fi
+          exit "$result"
+
+      - name: Upload host diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: host-diagnostics
+          path: build/ci-diagnostics/
+          if-no-files-found: ignore
 
       # Phase 3 budget: APK growth over the phase's base (main after phase 2), the fonts, and
       # fonts plus icons.
@@ -317,7 +358,12 @@ jobs:
           # Workout PR statistic: WorkoutPresentationTest +1 (:shared common), ShareCardDataTest +3
           # (:screens common), HistoryRecordsHostTest +2 and WorkoutSharePreviewHostTest +1
           # (:app host). 1281 + 7 = 1288.
-          MIN_HOST_TESTS: 1288
+          # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (:screens common), CalendarMonthGridTest7
+          # (:designsystem common), AppViewModelSavedWorkoutTimerHostTest3 and ShellNavigationHostTest+1.
+          # SetDraftsTest+1 (scoped failed writes, :screens common), WorkoutSharePreviewHostTest+1.
+          # HistoryModelTest+2 (metadata cache parity/invalidation). Legacy coverage is ported, none retired.
+          # 1288 + 29 + 7 + 7 + 3 + 1 + 1 + 1 = 1337.
+          MIN_HOST_TESTS: 1337
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -376,6 +422,21 @@ jobs:
   # can build Kotlin/Native Apple targets.
   ios:
     name: iOS compile and simulator tests
+    # Owner-approved Android-only v1.5.4 release. Match the release branch
+    # commit, same-repository PR, one main transition, and version tag.
+    if: >-
+      ${{ !(github.repository == 'ReiTut/Mooscles' && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/codex/phase5b-history' &&
+          startsWith(github.event.head_commit.message, 'ci: prepare Android-only v1.5.4 release')) ||
+        (github.event_name == 'pull_request' && github.base_ref == 'main' &&
+          github.head_ref == 'codex/phase5b-history' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.title == 'Release v1.5.4: Phase 5B (Android only)') ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          github.event.before == 'c9ba9b1a226d7cbc41acbca19dcba09ae9f6447e' &&
+          startsWith(github.event.head_commit.message, 'Release v1.5.4: Phase 5B (Android only)')) ||
+        (github.event_name == 'push' && github.ref == 'refs/tags/v1.5.4')
+      )) }}
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -416,7 +477,20 @@ jobs:
           restore-keys: konan-${{ runner.os }}-
 
       - name: Compile for iOS and run the simulator tests
-        run: ./gradlew :shared:compileKotlinIosArm64 :shared:iosSimulatorArm64Test :designsystem:compileKotlinIosArm64 :designsystem:iosSimulatorArm64Test :screens:compileKotlinIosArm64 :screens:iosSimulatorArm64Test --console=plain --continue
+        run: |
+          # Name the active native test and fail a stalled task while report uploads can still run.
+          # The job's 60-minute ceiling and every test assertion/count guard remain unchanged.
+          cat > "$RUNNER_TEMP/ios-diagnostics.init.gradle" <<'INIT'
+          allprojects {
+              tasks.withType(org.gradle.api.tasks.testing.AbstractTestTask).configureEach {
+                  testLogging { events 'started', 'passed', 'skipped', 'failed' }
+              }
+              tasks.matching { it.name == 'iosSimulatorArm64Test' }.configureEach {
+                  timeout.set(java.time.Duration.ofMinutes(20))
+              }
+          }
+          INIT
+          ./gradlew :shared:compileKotlinIosArm64 :shared:iosSimulatorArm64Test :designsystem:compileKotlinIosArm64 :designsystem:iosSimulatorArm64Test :screens:compileKotlinIosArm64 :screens:iosSimulatorArm64Test --console=plain --continue --init-script "$RUNNER_TEMP/ios-diagnostics.init.gradle"
 
       # kspIosArm64 and kspIosSimulatorArm64 run only here, so an iOS-only divergence in the
       # exported schema (and its identityHash) is caught here, not in the host job.
@@ -552,7 +626,8 @@ jobs:
           # Phase 5A final fixes: ChartScaleTest +1 (commonTest: floatNoiseIsAFlatLine); SizesTimingElevationTest +1
           # (commonTest: progressPrewarmDelayIsHalfASecond); ChartsTest +1 (uiTest: lineChartWritesItsOwnTicksWithTheComposableLabel).
           # 411 + 3 = 414.
-          MIN_DS_IOS_TESTS: 414
+          # Phase 5B: CalendarMonthGridTest7 (common), MonthCalendarTest7 (UI). 414 + 14 = 428.
+          MIN_DS_IOS_TESTS: 428
         run: |
           $files = @(Get-ChildItem -Path 'designsystem/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
@@ -727,7 +802,13 @@ jobs:
           # Language/icon: PlannedSetDraftsTest +3 common tests, 892 + 3 = 895.
           # Workout PR statistic: ShareCardDataTest +3 (common), ShareCardPainterTest +3 and
           # WorkoutSummaryScreenTest +1 (UI). 895 + 7 = 902.
-          MIN_SCREENS_IOS_TESTS: 902
+          # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (common); HistoryScreenTest17,
+          # WorkoutDetailScreenTest28, SharePreviewSheetTest11, HistoryFlowTest2, RecordsScreenTest+3,
+          # HistoryTapBudgetTest2, HistoryAccessibilityTest3 (UI); SetDraftsTest+1 (common).
+          # ProgressIndexComposeTest+1 (foreground date/zone refresh without rebuilding the index).
+          # HistoryModelTest+2 (metadata cache parity/invalidation).
+          # 902 + 37 + 66 + 1 = 1006.
+          MIN_SCREENS_IOS_TESTS: 1006
         run: |
           $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
           $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()

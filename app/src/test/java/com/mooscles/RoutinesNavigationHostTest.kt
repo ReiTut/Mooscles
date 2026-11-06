@@ -184,7 +184,7 @@ class RoutinesNavigationHostTest {
         compose.onNodeWithTag(MTabBarTag).assertDoesNotExist()
     }
 
-    @Test fun globalSnackbarNeverShowsOnTrainOrEditor() {
+    @Test fun globalSnackbarNeverShowsOnTrainEditorOrHistory() {
         clearErrorClears = false
         show(UiState(loading = false, exercises = listOf(bench, row), routines = listOf(push), routineFolders = folders))
         compose.runOnIdle { state.value = state.value.copy(error = "Raw failure", errorCode = UiError.SAVE_FAILED) }
@@ -192,9 +192,10 @@ class RoutinesNavigationHostTest {
         compose.onNodeWithText("Raw failure").assertDoesNotExist()
         openEditor("push")
         compose.onNodeWithText("Raw failure").assertDoesNotExist()
-        // An old screen still has it.
+        // History also owns its localized error presentation after Phase 5B.
         tab("history").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithText("Raw failure").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("History").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Raw failure").assertDoesNotExist()
     }
 
     @Test fun reselectingTrainFromTheEditorReturnsToTheList() {

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_title">Workout details</string>
+    <string name="detail_editing">Editing workout</string>
+    <string name="detail_menu">Workout options</string>
+    <string name="detail_edit">Edit workout</string>
+    <string name="detail_done">Done</string>
+    <string name="detail_share">Share workout</string>
+    <string name="detail_rename">Rename workout</string>
+    <string name="detail_name">Workout name</string>
+    <string name="detail_save">Save</string>
+    <string name="detail_cancel">Cancel</string>
+    <string name="detail_delete">Delete workout</string>
+    <string name="detail_confirm_edit">Edit saved workout?</string>
+    <string name="detail_confirm_edit_body">Changes are saved immediately and this exercise’s records are recalculated throughout your history.</string>
+    <string name="detail_confirm_delete">Delete this workout?</string>
+    <string name="detail_confirm_delete_body">It will leave your history and personal records will be recalculated.</string>
+    <string name="detail_remove_set">Remove set %1$d?</string>
+    <string name="detail_remove_set_body">This exercise’s records will be recalculated. This removal cannot be undone.</string>
+    <string name="detail_remove">Remove</string>
+    <string name="detail_remove_exercise">Remove %1$s?</string>
+    <string name="detail_remove_exercise_body">Its sets will leave this workout and personal records will be recalculated.</string>
+    <string name="detail_replace_exercise">Replace %1$s?</string>
+    <string name="detail_replace_exercise_body">Its existing sets will be removed. Choose the replacement exercise next.</string>
+    <string name="detail_replace">Replace exercise</string>
+    <string name="detail_add_exercise">Add exercise</string>
+    <string name="detail_exercise_menu">Options for %1$s</string>
+    <string name="detail_progress">View progress</string>
+    <string name="detail_move_up">Move up</string>
+    <string name="detail_move_down">Move down</string>
+    <string name="detail_routine">Routine: %1$s</string>
+    <string name="detail_rest">Rest %1$s min</string>
+    <string name="detail_rest_help">Use m:ss, up to 5:00. Save applies the change to this exercise.</string>
+    <string name="detail_rest_error">Enter a duration from 0:00 to 5:00.</string>
+    <string name="detail_set_not_completed">Not completed</string>
+    <string name="detail_set_completed">Completed</string>
+    <string name="detail_weight_pr">Weight PR</string>
+    <string name="detail_reps_pr">Reps PR</string>
+    <string name="detail_set_reading">Set %1$d · %2$s · %3$s</string>
+    <string name="detail_no_sets">No sets recorded</string>
+    <string name="detail_missing">Workout not found</string>
+    <string name="detail_missing_body">This workout may have been deleted or replaced by an import.</string>
+    <string name="detail_back_history">Back to History</string>
+</resources>

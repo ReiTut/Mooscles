@@ -193,7 +193,7 @@ fun BodyMap(primary: Set<BodyRegion>, secondary: Set<BodyRegion>, modifier: Modi
  * colors and outline. The two items wrap onto two lines when the text is large.
  */
 @Composable
-fun BodyMapLegend(modifier: Modifier = Modifier) {
+fun BodyMapLegend(modifier: Modifier = Modifier, primaryLabel: String? = null, secondaryLabel: String? = null) {
     val palette = bodyMapPalette(MTheme.colors)
     val space = MTheme.space
     FlowRow(
@@ -201,8 +201,8 @@ fun BodyMapLegend(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(space.s4),
         verticalArrangement = Arrangement.spacedBy(space.s2),
     ) {
-        LegendItem(palette.primary, palette.outline, stringResource(Res.string.ds_body_map_primary))
-        LegendItem(palette.secondary, palette.outline, stringResource(Res.string.ds_body_map_secondary))
+        LegendItem(palette.primary, palette.outline, primaryLabel ?: stringResource(Res.string.ds_body_map_primary))
+        LegendItem(palette.secondary, palette.outline, secondaryLabel ?: stringResource(Res.string.ds_body_map_secondary))
     }
 }
 

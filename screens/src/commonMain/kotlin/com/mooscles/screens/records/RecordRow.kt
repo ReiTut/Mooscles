@@ -36,6 +36,7 @@ import com.mooscles.designsystem.components.Skeleton
 import com.mooscles.designsystem.interaction.mFocusRing
 import com.mooscles.designsystem.theme.MTheme
 import com.mooscles.screens.format.displayName
+import com.mooscles.screens.format.conventionLabel
 import com.mooscles.screens.format.shortDate
 import com.mooscles.screens.progress.RecordEvent
 import com.mooscles.screens.progress.recordKindLabel
@@ -45,12 +46,16 @@ import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.records_current
 import com.mooscles.screens.resources.records_first_short
 import com.mooscles.screens.resources.records_open_workout
+import com.mooscles.screens.resources.records_spoken_join
 import com.mooscles.screens.workout.RecompositionProbe
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import com.mooscles.designsystem.resources.Res as DsRes
 import com.mooscles.designsystem.resources.ds_pr_label
+
+/** Stable semantics tag for the convention that disambiguates historical loads on a record row. */
+internal const val RecordConventionTag = "records-row-convention"
 
 /**
  * One record of the timeline (spec D11), one button and one node for a screen reader ([recordSpoken]: "Supino reto
@@ -79,11 +84,13 @@ internal fun RecordRow(
     val colors = MTheme.colors
     val name = displayName(record.exercise, portuguese)
     val first = record.firstRecord
+    val convention = conventionLabel(record.exercise.convention)
     val kind = recordKindLabel(record.kind, record.exercise.convention)
     val value = recordWasText(record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds, record.assistance)
     val date = shortDate(record.date, zone)
     val spoken = recordSpoken(
-        name, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
+        stringResource(Res.string.records_spoken_join, name, convention),
+        record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
         record.date, zone, today, current = event.current, first = first, assistance = record.assistance,
         convention = record.exercise.convention,
     )
@@ -131,6 +138,7 @@ internal fun RecordRow(
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             MText(kind, MTheme.type.labelMd, color = colors.textSecondary, modifier = Modifier.testTag(RecordsTags.ROW_KIND))
+            MText(convention, MTheme.type.labelMd, color = colors.textSecondary, modifier = Modifier.testTag(RecordConventionTag))
             MText(date, MTheme.type.bodyMd, color = colors.textSecondary, modifier = Modifier.testTag(RecordsTags.ROW_DATE))
             if (event.current) CurrentLabel()
         }

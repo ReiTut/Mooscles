@@ -111,6 +111,10 @@ private fun weekdayName(day: DayOfWeek): StringResource = when (day) {
     DayOfWeek.SUNDAY -> Res.string.date_day_sun
 }
 
+/** Localized weekday label for a caller-ordered calendar header. */
+@Composable
+fun weekdayText(day: DayOfWeek): String = stringResource(weekdayName(day))
+
 /** `21 out` / `Oct 21`. */
 @Composable
 fun shortDate(epochMillis: Long, zone: TimeZone = TimeZone.currentSystemDefault()): String {

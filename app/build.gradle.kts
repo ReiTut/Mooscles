@@ -10,8 +10,8 @@ android {
         applicationId = "com.mooscles"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
-        versionName = "1.5.3"
+        versionCode = 26
+        versionName = "1.5.4"
         // The updater runs everywhere except the side-by-side `preview` build (below).
         buildConfigField("boolean", "UPDATER_ENABLED", "true")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -87,7 +87,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.datastore:datastore-preferences:1.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("androidx.work:work-runtime-ktx:2.12.0")

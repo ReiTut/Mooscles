@@ -8,9 +8,10 @@ import org.junit.Test
 
 /** New localized legacy labels must not silently fall back because a key/argument is missing. */
 class LegacyStringsHostTest {
-    private fun resources(language: String, file: String): Map<String, String> {
+    private fun resources(language: String, file: String, shared: Boolean = false): Map<String, String> {
+        val folder = if (shared) "../screens/src/commonMain/composeResources/$language" else "src/main/res/$language"
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-            .parse(File("src/main/res/$language/$file.xml"))
+            .parse(File("$folder/$file.xml"))
         val nodes = document.documentElement.childNodes
         return buildMap {
             for (i in 0 until nodes.length) {
@@ -21,9 +22,9 @@ class LegacyStringsHostTest {
         }
     }
 
-    private fun parity(file: String) {
-        val en = resources("values", file)
-        val pt = resources("values-pt-rBR", file)
+    private fun parity(file: String, shared: Boolean = false) {
+        val en = resources("values", file, shared)
+        val pt = resources("values-pt-rBR", file, shared)
         assertEquals(en.keys, pt.keys)
         val args = Regex("%[0-9]+\\$[sd]")
         for (key in en.keys) {
@@ -34,5 +35,5 @@ class LegacyStringsHostTest {
     }
 
     @Test fun existingScreenLabelsHaveMatchingPortugueseKeysAndArguments() = parity("legacy_strings")
-    @Test fun existingSharePreviewHasMatchingPortugueseKeysAndArguments() = parity("share_strings")
+    @Test fun existingSharePreviewHasMatchingPortugueseKeysAndArguments() = parity("strings_share_preview", shared = true)
 }
