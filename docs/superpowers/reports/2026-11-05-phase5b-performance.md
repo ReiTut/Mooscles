@@ -1,6 +1,6 @@
 # Phase 5B performance — measured CPU work and remaining frame checks
 
-Date: 2026-11-05. Feature branch: `codex/phase5b-history`; development baseline: `c9ba9b1a226d7cbc41acbca19dcba09ae9f6447e` (v1.5.3 / Build 25). The measurements below are local evidence from the unmerged Phase 5B implementation, not a release or a physical-phone result. Version and production application identity were not changed.
+Date: 2026-11-05. Feature branch: `codex/phase5b-history`. Development baseline: `c9ba9b1a226d7cbc41acbca19dcba09ae9f6447e` (v1.5.3 / Build 25). Emulator and approved physical-phone results are separate below.
 
 The cached implementation corresponds to source `26a8889`. The later `7fc1b2e` correction changes only the saved editor's large-text heading/layout and its assertions; it was not part of the ABBA/settled-scroll captures. The later final-source unit-switch trace below includes it. No saved-editor performance benefit is inferred from these History/index measurements.
 
@@ -10,7 +10,36 @@ Caching repeated exercise metadata **within one history-index build** reduced th
 
 All measured query categories pass the median ≤4 ms / p95 ≤8 ms budget. That is not a claim that every query is below 8 ms: overall-progress queries had **4/360 samples above 8 ms in each build**.
 
-The three cached-candidate History scrolling captures have **11.12–13.62% janky frames**, the same-gesture Library control **10.22–13.61%**, and Overall Progress **19.00–22.16%**, all above the specification's 5% goal. That part is **not green**. The control captures and supplemental Perfetto attribution are complete below; navigation-to-visible-frame measurements and the active-workout rendering comparison remain unverified. The controls do not establish a released-version regression or excuse the absolute budget failure. Lower index CPU time alone does not prove smoother scrolling or faster routine startup.
+On the phone, the scoped body-map layer reduced Overall Progress jank from **7.24% to 1.39%** in the repeat comparison. History, Records and the Library control also met the 5% goal on the phone. The earlier host-GPU emulator results exceeded 5% in History, Overall Progress and Library. The emulator was measured before the layer change. Navigation-to-visible-frame timing and the active-workout rendering comparison remain unverified.
+
+## Approved physical-phone comparison
+
+Device `4eb066eb`, model 23021RAAEG, Android 15/API 35, Adreno 610, 1080 × 2400, density 440 dpi, font scale 1.1. Nominal 120 Hz with measured intended-vsync spacing around 8.353 ms. Portuguese, dark theme, pounds, no active timer or keyboard. The R8-optimized, profileable Build 25 used the separate package `com.mooscles.phase5b.phone20261105` with updates disabled and the same synthetic fixture of 208 workouts, 12,688 sets and 48 variations. The phone's production installation and device settings were preserved.
+
+Initial warmup and scroll captures used `7fc1b2e`. History, Records and Library each used 20 down/up pairs at 1,200 px per 100 ms with 350 ms gaps. Overall Progress used 10 pairs at 1,000 px per 100 ms with the same gaps. The rates below use Android's modern gfxinfo aggregate. The different gestures make comparisons between screens descriptive.
+
+| Screen | Captures | Janky / total frames | Capture range |
+| --- | ---: | ---: | ---: |
+| History | 3 | 94 / 7,356 | 1.14–1.35% |
+| Records | 3 | 128 / 7,442 | 1.53–1.90% |
+| Library control | 3 | 98 / 7,137 | 1.21–1.52% |
+
+Overall Progress had repeated costly path drawing and long graphics handoffs. The isolated prototype put only the static muscle map in an offscreen layer at `HistoryProgress.kt` in the `muscle-map` lazy item. Repeating the same scroll with the original APK restored the slowdown. Reinstalling the prototype restored the improvement. The last three blocks used the same compilation, seed guard, fresh-process setup and visible-chart check. Initial A1 followed earlier CPU and scroll probes.
+
+| Block | Janky / total frames | Rates by capture | Frame-time p95 by capture |
+| --- | ---: | --- | --- |
+| A1, original | 259 / 3,542 | 7.23%, 7.37%, 7.34% | — |
+| B1, layer | 60 / 3,677 | 1.62%, 1.56%, 1.71% | 17, 18, 18 ms |
+| A2, restored original | 256 / 3,536 | 7.31%, 7.21%, 7.20% | 27, 28, 27 ms |
+| B2, restored layer | 51 / 3,675 | 1.55%, 1.31%, 1.30% | 18, 18, 18 ms |
+
+A2 to B2 is a 5.85 percentage-point reduction (80.8% relative). These are repeated captures from one phone with correlated samples within each block. The candidate and original map captures retained the same regions, outlines, proportions and legend. Content and size changes still invalidate the layer.
+
+In comparable approximately 12.6–12.7 second Perfetto captures, path-heavy RenderThread draws fell **428→13** and summed main-thread graphics-handoff wait fell **3,779.9→1,288.2 ms**. RenderThread scheduled CPU fell **6,157.4→4,043.4 ms**, while main-thread scheduled CPU rose from **1,546.9 to 1,690.1 ms** across more frames. The 13 remaining path-heavy draws averaged 17.3 ms wall time, so layer creation and item re-entry can still be expensive. A visible-map RGBA backing is roughly 2.8 MiB. Single snapshots showed 44,388→44,340 KiB Graphics PSS and cannot establish a memory gain. There are no hardware GPU counters, and the FrameTimeline parser lost some rows. The jank table therefore uses gfxinfo.
+
+The phone CPU probe measured an index median of 88.966 ms and p95 of 103.137 ms (nine samples, candidate only). Records/history/calendar/overall query medians were 0.799/0.141/0.092/3.094 ms and p95s 3.078/0.188/0.172/4.795 ms (180 per query). The phone probe has no matched CPU baseline.
+
+Local evidence under `D:\Programing\Mooscles\.tooling\phase5b-20261104\` includes `phone-scroll-analysis.md`, `phone-cpu-analysis.md`, `phone-map-baseline-a.log`, `phone-map-layer-b.log`, `phone-map-layer-b2.log`, `phone-overall-scroll.perfetto-trace`, `phone-map-layer-scroll.perfetto-trace` and both `phone-map-*.png` captures.
 
 ## Device, build and workload
 
@@ -204,12 +233,7 @@ notices; History also reports one informational FrameTimeline parser error. No p
 counter was reported. One History surface frame and two Overall surface frames lack exact numeric main-token
 matches; the aggregate timeline and main-frame populations are therefore deliberately reported separately.
 
-**Bounded recommendation:** keep the 5% scrolling result marked unmet. Before a broader rendering change, isolate
-one static chart/body-map boundary in an ignored prototype and compare the same settled scroll with and without
-a cached drawing layer, measuring RenderThread time, memory and image quality. Do not claim a benefit before that
-comparison, or attribute the heavy path operations to the body map from names alone. A physical-device comparison
-would help separate emulator translation from product cost, but it requires the owner's approval gate. These
-traces alone do not justify changing workout loading, removing content or moving query work onto the UI thread.
+These emulator traces motivated the phone comparison above. The scoped layer is now applied at the measured History Progress call site. The earlier emulator result still describes its tested build and environment.
 
 Reproducible local SQL/results: `scroll-trace-summary.sql`, `scroll-frame-attribution.sql`,
 `history-trace-summary.csv`, `overall-trace-summary.csv`, `history-frame-attribution.csv` and

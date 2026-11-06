@@ -10,6 +10,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
@@ -81,7 +83,12 @@ internal fun HistoryProgress(index: ProgressLoad<ProgressIndex>, calendar: Progr
                 item("muscle-heading") { HistoryHeading(stringResource(Res.string.history_muscles)) }
                 item("muscle-map") {
                     Column(Modifier.historyItem()) {
-                        BodyMap(data.primaryRegions.mapTo(HashSet()) { it.toBodyRegion() }, data.secondaryRegions.mapTo(HashSet()) { it.toBodyRegion() }, Modifier.fillMaxWidth())
+                        BodyMap(data.primaryRegions.mapTo(HashSet()) { it.toBodyRegion() }, data.secondaryRegions.mapTo(HashSet()) { it.toBodyRegion() },
+                            Modifier.fillMaxWidth().graphicsLayer {
+                                // Reuse the static vector drawing while this lazy item moves. Content/size
+                                // changes invalidate the layer; other maps and chart drawing stay unchanged.
+                                compositingStrategy = CompositingStrategy.Offscreen
+                            })
                         BodyMapLegend(primaryLabel = stringResource(Res.string.history_muscle_more), secondaryLabel = stringResource(Res.string.history_muscle_less))
                     }
                 }

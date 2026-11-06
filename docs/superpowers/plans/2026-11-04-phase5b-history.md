@@ -25,7 +25,7 @@ The owner's attached instruction explicitly resumes Phase 5B, including planning
 7. [x] Integrate routes and own placeholders; port legacy behavior tests before removing genuinely unused old screens/components. Record old/new tap budgets and ensure navigation/focus/state restoration parity.
 8. [x] Verify 5A carryovers against current code: foreground date refresh, list-top assertion, cache-start dispatch assumption and localized record convention label are covered. Long-range short axis labels and fresh pre-33/real-iOS region changes remain explicitly documented limitations; no extra redesign is bundled.
 9. [ ] Run focused tests during each change, resource parity/tokens/metadata/lint/debug packaging, and final required device suites once. Validate offline/compatible upgrade on isolated emulator data, restoration, shared history flow, performance in optimized build and clean APK budgets. Physical checks trigger the owner's stop-and-approval gate.
-10. [ ] Review full feature diff, update CI minima by actual added/ported tests, run feature-branch CI (including iOS), visual critique and compatibility audit. Report actual evidence/limitations and final debug/preview APK paths; keep feature branch unmerged and version unchanged.
+10. [x] Review full feature diff, update CI minima by actual added/ported tests, record prior feature-branch CI, complete the visual critique and compatibility audit, and report final debug and preview APKs. Final checks are Android-only at the owner's request. Keep the final fix local to avoid triggering iOS CI.
 
 ## Evidence
 
@@ -37,4 +37,5 @@ Keep heavy captures/traces and command logs in ignored `.tooling/phase5b-2026110
 - Clean debug and preview builds, common metadata, lint and APK budgets pass. Version remains 1.5.3 / 25 and the original signer is verified. Exact artifacts are in the verification report.
 - The isolated offline upgrade passed both 14-check stages, including identical real exports and raw preferences, schema 6, exact active sets and a running timer deadline.
 - Full device suites and latest-source CI evidence are recorded separately from focused retries. No blanket green claim is made for the first Windows/device attempts.
-- Tasks 9–10 remain open until their final evidence is recorded. The 5% scrolling target is currently unmet on the host-GPU emulator; navigation-to-visible-content timing and physical graphics behavior remain unverified. Do not advance to Phase 6/7 or merge/release this branch while presenting these as completed criteria.
+- The approved phone test identified repeated muscle-map path drawing. The integrated offscreen layer brought Overall Progress jank from 7.24% to 1.39% on that phone. Its layer can still incur heavier draws on lazy-item re-entry. The earlier emulator result exceeded 5% and predates the layer.
+- Task 9 retains open performance criteria. The live unit-switch median remains above 60 ms, and navigation-to-visible-content and active-workout rendering comparisons remain unverified. The [verification report](../reports/2026-11-05-phase5b-verificacao.md) separates full earlier suites from the final affected Android checks.

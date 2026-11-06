@@ -55,7 +55,7 @@ The unused Material icons library was removed after its last production callers 
 Earlier clean APKs passed font/icon/growth budgets and verified with the original signing certificate;
 the source-matching final artifact is recorded in the verification report.
 
-## Still pending
+## Verification status and limits
 
 Full emulator design-system coverage passed 428 cases; the 1,009-case screens run passed every
 functional case but failed its debuggable index timing check. The focused post-cache timing rerun
@@ -63,12 +63,15 @@ passes, and the expanded saved-editor matrix passes after its viewport correctio
 calendar/detail/preview captures passed; final-source CI is recorded separately in the verification report.
 
 The isolated offline on-top comparison passed both 14-check stages. The optimized index cache has
-a measured standalone CPU benefit; completed controls and traces show graphics-handoff waits plus some layout outliers. Scrolling remains above target, and hardware/emulator attribution remains unresolved.
-No visual impression is substituted for that unmet performance criterion.
+a measured standalone CPU benefit. Earlier emulator traces show graphics-handoff waits and some layout outliers.
+The approved physical-phone comparison isolated the muscle map as a contributor to Overall Progress scrolling.
+The scoped layer passed the phone's scrolling target. The pre-layer emulator result remains above target.
 
-Physical TalkBack/VoiceOver, finger gestures, haptics, 120 Hz and S23 performance remain unverified,
-as allowed by the approved specification. Any phone-dependent follow-up requires the owner's
-explicit approval and a complete work stop while waiting. No phone test has been performed.
+Both physical-phone map captures show the full map, highlights, outlines and legend at matching proportions.
+The captured scroll positions differ by 4 px, so this is visual review rather than a pixel-equality assertion.
+The test used ADB gestures on a nominal 120 Hz Android phone. Physical TalkBack/VoiceOver, finger gestures,
+haptics and S23-specific performance remain unverified. Future phone-dependent tests require explicit approval.
+Final verification is Android-only.
 
 ## Saved-editor correction, final Android rerun
 

@@ -1,6 +1,6 @@
 # Phase 5B — implementation and verification checkpoint
 
-Updated 5 November 2026. Implementation is complete on the feature branch; performance acceptance and final-source iOS execution remain open. No Phase 6/7, merge, version change, tag or release is included.
+Updated 5 November 2026. Phase 5B is implemented on the feature branch. The final checks are Android-only by request, with open performance criteria documented below.
 
 ## Source and preservation
 
@@ -13,6 +13,7 @@ Repository: [ReiTut/Mooscles](https://github.com/ReiTut/Mooscles). Branch: `code
 | `e264f7186652d38eaaf0535dd790363026e6f098` | CI host-stall diagnostics and checkpoint critique. |
 | `26a8889d53a37bff9736fc97b65d7b4001b3aa51` | Build-local exercise metadata reuse, parity/invalidation tests, foreground refresh coverage and expanded accessibility matrix. |
 | `7fc1b2e3eacad1d6d667432efe6a7e84fe3e0a33` | Usable saved-editor viewport at narrow widths/large fonts; full heading remains in scrollable content. |
+| Local follow-up after `b4d23ed` | Reuse the static muscle-map drawing in an offscreen layer at the History Progress call site. |
 
 Heavy evidence remains local and ignored: `D:\Programing\Mooscles\.tooling\phase5b-20261104\`.
 
@@ -43,17 +44,18 @@ Results are tied to the source/checkpoint stated below. Earlier failures are ret
 | Metadata-cache host checks | 80 passed, including search-fold parity and full-snapshot/index invalidation. Both newly added regression methods also passed on Android: two cases, 0.451 seconds (`cache-regressions-android.log`). |
 | Post-cache affected Android run | 31 cases: 30 passed, one saved-editor accessibility method timed out. The follow-up screenshot established the viewport bug, rather than a performance fix being inferred from a build. |
 | Final editor correction | All 28 saved-detail cases plus the saved-editor/preview matrix passed: 29 methods, 194.013 seconds (`editor-header-fix-ui.log`). That method covers all 32 language/theme/width/font looks. Light/dark Portuguese 320 dp/2.01 captures were inspected. |
+| Final muscle-map correction | 20 Android methods passed in 119.648 seconds on the Android 15 Medium_Phone emulator. This covers History restoration and end-to-end flows, Progress period switching and the chart accessibility matrix (`integrated-map-layer-android-ui.log`). |
 | Timing failure rerun | Passed unchanged loose allowance after cache fix: debug index median 177.560 ms, p95 361.000 ms, n=9; chart/query/key loose checks also passed. This is not the R8 budget measurement (`final-debug-index-timing.txt`). |
 | Foreground calendar | Focused Android test passed: refreshes date/zone without rebuilding an unchanged index or recomputing an equal query. |
 | Completed cache-revision CI | [42032537216](https://github.com/ReiTut/Mooscles/actions/runs/42032537216), source `26a8889`: all seven jobs succeeded. Host 1,337 /194 classes (app 569, shared 303, DS 127, screens 338); iOS shared 283 /27, DS 428 /70, screens 1,006 /86. Zero failures/errors/skips in all reported aggregates. |
 | Final editor-source host CI | [42078692993](https://github.com/ReiTut/Mooscles/actions/runs/42078692993), source `7fc1b2e`: Linux host passed 1,337 tests /194 classes, zero failures/errors/skips (`ci-editor-fix-host.log`). |
 | Final editor-source iOS CI | Initial attempt never acquired a hosted runner; canceled after 15 minutes. GitHub explicitly reported macOS arm64 capacity constraints (`ci-editor-fix-ios-runner-capacity.json`). Only that job was retried; the retry also failed to acquire a runner after 15 minutes (`ci-editor-fix-ios-retry-capacity.json`). No tests ran in either attempt. Final native execution is blocked by hosted-runner capacity, not reported green. |
 
-Earlier iOS source run 41975113848 passed 283 shared /428 DS /1,003 screens cases. A same-source follow-up stalled at the screens test task for 52m41s; cause remains unresolved. The later complete cache-revision run passed. These are distinct events, not established production failures. The CI changes add test names/diagnostics and bounded tasks without raising assertions or lowering minima.
+Earlier iOS source run 41975113848 passed 283 shared /428 DS /1,003 screens cases. A same-source follow-up stalled at the screens test task for 52m41s and its cause remains unresolved. The later complete cache-revision run passed. These results apply to their recorded revisions. The owner's final verification scope excludes iOS-specific checks, so the local muscle-map change was tested on Android and kept local to avoid starting the iOS CI job.
 
 Current CI minima: host 1,337, shared iOS 283, DS iOS 428, screens iOS 1,006. The final full Android screens count is expected to be 1,012; that complete count has not been freshly run. Full earlier suites plus the necessary affected reruns are reported separately.
 
-Final local source build: focused detail-model seven cases, common metadata, lint and clean debug/preview packaging passed. Debug lint has zero errors /120 advisory warnings. Design-token guard passed 178 files. No schema JSON changed.
+Earlier focused detail-model verification passed seven cases. Common metadata and Android instrumentation packaging passed after the map change. Clean debug/preview packaging and lint then passed in 2m27s (`final-android-clean-package.log`). Lint reports zero errors and 120 advisory warnings. The design-token guard passed 178 files. No schema JSON changed.
 
 ## Offline upgrade and data compatibility
 
@@ -79,7 +81,9 @@ Source review found unchanged schema/data, preferences, backup, manifest, update
 
 See [performance report](2026-11-05-phase5b-performance.md) and [screen critique](2026-11-05-phase5b-critique.md). The controlled R8 cache comparison reduced index median 79.2168→58.5348 ms (26.1%), p95 98.3670→72.1725 ms. This is versus initial Phase 5B, not a general startup/scroll improvement or a claim that the released app is slower.
 
-The 5% scrolling target remains unmet: History 11.12–13.62%, unchanged Library control 10.22–13.61%, Overall Progress 19.00–22.16%. Supplemental Perfetto traces show substantial RenderThread work and graphics-handoff waits, plus some History layout/prefetch outliers. No hardware GPU tracks or allocation stacks establish the division between app drawing, emulator translation and host driver.
+On the approved Android 15 phone, the isolated R8/profileable Build 25 ran against 208 synthetic workouts and 12,688 sets. History (1.14–1.35%), Records (1.53–1.90%) and the Library control (1.21–1.52%) met 5%. Overall Progress dropped from 256/3,536 janky frames (7.24%) to 51/3,675 (1.39%) in the repeated baseline-to-layer comparison. The map's path-heavy draws fell from 428 to 13 in the sampled traces. Both map screenshots retained their content and proportions. Layer allocation and lazy-item re-entry still cause occasional expensive draws. See the performance report for all four blocks, test conditions and limitations.
+
+Before the layer, the host-GPU emulator measured History at 11.12–13.62%, Library at 10.22–13.61% and Overall Progress at 19.00–22.16%. These measurements exceeded 5% and were retained as earlier evidence. Final-layer emulator frame timing was outside the affected functional rerun. Hardware GPU timing remains unmeasured.
 
 A final-source trace confirms one DefaultDispatch index build per kg/lb switch (six switches/six builds), but its in-app median 77.133 ms exceeds the 60 ms goal. The controlled standalone result must not be generalized to every app condition. Navigation-to-visible-frame and active-workout rendering comparisons remain unverified.
 
@@ -87,7 +91,7 @@ Conditions: Medium_Phone AVD, emulator-5560, Android 15/API35 x86_64, 1080×2400
 
 Current and earlier iOS captures remain separate in `ios-final-captures/` and `ios-captures/`. The latest completed native run produced 145 captures; selected calendar/detail/preview states were inspected. These are simulator/layout proof, not an actual iOS app, VoiceOver session or native Android PNG decoding. Final editor-fix Android captures are in `final-editor-captures/`. Actual native exported PNG samples were retained in `exported-pngs/` before cleaning app/build.
 
-5A carryovers: foreground refresh, convention labels and stronger list restoration are covered. Dispatching-context cache assumptions are documented. Short long-range axis labels remain; table/readout/spoken dates retain years. Fresh pre-33 region changes, real iPhone region changes, physical TalkBack/VoiceOver, finger gestures/haptics, 120 Hz and S23 performance remain unverified.
+5A carryovers include foreground refresh, convention labels and list restoration. Dispatching-context cache assumptions are documented. Long-range axis labels remain short and table/readout/spoken dates retain years. Fresh pre-33 region changes, real iPhone region changes, physical TalkBack/VoiceOver, finger gestures/haptics and S23-specific performance remain unverified. The tested phone's nominal 120 Hz results are recorded separately.
 
 ## Verified final APKs
 
@@ -95,17 +99,17 @@ Original certificate SHA-256: `0cd093b2696ea51b9a948e85311478cd6fad200de8aef775f
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
-| `D:\Programing\Mooscles\app\build\outputs\apk\debug\app-debug.apk` | 18,214,392 | `0d895ba6766e63d90c672523c5d3766b12f1539fa578188f340441d9934d49c9` |
-| `D:\Programing\Mooscles\app\build\outputs\apk\preview\app-preview.apk` | 18,099,752 | `e282829f2dd278b496fe38f699895fc26207bec09a2808a8868fb9591a5c03b8` |
+| `D:\Programing\Mooscles\app\build\outputs\apk\debug\app-debug.apk` | 18,214,392 | `8b4bac453104dc1201e7c4a7ba04828e83bfb409fe060ccb0f1806f098ecaf10` |
+| `D:\Programing\Mooscles\app\build\outputs\apk\preview\app-preview.apk` | 18,099,752 | `ac41a8b2bba37969546198032e6b5e8cf631eae1d651dfced9dff965c7d0497b` |
 
-Debug: com.mooscles, 1.5.3 /25, minSdk26/target35. Preview: com.mooscles.preview, 1.5.3-preview /25, independent data, updater disabled. Both verify with the original signer. `final-apk-verification.json` retains the manifest/hash evidence.
+Debug is `com.mooscles` 1.5.3 / Build 25, minSdk 26 and target 35. Preview is `com.mooscles.preview` 1.5.3-preview / Build 25 with independent data and updates disabled. Both verify with the original signer. `final-map-layer-apk-verification.json` retains the manifest and hash evidence.
 
-Unchanged budgets pass: fonts compressed 645,546 bytes; icon upper bound 293,223; combined 938,769 below 1,048,576. APK growth −6,254,816 against phase base 24,469,208, limit +524,288. No budget increase or lint suppression. The unused Material icons library removal accounts for the large packaging reduction.
+The debug APK is 6,254,816 bytes below the 24,469,208-byte phase base and 6,779,104 bytes below the maximum allowed size. The combined fonts and icon upper bound is 938,769 bytes, leaving 109,807 bytes of headroom. Compressed fonts use 645,546 bytes and compiled icon classes account for an upper bound of 293,223 bytes. The budget and lint settings are unchanged. Removing the unused Material icons library accounts for the large packaging reduction.
 
 ## Continuation and phone gate
 
-Physical phone `4eb066eb` was listed online/authorized by ADB inventory only. No phone installation, settings access, interaction, test or storage operation occurred. A uniquely isolated optimized APK is prepared (not installed): com.mooscles.phase5b.phone20261105, visible label Mooscles Phase 5B Test; exact metadata in `prepared-phone-apk.json` and proposed procedure in `PHONE-CHECK-PLAN.md` under the ignored evidence root.
+The owner approved the focused physical-phone comparison on serial `4eb066eb`. Only `com.mooscles.phase5b.phone20261105` was installed and profiled. The production app remained 1.5.2 / Build 23 with the same data directory, and the animation and stay-awake settings were unchanged. The isolated app was stopped and remains installed with its synthetic data. Raw metadata and test procedure are in `phone-before.json`, `phone-after.json`, `final-phone-preservation.json` and `PHONE-CHECK-PLAN.md`.
 
-Before any phone-dependent check, explain the concrete build/actions/settings/protection and request explicit approval; then stop all agents, builds, tests and Git work until the answer. Connection is not approval. The emulator cannot separate its translation/host effects from the observed graphics pressure; a phone comparison could help, but cannot retrospectively make the emulator budget pass.
+Any future phone-dependent check requires a concrete procedure, explicit approval, and a complete stop of all work while waiting. The approved comparison is complete.
 
-Remaining acceptance: final editor-source iOS execution when runner capacity permits, bounded investigation of the frame/unit-switch budget misses and unverified visible-frame/active-render timing. Keep the branch unmerged and version unchanged. Do not advance to Phase6/7 or publish a release.
+The continuation point is the live unit-switch budget and unmeasured visible-frame and active-render timing. Keep the branch unmerged and version unchanged. Phase 6/7 and release work remain outside this checkpoint.
