@@ -1,5 +1,11 @@
 # Verification — 2026-10-25
 
+## Release 1.5.5 / Build 27
+
+Weekly Sets by Muscle uses the existing saved History index. The feature run passed 34 History model tests, seven resource parity tests, all 20 History screen tests on an Android 15 emulator with synthetic workouts, lint, design tokens, and APK budgets. See the [Weekly verification](docs/superpowers/plans/2026-11-15-weekly-muscle-sets.md#verification) for the tested cases and screenshots.
+
+Release checks cover Android CI, fresh debug packaging, the original signer, and public updater discovery from Build 26. Build 27 uses the existing `com.mooscles` application ID, schema 6, and update metadata format. Updater discovery and on-device installation are separate checks. [Release notes](docs/superpowers/releases/v1.5.5.md)
+
 ## Release candidate 1.5.4 / Build 26
 
 See the [release notes](docs/superpowers/releases/v1.5.4.md), [Phase 5B verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md) and [performance comparison](docs/superpowers/reports/2026-11-05-phase5b-performance.md). The version bump preserves package `com.mooscles`, schema 6, the original distribution signer and the updater contract. Build 26 is above the latest distributed Build 25.

@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **Weekly Sets by Muscle.** [1.5.5 / Build 27](releases/v1.5.5.md) adds a Weekly view to History → Progress with calendar-week navigation and weighted working sets by muscle. See the [implementation and verification](plans/2026-11-15-weekly-muscle-sets.md).
+
 > **2026-11-06 — Android como único alvo.** O projeto mantém Kotlin Multiplatform e Compose Multiplatform em `:shared`, `:designsystem` e `:screens`. O build e o CI atuais validam apenas Android. As notas e os resultados datados das fases anteriores registram a configuração da época.
 
 > **Phase 5B release.** The owner authorized an Android-only full release for [1.5.4 / Build 26](releases/v1.5.4.md). Shared History and overall progress, saved detail and editing, and sharing preview are implemented. The approved phone runs meet the scrolling target after the scoped muscle-map fix. Offline compatibility and the standalone index check pass. The live unit-switch goal and remaining visible-frame measurements stay open. See the [plan](plans/2026-11-04-phase5b-history.md), [verification](reports/2026-11-05-phase5b-verificacao.md) and [performance results](reports/2026-11-05-phase5b-performance.md). Phase 6/7 remain outside the release scope.

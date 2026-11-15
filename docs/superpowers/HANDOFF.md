@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-15 — Weekly Sets by Muscle.** The [1.5.5 / Build 27 release](releases/v1.5.5.md) includes the Weekly History → Progress view and the Android-only project configuration. The [Weekly plan](plans/2026-11-15-weekly-muscle-sets.md) records functional verification and emulator results.
+
 **2026-11-06 — Android-only project.** The `codex/android-only` branch starts from published 1.5.4 / Build 26 (`30de9ff`). It retains Kotlin Multiplatform and Compose Multiplatform in `:shared`, `:designsystem`, and `:screens`, with Android as their sole target. The current CI runs Android host checks, lint, APK packaging, resource and schema checks, and the release-script matrix. Follow the current [build and test instructions](../../AGENTS.md#ambiente-e-comandos).
 
 Keep this cleanup local and retain the application ID, version, distribution variant, signer, workout data, PC backups, and unrelated Gradle edit. Use an Android emulator for device checks and ask for approval before a physical-phone test.
