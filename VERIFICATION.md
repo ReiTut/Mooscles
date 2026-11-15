@@ -1,12 +1,14 @@
 # Verification — 2026-10-25
 
-## Release 1.5.5 / Build 27
+## Release 1.5.6 / Build 28
 
 Weekly Sets by Muscle uses the existing saved History index. The feature run passed 34 History model tests, seven resource parity tests, all 20 History screen tests on an Android 15 emulator with synthetic workouts, lint, design tokens, and APK budgets. See the [Weekly verification](docs/superpowers/plans/2026-11-15-weekly-muscle-sets.md#verification) for the tested cases and screenshots.
 
-Release checks cover Android CI, fresh debug packaging, the original signer, and public updater discovery from Build 26. Build 27 uses the existing `com.mooscles` application ID, schema 6, and update metadata format. Updater discovery and on-device installation are separate checks. [Release notes](docs/superpowers/releases/v1.5.5.md)
+Release checks cover Android CI, fresh debug packaging, the original signer, and public updater discovery from Build 26. Build 28 uses the existing `com.mooscles` application ID, schema 6, and update metadata format. Updater discovery and on-device installation are separate checks. [Release notes](docs/superpowers/releases/v1.5.6.md)
 
 The JVM progress-index scaling check warms and alternates the full and half histories, then uses current-thread CPU time where the clock is suitable to reduce the effect of runner scheduling. Windows uses elapsed time because its JVM CPU clock reported coarse increments. The check keeps the original scaling threshold and elapsed-time build and query limits.
+
+The History tab host tests now wait for the workout card after navigation. Tag CI for the unpublished Build 27 candidate twice reached an assertion while the History query was loading. Build 28 retains those assertions and uses a new tag for the corrected source.
 
 ## Release candidate 1.5.4 / Build 26
 

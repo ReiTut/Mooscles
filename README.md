@@ -4,7 +4,7 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Current release
 
-**1.5.5 / Build 27** adds Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks. See the [release notes](docs/superpowers/releases/v1.5.5.md) and [Android verification](VERIFICATION.md).
+**1.5.6 / Build 28** adds Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks. See the [release notes](docs/superpowers/releases/v1.5.6.md) and [Android verification](VERIFICATION.md).
 
 The [previous Build 26 release](docs/superpowers/releases/v1.5.4.md) added the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview.
 
@@ -85,7 +85,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.5 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.5) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.5/Mooscles-v1.5.5-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.5/update.json)
+[v1.5.6 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.6) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.6/Mooscles-v1.5.6-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.6/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
