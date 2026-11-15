@@ -94,14 +94,17 @@ class ShellNavigationHostTest {
     @Test fun reselectingTheCurrentTabReturnsToItsRoot() {
         show(UiState(loading = false, history = listOf(past)))
         tab("history").performClick()
+        awaitHistoryWorkout()
         compose.onNodeWithText("Last week").performClick()
         compose.onNodeWithTag("workout-details").assertIsDisplayed()
         tab("history").assertIsSelected().performClick()
+        awaitHistoryWorkout()
         compose.onNodeWithTag("workout-details").assertDoesNotExist()
         compose.onNodeWithTag("history-list").assertIsDisplayed()
         tab("history").assertIsSelected()
         // At the root, reselecting stays there.
         tab("history").performClick()
+        awaitHistoryWorkout()
         compose.onNodeWithTag("history-list").assertIsDisplayed()
     }
 
@@ -143,6 +146,7 @@ class ShellNavigationHostTest {
         tab("routines").assertIsNotSelected()
         // The same from the history's workout detail, a screen of another tab.
         tab("history").performClick()
+        awaitHistoryWorkout()
         compose.onNodeWithText("Last week").performClick()
         compose.onNodeWithTag("workout-details").assertIsDisplayed()
         restoration.emulateSavedInstanceStateRestore()
@@ -150,6 +154,7 @@ class ShellNavigationHostTest {
         tab("history").assertIsSelected()
         // Reselecting it still goes back to its own root.
         tab("history").performClick()
+        awaitHistoryWorkout()
         compose.onNodeWithTag("history-list").assertIsDisplayed()
     }
 
@@ -509,6 +514,14 @@ class ShellNavigationHostTest {
     private fun assertMetricSelected(route: String) {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("progress-metric-$route").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("progress-metric-$route").assertIsSelected()
+    }
+
+    private fun awaitHistoryWorkout() {
+        // The History destination loads its saved-workout query outside the Compose test clock.
+        val card = hasText(past.name) and hasAnyAncestor(hasTestTag("history-list"))
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(card).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun tab(route: String) = compose.onNodeWithTag("tab-$route")
