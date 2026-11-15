@@ -24,7 +24,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** Common tests (JVM and iOS): presentation caches must invalidate by saved values, never just row counts. */
+/** Presentation caches invalidate when saved values change, even if row counts match. */
 class WorkoutPresentationTest {
     private val bench = Exercise(id = "bench", name = "Bench", muscle = MuscleGroup.CHEST,
         equipment = Equipment.BARBELL, convention = LoadConvention.TOTAL_LOAD)

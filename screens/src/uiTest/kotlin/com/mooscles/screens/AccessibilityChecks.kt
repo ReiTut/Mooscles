@@ -146,8 +146,7 @@ fun assertTextNotCut(layout: TextLayoutResult, where: String) {
     val lines = maxOf(1, ceil(needed / (width * WRAP_SLACK)).toInt())
     assertTrue(lines <= input.maxLines, "$where \"$text\" needs at least $lines lines at $width px, may have ${input.maxLines}")
     val lineHeight = layout.multiParagraph.getLineBottom(0) - layout.multiParagraph.getLineTop(0)
-    // A quarter of a line of slack: Skia on iOS rounds the laid out height down a pixel from the
-    // line's (19 px for a 20 px line), while a line cut by a fixed height loses far more.
+    // Leave a quarter of a line for rounding. A fixed height that cuts off a line loses far more.
     assertTrue(
         lines * lineHeight <= layout.size.height + lineHeight * LINE_SLACK,
         "$where \"$text\" needs at least $lines lines of $lineHeight px at $width px, has ${layout.size.height} px",
@@ -179,8 +178,7 @@ private fun speaks(node: SemanticsNode): Boolean {
  * ([SemanticsProperties.IsTraversalGroup]) are sorted together, a nested group counting as one
  * node; they go in rows of vertically overlapping bounds, top to bottom, left to right within a
  * row, then by [SemanticsProperties.TraversalIndex]; each group then gives way to its own sorted
- * nodes (kept itself only when it speaks). The iOS simulator runs the same model: it checks the
- * semantics the screens give, not the platform's reader.
+ * nodes (kept itself only when it speaks). This checks the screen's semantics.
  */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.screenReaderOrder(): List<SemanticsNode> {

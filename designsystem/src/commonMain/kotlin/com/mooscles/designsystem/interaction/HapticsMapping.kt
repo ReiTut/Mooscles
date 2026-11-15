@@ -24,16 +24,3 @@ fun androidHapticPlan(event: HapticEvent): List<HapticStep> = when (event) {
 }
 
 private fun single(kind: AndroidHaptic) = listOf(HapticStep(kind, 0))
-
-/** The UIKit feedback generators the iOS actual uses. */
-enum class IosHaptic { ImpactMedium, ImpactLight, NotificationSuccess, NotificationWarning, NotificationError, Selection }
-
-/** The iOS column of the spec's haptics table. */
-fun iosHapticFor(event: HapticEvent): IosHaptic = when (event) {
-    HapticEvent.SetCompleted -> IosHaptic.ImpactMedium
-    HapticEvent.PersonalRecord -> IosHaptic.NotificationSuccess
-    HapticEvent.RestFinished -> IosHaptic.NotificationWarning
-    HapticEvent.StepperStep, HapticEvent.SetUnchecked, HapticEvent.ToggleOn, HapticEvent.ToggleOff -> IosHaptic.Selection
-    HapticEvent.Rejected -> IosHaptic.NotificationError
-    HapticEvent.LongPress -> IosHaptic.ImpactLight
-}

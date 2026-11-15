@@ -2,7 +2,7 @@ import org.jetbrains.compose.resources.ResourcesExtension.ResourceClassGeneratio
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // The Mooscles design system: tokens, components, fonts, icons and strings, in commonMain
-// for Android and iOS. A pure UI library on Compose Multiplatform foundation: it depends
+// for Android. A pure UI library on Compose Multiplatform foundation: it depends
 // on neither :shared nor Material 3.
 plugins {
     // On the build classpath already (root buildscript and the root plugins block), so by id only.
@@ -27,9 +27,6 @@ kotlin {
         }
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
-    iosArm64()
-    iosSimulatorArm64()
-
     sourceSets {
         commonMain.dependencies {
             // CMP 1.12.2 maps to Jetpack Compose 1.12.1 on Android, the version the :app BOM
@@ -40,7 +37,7 @@ kotlin {
             api("org.jetbrains.compose.animation:animation:1.12.2")
             api("org.jetbrains.compose.components:components-resources:1.12.2")
         }
-        // Pure tests (tokens, contrast, formatting): the JVM host and the iOS simulator.
+        // Pure tests (tokens, contrast, formatting) run on the JVM host.
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
@@ -48,14 +45,7 @@ kotlin {
             implementation(kotlin("test-junit"))
             implementation("junit:junit:4.13.2")
         }
-        // UI tests (runComposeUiTest) in src/uiTest: the iOS simulator and the emulator, never
-        // the JVM host, where runComposeUiTest would need Robolectric.
-        iosTest {
-            kotlin.srcDir("src/uiTest/kotlin")
-            dependencies {
-                implementation("org.jetbrains.compose.ui:ui-test:1.12.2")
-            }
-        }
+        // UI tests in src/uiTest run on Android.
         getByName("androidDeviceTest") {
             kotlin.srcDir("src/uiTest/kotlin")
             dependencies {

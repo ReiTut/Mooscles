@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The checked-in v1 backup sample, read through the JVM classloader, so this stays off iOS. */
+/** The checked-in v1 backup sample, read through the JVM classloader. */
 class BackupSampleFileTest {
     private fun sampleText() = javaClass.classLoader!!.getResourceAsStream("backup/v1-sample.json")!!
         .readBytes().toString(Charsets.UTF_8)

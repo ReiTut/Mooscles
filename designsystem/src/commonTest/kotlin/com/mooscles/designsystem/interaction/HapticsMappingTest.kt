@@ -30,21 +30,4 @@ class HapticsMappingTest {
             androidHapticPlan(HapticEvent.PersonalRecord),
         )
     }
-
-    @Test
-    fun iosMappingMatchesTheSpecTable() {
-        val expected = mapOf(
-            HapticEvent.SetCompleted to IosHaptic.ImpactMedium,
-            HapticEvent.PersonalRecord to IosHaptic.NotificationSuccess,
-            HapticEvent.RestFinished to IosHaptic.NotificationWarning,
-            HapticEvent.StepperStep to IosHaptic.Selection,
-            HapticEvent.SetUnchecked to IosHaptic.Selection,
-            HapticEvent.Rejected to IosHaptic.NotificationError,
-            HapticEvent.LongPress to IosHaptic.ImpactLight,
-            HapticEvent.ToggleOn to IosHaptic.Selection,
-            HapticEvent.ToggleOff to IosHaptic.Selection,
-        )
-        assertEquals(HapticEvent.entries.toSet(), expected.keys)
-        for ((event, haptic) in expected) assertEquals(haptic, iosHapticFor(event), event.name)
-    }
 }

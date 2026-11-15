@@ -1,6 +1,5 @@
-# Host tests, lint and a debug build on every push and pull request, the iOS
-# targets of :shared, :designsystem and :screens compiled and their tests run on the iOS simulator, plus
-# a check that the release script still works on Linux and Windows, run when tools/,
+# Android host tests, lint and a debug build on every push and pull request.
+# Check the release script on Linux and Windows when tools/,
 # build.ps1, app/build.gradle.kts (version and signing inputs) or a workflow
 # changes, and on every manual run.
 # Nothing here is publishable: the CI APK is signed
@@ -115,8 +114,8 @@ jobs:
         run: ./tools/check-apk-budget.ps1 -Apk app/build/outputs/apk/debug/app-debug.apk
 
       # Shapes the digits of the design system fonts with HarfBuzz, with and without tnum,
-      # and checks each file against the SHA-256 lock. A host-side indicator: the device
-      # proof is TnumRegressionTest on the iOS simulator (job ios) and the emulator.
+      # and checks each file against the SHA-256 lock. TnumRegressionTest also
+      # verifies the rendered digits on the Android emulator.
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         if: ${{ !cancelled() }}
         with:
@@ -223,15 +222,15 @@ jobs:
           # Phase 3 final review fixes: :screens commonTest RecordAnnouncerTest +1, RestDraftTest +2;
           # :app ShellNavigationHostTest +2, WorkoutSharePreviewHostTest -1; :shared WorkoutPresentationTest +1,
           # InProcessRestTimerTest +1. 807 + 3 + 1 + 2 = 813.
-          # Ring iOS fix (:designsystem commonTest): RestTimerRingMathTest +1.
+          # Rest timer ring fix (:designsystem commonTest): RestTimerRingMathTest +1.
           # Merged with the ring fix: 813 + 1 = 814.
           # +1: in-process rest completion retry test
           # Phase 4A task 2 (:shared commonTest): ExerciseAnatomyTest 15. 815 + 15 = 830.
           # Phase 4A task 4 (:app host): CustomExerciseIdTest 4, AppViewModelCustomExerciseHostTest 2. 830 + 6 = 836.
           # Phase 4A task 3 (:shared commonTest): ExerciseNamesTest 8, ExerciseSearchIndexTest 9;
           # (:screens androidHostTest) SearchTermsDriftTest 2. 830 + 19 = 849.
-          # Task 3 fix round 1 (:shared androidHostTest): ExerciseSearchIndexJvmTest 1 (the exhaustive
-          # legacy check moved off iOS; the commonTest one now samples). 849 + 1 = 850.
+          # Task 3 fix round 1 (:shared androidHostTest): ExerciseSearchIndexJvmTest 1 (exhaustive
+          # legacy check alongside the sampled commonTest). 849 + 1 = 850.
           # Merged Task 4 + Task 3: 830 + 6 + 20 = 856.
           # Phase 4A task 5 (:designsystem commonTest): FigureGeometryTest 5, IllustrationTokensTest 2,
           # ComponentColorsTest +1. 815 + 8 = 823.
@@ -286,7 +285,7 @@ jobs:
           # aMissingPicker..., stagingNeverDeletes...; the double-launch test was replaced one for one). 1078 + 5 = 1083.
           # Post-15 cleanup (:app): RoutineFolderPersistenceTest.routineMoveUsesNeighborsInItsFolderWithoutChangingOtherFoldersOrActiveWorkout
           # retired (-1, sdk 35 only): MoosclesActions.moveRoutine and WorkoutRepository.moveRoutine were removed, no caller since the old routine
-          # screens went; reorder goes through reorderRoutines. 1083 - 1 = 1082. No :shared test changed, so MIN_IOS_TESTS stays 275.
+          # screens went; reorder goes through reorderRoutines. 1083 - 1 = 1082.
           # Phase 4B task 14 fix round 1: (:screens commonTest) PlannedSetDraftsTest +2 (foldedEchoesDoNotLeaveTheLastWritePending,
           # forgottenWritesLetTheSavedValuesBackAndTheNextEditWriteAgain). 1082 + 2 = 1084.
           # Phase 4B tasks 16-17: only uiTest classes changed (they do not run on the host), so MIN_HOST_TESTS stays 1084.
@@ -363,7 +362,9 @@ jobs:
           # SetDraftsTest+1 (scoped failed writes, :screens common), WorkoutSharePreviewHostTest+1.
           # HistoryModelTest+2 (metadata cache parity/invalidation). Legacy coverage is ported, none retired.
           # 1288 + 29 + 7 + 7 + 3 + 1 + 1 + 1 = 1337.
-          MIN_HOST_TESTS: 1337
+          # Android-only cleanup: HapticsMappingTest -1 for the removed platform mapping. 1337 - 1 = 1336.
+          # Weekly muscle sets: HistoryModelTest +5. 1336 + 5 = 1341.
+          MIN_HOST_TESTS: 1341
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',
@@ -416,450 +417,6 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: warn
           retention-days: 7
-
-  # Compiles the iOS device targets of :shared, :designsystem and :screens and runs their tests
-  # (common tests, plus the design system and screen UI tests) on the iOS simulator. Only a Mac
-  # can build Kotlin/Native Apple targets.
-  ios:
-    name: iOS compile and simulator tests
-    # Owner-approved Android-only v1.5.4 release. Match the release branch
-    # commit, same-repository PR, one main transition, and version tag.
-    if: >-
-      ${{ !(github.repository == 'ReiTut/Mooscles' && (
-        (github.event_name == 'push' && github.ref == 'refs/heads/codex/phase5b-history' &&
-          startsWith(github.event.head_commit.message, 'ci: prepare Android-only v1.5.4 release')) ||
-        (github.event_name == 'pull_request' && github.base_ref == 'main' &&
-          github.head_ref == 'codex/phase5b-history' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          github.event.pull_request.title == 'Release v1.5.4: Phase 5B (Android only)') ||
-        (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-          github.event.before == 'c9ba9b1a226d7cbc41acbca19dcba09ae9f6447e' &&
-          startsWith(github.event.head_commit.message, 'Release v1.5.4: Phase 5B (Android only)')) ||
-        (github.event_name == 'push' && github.ref == 'refs/tags/v1.5.4')
-      )) }}
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # Xcode 26.4 is the version the Kotlin 2.4.20-2.4.21 compatibility table
-      # lists. On the macos-26 image Xcode_26.4.app links to Xcode_26.4.1.app.
-      - name: Select Xcode 26.4
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.4.app
-          xcodebuild -version
-
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      # Gradle configures :app as well, so the Android SDK must be complete here too.
-      - name: Install Android SDK packages
-        shell: pwsh
-        run: |
-          $sdkmanager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager'
-          @('y') * 10 | & $sdkmanager --install 'platforms;android-37.0' 'build-tools;36.0.0' | Select-Object -Last 3
-
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-provider: basic
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
-
-      # Kotlin/Native keeps its compiler and the Apple platform libraries in
-      # ~/.konan, outside the Gradle cache.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'shared/build.gradle.kts', 'designsystem/build.gradle.kts', 'screens/build.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: konan-${{ runner.os }}-
-
-      - name: Compile for iOS and run the simulator tests
-        run: |
-          # Name the active native test and fail a stalled task while report uploads can still run.
-          # The job's 60-minute ceiling and every test assertion/count guard remain unchanged.
-          cat > "$RUNNER_TEMP/ios-diagnostics.init.gradle" <<'INIT'
-          allprojects {
-              tasks.withType(org.gradle.api.tasks.testing.AbstractTestTask).configureEach {
-                  testLogging { events 'started', 'passed', 'skipped', 'failed' }
-              }
-              tasks.matching { it.name == 'iosSimulatorArm64Test' }.configureEach {
-                  timeout.set(java.time.Duration.ofMinutes(20))
-              }
-          }
-          INIT
-          ./gradlew :shared:compileKotlinIosArm64 :shared:iosSimulatorArm64Test :designsystem:compileKotlinIosArm64 :designsystem:iosSimulatorArm64Test :screens:compileKotlinIosArm64 :screens:iosSimulatorArm64Test --console=plain --continue --init-script "$RUNNER_TEMP/ios-diagnostics.init.gradle"
-
-      # kspIosArm64 and kspIosSimulatorArm64 run only here, so an iOS-only divergence in the
-      # exported schema (and its identityHash) is caught here, not in the host job.
-      - name: Room schemas unchanged
-        if: ${{ !cancelled() }}
-        run: |
-          git diff --exit-code -- shared/schemas
-          status=$(git status --porcelain -- shared/schemas)
-          if [ -n "$status" ]; then
-            echo "Room schema files changed or appeared:"
-            echo "$status"
-            exit 1
-          fi
-
-      - name: Summarize iOS simulator tests
-        if: ${{ !cancelled() }}
-        shell: pwsh
-        env:
-          # The common tests in :shared (156 after phase 2, 183 with the lines below)
-          # plus the iOS-only entry point tests (7 since phase 4B task 1). Raise it when tests move into
-          # commonTest or iosTest, so a silently skipped class fails the job.
-          # Phase 3 task 4: DataErrorsTest +3, UiErrorsTest +7.
-          # Phase 3 task 5: WorkoutPresentationTest +14, WorkoutCalculationsTest +2, WorkoutCalculationsBatchTest +1.
-          # Phase 3 final review fixes: WorkoutPresentationTest +1, InProcessRestTimerTest +1. 221 + 2 = 223.
-          # +1: in-process rest completion retry test
-          # Phase 4A task 2: ExerciseAnatomyTest 15. 224 + 15 = 239.
-          # Phase 4A task 3: ExerciseNamesTest 8, ExerciseSearchIndexTest 9. 239 + 17 = 256.
-          # Task 3 fix round 1: +0 (the new exhaustive test is JVM-only). 256.
-          # Phase 4A task 16: EditRulesTest +1. 256 + 1 = 257.
-          # Phase 4A final review fixes: ExerciseAnatomyTest +2. 257 + 2 = 259.
-          # Phase 4B task 1: BackupCodecTest +3, ImportPlannerTest +1 (commonTest), IosDatabaseTest +1 (iosTest). 259 + 5 = 264.
-          # Phase 4B task 3: WorkoutPresentationTest +10, UiErrorsTest +1 (commonTest). 264 + 11 = 275.
-          # Phase 5A task 2: EstimatedOneRepMaxTest 5 (commonTest). 275 + 5 = 280.
-          # Startup PR fast path: WorkoutPresentationTest +2 (commonTest). 280 + 2 = 282.
-          # Workout PR statistic: WorkoutPresentationTest +1. 282 + 1 = 283.
-          MIN_IOS_TESTS: 283
-        run: |
-          $files = @(Get-ChildItem -Path 'shared/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
-          $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @(); $platform = @()
-          foreach ($file in $files) {
-              $suite = ([xml](Get-Content -LiteralPath $file.FullName -Raw)).testsuite
-              $tests += [int]$suite.tests; $failures += [int]$suite.failures
-              $errors += [int]$suite.errors; $skipped += [int]$suite.skipped
-              foreach ($case in @($suite.testcase)) {
-                  if ($case.failure -or $case.error) { $failed += "$($case.classname).$($case.name)" }
-                  # The iosTest classes (database and preferences entry points) are listed by name.
-                  if ($case.classname -match '\.Ios[A-Za-z]+Test\b') {
-                      $result = if ($case.failure -or $case.error) { 'failed' } elseif ($null -ne $case.SelectSingleNode('skipped')) { 'skipped' } else { 'passed' }
-                      $platform += "- ``$($case.classname).$($case.name)``: $result"
-                  }
-              }
-          }
-          $minimum = [int]$env:MIN_IOS_TESTS
-          $lines = @(
-              '### iOS simulator tests',
-              "$tests tests in $($files.Count) classes: $failures failed, $errors errors, $skipped skipped. Minimum: $minimum."
-          ) + ($failed | ForEach-Object { "- ``$_``" }) + @('', 'iOS entry point tests:') + $platform
-          $lines | Write-Host
-          $lines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          if ($files.Count -eq 0) { throw 'No iOS simulator test results were written.' }
-          if ($tests -lt $minimum) { throw "Only $tests iOS simulator tests ran; at least $minimum are expected." }
-          if ($platform.Count -ne 7) { throw "$($platform.Count) iOS entry point tests ran; exactly 7 are expected (update this number and MIN_IOS_TESTS when adding or removing one)." }
-
-      # The design system on its own, so a skipped :designsystem class cannot hide behind
-      # the :shared total above.
-      - name: Summarize design system iOS simulator tests
-        if: ${{ !cancelled() }}
-        shell: pwsh
-        env:
-          # Per class: TnumRegressionTest 6, ThemeTest 2, GallerySmokeTest 7, PrimitiveColorsTest 1,
-          # ContrastMathTest 3, ContrastTokensTest 5, SemanticColorsTest 2, TypographyTokensTest 3,
-          # SpaceTokensTest 4, SizesTimingElevationTest 3, MotionTokensTest 3, ReducedMotionTest 1, IconsTest 4,
-          # MoosclesNumbersTest 8, PluralCountTest 2, AppLocaleTest 3, HapticsMappingTest 3, MotionPolicyTest 3,
-          # FocusRingTest 1, MButtonTest 4, MIconButtonTest 2, MChipTest 2, RowsTest 5, MTextTest 2, MSwitchTest 2, MRadioTest 1,
-          # MTextFieldTest 6, MProgressBarTest 3, FeedbackTest 5, MDialogTest 4, MBottomSheetTest 2, MToastTest 5,
-          # NumericInputTest 4, NumericFieldTest 3, StepperTest 7, SetCheckTest 4, SetRowTest 16, PrBadgeTest 1,
-          # RestTimerRingMathTest 3, RestTimerDockTest 9, RestTimerExpandedTest 5, PrToastTest 3, ExerciseCardTest 6,
-          # ComponentColorsTest 5. Task 16 critique: LicenseTextTest 5, MButtonIconScaleTest 1, GallerySmokeTest +4, FullWidthTest 3.
-          # Final fix wave: StepperTest +4, MToastTest +2, MDialogTest +2, RestTimerDockTest +1, RestTimerExpandedTest +2, TextFitTest 3.
-          # Set row density fix: SetRowTest +4.
-          # Phase 3 task 11: IconsTest +1, SizesTimingElevationTest +1, MTabBarTest 8, ActiveWorkoutBarTest 7.
-          # Phase 3 task 12: SetRowTest +9, SetRowSwipeTest 5, NumericFieldTest +3, StepperTest +6.
-          # Task 12 review fixes: SetRowSwipeTest +7, StepperTest +2, NumericFieldTest +2, SetRowTest +1.
-          # Phase 3 task 13: ExerciseCardTest +5, RestTimerDockTest +2, RestTimerExpandedTest +4, RestTimerCompactTest 3,
-          # SizesTimingElevationTest +1. Swipe settle restart fix: SetRowSwipeTest +1.
-          # Phase 3 task 17 fix round 1: SetRowColumnsTest 2.
-          # Phase 3 task 20: RestTimerDockTest +2, RestTimerCompactTest +1, RestTimerExpandedTest +1 (fix round 1: RestTimerCompactTest +1).
-          # Phase 3 task 28 (defects the flow found): StepperTest +1, MDialogTest +1, MBottomSheetTest +1.
-          # Phase 3 task 29 (defects the sweep found): StepperTest +1, RestTimerDockTest +1 (fix round 1: StepperTest +2).
-          # Phase 3 task 31 (screen critique): SetCheckTest +1, RestTimerExpandedTest +1.
-          # Timer announcer fix (2ff31b4): RestTimerDockTest +2 (uiTest), SizesTimingElevationTest +1
-          # (commonTest). 291 (counted by run 40937989893 on 5d94a7f) + 3 = 294, the number of @Test in
-          # commonTest, uiTest and iosTest at the phase 3 end (that count matched the CI at 53b13ba and 5d94a7f).
-          # Ring iOS fix: RestTimerRingMathTest +1. Run 40944220889 counted 295 (294 + 1).
-          # Raise it in every task that adds design system tests to commonTest, iosTest or uiTest.
-          # Phase 4A task 5: FigureGeometryTest 5, IllustrationTokensTest 2, ComponentColorsTest +1 (commonTest);
-          # ExerciseFigureTest 9, GallerySmokeTest +1 (uiTest). 295 + 18 = 313.
-          # Phase 4A task 6: BodyMapPathsTest 4, ComponentColorsTest +1 (commonTest); BodyMapTest 4,
-          # LicensesScreenTest 1 (uiTest). 313 + 10 = 323.
-          # Phase 4A task 7: SizesTimingElevationTest +1 (commonTest); MSearchFieldTest 5, MChipTest +1,
-          # MInfoChipTest 2 (uiTest). 323 + 9 = 332.
-          # Phase 4A task 8 fix round 1: FigureHighlightDrawingTest 2 (commonTest). 323 + 2 = 325.
-          # Phase 4A task 9: FigureHighlightDrawingTest +2 (commonTest). 325 + 2 = 327.
-          # Merged Tasks 8–9 (+4 over 323): 332 + 4 = 336.
-          # Phase 4A task 17 fix round 1: RowsTest +1 (TopBar without a title, uiTest). 336 + 1 = 337.
-          # Phase 4A task 21: MBottomSheetTest +1, MDialogTest +1 (the host's density in the window, uiTest). 337 + 2 = 339.
-          # Phase 4A task 23: LicenseTextTest +1 (commonTest). 339 + 1 = 340.
-          # Phase 4B task 4: SizesTimingElevationTest +1, MotionTokensTest +1 (commonTest); ReorderTest 15, ExerciseCardTest +1, GallerySmokeTest +1 (uiTest). 340 + 19 = 359.
-          # Phase 4B task 4 fix round 1: ComponentColorsTest +1 (commonTest); ReorderTest +2 (uiTest). 359 + 3 = 362.
-          # Phase 4B task 5: ExerciseFigureTest.holdRequestsNoFrames (uiTest). 340 + 1 = 341.
-          # Merged Task 5 (+1 over 340): 362 + 1 = 363.
-          # Phase 4B task 10: SizesTimingElevationTest +1 (commonTest). 363 + 1 = 364.
-          # Phase 4B task 11: SizesTimingElevationTest +1 (commonTest, mediaStripIsFiftySix). 364 + 1 = 365.
-          # Phase 4B task 13 fix round 1: ExerciseCardTest +1 (headerWithoutToggleIsNotAButtonAndNamesItsMenu). 365 + 1 = 366.
-          # Phase 4B task 12 fix round 1: MDialogTest +1 (uiTest, nullTextLeavesNoTextNodeAndNoGap). 366 + 1 = 367.
-          # Phase 4B tasks 16-17 carries: MBottomSheetTest +1 (initialFocusIsRequestedOnceAndNeverAgain); ReorderTest +2
-          # (reorderMoverHoldsTheOrderAndAnnouncesThroughTheLiveRegion, reorderMoverRefusesWhileDragging). 367 + 3 = 370.
-          # Phase 4B reorder 2x investigation: ReorderTest +1 (aSlotTheScrollCannotBringBackFollowsTheFingerOnceItMoves). 370 + 1 = 371.
-          # Reorder fix round 1: ReorderTest +2 (aTremblingFingerDoesNotPullAFarSlotToIt, aSlotLeftAboveTheFingerGoesToWhereTheItemIsDrawnOneSwapAtATime). 371 + 2 = 373.
-          # G1 equipment color: ComponentColorsTest.figureEquipmentIsCopperAndStandsOut +1 (commonTest). 373 + 1 = 374.
-          # Phase 4B task 19 (critique): SizesTimingElevationTest.formHandoffIsOneAndAHalfSeconds +1 (commonTest). 374 + 1 = 375.
-          # Phase 4 figures, final lot: FigureGeometryTest.railIsAVerticalLineThatStaysPut +1,
-          # FigureHighlightDrawingTest.aKettlebellInTheNearHandIsDrawnOverTheArm +1 (commonTest). 375 + 2 = 377.
-          # Phase 4 figures, shoulder lift (shrugs): FigureGeometryTest +3 (commonTest: noShoulderLiftLeavesEveryJointBitIdentical,
-          # aShoulderLiftRaisesTheShoulderAlongTheTrunk, theShoulderLiftIsClamped). 377 + 3 = 380.
-          # Phase 5A task 1: ChartScaleTest 7, ChartGeometryTest 3, SizesTimingElevationTest +1, ComponentColorsTest +2 (commonTest);
-          # ChartsTest 11 (uiTest). 380 + 24 = 404.
-          # Phase 5A task 9 fix round 1: ChartsTest +1 (uiTest: tableRowStacksALongDateAndKeepsTheValueWhole). 404 + 1 = 405.
-          # Phase 5A task 17 (critique): ChartGeometryTest +1 (commonTest: ringsThatWouldTouchAreSkippedKeepingTheNewest);
-          # PrBadgeTest +2 (uiTest: customLabelIsDrawnAndSpoken, customLabelAloneKeepsTheSpokenDefault); SpokenWeightTest 2 (uiTest:
-          # portugueseIsSingularAtOneOnly, englishIsSingularAtOneOnly); ChartsTest +1 (uiTest: verticalSwipeScrollsAndHorizontalSwipeSelects).
-          # 405 + 6 = 411.
-          # Phase 5A final fixes: ChartScaleTest +1 (commonTest: floatNoiseIsAFlatLine); SizesTimingElevationTest +1
-          # (commonTest: progressPrewarmDelayIsHalfASecond); ChartsTest +1 (uiTest: lineChartWritesItsOwnTicksWithTheComposableLabel).
-          # 411 + 3 = 414.
-          # Phase 5B: CalendarMonthGridTest7 (common), MonthCalendarTest7 (UI). 414 + 14 = 428.
-          MIN_DS_IOS_TESTS: 428
-        run: |
-          $files = @(Get-ChildItem -Path 'designsystem/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
-          $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
-          foreach ($file in $files) {
-              $suite = ([xml](Get-Content -LiteralPath $file.FullName -Raw)).testsuite
-              $tests += [int]$suite.tests; $failures += [int]$suite.failures
-              $errors += [int]$suite.errors; $skipped += [int]$suite.skipped
-              foreach ($case in @($suite.testcase)) {
-                  if ($case.failure -or $case.error) { $failed += "$($case.classname).$($case.name)" }
-              }
-          }
-          $minimum = [int]$env:MIN_DS_IOS_TESTS
-          $lines = @(
-              '### Design system iOS simulator tests',
-              "$tests tests in $($files.Count) classes: $failures failed, $errors errors, $skipped skipped. Minimum: $minimum."
-          ) + ($failed | ForEach-Object { "- ``$_``" })
-          $lines | Write-Host
-          $lines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          if ($files.Count -eq 0) { throw 'No design system iOS simulator test results were written.' }
-          if ($tests -lt $minimum) { throw "Only $tests design system iOS simulator tests ran; at least $minimum are expected." }
-
-      # The screens on their own, for the same reason.
-      - name: Summarize screens iOS simulator tests
-        if: ${{ !cancelled() }}
-        shell: pwsh
-        env:
-          # Per class: EquipmentIconsTest 1, ScreenDatesTest 4, ActiveWorkoutScreenStateTest 4, SetDraftsTest 7,
-          # ShareCardDataTest 23, ShareCardColorsTest 1, WorkoutBarStateTest 2 (commonTest); CatalogLabelsTest 4,
-          # ScreensHelpersTest 4, DateTextsTest 5, WorkoutSetRowTest 13, SetEditingTest 23, SetTypeAndRemovalTest 14,
-          # ShareCardPainterTest 4, ShareCardTextsTest 2, AppShellBottomTest 13 (uiTest).
-          # Task 22: SummaryStatsTest 6 (commonTest), WorkoutSummaryScreenTest 11 (uiTest).
-          # Task 17: CardExpansionTest 5 (commonTest), ExerciseListTest 20 (uiTest) (fix round 1: +1, +4).
-          # Task 18: ExercisePickerTest 3, RestDraftTest 1 (commonTest), RestSheetTest 9, ExercisePickerSheetTest 6 (uiTest).
-          # Task 19: ActiveWorkoutScreenTest 21 (uiTest) (fix round 1: +9).
-          # Task 20: RestUpNextTest 3 (commonTest), WorkoutTimerTest 17 (uiTest) (fix round 1: RestUpNextTest +1,
-          # CardExpansionTest +1, WorkoutTimerTest +3).
-          # Task 21: RecordAnnouncerTest 9, ActiveWorkoutScreenStateTest +1 (commonTest), RecordReactionTest 10 (uiTest).
-          # Task 28: ActiveWorkoutFlowTest 2 (uiTest; the end-to-end proof of the workout on iOS, spec D6).
-          # Task 29: TapBudgetTest 11, WorkoutAccessibilitySweepTest 12, ScreensHelpersTest +1 (uiTest).
-          # Task 31 (screen critique): ShareCardDataTest +1 (commonTest).
-          # Final review fixes: RecordAnnouncerTest +1, RestDraftTest +2 (commonTest), ActiveWorkoutScreenTest +3
-          # (uiTest). 287 + 3 + 3 = 293.
-          # Phase 4A task 11: ExerciseCuesTest 4 (commonTest). 293 + 4 = 297.
-          # Phase 4A task 10: ShareCardDataTest +1 (commonTest); ExerciseDisplayNamesTest 4, AnatomyTextsTest 3,
-          # ActiveWorkoutScreenTest +1, WorkoutSummaryScreenTest +1 (uiTest). 297 + 10 = 307.
-          # Phase 4A task 14: LibraryModelTest 10 (commonTest). 307 + 10 = 317.
-          # Phase 4A task 15 (uiTest): LibraryScreenTest 17, LibraryFiltersUiTest 6. 317 + 23 = 340.
-          # Phase 4A task 16: CustomExerciseRulesTest 4 (commonTest); CustomExerciseFormTest 13,
-          # LibraryScreenTest +2 (uiTest). 340 + 19 = 359.
-          # Task 16 fix round 1: CustomExerciseFormTest +2 (uiTest). 359 + 2 = 361.
-          # Raise it in every task that adds screen tests to commonTest, iosTest or uiTest.
-          # Phase 4A task 8: ExerciseFiguresTest 8, FigureHighlightsTest 2 (commonTest); FiguresGalleryPageTest 1
-          # (uiTest). 307 + 11 = 318.
-          # Raise it in every task that adds screen tests to commonTest, iosTest or uiTest.
-          # Merged Tasks 8–9 (+11 over 307): 361 + 11 = 372.
-          # Phase 4A task 17: ExerciseHistorySummariesTest 6, BodyRegionBridgeTest 1 (commonTest);
-          # ExerciseInfoScreenTest 20, AddToRoutineSheetTest 3 (uiTest). 372 + 30 = 402.
-          # Phase 4A task 18: ExercisePickerTest -2 (commonTest, ported to LibraryModelTest); ExercisePickerSheetTest +4,
-          # ActiveWorkoutScreenTest +1, ExerciseListTest +1 (uiTest). 402 + 6 - 2 = 406.
-          # Task 17 fix round 1: ExerciseInfoScreenTest +1 (uiTest). 402 + 1 = 403.
-          # Merged Task 17 fix round: 406 + 1 = 407.
-          # Phase 4A task 20: LibraryFlowTest 2 (uiTest). 407 + 2 = 409.
-          # Phase 4A task 21: TapBudgetTest +2, LibraryAccessibilitySweepTest 16 (uiTest). 407 + 18 = 425.
-          # Merged Tasks 20 + 21: 407 + 2 + 18 = 427.
-          # Phase 4A task 23: ExerciseInfoScreenTest +1, CustomExerciseFormTest +1, ExercisePickerSheetTest +1 (uiTest). 427 + 3 = 430.
-          # Phase 4A final review fixes: ActiveWorkoutScreenTest +1 (uiTest), RoutineGroupsTest 2 (commonTest). 430 + 3 = 433.
-          # Phase 4B task 3: ScreensHelpersTest +1 (uiTest). 433 + 1 = 434.
-          # Phase 4B task 8: RoutineTargetFormatTest 14 (commonTest), RoutineTargetLineTest 1, ActiveWorkoutScreenTest +3 (uiTest). 434 + 18 = 452.
-          # Phase 4B task 9: ExercisePickerSheetTest +8 (uiTest, multiple mode). 452 + 8 = 460.
-          # Phase 4B task 10: PhotoCacheTest 4 (commonTest); CustomExerciseFormPhotoTest 16, LibraryScreenTest +3,
-          # ExerciseInfoScreenTest +3, ExercisePickerSheetTest +1 (uiTest). 460 + 27 = 487.
-          # Phase 4B task 10 fix round 1: CustomExerciseFormPhotoTest +5 (editStaysBusyUntilTheStateShowsTheNewValues,
-          # failedEditKeepsTheFormAndThePhoto, lostCommandFreesTheFormAfterTheCapWithItsToast, cancelWhileSavingDoesNothing,
-          # resaveAfterTheEchoSendsNothing), ExerciseInfoScreenTest +1 (photoThatTheSaveCouldNotKeepIsToastedOnce);
-          # LibraryScreenTest's photo-toast test was replaced by the navigation one (net 0). Device XML: 21 + 22 + 26 tests. 487 + 6 = 493.
-          # Phase 4B task 10 fix round 2: CustomExerciseFormPhotoTest +2 (saveWaitsWhileAChosenPhotoIsPrepared, failedStagingReleasesTheForm). 493 + 2 = 495.
-          # Phase 4B task 11: RoutineSummariesTest 3 (commonTest); TrainScreenTest 30 (uiTest). 495 + 33 = 528.
-          # Phase 4B task 11 fix round 1: RoutineNamesTest 3 (commonTest); TrainScreenTest +7 (uiTest: menu and move
-          # sheet scroll, busy entry points, menu move announces, dialog survives recreation, cap, copy failure). 528 + 10 = 538.
-          # Phase 4B task 13: RoutineEditorScreenTest 22 (uiTest: the 18 of the brief, loadingDoesNotCallOnGone,
-          # startOfTheSourceRoutineResumes, menusScrollAtTwoXInAShortWindow, addWaitReleasesOnItsOwnFailureAndAtTheCap);
-          # RestSheetTest 1 (withoutStartNowTheSheetHasNoButtonAndStillSaves). 538 + 23 = 561.
-          # Phase 4B task 13 fix round 1: RoutineEditorScreenTest +2 (liftedCardIsRaisedAmongTheListsItems,
-          # duplicatedToastOpensTheCopyWhenTheHostCanOpenIt). 561 + 2 = 563.
-          # Phase 4B task 12: FolderManagerSheetTest 15 (uiTest). 563 + 15 = 578.
-          # Phase 4B task 12 fix round 1: FolderManagerSheetTest +2 (uiTest: menuMovesReorderAndAnnounce, errorWhileManagingShowsInTheSheet). 578 + 2 = 580.
-          # Phase 4B task 14: PlannedSetDraftsTest 13 (commonTest); RoutineEditorSetsTest 19 (uiTest: the 17 of the brief,
-          # removeKeepsAPendingEditInTheSnapshot, restoringTheFiftyFirstSetSaysTheLimit). 580 + 32 = 612.
-          # Phase 4B task 14 fix round 1: PlannedSetDraftsTest +2 (commonTest); RoutineEditorSetsTest +5 (uiTest: onlyTheTypeItemsReportSelected,
-          # warmupsAreNamedAmongWarmupsNotAmongTheWorkingSets, undoAfterTheExerciseIsReplacedDoesNotRestore,
-          # replacingAnExerciseDropsItsDraftsAndNeverWritesTheOldLoad, aFailedWriteLetsTheSavedValueBackAfterTheError). 612 + 7 = 619.
-          # MIN_DS_IOS_TESTS stays 367 (no designsystem test changed).
-          # Phase 4B task 16: RoutinesFlowTest 2 (uiTest: routinesFlowPortugueseLightAtOneX, routinesFlowEnglishDarkAtTwoX). 619 + 2 = 621.
-          # Phase 4B task 17: TapBudgetTest +5 (uiTest: buildARoutineWithFiveExercises, moveTheFifthExerciseToTheTop,
-          # addAPlannedSetLikeTheOneAbove, markAPlannedSetAsWarmup, startAWorkoutFromARoutine); RoutinesAccessibilitySweepTest 11
-          # (uiTest: trainWithRoutines, trainEmptyFolder, trainLoading, folderManager, folderDeleteDialog, editorWithWarmup,
-          # editorWithASetInEdit, editorEmpty, multiplePicker, trainReadingOrder, editorReadingOrder). 621 + 16 = 637.
-          # TrainScreenTest's two overflow tests (routineMenuScrollsAtTwoXInAShortWindow, moveSheetScrollsWithManyFolders)
-          # were strengthened in place (+0). 619 + 18 = 637.
-          # Phase 4B task 19 (critique): TrainScreenTest.nameSheetStandsAboveTheKeyboard, LibraryScreenTest.savedFormStaysUntilTheDetailTakesOver,
-          # RoutineEditorScreenTest.loadsAndRepsLineUpWithAndWithoutTheRecordIcon (uiTest). 637 + 3 = 640.
-          # Phase 4B final review C1: LibraryScreenTest.nextFormAfterTheHandOverStartsAfresh (uiTest). 640 + 1 = 641.
-          # Phase 4 figures, barbell lot: ExerciseFiguresTest.barbellFamilyIsComplete (commonTest). 641 + 1 = 642.
-          # Phase 4 figures, dumbbell lot: ExerciseFiguresTest.dumbbellFamilyIsComplete (commonTest). 642 + 1 = 643.
-          # Phase 4 figures, cable lot: ExerciseFiguresTest.cableFamilyIsComplete (commonTest). 643 + 1 = 644.
-          # Phase 4 figures, Pallof press exclusion: ExerciseFiguresTest.noFigureIdsAreCatalogExercisesWithoutAFigure (commonTest). 644 + 1 = 645.
-          # Phase 4 figures, bodyweight lot: ExerciseFiguresTest.bodyweightFamilyIsComplete (commonTest). 645 + 1 = 646.
-          # Phase 4 figures, machine lot: ExerciseFiguresTest.machineFamilyIsComplete (commonTest). 646 + 1 = 647.
-          # Phase 4 figures, final lot: ExerciseFiguresTest +5 (commonTest: kettlebellFamilyIsComplete, smithFamilyIsComplete,
-          # everyCatalogExerciseHasAFigure, kettlebellFiguresHoldAKettlebell, smithBarRunsOnTheRail). 647 + 5 = 652.
-          # Phase 4 figures, shoulder lift (shrugs): ExerciseFiguresTest +2 (commonTest: shrugsRaiseTheShouldersInFrameB,
-          # onlyTheShrugsLiftTheShoulders). 652 + 2 = 654.
-          # Copy a planned set to all working sets (2026-10-31): RoutineEditorSetsTest +9 (uiTest:
-          # copyToAllIsOfferedOnAWorkingSetWithOtherWorkingSets, copyToAllIsHiddenOnAWarmupAndOnTheOnlyWorkingSet,
-          # copyToAllSendsOneActionAndSaysHowManySets, copyToastIsSingularForOneSet, copyToastInEnglish,
-          # undoCopySendsTheRestoreWithThePreviousSets, copyDropsATargetsDraftAndUndoKeepsItsPendingWrite,
-          # undoCopyAfterTheSetsChangedSaysNotRestored, undoCopyAfterTheExerciseIsReplacedSaysNotRestored).
-          # No :shared test changed, so MIN_IOS_TESTS stays 275. 654 + 9 = 663.
-          # Copy review fix round 1: RoutineEditorSetsTest +3 (uiTest: copyUndoIsWithdrawnOnceACopiedSetIsEdited,
-          # aDoubleTapOnCopyCopiesOnceAndKeepsTheSnapshot, undoCopyAfterASetIsAddedOrBecomesAWarmupSaysNotRestored);
-          # undoCopyAfterTheExerciseIsReplacedSaysNotRestored became copyUndoIsWithdrawnWhenTheExerciseIsReplaced (+0). 663 + 3 = 666.
-          # Phase 5A task 2: TrendTest 8 (commonTest). 666 + 8 = 674.
-          # Phase 5A task 2 review minors: TrendTest +3. 674 + 3 = 677.
-          # Phase 5A task 3: WeekStartTest 6 (commonTest). 677 + 6 = 683.
-          # Phase 5A task 4: ProgressIndexTest 25 (commonTest). 683 + 25 = 708.
-          # Phase 5A task 4 fix round 1: ProgressIndexTest +5 (commonTest). 708 + 5 = 713.
-          # Phase 5A task 5: ExerciseChartsTest 16 (commonTest). 713 + 16 = 729.
-          # Phase 5A task 5 fix round 1: ExerciseChartsTest +4 (commonTest). 729 + 4 = 733.
-          # Phase 5A task 6: RecordTimelinesTest 9 (commonTest). 733 + 9 = 742.
-          # Phase 5A task 6 fix round 1: RecordTimelinesTest +5 (commonTest). 742 + 5 = 747.
-          # Phase 5A task 7: ProgressIndexCacheTest 13 (commonTest; the timing test is androidHostTest, host only). 747 + 13 = 760.
-          # Phase 5A task 7 fix round 1: ProgressIndexCacheTest +5 (commonTest; one test renamed, +0). 760 + 5 = 765.
-          # Phase 5A task 8: ProgressNumbersTest 4 (commonTest) and ProgressTextsTest 13 (uiTest). 747 + 17 = 764.
-          # Phase 5A task 8 fix round 1: ProgressTextsTest +2 (uiTest: viewAllRecordsPluralInBothLanguages, poundsComeFromExactKilosAndSignTheChange). 764 + 2 = 766.
-          # Merged with phase 5A task 7 (same base): 784.
-          # Phase 5A task 9: ExerciseProgressScreenTest 17 and ProgressIndexComposeTest 4 (uiTest). 784 + 21 = 805.
-          # Phase 5A task 9 fix round 1: ExerciseProgressScreenTest +4 (failedBuildShowsNoDataInsteadOfTheSkeleton,
-          # chartArrivesOnTheSecondFrameWithTheIndexReady, weeklyChartSaysWeekOfAndShowsTheNote,
-          # onePointOfALongerHistoryIsStillDrawn), ProgressIndexComposeTest +2 (aFailingBuildKeepsThePreviousIndex,
-          # aFailingQueryIsFailedNotThePreviousResult; one test renamed, +0). 805 + 6 = 811.
-          # Phase 5A task 10: ExerciseProgressSectionsTest 12 (uiTest) and ProgressSectionsQueryTest 4 (commonTest). 811 + 16 = 827.
-          # Phase 5A task 10 fix round 1: ExerciseProgressSectionsTest +6 (uiTest: assistedRepsRecordsAreTheirOwnGroupLowestAssistanceFirst,
-          # sessionOfAnotherConventionSaysItsConvention, assistedSetAndZeroLoadSayWhatTheyAre, assistanceSessionsHaveNoAssistedLetter,
-          # datesAYearOrMoreAgoShowTheYear, viewAllSurvivesRecreation); MIN_HOST_TESTS stays 1242 (commonTest only gained asserts). 827 + 6 = 833.
-          # Phase 5A task 11: RecordsScreenTest 18 (uiTest: the 16 of the brief, failedBuildShowsTheEmptyStateNotTheSkeleton,
-          # unrelatedStateChangesDoNotRecomposeTheRows). 811 + 18 = 829.
-          # Phase 5A task 11 fix round 1: RecordsScreenTest +2 (uiTest: assistedRepsRecordSaysAssistance,
-          # onlyFirstRecordsOffersTheChip; failedBuildShowsTheEmptyStateNotTheSkeleton renamed
-          # failedBuildShowsNoneFoundNotTheSkeleton, +0). 829 + 2 = 831.
-          # Merge of the task 10 and task 11 lanes: 833 + 20 (task 11 and its fix round) = 853.
-          # Task 12 (ExerciseInfoScreenTest: historyCardShowsASparklineFromTwoSessions, noSparklineWithOneSession;
-          # fullHistoryOpensTheOldScreen renamed viewProgressFromTheCardAndTheMenu, +0). 853 + 2 = 855.
-          # Task 13 fix round 1 (RecordsScreenTest: leavingLetsTheSearchFocusGo,
-          # draggingTheListLetsTheSearchFocusGoButANewSearchKeepsIt). 855 + 2 = 857.
-          # Phase 5A task 14: ProgressFlowTest 2 (uiTest: progressFlowPortugueseLightAtOneX, progressFlowEnglishDarkAtTwoX). 855 + 2 = 857.
-          # Phase 5A task 15: TapBudgetTest +3 (uiTest: seeTheCurrentRecordOfAnExercise, fromARecordToTheExerciseProgress,
-          # seeTheEstimatedOneRepMaxOfTheBench) and ProgressAccessibilitySweepTest 15 (uiTest: six Records states, six
-          # progress states, the history card, recordsReadingOrder, progressReadingOrder). 857 + 18 = 875.
-          # Merge of the task 13 and tasks 14-15 lanes (same base, 855): 855 + 2 + 20 = 877.
-          # Phase 5A task 16 round 2: WeekStartTest +1 (commonTest: aRegionlessLanguageTakesTheDeviceRegion). 877 + 1 = 878.
-          # Phase 5A task 17 (critique): ProgressTextsTest +2 (uiTest: datesAYearOrMoreAgoCarryTheYearAndDoNotBreak,
-          # spokenWeightsAddedWeightAndBodyweightRecords); ExerciseInfoScreenTest +3 (uiTest: noSparklineForSessionsOfAnotherConvention,
-          # noSparklineNorSkeletonWhileTheIndexBuildsOrAfterItFails, anOldLastTimeHasItsYear); ExerciseProgressSectionsTest +2
-          # (uiTest: assistanceRepsRecordsSayAssistance, firstWorkoutNeverFlashesTheEmptyState); ExerciseProgressScreenTest +1
-          # (uiTest: repsHighlightDoesNotRepeatTheMetric). CurrentWeekStartDeviceTest is androidDeviceTest only. 878 + 8 = 886.
-          # Phase 5A final fixes: ProgressIndexCacheTest +1 (commonTest: aFailedBuildWhoseOnlyCallerLeftIsForgottenToo);
-          # ProgressIndexComposeTest +1 (uiTest: whileTheStateLoadsTheCacheBuildsNothing); RecordsScreenTest +2 (uiTest:
-          # aChipThatAddsANewerMonthShowsItOnTop, midnightMovesTodayForTheSpokenDates); ExerciseProgressScreenTest +2 (uiTest:
-          # twoWorkoutsStartedTogetherAreTwoRowsOfTheTable, midnightMovesThePeriodsStart). ProgressTextsTest moved its
-          # assertions off tableRows, weekOf and recordLine (deleted, unused by the screens) onto tableRow, chartWeekOf and
-          # recordWasText: no test retired. 886 + 6 = 892.
-          # Language/icon: PlannedSetDraftsTest +3 common tests, 892 + 3 = 895.
-          # Workout PR statistic: ShareCardDataTest +3 (common), ShareCardPainterTest +3 and
-          # WorkoutSummaryScreenTest +1 (UI). 895 + 7 = 902.
-          # Phase 5B: HistoryModelTest27, WorkoutDetailModelTest7 (common); HistoryScreenTest17,
-          # WorkoutDetailScreenTest28, SharePreviewSheetTest11, HistoryFlowTest2, RecordsScreenTest+3,
-          # HistoryTapBudgetTest2, HistoryAccessibilityTest3 (UI); SetDraftsTest+1 (common).
-          # ProgressIndexComposeTest+1 (foreground date/zone refresh without rebuilding the index).
-          # HistoryModelTest+2 (metadata cache parity/invalidation).
-          # 902 + 37 + 66 + 1 = 1006.
-          MIN_SCREENS_IOS_TESTS: 1006
-        run: |
-          $files = @(Get-ChildItem -Path 'screens/build/test-results/iosSimulatorArm64Test' -Filter '*.xml' -ErrorAction SilentlyContinue)
-          $tests = 0; $failures = 0; $errors = 0; $skipped = 0; $failed = @()
-          foreach ($file in $files) {
-              $suite = ([xml](Get-Content -LiteralPath $file.FullName -Raw)).testsuite
-              $tests += [int]$suite.tests; $failures += [int]$suite.failures
-              $errors += [int]$suite.errors; $skipped += [int]$suite.skipped
-              foreach ($case in @($suite.testcase)) {
-                  if ($case.failure -or $case.error) { $failed += "$($case.classname).$($case.name)" }
-              }
-          }
-          $minimum = [int]$env:MIN_SCREENS_IOS_TESTS
-          $lines = @(
-              '### Screens iOS simulator tests',
-              "$tests tests in $($files.Count) classes: $failures failed, $errors errors, $skipped skipped. Minimum: $minimum."
-          ) + ($failed | ForEach-Object { "- ``$_``" })
-          $lines | Write-Host
-          $lines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-          if ($files.Count -eq 0) { throw 'No screens iOS simulator test results were written.' }
-          if ($tests -lt $minimum) { throw "Only $tests screens iOS simulator tests ran; at least $minimum are expected." }
-
-      # The PNGs ActiveWorkoutFlowTest writes on the simulator, one per state of each run, and (phase 5A
-      # spike S1) the chart captures of the design system's ChartsTest (none when captureToImage is
-      # unsupported there). Uploaded whatever the outcome, to look at the iOS screens. With two paths the
-      # artifact keeps their common parent: the screens PNGs are under screens/build/ios-captures/ and the
-      # charts under designsystem/build/ios-captures/, not at the artifact's root.
-      - name: Upload iOS flow captures
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ios-flow-captures
-          path: |
-            screens/build/ios-captures/**
-            designsystem/build/ios-captures/**
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Upload iOS reports
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ios-reports
-          path: |
-            shared/build/reports/
-            shared/build/test-results/
-            designsystem/build/reports/
-            designsystem/build/test-results/
-            screens/build/reports/
-            screens/build/test-results/
-          if-no-files-found: ignore
-          retention-days: 14
 
   # Decides whether the release-script matrix is worth running. It fails open:
   # a manual run, a missing or unknown base commit, a failed diff or a failure

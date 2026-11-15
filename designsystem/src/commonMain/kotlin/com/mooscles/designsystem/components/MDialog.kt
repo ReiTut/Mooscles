@@ -48,9 +48,9 @@ internal const val DialogConfirmDangerTag = "dialog-confirm-danger"
  * A confirmation dialog: [title], [text] (none when null) and actions at the end, with the confirmation last.
  * [destructive] makes the confirmation the filled `Danger` button.
  *
- * Built on the common `androidx.compose.ui.window.Dialog` (a window on Android, a platform
- * overlay on iOS), which traps focus and gives the dialog its own accessibility pane; no
- * Material 3. Back, Escape and a tap on the scrim call [onDismiss] after the exit animation
+ * Uses an Android window through `androidx.compose.ui.window.Dialog` to trap focus and give
+ * the dialog its own accessibility pane. Back, Escape and a tap on the scrim call [onDismiss]
+ * after the exit animation
  * (`motion.slowExit`); the scrim and the card fade and rise in with `motion.slow`
  * (`ease.drawer`). The close key handling lives here because common code cannot see the
  * platform back button: Android's goes through the Dialog's own request, hardware keys

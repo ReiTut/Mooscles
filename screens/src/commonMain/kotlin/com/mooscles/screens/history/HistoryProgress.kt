@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
@@ -42,7 +43,19 @@ internal fun HistoryProgress(index: ProgressLoad<ProgressIndex>, calendar: Progr
     pounds: Boolean, onProgress: (String) -> Unit, onTrain: () -> Unit) {
     var periodName by rememberSaveable { mutableStateOf(HistoryPeriod.THREE_MONTHS.name) }
     val period = HistoryPeriod.valueOf(periodName)
-    val query = remember(period, calendar, weekStart) { OverallProgressQuery(period, calendar.today, calendar.zone, weekStart) }
+    // A null date follows the current week. A past selection keeps its date when the calendar advances.
+    var selectedWeekStart by rememberSaveable { mutableStateOf<String?>(null) }
+    val weekly = period == HistoryPeriod.WEEKLY
+    val weekOffset = remember(weekly, selectedWeekStart, calendar.today, weekStart) {
+        if (!weekly) 0 else selectedWeekStart?.let { saved ->
+            val current = ExerciseCharts.weekStartOf(calendar.today, weekStart)
+            val selected = ExerciseCharts.weekStartOf(LocalDate.parse(saved), weekStart)
+            ((current.toEpochDays() - selected.toEpochDays()) / 7).toInt().coerceAtLeast(0)
+        } ?: 0
+    }
+    val query = remember(period, calendar, weekStart, weekOffset) {
+        OverallProgressQuery(period, calendar.today, calendar.zone, weekStart, weekOffset)
+    }
     val load = key(query) { rememberProgressQuery(index, query) }
     val data = load.valueOrNull
     var musclesExpanded by rememberSaveable { mutableStateOf(false) }
@@ -63,9 +76,30 @@ internal fun HistoryProgress(index: ProgressLoad<ProgressIndex>, calendar: Progr
                 }
             }
         }
+        if (weekly) item("week-controls") {
+            WeekControls(query, calendar,
+                onPrevious = { selectedWeekStart = query.weekRangeStart.minus(1, DateTimeUnit.WEEK).toString() },
+                onNext = {
+                    selectedWeekStart = query.weekRangeStart.plus(1, DateTimeUnit.WEEK).toString().takeIf { weekOffset > 1 }
+                })
+        }
         when {
             load is ProgressLoad.Loading -> item("loading") { HistorySkeleton() }
             load is ProgressLoad.Failed -> item("failed") { EmptyState(MIcons.History, stringResource(Res.string.history_load_failed), "", Modifier.historyItem()) }
+            weekly && data != null -> {
+                item("muscle-heading") {
+                    Column(verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
+                        HistoryHeading(stringResource(Res.string.history_week_muscles))
+                        MText(stringResource(Res.string.history_week_weighting), MTheme.type.caption,
+                            color = MTheme.colors.textSecondary, modifier = Modifier.historyItem())
+                    }
+                }
+                if (data.muscles.isEmpty() && data.fullBodySets == 0.0) item("no-weekly-sets") {
+                    EmptyState(MIcons.History, stringResource(Res.string.history_week_empty), "", Modifier.historyItem())
+                }
+                muscleRows(data, weekly = true, expanded = true, onExpand = {})
+                if (data.workouts > 0) item("totals") { HistoryTotals(data, pounds, weekly = true) }
+            }
             data == null || !data.hasHistory -> item("empty") {
                 EmptyState(MIcons.History, stringResource(Res.string.history_empty), stringResource(Res.string.history_empty_body), Modifier.historyItem(), stringResource(Res.string.history_train) to onTrain)
             }
@@ -92,20 +126,7 @@ internal fun HistoryProgress(index: ProgressLoad<ProgressIndex>, calendar: Progr
                         BodyMapLegend(primaryLabel = stringResource(Res.string.history_muscle_more), secondaryLabel = stringResource(Res.string.history_muscle_less))
                     }
                 }
-                items(if (musclesExpanded) data.muscles else data.muscles.take(6), key = { "muscle-${it.region}" }) { muscle ->
-                    Column(Modifier.historyItem().testTag("history-muscle-${muscle.region}"), verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
-                        MText(stringResource(Res.string.history_muscle_row, regionName(muscle.region), number(muscle.sets), number(muscle.perWeek)), MTheme.type.bodyMd)
-                        Box(Modifier.fillMaxWidth().height(MTheme.space.s1).background(MTheme.colors.borderSubtle)) {
-                            Box(Modifier.fillMaxWidth((muscle.sets / data.muscles.first().sets).toFloat()).fillMaxHeight().background(MTheme.colors.accentSolid))
-                        }
-                    }
-                }
-                if (data.muscles.size > 6 && !musclesExpanded) item("more-muscles") {
-                    MButton(stringResource(Res.string.history_more_muscles, number(data.muscles.size.toDouble())), { musclesExpanded = true }, Modifier.historyItem(), MButtonVariant.Text)
-                }
-                if (data.fullBodySets > 0) item("full-body") {
-                    MText(stringResource(Res.string.history_muscle_row, stringResource(Res.string.history_full_body), number(data.fullBodySets), number(data.fullBodySets / data.weeks)), MTheme.type.bodyMd, modifier = Modifier.historyItem())
-                }
+                muscleRows(data, weekly = false, expanded = musclesExpanded, onExpand = { musclesExpanded = true })
                 item("most-title") { HistoryHeading(stringResource(Res.string.history_most)) }
                 items(data.mostPerformed, key = { "frequent-${it.exercise.id}" }) { item ->
                     MButton(exerciseName(item.exercise) + " · " + pluralCount(Res.plurals.history_workout_count, item.sessions), { onProgress(item.exercise.id) },
@@ -117,22 +138,82 @@ internal fun HistoryProgress(index: ProgressLoad<ProgressIndex>, calendar: Progr
 }
 
 @Composable
-private fun HistoryTotals(data: OverallProgress, pounds: Boolean) {
-    val labels = listOf(stringResource(Res.string.history_workouts), stringResource(Res.string.history_per_week), stringResource(Res.string.history_sets), stringResource(Res.string.history_volume))
-    val values = listOf(number(data.workouts.toDouble()), number(data.workoutsPerWeek), number(data.sets.toDouble()), load(data.volumeKg, pounds))
+private fun WeekControls(query: OverallProgressQuery, calendar: ProgressCalendar, onPrevious: () -> Unit, onNext: () -> Unit) {
+    val start = shortDateAged(query.weekRangeStart.atStartOfDayIn(calendar.zone).toEpochMilliseconds(), calendar.zone, calendar.today)
+    val end = shortDateAged(query.weekRangeEnd.atStartOfDayIn(calendar.zone).toEpochMilliseconds(), calendar.zone, calendar.today)
+    val spacing = Arrangement.spacedBy(MTheme.space.s2)
+    val previous: @Composable (Modifier) -> Unit = { modifier ->
+        MButton(stringResource(Res.string.history_week_previous), onPrevious,
+            modifier.testTag("history-week-previous"), MButtonVariant.Secondary)
+    }
+    val next: @Composable (Modifier) -> Unit = { modifier ->
+        MButton(stringResource(Res.string.history_week_next), onNext,
+            modifier.testTag("history-week-next"), MButtonVariant.Secondary, enabled = query.weekOffset > 0)
+    }
+    Column(Modifier.historyItem(), verticalArrangement = spacing) {
+        MText(stringResource(Res.string.history_week_range, start, end), MTheme.type.titleSm,
+            modifier = Modifier.testTag("history-week-range").semantics { heading() })
+        if (query.weekOffset == 0) {
+            MText(stringResource(Res.string.history_week_to_date), MTheme.type.caption, color = MTheme.colors.textSecondary)
+        }
+        if (LocalDensity.current.fontScale >= 1.5f) {
+            previous(Modifier.fillMaxWidth())
+            next(Modifier.fillMaxWidth())
+        } else {
+            Row(horizontalArrangement = spacing) {
+                previous(Modifier.weight(1f))
+                next(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+private fun LazyListScope.muscleRows(data: OverallProgress, weekly: Boolean, expanded: Boolean, onExpand: () -> Unit) {
+    items(if (expanded) data.muscles else data.muscles.take(6), key = { "muscle-${it.region}" }) { muscle ->
+        Column(Modifier.historyItem().testTag("history-muscle-${muscle.region}"), verticalArrangement = Arrangement.spacedBy(MTheme.space.s2)) {
+            MText(muscleRowLabel(regionName(muscle.region), muscle.sets, muscle.perWeek, weekly), MTheme.type.bodyMd)
+            Box(Modifier.fillMaxWidth().height(MTheme.space.s1).background(MTheme.colors.borderSubtle)) {
+                Box(Modifier.fillMaxWidth((muscle.sets / data.muscles.first().sets).toFloat()).fillMaxHeight().background(MTheme.colors.accentSolid))
+            }
+        }
+    }
+    if (data.muscles.size > 6 && !expanded) item("more-muscles") {
+        MButton(stringResource(Res.string.history_more_muscles, number(data.muscles.size.toDouble())), onExpand, Modifier.historyItem(), MButtonVariant.Text)
+    }
+    if (data.fullBodySets > 0) item("full-body") {
+        MText(muscleRowLabel(stringResource(Res.string.history_full_body), data.fullBodySets, data.fullBodySets / data.weeks, weekly),
+            MTheme.type.bodyMd, modifier = Modifier.historyItem())
+    }
+}
+
+@Composable
+private fun muscleRowLabel(name: String, sets: Double, perWeek: Double, weekly: Boolean): String = if (weekly) {
+    stringResource(if (sets == 1.0) Res.string.history_week_muscle_one else Res.string.history_week_muscle_many, name, number(sets))
+} else {
+    stringResource(Res.string.history_muscle_row, name, number(sets), number(perWeek))
+}
+
+@Composable
+private fun HistoryTotals(data: OverallProgress, pounds: Boolean, weekly: Boolean = false) {
+    val stats = buildList {
+        add(stringResource(Res.string.history_workouts) to number(data.workouts.toDouble()))
+        if (!weekly) add(stringResource(Res.string.history_per_week) to number(data.workoutsPerWeek))
+        add(stringResource(if (weekly) Res.string.history_week_logged_sets else Res.string.history_sets) to number(data.sets.toDouble()))
+        add(stringResource(Res.string.history_volume) to load(data.volumeKg, pounds))
+    }
     val measurer = rememberTextMeasurer()
     val style = MTheme.type.numMd
     val font = LocalDensity.current.fontScale
     val gap = MTheme.space.s4
     BoxWithConstraints(Modifier.historyItem().testTag("history-period-stats")) {
         val half = with(LocalDensity.current) { ((maxWidth - gap) / 2).roundToPx() }
-        val oneColumn = font >= 1.5f || values.any { measurer.measure(it, style, softWrap = false).size.width > half }
+        val oneColumn = font >= 1.5f || stats.any { (_, value) -> measurer.measure(value, style, softWrap = false).size.width > half }
         Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-            values.indices.toList().chunked(if (oneColumn) 1 else 2).forEach { row ->
+            stats.chunked(if (oneColumn) 1 else 2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    row.forEach { i -> Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                        MText(values[i], style)
-                        MText(labels[i], MTheme.type.caption, color = MTheme.colors.textSecondary)
+                    row.forEach { (label, value) -> Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                        MText(value, style)
+                        MText(label, MTheme.type.caption, color = MTheme.colors.textSecondary)
                     } }
                 }
             }
@@ -204,6 +285,7 @@ private fun load(kg: Double, pounds: Boolean) = MoosclesNumbers.weight(MoosclesN
 
 @Composable
 internal fun historyPeriodLabel(period: HistoryPeriod): String = stringResource(when (period) {
+    HistoryPeriod.WEEKLY -> Res.string.history_period_weekly
     HistoryPeriod.FOUR_WEEKS -> Res.string.history_period_4w
     HistoryPeriod.THREE_MONTHS -> Res.string.progress_period_3m
     HistoryPeriod.SIX_MONTHS -> Res.string.progress_period_6m

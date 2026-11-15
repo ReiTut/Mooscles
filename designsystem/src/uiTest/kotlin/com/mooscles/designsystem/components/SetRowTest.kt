@@ -287,11 +287,11 @@ class SetRowTest {
     @Test
     fun numbersNeverEllipsizeAtTwoHundredPercentOn320dp() = assertNumbersWholeOn320dp()
 
-    /** The iOS simulator's density: a dp is a pixel. Android still scales large text non-linearly. */
+    /** At density 1 a dp is a pixel, with Android's nonlinear font scaling. */
     @Test
     fun numbersNeverEllipsizeAtTwoHundredPercentOn320dpAtDensityOne() = assertNumbersWholeOn320dp(density = 1f)
 
-    /** What the iOS simulator renders at 2x: density 1 and 28 sp drawn at 56 dp. */
+    /** At density 1, linear scaling draws 28 sp at about 56 dp. */
     @Test
     fun numbersNeverEllipsizeAtLinearTwoHundredPercentOn320dp() =
         assertNumbersWholeOn320dp(density = 1f, fontScale = LINEAR_TWO_X_FONT_SCALE)
@@ -300,7 +300,7 @@ class SetRowTest {
     fun editableNumbersNeverClipAtLinearTwoHundredPercentOn320dp() =
         assertNumbersWholeOn320dp(density = 1f, fontScale = LINEAR_TWO_X_FONT_SCALE, fields = true)
 
-    /** iOS's largest accessibility sizes are about 3x: the cells wrap onto more lines, never inside a value. */
+    /** At 3x, cells can wrap onto more lines while each value stays whole. */
     @Test
     fun numbersWrapBetweenCellsAtThreeHundredPercentOn320dp() {
         assertNumbersWholeOn320dp(density = 1f, fontScale = 3f)
@@ -574,7 +574,7 @@ class SetRowTest {
             }
         }
         // With the wider "AS" pill, every text (the letters, previous, load and reps) stays whole
-        // where text is largest: iOS's 2x on a 320 dp screen, with numbers and with fields.
+        // with the largest test text on a 320 dp screen, for both numbers and fields.
         assertNumbersWholeOn320dp(density = 1f, fontScale = LINEAR_TWO_X_FONT_SCALE, type = SetType.Assisted)
         assertNumbersWholeOn320dp(density = 1f, fontScale = LINEAR_TWO_X_FONT_SCALE, fields = true, type = SetType.Assisted)
     }

@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Fixed tables that run on every platform, the iOS simulator included. Every expected
+ * Fixed tables for decimal text and precision. Every expected
  * value was printed by the JVM (Temurin 21): `String.format(Locale.US, "%.2f", v)` and
  * `Double.doubleToRawLongBits(Math.ulp(v))`.
  */

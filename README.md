@@ -4,9 +4,9 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Current release
 
-**1.5.4 / Build 26** adds the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview. See the [release notes](docs/superpowers/releases/v1.5.4.md) and [Android verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md).
+**1.5.5 / Build 27** adds Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks. See the [release notes](docs/superpowers/releases/v1.5.5.md) and [Android verification](VERIFICATION.md).
 
-The [previous Build 25 release](docs/superpowers/releases/v1.5.3.md) added **PRs beside Sets** in the completed-workout summary, saved detail, share preview and every exported card page. It counts each exercise variation with a qualifying first or beaten record once.
+The [previous Build 26 release](docs/superpowers/releases/v1.5.4.md) added the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview.
 
 ## Routine-startup changes (first published in beta)
 
@@ -85,7 +85,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.4 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.4) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.4/Mooscles-v1.5.4-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.4/update.json)
+[v1.5.5 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.5) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.5/Mooscles-v1.5.5-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.5/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
@@ -131,7 +131,7 @@ On the development workspace, the local JDK and SDK are installed under ignored 
 .\build.ps1
 ```
 
-The scripts run on Windows PowerShell 5.1 or PowerShell 7 on Windows, and on PowerShell 7 (`pwsh ./build.ps1`) on macOS and Linux. On macOS, install `pwsh` from the official tarball: `osx-arm64` for Apple Silicon, `osx-x64` for Intel Macs. CI runs in `.github/workflows/ci.yml`.
+The scripts run on Windows PowerShell 5.1 or PowerShell 7 on Windows, and on PowerShell 7 (`pwsh ./build.ps1`) on macOS and Linux. On macOS, install `pwsh` from the official tarball for your processor. [GitHub Actions](.github/workflows/ci.yml) runs the Android host suites, lint, debug packaging, resource and schema checks, and release-script checks.
 
 On any machine without the original signing key, `build.ps1` ends with exit code 1 at the `prepare-release` step ("Do not create a new key as an update workaround.") after tests, lint and the build have passed. That is the protection working: the release script accepts only an APK signed solely by the original key. To exercise the script with another key, run `tools/prepare-release.ps1` directly with `-ExpectedSignerSha256` set to that key's SHA-256 certificate fingerprint (from `apksigner verify --print-certs`). Never change the parameter's default value.
 
@@ -140,7 +140,7 @@ After Android Studio's daemon-toolchain migration, `gradle/gradle-daemon-jvm.pro
 On a fresh checkout, install Adoptium JDK 21, Android SDK platform `android-37.0` and build-tools 36.0.0. Set `JAVA_HOME` and set `sdk.dir` in untracked `local.properties` to your SDK folder. The checked-in wrapper downloads Gradle. Build dependencies require network only during initial resolution.
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
+.\gradlew.bat :app:testDebugUnitTest :shared:testAndroidHostTest :designsystem:testAndroidHostTest :screens:testAndroidHostTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
@@ -152,7 +152,14 @@ Version compatibility references: [AGP 9.3](https://developer.android.com/build/
 
 ## Architecture and persistence
 
-The project has four Gradle modules. `:shared` is a Kotlin Multiplatform library (Android and iOS targets) holding the data layer (Room entities, DAO, migrations, repository, catalog), `domain/`, backup, the preferences and rest-timer logic and the shared view-model; `:designsystem` is a Compose Multiplatform library (Android and iOS targets) with the design tokens, components, fonts, icons, English and Brazilian Portuguese strings, a hidden component gallery and the licenses screen; `:screens` is a Compose Multiplatform library (Android and iOS targets) with the redesigned screens built from the design system: the active workout, the end-of-workout summary, the share card and the app shell (tabs and workout bar); `:app` holds the Android-only parts (activity, Compose screens, alarms and notifications, updater, sharing). `ui/` contains Compose screens, navigation, presentation models and the UI action contract. `AppViewModel` maps repository snapshots to screen state, serializes commands, and catches save failures. `data/` contains Room entities, foreign-key relationships/cascade rules, a transactional repository, and the offline catalog. A single transaction reads each observable database snapshot. Workout finalization checks the existing status and saves once atomically; concurrent starts reuse the single active workout. `domain/` contains pure record, volume and unit calculations.
+The project retains four Gradle modules. `:shared`, `:designsystem`, and `:screens` use Kotlin Multiplatform tooling with Android as their sole target. Shared Kotlin code and Compose resources stay in `commonMain`, and Android integrations stay in `androidMain` or `:app`.
+
+- `:shared` holds Room entities, migrations, the transactional repository and offline catalog, domain calculations, backup, preferences, timer logic, and the shared view model.
+- `:designsystem` uses Compose Multiplatform for tokens, components, fonts, icons, English and Brazilian Portuguese strings, the component gallery, and the licenses screen.
+- `:screens` builds the redesigned screens, app shell, and workout share card on the design system.
+- `:app` hosts the Android activity, navigation, alarms, notifications, updater, and sharing.
+
+`AppViewModel` maps repository snapshots to screen state, serializes commands, and catches save failures. A single transaction reads each observable database snapshot. Workout finalization checks the existing status and saves atomically. Concurrent starts reuse the single active workout.
 
 Workouts copy exercise metadata and planned sets into independent snapshots. Renaming exercises or editing/deleting routines never rewrites past workouts. Records are derived from completed history instead of cached, so corrections and deletions recalculate both current records and each session's PR total. Room schemas v1 through v5 are exported to `shared/schemas/`. The additive v1 → v2 migration creates PR synchronization checkpoints. The additive v2 → v3 migration creates the ordered `routine_sets` table and copies each legacy exercise's shared target pair into every planned row, preserving its original values and set count. Migrated rows are explicitly custom prescriptions, so initialization does not infer PR inheritance or overwrite them. The additive v3 → v4 migration adds only a nullable workout source routine ID. Legacy sources remain unknown, and routine deletion cannot cascade into workout history. The additive v4 → v5 migration creates routine folders and adds default folder membership without rebuilding routine or prescription tables. Existing routine/workout tables remain in place; no destructive migration fallback is enabled.
 

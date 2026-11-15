@@ -4,7 +4,7 @@ import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** Changes the JVM's default Locale, which only the JVM has, so this stays off iOS. */
+/** Changes the JVM's default locale to test search normalization. */
 class ExerciseSearchLocaleTest {
     private val catalog = ExerciseCatalog.exercises.associateBy { it.id }
 

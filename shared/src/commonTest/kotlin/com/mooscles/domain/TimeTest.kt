@@ -6,7 +6,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 /**
- * Pins the ISO text `currentIsoInstant()` writes, so the iOS simulator checks it too.
+ * Pins the ISO text `currentIsoInstant()` writes.
  * Every expected string was printed by `java.time.Instant.ofEpochSecond(s, n).toString()`.
  */
 class TimeTest {

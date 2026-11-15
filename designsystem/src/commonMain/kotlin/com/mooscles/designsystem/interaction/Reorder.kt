@@ -424,8 +424,7 @@ class ReorderState<K : Any> internal constructor(
         // After followSlot, so a shift of this very layout is taken out before the rejoin, not after it.
         if (adrift) rejoin(item)
         // No swap while adrift: the logical position is then the slot's, not the drawn item's, and the rejoin would
-        // undo a swap made from it (with the 18 dp slop of iOS, lifting a middle item at the list's top swapped it up
-        // one place before the rejoin took it back down).
+        // undo a swap made from it. A large touch slop can make a middle item swap just before rejoining.
         if (adrift || swappedOn === info) return
         val current = order
         val index = current.indexOf(key)

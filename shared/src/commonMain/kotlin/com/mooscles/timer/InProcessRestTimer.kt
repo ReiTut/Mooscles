@@ -21,7 +21,7 @@ import kotlin.math.ceil
 /**
  * A [RestTimer] with no alarm and no notification: a coroutine ticker over the same
  * [RestTimerPersistence], so it reads and writes exactly the keys the Android controller does.
- * Used by the iOS end-to-end flow test and as the base for the iOS timer.
+ * Used by the end-to-end flow tests.
  */
 class InProcessRestTimer(
     private val persistence: RestTimerPersistence,

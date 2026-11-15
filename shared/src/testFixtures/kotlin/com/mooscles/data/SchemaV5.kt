@@ -1,8 +1,7 @@
 package com.mooscles.data
 
 /**
- * A database as version 5 (v1.4.x and v1.5.0) left it, for the v5 -> v6 migration tests on the
- * Android host and on the iOS simulator, which has no file system access to the exported JSON.
+ * A database as version 5 (v1.4.x and v1.5.0) left it, for the v5 -> v6 migration tests.
  *
  * [statements] are the `createSql` of every entity and index and the `setupQueries` of Room's
  * exported `5.json`, in its order, with `${TABLE_NAME}` resolved. `SchemaV5FixtureTest` (`:app`)

@@ -82,8 +82,8 @@ enum class GalleryLanguage(val tag: String?, val label: StringResource) {
 }
 
 /**
- * The motion choices of the gallery. [System] follows the system setting (Android: animator
- * duration scale 0; iOS: Reduce Motion) and is the starting choice; the other two force it.
+ * [System] starts by following the Android animator duration scale, with zero reducing motion.
+ * The other choices override that setting.
  */
 enum class GalleryMotion(val reduced: Boolean?, val label: StringResource) {
     System(null, Res.string.gallery_motion_system),

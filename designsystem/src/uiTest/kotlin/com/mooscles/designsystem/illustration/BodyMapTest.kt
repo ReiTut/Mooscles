@@ -95,7 +95,7 @@ class BodyMapTest {
 
     /**
      * Each legend item is a swatch beside its text, in English and in Portuguese; at 2x text on a
-     * narrow column (with the linear 2x of iOS too) the words stay whole and the items wrap instead.
+     * narrow column the words stay whole and the items wrap, including under linear scaling.
      */
     @Test
     fun legendHasSwatchAndText() {

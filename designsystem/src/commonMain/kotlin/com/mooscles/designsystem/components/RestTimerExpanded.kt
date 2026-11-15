@@ -101,7 +101,7 @@ private data class RingType(val time: TextStyle, val label: TextStyle)
  * in the full ring. Over the time, the ring names only the phase ("Rest", "Paused", "Rest
  * complete"), never [RestTimerVisual.label]: the exercise is in the [title]. The phase, the time
  * (one line) and the total stay inside the ring's clear circle, corners included: when the font
- * scale would take them past it (iOS scales text linearly, so its 2x is larger than Android's),
+ * scale would take them past it,
  * the time steps down from `num.display` to `num.lg`, `num.md` and `num.sm`, and at each of those
  * the phase and the total from `label.lg` to `label.md` and `caption`, until the stack fits
  * ([stackFitsInCircle]); the largest time comes first.
@@ -154,8 +154,8 @@ fun RestTimerExpanded(
     val inner = sizes.expandedRing - (sizes.tickLength + MTheme.space.s1 + sizes.expandedRingStroke) * 2
     val statusWidth = inner * RING_STATUS_SHARE
     val check = sizes.checkDisc
-    // Measured as drawn (px, after the platform's font scaling), so the choice holds for Android's
-    // nonlinear scaling and iOS's linear one alike. The widest time stands for every time.
+    // Measure the drawn pixels after font scaling, including Android's nonlinear scaling.
+    // The widest time stands for every time.
     val ringType = remember(status, total, done, type, density, direction, inner, statusWidth, check) {
         with(density) {
             val radius = inner.toPx() / 2f

@@ -24,8 +24,7 @@ internal fun restoreTouchMode() {
 }
 
 /**
- * The emulator's side of the chart captures (the iOS one, in its TestPlatform.kt, writes the PNG
- * for the CI artifact; not expect/actual). Here the PNG is written to the test app's external files
+ * On the emulator the PNG is written to the test app's external files
  * and copied by the shell to `/data/local/tmp/<name>.png`, which outlives the test APK, so
  * `adb pull` can fetch it for the spike report.
  */

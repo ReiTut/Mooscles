@@ -85,7 +85,7 @@ internal fun ComposeUiTest.openCard(entryId: String) {
 
 /**
  * Takes a capture of each root (the screen, and a dialog or sheet over it) and hands it to the
- * platform ([saveFlowCapture]: a PNG on iOS). Where `captureToImage` is not supported, says so once and goes on.
+ * test capture helper [saveFlowCapture]. Where `captureToImage` is unavailable, reports it once and continues.
  */
 @OptIn(ExperimentalTestApi::class)
 internal fun ComposeUiTest.capture(state: String) {
@@ -105,8 +105,8 @@ internal fun ComposeUiTest.capture(state: String) {
 
 /**
  * [node] lies inside the window, [window] px (`LocalWindowInfo.containerSize`, read by the host):
- * what the person sees. The iOS simulator's window is smaller than the emulator's, so a toast drawn
- * at the bottom of a frame taller than the window would pass `assertIsDisplayed` and be out of sight.
+ * what the person sees. A toast at the bottom of a frame taller than the window may pass
+ * `assertIsDisplayed` while sitting outside the viewport.
  */
 internal fun assertInsideWindow(node: SemanticsNodeInteraction, window: IntSize, what: String) {
     val bounds = node.fetchSemanticsNode().boundsInWindow

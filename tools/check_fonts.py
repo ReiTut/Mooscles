@@ -22,9 +22,8 @@ per font, separated by whitespace; blank lines and lines starting with `#` are
 ignored. Fonts are matched by the file name (basename) of each argument. GLOBs are
 matched against the file name and the full path (fnmatch).
 
-This is a host-side indicator only. Android (Minikin) and Compose Multiplatform on
-iOS (Skia/SkParagraph) shape with HarfBuzz too, but only a measurement on the
-device or simulator proves what the app renders.
+This is a host-side indicator. Android's Minikin shapes with HarfBuzz too.
+Measure on an Android device or emulator to confirm what the app renders.
 
 Requires fonttools and uharfbuzz (versions pinned in .github/workflows/ci.yml).
 """

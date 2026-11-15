@@ -536,7 +536,7 @@ class ExercisePickerSheetTest {
 
     @Test
     fun addButtonWholeAtTwoX() {
-        // 2.01 with density 1 is the text iOS draws at 200% (see LINEAR_TWO_X_FONT_SCALE).
+        // Use density 1 for the linear scaling case.
         for ((scale, density) in listOf(2f to null, LINEAR_TWO_X_FONT_SCALE to 1f)) {
             runComposeUiTest {
                 showPicker(mode = PickerMode.Multiple, fontScale = scale, density = density)

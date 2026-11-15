@@ -59,11 +59,11 @@ import kotlin.time.Duration.Companion.minutes
 /**
  * The active workout from start to summary over the real stack (spec D6): the common
  * [com.mooscles.MoosclesViewModel], Room through the platform's own driver and DataStore, each in
- * a fresh directory ([FlowHarness]), with the screens as the app hosts them ([FlowApp]). It runs on
- * the emulator and on the iOS simulator, where it is the proof that the workout works on iOS.
+ * a fresh directory ([FlowHarness]), with the screens as the app hosts them ([FlowApp]). It runs
+ * as an Android device test.
  *
- * Twice (plan decision 27): light at 1.0 and dark at 2.0 (2.01 on every platform, the linear 200%
- * iOS draws: [LINEAR_TWO_X_FONT_SCALE]). Each run seeds a routine of three exercises and a past
+ * Two runs cover light mode at 1.0 and dark mode at [LINEAR_TWO_X_FONT_SCALE]. Each run seeds
+ * a routine of three exercises and a past
  * workout with 85 kg × 6 on the bench, starts the routine, then: a pre-filled set done; the load
  * stepped up to 87.5 and done, which beats the seeded record (the toast and the badge); a set done
  * from its suggestion; the rest timer docked (compact at 2.0), +15 s, expanded, skipped; a set
@@ -71,7 +71,7 @@ import kotlin.time.Duration.Companion.minutes
  * the numbers and the record. Each step is checked in the view model's state, which comes from the
  * database, not from the screen. In each main state ([sweep]): every clickable node has a label,
  * every target is 48 dp and the workout's actions 56, every number is shown whole, and a capture
- * is taken (written as a PNG on iOS, for the CI to upload).
+ * is taken when supported.
  */
 @OptIn(ExperimentalTestApi::class)
 class ActiveWorkoutFlowTest {

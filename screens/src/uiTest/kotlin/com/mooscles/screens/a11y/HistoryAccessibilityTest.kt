@@ -80,9 +80,8 @@ import kotlin.test.assertTrue
 /** Focused Phase5B accessibility additions. Existing sweeps cover charts, inputs and the shell.
  * Every new screen is checked in both themes and languages, at320/412dp and1/1.3/2/2.01font scales.
  * History and progress visit top/middle/end; saved detail covers reading and editing, including the
- * keyboard focus/IME action path. The iOS simulator does not display its real keyboard: these tests
- * prove focus and IME semantics, not physical keyboard geometry or screen-reader speech.
- * They check semantics/layout, not actual TalkBack or VoiceOver speech.
+ * keyboard focus and IME actions. These tests cover semantics and layout. Physical keyboard
+ * geometry and TalkBack speech require separate checks.
  */
 @OptIn(ExperimentalTestApi::class)
 class HistoryAccessibilityTest {
