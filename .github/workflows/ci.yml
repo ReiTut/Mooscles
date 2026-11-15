@@ -363,7 +363,8 @@ jobs:
           # HistoryModelTest+2 (metadata cache parity/invalidation). Legacy coverage is ported, none retired.
           # 1288 + 29 + 7 + 7 + 3 + 1 + 1 + 1 = 1337.
           # Android-only cleanup: HapticsMappingTest -1 for the removed platform mapping. 1337 - 1 = 1336.
-          MIN_HOST_TESTS: 1336
+          # Weekly muscle sets: HistoryModelTest +5. 1336 + 5 = 1341.
+          MIN_HOST_TESTS: 1341
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',

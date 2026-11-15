@@ -25,6 +25,17 @@
     <plurals name="history_workout_count"><item quantity="one">%1$d treino</item><item quantity="other">%1$d treinos</item></plurals>
     <plurals name="history_set_count"><item quantity="one">%1$d série</item><item quantity="other">%1$d séries</item></plurals>
     <plurals name="history_pr_count"><item quantity="one">%1$d recorde</item><item quantity="other">%1$d recordes</item></plurals>
+    <string name="history_period_weekly">Semanal</string>
+    <string name="history_week_previous">Semana anterior</string>
+    <string name="history_week_next">Próxima semana</string>
+    <string name="history_week_range">%1$s – %2$s</string>
+    <string name="history_week_to_date">Semana até agora</string>
+    <string name="history_week_muscles">Séries por músculo</string>
+    <string name="history_week_logged_sets">Séries registradas</string>
+    <string name="history_week_weighting">Cada série de trabalho vale 1 para cada músculo principal e 0,5 para cada músculo secundário.</string>
+    <string name="history_week_empty">Nenhuma série de trabalho nesta semana</string>
+    <string name="history_week_muscle_one">%1$s · %2$s série</string>
+    <string name="history_week_muscle_many">%1$s · %2$s séries</string>
     <string name="history_period_4w">4 semanas</string>
     <string name="history_per_week">Por semana</string>
     <string name="history_sets">Séries</string>

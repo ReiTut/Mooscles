@@ -197,7 +197,7 @@ class HistoryCalendarMonth(
     val totalWorkouts: Int = dayWorkouts.values.sumOf { it.size }
 }
 
-enum class HistoryPeriod { FOUR_WEEKS, THREE_MONTHS, SIX_MONTHS, ONE_YEAR, ALL }
+enum class HistoryPeriod { WEEKLY, FOUR_WEEKS, THREE_MONTHS, SIX_MONTHS, ONE_YEAR, ALL }
 enum class HistoryBucketKind { WEEK, MONTH, QUARTER }
 
 @Immutable
@@ -248,14 +248,27 @@ data class OverallProgressQuery(
     val today: LocalDate,
     val zone: TimeZone,
     val weekStart: DayOfWeek,
+    val weekOffset: Int = 0,
 ) : ProgressQuery<OverallProgress> {
+    init {
+        require(weekOffset >= 0)
+    }
+
+    private val currentWeek: LocalDate get() = ExerciseCharts.weekStartOf(today, weekStart)
+    val weekRangeStart: LocalDate get() = currentWeek.minus(weekOffset, DateTimeUnit.WEEK)
+    val weekRangeEnd: LocalDate get() = weekRangeStart.plus(6, DateTimeUnit.DAY)
+
     override fun compute(index: ProgressIndex): OverallProgress {
         val all = index.historyData.items.map { it to ScreenDates.localDate(it.workout.startedAt, zone) }
         val earliest = all.minOfOrNull { it.second } ?: today
         val latest = all.maxOfOrNull { it.second } ?: today
-        val end = if (period == HistoryPeriod.ALL) maxOf(today, latest) else today
-        val currentWeek = ExerciseCharts.weekStartOf(today, weekStart)
+        val end = when (period) {
+            HistoryPeriod.WEEKLY -> minOf(today, weekRangeEnd)
+            HistoryPeriod.ALL -> maxOf(today, latest)
+            else -> today
+        }
         val start = when (period) {
+            HistoryPeriod.WEEKLY -> weekRangeStart
             HistoryPeriod.FOUR_WEEKS -> currentWeek.minus(DatePeriod(days = 3 * 7))
             HistoryPeriod.THREE_MONTHS -> currentWeek.minus(DatePeriod(days = 12 * 7))
             HistoryPeriod.SIX_MONTHS -> currentWeek.minus(DatePeriod(days = 25 * 7))
@@ -264,7 +277,7 @@ data class OverallProgressQuery(
         }
         val months = (end.year - start.year) * 12 + end.month.number - start.month.number + 1
         val kind = when (period) {
-            HistoryPeriod.FOUR_WEEKS, HistoryPeriod.THREE_MONTHS, HistoryPeriod.SIX_MONTHS -> HistoryBucketKind.WEEK
+            HistoryPeriod.WEEKLY, HistoryPeriod.FOUR_WEEKS, HistoryPeriod.THREE_MONTHS, HistoryPeriod.SIX_MONTHS -> HistoryBucketKind.WEEK
             HistoryPeriod.ONE_YEAR -> HistoryBucketKind.MONTH
             HistoryPeriod.ALL -> if (months > 36) HistoryBucketKind.QUARTER else HistoryBucketKind.MONTH
         }

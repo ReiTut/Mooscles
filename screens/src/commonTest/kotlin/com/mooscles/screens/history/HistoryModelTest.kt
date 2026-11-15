@@ -4,6 +4,7 @@ import com.mooscles.data.MuscleRegion
 import com.mooscles.data.ExerciseNames
 import com.mooscles.data.SearchFolding
 import com.mooscles.screens.progress.ProgressIndex
+import com.mooscles.screens.progress.ProgressIndexCache
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.RecordUi
 import com.mooscles.ui.SetUi
@@ -14,6 +15,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -200,6 +203,96 @@ class HistoryModelTest {
         val progress = overall(index(workout("a", entries = listOf(entry(assisted, set(kg = 40.0))))))
         assertEquals(1, progress.sets)
         assertEquals(0.0, progress.volumeKg)
+    }
+
+    @Test fun weeklyShowsActualTotalsForConsecutiveWeeks() = runTest {
+        val cache = ProgressIndexCache(backgroundScope, StandardTestDispatcher(testScheduler))
+        val history = listOf(
+            workout("last-week", "2026-10-31", entries = listOf(entry(bench, *Array(10) { set("old-$it") }))),
+            workout("this-week", "2026-11-01", entries = listOf(entry(bench, *Array(6) { set("new-$it") }))),
+            workout("future", "2026-11-05"),
+        )
+        val index = cache.get(history, emptyList())
+        val weekly = OverallProgressQuery(HistoryPeriod.WEEKLY, today, zone, DayOfWeek.SUNDAY)
+        val current = cache.query(index, weekly)
+        val previous = cache.query(index, weekly.copy(weekOffset = 1))
+        val currentChest = current.muscles.single { it.region == MuscleRegion.CHEST }
+        val previousChest = previous.muscles.single { it.region == MuscleRegion.CHEST }
+
+        assertEquals(LocalDate(2026, 11, 1), weekly.weekRangeStart)
+        assertEquals(LocalDate(2026, 11, 7), weekly.weekRangeEnd)
+        assertEquals(today, current.rangeEnd)
+        assertEquals(LocalDate(2026, 10, 25), previous.rangeStart)
+        assertEquals(LocalDate(2026, 10, 31), previous.rangeEnd)
+        assertEquals(6.0, currentChest.sets)
+        assertEquals(10.0, previousChest.sets)
+        assertEquals(currentChest.sets, currentChest.perWeek)
+        assertEquals(previousChest.sets, previousChest.perWeek)
+        assertEquals(1, current.weeks)
+        assertEquals(1, previous.weeks)
+        assertTrue(current.buckets.single().partial)
+        assertFalse(previous.buckets.single().partial)
+    }
+
+    @Test fun weeklyBoundaryUsesRegionalStartAndLocalWorkoutStartTime() {
+        val saoPaulo = TimeZone.of("America/Sao_Paulo")
+        val boundary = LocalDate(2026, 11, 2).atStartOfDayIn(saoPaulo).toEpochMilliseconds()
+        val index = index(
+            workout("before").copy(startedAt = boundary - 1, endedAt = boundary + 1),
+            workout("at").copy(startedAt = boundary, endedAt = boundary + 1),
+        )
+        val monday = OverallProgressQuery(HistoryPeriod.WEEKLY, today, saoPaulo, DayOfWeek.MONDAY)
+
+        assertEquals(1, monday.compute(index).workouts)
+        assertEquals(1, monday.copy(weekOffset = 1).compute(index).workouts)
+        assertEquals(2, monday.copy(weekStart = DayOfWeek.SUNDAY).compute(index).workouts)
+        assertEquals(2, monday.copy(zone = TimeZone.UTC).compute(index).workouts)
+    }
+
+    @Test fun weeklyRetainsFractionalCreditsAndCustomExerciseHandling() {
+        val customChest = bench.copy(id = "custom-chest", custom = true)
+        val fullBody = ExerciseUi("custom-full", "Complex", "Full body", "Bodyweight", custom = true)
+        val entries = listOf(
+            entry(bench, set(), set("warm", warmup = true), set("planned", completed = false), set("invalid", reps = 0)),
+            entry(customChest, set("custom")),
+            entry(fullBody, set("full")),
+        )
+        val progress = overall(index(workout("eligible", entries = entries)), HistoryPeriod.WEEKLY)
+
+        assertEquals(MuscleRegion.CHEST, progress.muscles.first().region)
+        assertEquals(2.0, progress.muscles.first().sets)
+        assertEquals(0.5, progress.muscles.single { it.region == MuscleRegion.TRICEPS }.sets)
+        assertEquals(0.5, progress.muscles.single { it.region == MuscleRegion.SHOULDERS }.sets)
+        assertEquals(1.0, progress.fullBodySets)
+    }
+
+    @Test fun weeklyCanBeEmptyWithOtherHistoryOrOnlyWarmups() {
+        val index = index(workout("a", entries = listOf(entry(bench, set(warmup = true)))))
+        val weekly = OverallProgressQuery(HistoryPeriod.WEEKLY, today, zone, DayOfWeek.SUNDAY)
+
+        assertTrue(weekly.compute(index).muscles.isEmpty())
+        assertEquals(1, weekly.compute(index).workouts)
+        val previous = weekly.copy(weekOffset = 1).compute(index)
+        assertTrue(previous.hasHistory)
+        assertEquals(0, previous.workouts)
+        assertTrue(previous.muscles.isEmpty())
+        assertEquals(0.0, previous.fullBodySets)
+    }
+
+    @Test fun cachedWeeklyQueryRefreshesWhenSavedHistoryChanges() = runTest {
+        val cache = ProgressIndexCache(backgroundScope, StandardTestDispatcher(testScheduler))
+        val weekly = OverallProgressQuery(HistoryPeriod.WEEKLY, today, zone, DayOfWeek.SUNDAY)
+        suspend fun weeklyChestSets(history: List<WorkoutUi>): Double =
+            cache.query(cache.get(history, emptyList()), weekly).muscles
+                .singleOrNull { it.region == MuscleRegion.CHEST }?.sets ?: 0.0
+
+        val saved = workout("saved")
+        val edited = saved.copy(exercises = listOf(entry(bench, set(), set("second"))))
+        assertEquals(0.0, weeklyChestSets(emptyList()))
+        assertEquals(1.0, weeklyChestSets(listOf(saved)))
+        assertEquals(2.0, weeklyChestSets(listOf(edited)))
+        assertEquals(0.0, weeklyChestSets(emptyList()))
+        assertEquals(3.0, weeklyChestSets(listOf(saved, edited.copy(id = "imported"))))
     }
 
     @Test fun fourWeeksAlignToRegionAndIncludeEmptyWeeksAndPartialCurrentWeek() {
