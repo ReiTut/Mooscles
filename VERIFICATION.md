@@ -6,6 +6,8 @@ Weekly Sets by Muscle uses the existing saved History index. The feature run pas
 
 Release checks cover Android CI, fresh debug packaging, the original signer, and public updater discovery from Build 26. Build 27 uses the existing `com.mooscles` application ID, schema 6, and update metadata format. Updater discovery and on-device installation are separate checks. [Release notes](docs/superpowers/releases/v1.5.5.md)
 
+The JVM progress-index scaling check warms and alternates the full and half histories, then uses current-thread CPU time where the clock is suitable to reduce the effect of runner scheduling. Windows uses elapsed time because its JVM CPU clock reported coarse increments. The check keeps the original scaling threshold and elapsed-time build and query limits.
+
 ## Release candidate 1.5.4 / Build 26
 
 See the [release notes](docs/superpowers/releases/v1.5.4.md), [Phase 5B verification](docs/superpowers/reports/2026-11-05-phase5b-verificacao.md) and [performance comparison](docs/superpowers/reports/2026-11-05-phase5b-performance.md). The version bump preserves package `com.mooscles`, schema 6, the original distribution signer and the updater contract. Build 26 is above the latest distributed Build 25.

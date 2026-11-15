@@ -3,6 +3,7 @@ package com.mooscles.screens.progress
 import com.mooscles.screens.format.ScreenDates
 import com.mooscles.screens.records.RecordTimelines
 import com.mooscles.screens.records.RecordsQuery
+import java.lang.management.ManagementFactory
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -46,9 +47,30 @@ class ProgressIndexTimingTest {
         }
         val timelines = searches.map { query -> timed { RecordTimelines.query(index, query) } }
 
-        // Relative: seven warm runs of each side, the best of each.
-        val fullBest = bestOfSeven { ProgressIndex.build(history, records) }
-        val halfBest = bestOfSeven { ProgressIndex.build(half, halfRecords) }
+        // Sample both sizes throughout the same runner-load window. The synchronous index's
+        // scaling comparison uses thread CPU time, while the latency budgets use elapsed time.
+        val sizes = listOf({ ProgressIndex.build(history, records) }, { ProgressIndex.build(half, halfRecords) })
+        repeat(2) { sizes.forEach { build -> build() } }
+        val thread = ManagementFactory.getThreadMXBean()
+        // The Windows JVM reports CPU time in ticks that can be longer than a half-history build.
+        val coarseCpuClock = System.getProperty("os.name").startsWith("Windows")
+        val cpuClock: () -> Long = if (!coarseCpuClock && thread.isCurrentThreadCpuTimeSupported && thread.isThreadCpuTimeEnabled) {
+            thread::getCurrentThreadCpuTime
+        } else {
+            System::nanoTime
+        }
+        val bestWall = DoubleArray(sizes.size) { Double.POSITIVE_INFINITY }
+        val bestCpu = DoubleArray(sizes.size) { Double.POSITIVE_INFINITY }
+        repeat(7) { trial ->
+            sizes.indices.forEach { step ->
+                val size = (trial + step) % sizes.size
+                val started = cpuClock()
+                val elapsed = timed { sizes[size]() }
+                bestCpu[size] = minOf(bestCpu[size], (cpuClock() - started) / 1_000_000.0)
+                bestWall[size] = minOf(bestWall[size], elapsed)
+            }
+        }
+        val fullBest = bestWall[0]
         val chartBest = bestOfSeven { queries.forEach { ExerciseCharts.query(index, it) } } / CHART_QUERIES
         val recordsBest = bestOfSeven { searches.forEach { RecordTimelines.query(index, it) } } / RECORD_QUERIES
 
@@ -56,12 +78,13 @@ class ProgressIndexTimingTest {
         val chart = median(charts)
         val timeline = median(timelines)
         println("TIMING progress build=${ms(build)} chart=${ms(chart)} records=${ms(timeline)} " +
-            "warm build=${ms(fullBest)} half=${ms(halfBest)} chart=${ms(chartBest)} records=${ms(recordsBest)} " +
+            "warm build=${ms(fullBest)} half=${ms(bestWall[1])} chart=${ms(chartBest)} records=${ms(recordsBest)} " +
+            "scaling full=${ms(bestCpu[0])} half=${ms(bestCpu[1])} " +
             "events=${index.events.size} current=${index.currentRecords.size}")
 
         assertTrue(index.events.size > 1000 && index.currentRecords.isNotEmpty(), "the history has many records")
         assertTrue(RecordTimelines.query(index, RecordsQuery(text = "supino", zone = zone)).total > 0, "\"supino\" finds bench records")
-        assertTrue(fullBest < halfBest * 3, "twice the history took ${ms(fullBest)} against ${ms(halfBest)}: not linear")
+        assertTrue(bestCpu[0] < bestCpu[1] * 3, "twice the history took ${ms(bestCpu[0])} against ${ms(bestCpu[1])}: not linear")
         assertTrue(chartBest * CHEAPER < fullBest, "a chart query took ${ms(chartBest)}, a build ${ms(fullBest)}")
         assertTrue(recordsBest * CHEAPER < fullBest, "a records query took ${ms(recordsBest)}, a build ${ms(fullBest)}")
 
