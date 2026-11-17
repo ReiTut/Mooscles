@@ -159,7 +159,9 @@ data class WorkoutSet(
     val weightKg: Double = 0.0,
     val completed: Boolean = false,
     val warmup: Boolean = false,
-    val assistance: Boolean = false
+    val assistance: Boolean = false,
+    /** Origin captured at routine start. The planned row can be deleted without altering this workout. */
+    val sourceRoutineSetId: String? = null,
 )
 
 data class AppData(

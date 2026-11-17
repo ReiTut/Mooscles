@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
@@ -38,6 +39,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import com.mooscles.designsystem.components.StepperIncreaseTag
@@ -269,6 +271,14 @@ class RoutineEditorSetsTest {
         waitForIdle()
     }
 
+    private fun ComposeUiTest.swipeSet(setId: String, distance: Float) {
+        reveal(RoutineEditorTags.set(setId))
+        onNodeWithTag(RoutineEditorTags.set(setId)).performTouchInput {
+            swipe(start = center, end = Offset(centerX + width * distance, centerY), durationMillis = 400)
+        }
+        waitForIdle()
+    }
+
     private fun ComposeUiTest.toastWith(text: String) =
         onNode(hasText(text, substring = true) and hasAnyAncestor(hasTestTag("toast")), useUnmergedTree = true)
 
@@ -465,6 +475,127 @@ class RoutineEditorSetsTest {
             "restoreRoutineSet:e2,2,${RoutineSetUi("e2b", 15, 60.0, inherited = false, warmup = false)}",
             fake.calls.last(),
         )
+    }
+
+    @Test
+    fun leftSwipeRemovesWorkingSetAndUndoKeepsItsPendingEdit() = runComposeUiTest {
+        val fake = Fake(stateOf(e1, e2, e3)).apply { echo = false }
+        show(fake.state, fake)
+        reps("e2b").performTextReplacement("15")
+        waitForIdle()
+        swipeSet("e2b", -0.48f)
+
+        assertEquals(listOf("removeRoutineSet:e2b"), fake.calls.filter { it.startsWith("removeRoutineSet:") })
+        assertEquals(listOf("e2w", "e2a"), fake.entries()[1].setTargets.map { it.id })
+        toastWith("Série 2 removida").assertIsDisplayed()
+        onNodeWithText("Desfazer").performClick()
+        waitForIdle()
+
+        val restored = RoutineSetUi("e2b", 15, 60.0, inherited = false, warmup = false)
+        assertEquals("restoreRoutineSet:e2,2,$restored", fake.calls.last())
+        assertEquals(e2.setTargets.dropLast(1) + restored, fake.entries()[1].setTargets)
+    }
+
+    @Test
+    fun leftSwipeRemovesWarmupAndUndoRestoresItsTypeAndPosition() = runComposeUiTest {
+        val fake = Fake(stateOf(e1, e2))
+        show(fake.state, fake)
+        swipeSet("e1w", -0.48f)
+
+        assertEquals(listOf("removeRoutineSet:e1w"), fake.calls)
+        assertEquals(e1.setTargets.drop(1), fake.entries().first().setTargets)
+        toastWith("Aquecimento 1 removido").assertIsDisplayed()
+        onNodeWithText("Desfazer").performClick()
+        waitForIdle()
+
+        assertEquals("restoreRoutineSet:e1,0,${e1.setTargets.first()}", fake.calls.last())
+        assertEquals(e1.setTargets, fake.entries().first().setTargets)
+        label("e1w").assertContentDescriptionEquals("Aquecimento 1")
+    }
+
+    @Test
+    fun repeatedSwipeBeforeRemovalIsShownOnlyRemovesTheSetOnce() = runComposeUiTest {
+        val fake = Fake(stateOf(e1, e2)).apply { applyRemove = false }
+        show(fake.state, fake)
+        swipeSet("e1b", -0.48f)
+        swipeSet("e1b", -0.48f)
+        swipeSet("e1a", -0.48f)
+        assertEquals(listOf("removeRoutineSet:e1b"), fake.calls)
+
+        runOnIdle {
+            fake.editEntries { list ->
+                list.map { entry -> if (entry.id == e1.id) entry.copy(setTargets = entry.setTargets.dropLast(1)) else entry }
+            }
+        }
+        waitForIdle()
+        toastWith("Série 2 removida").assertIsDisplayed()
+        onNodeWithText("Desfazer").performClick()
+        waitForIdle()
+
+        assertEquals(e1.setTargets, fake.entries().first().setTargets)
+        assertEquals(1, fake.calls.count { it.startsWith("restoreRoutineSet:") })
+    }
+
+    @Test
+    fun failedSwipeLeavesItsSetAvailableForRetry() = runComposeUiTest {
+        val fake = Fake(stateOf(e1, e2)).apply { applyRemove = false }
+        show(fake.state, fake)
+        swipeSet("e1b", -0.48f)
+
+        runOnIdle {
+            fake.state.value = fake.state.value.copy(subjectFailures = mapOf("e1b" to 1))
+            fake.applyRemove = true
+        }
+        waitForIdle()
+        onNodeWithText("Desfazer").assertDoesNotExist()
+        assertEquals(e1.setTargets, fake.entries().first().setTargets)
+
+        swipeSet("e1b", -0.48f)
+        toastWith("Série 2 removida").assertIsDisplayed()
+        assertEquals(e1.setTargets.dropLast(1), fake.entries().first().setTargets)
+    }
+
+    @Test
+    fun shortRightAndCancelledSwipesKeepTheSetAndVerticalDragScrolls() = runComposeUiTest {
+        val fake = Fake(stateOf(e1, e2, e3, e4, e5))
+        show(fake.state, fake)
+        swipeSet("e1a", -0.25f)
+        swipeSet("e1a", 0.48f)
+        val row = onNodeWithTag(RoutineEditorTags.set("e1a"))
+        row.performTouchInput {
+            down(center)
+            repeat(20) { moveBy(Offset(-width * 0.025f, 0f)) }
+            cancel()
+        }
+        waitForIdle()
+
+        val editor = onNodeWithTag(RoutineEditorTag)
+        val scroll = editor.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        val before = scroll.value()
+        row.performTouchInput {
+            swipe(
+                start = center,
+                end = Offset(centerX + width * 0.025f, centerY - 96.dp.toPx()),
+                durationMillis = 400,
+            )
+        }
+        waitForIdle()
+
+        assertTrue(scroll.value() > before, "A vertical drag on the planned set should scroll the list.")
+        assertEquals(emptyList(), fake.calls)
+        assertEquals(e1.setTargets, fake.entries().first().setTargets)
+    }
+
+    @Test
+    fun leftSwipeCannotRemoveTheOnlyPlannedSet() = runComposeUiTest {
+        val single = e1.copy(setTargets = listOf(e1.setTargets.last()))
+        val fake = Fake(stateOf(single))
+        show(fake.state, fake)
+
+        swipeSet(single.setTargets.single().id, -0.48f)
+
+        assertEquals(emptyList(), fake.calls)
+        assertEquals(single.setTargets, fake.entries().single().setTargets)
     }
 
     @Test

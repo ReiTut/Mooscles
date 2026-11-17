@@ -31,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
@@ -107,7 +108,10 @@ import com.mooscles.ui.UiError
 import com.mooscles.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.stringResource
 import com.mooscles.designsystem.resources.Res as DesignRes
 import com.mooscles.designsystem.resources.ds_reorder_bottom
@@ -351,6 +355,55 @@ fun RoutineEditorRoute(
             sets.keys.filterNot { editing.isEditing(it) }.forEach(drafts::settle)
         }
     }
+    // Keep one removal in flight per exercise so its position and last-set check use saved rows.
+    // The failure count releases the row even if another error replaces the first one.
+    val pendingRemovals = remember(routineId) { mutableMapOf<String, Int>() }
+    val currentFailures by rememberUpdatedState(state.subjectFailures)
+    LaunchedEffect(sets, state.subjectFailures) {
+        pendingRemovals.entries.removeAll { (id, failures) ->
+            id !in sets || (state.subjectFailures[id] ?: 0) > failures
+        }
+    }
+    // "Set 3 removed" with "Undo", which puts the set back as it stood (F15). Launched from the screen's own scope, not
+    // from an effect, and a newer removal takes the toast: the previous one closes.
+    val removeSet: (PlannedExerciseUi, RoutineSetUi) -> Unit = remove@{ entry, set ->
+        val current = byId[entry.id]?.takeIf { it.exercise.id == entry.exercise.id } ?: return@remove
+        val rows = current.setTargets
+        val index = rows.indexOfFirst { it.id == set.id }
+        if (index < 0 || rows.size <= 1 || rows.any { it.id in pendingRemovals }) return@remove
+        val failures = currentFailures[set.id] ?: 0
+        pendingRemovals[set.id] = failures
+        val snapshot = drafts.snapshot(rows[index])
+        val number = rows.take(index + 1).count { it.warmup == snapshot.warmup }
+        drafts.drop(set.id)
+        if (editing.isEditing(set.id)) editing.end()
+        currentActions.removeRoutineSet(set.id)
+        undoJob?.cancel()
+        copyTargets = emptySet()
+        undoFor = entry.id to entry.exercise.id
+        val template = if (snapshot.warmup) warmupRemovedTemplate else removedTemplate
+        undoJob = toastScope.launch {
+            val removed = withTimeoutOrNull(echoWaitMs) {
+                snapshotFlow {
+                    when {
+                        (currentFailures[set.id] ?: 0) > failures -> false
+                        set.id !in currentSets -> true
+                        else -> null
+                    }
+                }.filterNotNull().first()
+            }
+            pendingRemovals.remove(set.id)
+            if (removed != true) {
+                if (removed == null) host.show(failedText, MToastKind.Error)
+                return@launch
+            }
+            val shown = host.show(template.replace(SET_NUMBER_TOKEN, number.toString()), MToastKind.Info, undoText)
+            if (shown == MToastResult.ActionPerformed) {
+                currentActions.restoreRoutineSet(entry.id, index, snapshot)
+            }
+        }
+    }
+    val currentRemoveSet by rememberUpdatedState(removeSet)
     val callbacks = remember(drafts) {
         RoutineExerciseCallbacks(
             onMenu = { menuFor = it.id },
@@ -366,23 +419,8 @@ fun RoutineEditorRoute(
                 editing.end()
                 setMenuFor = setId
             },
+            onRemoveSet = { entry, set -> currentRemoveSet(entry, set) },
         )
-    }
-    // "Set 3 removed" with "Undo", which puts the set back as it stood (F15). Launched from the screen's own scope, not
-    // from an effect, and a newer removal takes the toast: the previous one closes.
-    val removeSet: (PlannedExerciseUi, RoutineSetUi, Int, Int) -> Unit = { entry, set, index, number ->
-        val snapshot = drafts.snapshot(set)
-        drafts.drop(set.id)
-        if (editing.isEditing(set.id)) editing.end()
-        currentActions.removeRoutineSet(set.id)
-        undoJob?.cancel()
-        copyTargets = emptySet()
-        undoFor = entry.id to entry.exercise.id
-        val template = if (set.warmup) warmupRemovedTemplate else removedTemplate
-        undoJob = toastScope.launch {
-            val shown = host.show(template.replace(SET_NUMBER_TOKEN, number.toString()), MToastKind.Info, undoText)
-            if (shown == MToastResult.ActionPerformed) currentActions.restoreRoutineSet(entry.id, index, snapshot)
-        }
     }
     // "Copied to 2 sets" with "Undo" (2026-10-31, owner's request): the source's load and reps on the exercise's other
     // working sets, in one command, and the undo puts each back as it stood, in one command too. The toast comes from
@@ -642,7 +680,7 @@ fun RoutineEditorRoute(
                 },
                 onRemove = {
                     setMenuFor = null
-                    removeSet(entry, set, index, number)
+                    removeSet(entry, set)
                 },
                 onDismiss = { setMenuFor = null },
             )

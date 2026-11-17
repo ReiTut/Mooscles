@@ -30,7 +30,7 @@ class WorkoutDatabaseFileTest {
         try {
             runBlocking {
                 database.dao().routineFolders()
-                assertEquals(6, database.userVersion())
+                assertEquals(7, database.userVersion())
             }
         } finally {
             database.close()

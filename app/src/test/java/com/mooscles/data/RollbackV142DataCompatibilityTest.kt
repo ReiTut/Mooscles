@@ -115,10 +115,11 @@ class RollbackV142DataCompatibilityTest {
 
     private fun open(): WorkoutRepository = runBlocking {
         database = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver())
-            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4, WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6)
+            .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4,
+                WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7)
             .build()
-        assertEquals(6, database!!.userVersion())
-        assertEquals(listOf(listOf<Any?>(exportedIdentityHash(6))),
+        assertEquals(7, database!!.userVersion())
+        assertEquals(listOf(listOf<Any?>(exportedIdentityHash(7))),
             database!!.typedRows("SELECT identity_hash FROM room_master_table WHERE id = 42"))
         WorkoutRepository(database!!)
     }

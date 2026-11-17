@@ -107,7 +107,7 @@ interface WorkoutDao {
 }
 
 /** Additive migrations preserve routines and all independent workout snapshots. */
-@Database(entities = [Exercise::class, RoutineFolder::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 6, exportSchema = true)
+@Database(entities = [Exercise::class, RoutineFolder::class, Routine::class, RoutineExercise::class, RoutineSet::class, Workout::class, WorkoutExercise::class, WorkoutSet::class, RoutineTargetCheckpoint::class], version = 7, exportSchema = true)
 @TypeConverters(EnumConverters::class)
 @ConstructedBy(WorkoutDatabaseConstructor::class)
 abstract class WorkoutDatabase : RoomDatabase() {
@@ -181,6 +181,13 @@ abstract class WorkoutDatabase : RoomDatabase() {
             }
         }
 
+        /** Older workouts never recorded a planned set ID. Leave their origin unknown. */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE `workout_sets` ADD COLUMN `sourceRoutineSetId` TEXT")
+            }
+        }
+
         private class LegacyPlan(val id: String, val plannedSets: Int, val targetReps: Int, val targetWeightKg: Double?)
 
         internal fun createDefaultFolder(connection: SQLiteConnection) {
@@ -208,7 +215,7 @@ expect object WorkoutDatabaseConstructor : RoomDatabaseConstructor<WorkoutDataba
 fun RoomDatabase.Builder<WorkoutDatabase>.buildMooscles(driver: SQLiteDriver): WorkoutDatabase =
     setDriver(driver)
         .addMigrations(WorkoutDatabase.MIGRATION_1_2, WorkoutDatabase.MIGRATION_2_3, WorkoutDatabase.MIGRATION_3_4,
-            WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6)
+            WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7)
         .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(connection: SQLiteConnection) = WorkoutDatabase.createDefaultFolder(connection)
         }).build()

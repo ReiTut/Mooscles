@@ -130,6 +130,29 @@ class BackupCodecTest {
         assertEquals(1, old.formatVersion)
     }
 
+    @Test
+    fun workoutSetOriginRoundTripsAndOlderReaderIgnoresIt() {
+        val file = sample().let { file ->
+            val linkedSet = file.data.workoutSets.single().copy(sourceRoutineSetId = "rs2")
+            file.copy(data = file.data.copy(workoutSets = listOf(linkedSet)))
+        }
+        val text = BackupCodec.encode(file)
+        assertEquals(file, BackupCodec.decode(text))
+        assertEquals("rs2", BackupCodec.decode(text).data.toEntities().workoutSets.single().sourceRoutineSetId)
+
+        val old = BackupCodec.json.decodeFromString(OldFile.serializer(), text)
+        assertEquals(1, old.formatVersion)
+        assertEquals(OldWorkoutSetRow("ws1", "we1", 0, 8, 22.75, true, false, false), old.data.workoutSets.single())
+    }
+
+    @Test
+    fun legacyWorkoutSetWithoutOriginDefaultsToUnlinked() {
+        val text = BackupCodec.encode(sample()).replace(",\"sourceRoutineSetId\":null", "")
+        assertFalse("sourceRoutineSetId" in text)
+        assertEquals(sample(), BackupCodec.decode(text))
+        assertEquals(null, BackupCodec.decode(text).data.toEntities().workoutSets.single().sourceRoutineSetId)
+    }
+
     private fun withPlannedWarmup() = sample().let { file ->
         file.copy(data = file.data.copy(routineSets = listOf(
             RoutineSetRow("rs1", "re1", 0, 8, 0.1 + 0.2, inheritPr = false, warmup = true),
@@ -145,7 +168,13 @@ class BackupCodecTest {
     )
 
     @Serializable
-    private data class OldData(val routineSets: List<OldRoutineSetRow>)
+    private data class OldWorkoutSetRow(
+        val id: String, val workoutExerciseId: String, val position: Int, val reps: Int,
+        val weightKg: Double, val completed: Boolean, val warmup: Boolean, val assistance: Boolean,
+    )
+
+    @Serializable
+    private data class OldData(val routineSets: List<OldRoutineSetRow>, val workoutSets: List<OldWorkoutSetRow>)
 
     @Serializable
     private data class OldFile(val format: String, val formatVersion: Int, val data: OldData)

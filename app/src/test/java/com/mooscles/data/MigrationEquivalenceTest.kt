@@ -31,9 +31,9 @@ import org.robolectric.annotation.Config
  * committed with it. The switch was then removed: the references are the old behavior the driver
  * code is checked against and must never be regenerated from it.
  *
- * Version 6 (2026-10-30) only adds `routine_sets.warmup`. The references stay as they were: the
- * comparison takes the version 6 additions out of the dump ([withoutVersionSixAdditions]), and
- * [v6AdditionsAreOnlyTheWarmupColumnAtZero] proves that those additions are all there is.
+ * Version 6 adds `routine_sets.warmup` and version 7 adds `workout_sets.sourceRoutineSetId`.
+ * The references stay as they were. The comparison removes both additions from the dump, and
+ * [v6AndV7AddOnlyDefaultWarmupAndUnknownSetOrigin] proves the comparison in the other direction.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -56,7 +56,7 @@ class MigrationEquivalenceTest {
         val drivers = (1..4).map { version ->
             createLegacyDatabase(version)
             val driver = openAndClose()
-            assertMatchesReference("from-v$version.txt", withoutVersionSixAdditions(dump(generatedRoutineSetIds = version <= 2)))
+            assertMatchesReference("from-v$version.txt", withoutLaterAdditions(dump(generatedRoutineSetIds = version <= 2)))
             SQLiteDatabase.deleteDatabase(file)
             driver
         }
@@ -65,56 +65,72 @@ class MigrationEquivalenceTest {
 
     @Test fun freshInstallProducesTheSameDatabaseAsBefore() {
         val driver = openAndClose()
-        assertMatchesReference("fresh-install.txt", withoutVersionSixAdditions(dump(generatedRoutineSetIds = false)))
+        assertMatchesReference("fresh-install.txt", withoutLaterAdditions(dump(generatedRoutineSetIds = false)))
         assertTrue("A fresh install must run on the SQLite driver", driver)
     }
 
     /**
-     * The other direction, exactly: each reference with the version 6 additions put in is the whole
-     * dump. Nothing else changed, and every planned set that a real upgrade carries is a working set.
+     * The other direction, exactly: each reference with both added columns is the whole dump.
+     * Old planned sets are working sets and older workout sets have an unknown origin.
      */
-    @Test fun v6AdditionsAreOnlyTheWarmupColumnAtZero() {
+    @Test fun v6AndV7AddOnlyDefaultWarmupAndUnknownSetOrigin() {
         val cases = (1..4).map { "from-v$it.txt" to it } + ("fresh-install.txt" to null)
         for ((name, version) in cases) {
             if (version != null) createLegacyDatabase(version)
             openAndClose()
             val actual = dump(generatedRoutineSetIds = version != null && version <= 2)
-            assertEquals("$name with the version 6 additions", withVersionSixAdditions(reference(name)), actual)
+            assertEquals("$name with the version 6 and 7 additions", withLaterAdditions(reference(name)), actual)
             SQLiteDatabase.deleteDatabase(file)
         }
     }
 
     private val hashFive by lazy { exportedIdentityHash(5) }
     private val hashSix by lazy { exportedIdentityHash(6) }
+    private val hashSeven by lazy { exportedIdentityHash(7) }
 
-    /** Reference -> version 6: user_version, Room's identity hash, the column definition and a zero in each planned set. */
-    private fun withVersionSixAdditions(reference: String): String = editDump(reference,
-        userVersion = "5" to "6", hash = hashFive to hashSix,
-        column = { it.replace(WITHOUT_WARMUP, WITH_WARMUP) },
-        plannedSet = { "$it$WARMUP_ZERO" })
+    private fun withLaterAdditions(reference: String): String {
+        val versionSix = editDump(reference,
+            userVersion = "5" to "6", hash = hashFive to hashSix,
+            table = "routine_sets",
+            column = { it.replace(WITHOUT_WARMUP, WITH_WARMUP) },
+            row = { "$it$WARMUP_ZERO" })
+        return editDump(versionSix,
+            userVersion = "6" to "7", hash = hashSix to hashSeven,
+            table = "workout_sets",
+            column = { it.replace(WITHOUT_SOURCE, WITH_SOURCE) },
+            row = { "$it$SOURCE_NULL" })
+    }
 
-    /** Version 6 dump -> what the reference recorded. Only a planned set whose warmup is 0 loses it. */
-    private fun withoutVersionSixAdditions(dump: String): String = editDump(dump,
-        userVersion = "6" to "5", hash = hashSix to hashFive,
-        column = { it.replace(WITH_WARMUP, WITHOUT_WARMUP) },
-        plannedSet = { it.removeSuffix(WARMUP_ZERO) })
+    /** Strip only the upgrade defaults. Non-default values still make a dump fail to match. */
+    private fun withoutLaterAdditions(dump: String): String {
+        val versionSix = editDump(dump,
+            userVersion = "7" to "6", hash = hashSeven to hashSix,
+            table = "workout_sets",
+            column = { it.replace(WITH_SOURCE, WITHOUT_SOURCE) },
+            row = { it.removeSuffix(SOURCE_NULL) })
+        return editDump(versionSix,
+            userVersion = "6" to "5", hash = hashSix to hashFive,
+            table = "routine_sets",
+            column = { it.replace(WITH_WARMUP, WITHOUT_WARMUP) },
+            row = { it.removeSuffix(WARMUP_ZERO) })
+    }
 
     /**
      * Applies each edit where it belongs and nowhere else, and fails if a place it expects is
      * missing, so a dump of another shape cannot pass by being left untouched.
      */
     private fun editDump(
-        text: String, userVersion: Pair<String, String>, hash: Pair<String, String>,
-        column: (String) -> String, plannedSet: (String) -> String,
+        text: String, userVersion: Pair<String, String>, hash: Pair<String, String>, table: String,
+        column: (String) -> String, row: (String) -> String,
     ): String {
         val out = mutableListOf<String>()
-        // Planned set rows are collected and sorted again: a changed suffix can change their order.
-        val plannedSets = mutableListOf<String>()
+        // Collect and sort the changed table's rows: a changed suffix can change their order.
+        val rows = mutableListOf<String>()
         var section = ""
         var edits = listOf(0, 0, 0)
         for (line in text.lines()) {
             if (line.startsWith("== ")) {
-                out += plannedSets.sorted().also { plannedSets.clear() }
+                out += rows.sorted().also { rows.clear() }
                 section = line.removePrefix("== ")
                 out += line
                 continue
@@ -124,20 +140,24 @@ class MigrationEquivalenceTest {
                     out += "user_version: ${userVersion.second}"
                     edits = listOf(edits[0] + 1, edits[1], edits[2])
                 }
-                section == "sqlite_master" && line.startsWith("type=text:table | name=text:routine_sets |") -> {
-                    out += column(line).also { check(it != line) { "routine_sets definition not as expected: $line" } }
+                section == "sqlite_master" && line.startsWith("type=text:table | name=text:$table |") -> {
+                    out += column(line).also { check(it != line) { "$table definition not as expected: $line" } }
                     edits = listOf(edits[0], edits[1] + 1, edits[2])
                 }
                 section == "room_master_table" && line == "id=integer:42 | identity_hash=text:${hash.first}" -> {
                     out += "id=integer:42 | identity_hash=text:${hash.second}"
                     edits = listOf(edits[0], edits[1], edits[2] + 1)
                 }
-                section == "routine_sets" && line.isNotEmpty() -> plannedSets += plannedSet(line)
+                section == table && line.isNotEmpty() -> rows += row(line)
+                section == table -> {
+                    out += rows.sorted().also { rows.clear() }
+                    out += line
+                }
                 else -> out += line
             }
         }
-        check(plannedSets.isEmpty()) { "routine_sets is not the last table of the dump" }
-        assertEquals("user_version, routine_sets definition and identity hash, edited once each", listOf(1, 1, 1), edits)
+        check(rows.isEmpty()) { "$table rows were not written into the dump" }
+        assertEquals("user_version, $table definition and identity hash, edited once each", listOf(1, 1, 1), edits)
         return out.joinToString("\n")
     }
 
@@ -281,6 +301,9 @@ class MigrationEquivalenceTest {
         const val WITHOUT_WARMUP = "`inheritPr` INTEGER NOT NULL, PRIMARY KEY(`id`)"
         const val WITH_WARMUP = "`inheritPr` INTEGER NOT NULL, `warmup` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`)"
         const val WARMUP_ZERO = " | warmup=integer:0"
+        const val WITHOUT_SOURCE = "`assistance` INTEGER NOT NULL, PRIMARY KEY(`id`)"
+        const val WITH_SOURCE = "`assistance` INTEGER NOT NULL, `sourceRoutineSetId` TEXT, PRIMARY KEY(`id`)"
+        const val SOURCE_NULL = " | sourceRoutineSetId=null"
     }
 
     /**

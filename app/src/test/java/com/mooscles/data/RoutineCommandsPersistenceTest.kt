@@ -46,6 +46,18 @@ class RoutineCommandsPersistenceTest {
         assertTrue(repo.finishWorkout(workout, now = clock))
     }
 
+    private suspend fun startFor(planned: RoutineSet): Pair<String, WorkoutSet> {
+        val routineId = repo.routineExercise(planned.routineExerciseId)!!.routineId
+        val workout = repo.startRoutine(routineId, now = clock.also { clock += 1_000 })
+        return workout to repo.workoutSets(workout).single { it.sourceRoutineSetId == planned.id }
+    }
+
+    private suspend fun record(planned: RoutineSet, weightKg: Double, reps: Int) {
+        val (workout, set) = startFor(planned)
+        repo.updateSet(set.copy(reps = reps, weightKg = weightKg, completed = true))
+        assertTrue(repo.finishWorkout(workout, now = clock))
+    }
+
     private suspend fun rows(entryId: String): List<RoutineSet> = repo.snapshot().plannedSets(entryId)
 
     private suspend fun routines(folderId: String): List<String> =
@@ -152,8 +164,8 @@ class RoutineCommandsPersistenceTest {
             assertEquals(com.mooscles.domain.RestDuration.DEFAULT_SECONDS, item.restSeconds)
             assertTrue(rows(item.id).all { it.inheritPr && !it.warmup })
         }
-        assertEquals(listOf(8 to 60.0, 8 to 60.0), rows(added[1]).map { it.targetReps to it.targetWeightKg })
-        assertEquals(60.0, items[2].targetWeightKg!!, 0.0)
+        assertTrue(rows(added[1]).all { it.targetReps == 0 && it.targetWeightKg == null })
+        assertNull(items[2].targetWeightKg)
         assertTrue(repo.addRoutineExercises(routine, emptyList()).isEmpty())
     }
 
@@ -282,8 +294,8 @@ class RoutineCommandsPersistenceTest {
 
     @Test fun warmupMakesTheSetManualAndKeepsItsValues() = runBlocking {
         val exerciseId = exercise()
-        record(exerciseId, 80.0, 6)
         val entry = repo.addRoutineExercise(repo.createRoutine("Push"), exerciseId)
+        record(rows(entry).first(), 80.0, 6)
         val (first, second) = rows(entry)
         assertTrue(first.inheritPr)
 
@@ -301,9 +313,9 @@ class RoutineCommandsPersistenceTest {
 
     @Test fun inheritingAWarmupMakesAWorkingSet() = runBlocking {
         val exerciseId = exercise()
-        record(exerciseId, 80.0, 6)
         val entry = repo.addRoutineExercise(repo.createRoutine("Push"), exerciseId)
         val first = rows(entry).first()
+        record(first, 80.0, 6)
         repo.updateRoutineSet(first.id, 12, 40.0)
         repo.setRoutineSetWarmup(first.id, true)
 
@@ -317,11 +329,12 @@ class RoutineCommandsPersistenceTest {
         val exerciseId = exercise()
         val entry = repo.addRoutineExercise(repo.createRoutine("Push"), exerciseId)
         val (first, second) = rows(entry)
+        record(first, 105.0, 5)
         // A backup can bring a warm-up that also says it follows the record; the screens never write one.
         val imported = first.copy(targetReps = 12, targetWeightKg = 40.0, inheritPr = true, warmup = true)
         database.dao().updateRoutineSet(imported)
 
-        record(exerciseId, 100.0, 5)
+        record(second, 100.0, 5)
         repo.initialize()
 
         val saved = rows(entry)
@@ -382,14 +395,14 @@ class RoutineCommandsPersistenceTest {
 
         repo.replaceRoutineExercise(entry, replacement)
 
-        // A warm-up stays a warm-up, emptied and manual (F18); working sets inherit the new record.
+        // Warm-ups stay manual. The new exercise has no record for any of these planned slots.
         assertEquals(listOf(
             RoutineSet(original[0].id, entry, 0, 0, null, inheritPr = false, warmup = true),
-            RoutineSet(original[1].id, entry, 1, 9, 70.0, inheritPr = true, warmup = false),
-            RoutineSet(original[2].id, entry, 2, 9, 70.0, inheritPr = true, warmup = false),
+            RoutineSet(original[1].id, entry, 1, 0, null, inheritPr = true, warmup = false),
+            RoutineSet(original[2].id, entry, 2, 0, null, inheritPr = true, warmup = false),
         ), rows(entry))
         assertEquals(replacement, repo.routineExercise(entry)!!.exerciseId)
-        assertEquals(9 to 70.0, repo.routineExercise(entry)!!.let { it.targetReps to it.targetWeightKg })
+        assertEquals(0 to null, repo.routineExercise(entry)!!.let { it.targetReps to it.targetWeightKg })
     }
 
     @Test fun startRoutineCopiesWarmups() = runBlocking {
@@ -424,12 +437,13 @@ class RoutineCommandsPersistenceTest {
 
     @Test fun restoringAnInheritedSetFollowsTheCurrentRecord() = runBlocking {
         val (entry, original) = threeSets()
-        val exerciseId = repo.routineExercise(entry)!!.exerciseId
-        record(exerciseId, 90.0, 4)
+        record(original[2], 90.0, 4)
         val c = rows(entry)[2]
         assertEquals(RoutineSet(original[2].id, entry, 2, 4, 90.0, inheritPr = true, warmup = false), c)
+        val (workout, set) = startFor(c)
         repo.removeRoutineSet(c.id)
-        record(exerciseId, 100.0, 5)
+        repo.updateSet(set.copy(reps = 5, weightKg = 100.0, completed = true))
+        assertTrue(repo.finishWorkout(workout, now = clock))
 
         // The undo holds the old snapshot (4 × 90); an inherited set comes back inherited, with today's record.
         repo.restoreRoutineSet(entry, 2, c)
@@ -507,8 +521,8 @@ class RoutineCommandsPersistenceTest {
     }
 
     @Test fun copyToAllFromAnInheritedSourceCopiesTheValuesItShows() = runBlocking {
-        val (entry, _) = threeSets()
-        record(repo.routineExercise(entry)!!.exerciseId, 90.0, 4)
+        val (entry, original) = threeSets()
+        record(original[2], 90.0, 4)
         val (a, b, c) = rows(entry)
         // C follows the record and shows 4 × 90.
         assertEquals(RoutineSet(c.id, entry, 2, 4, 90.0, inheritPr = true, warmup = false), c)
@@ -521,8 +535,8 @@ class RoutineCommandsPersistenceTest {
     @Test fun restoreRoutineSetTargetsPutsBackRepsLoadAndMode() = runBlocking {
         val (entry, _) = threeSets()
         val exerciseId = repo.routineExercise(entry)!!.exerciseId
-        record(exerciseId, 90.0, 4)
         repo.addRoutineSet(entry)
+        record(rows(entry).last(), 90.0, 4)
         val before = rows(entry)
         val (a, b, c, d) = before
         assertTrue(c.inheritPr && d.inheritPr)
@@ -537,7 +551,7 @@ class RoutineCommandsPersistenceTest {
         assertEquals(5 to 100.0, repo.routineExercise(entry)!!.let { it.targetReps to it.targetWeightKg })
         // An inherited set comes back with today's record, as restoreRoutineSet does.
         repo.copyRoutineSetToAll(b.id)
-        record(exerciseId, 100.0, 6)
+        record(d, 100.0, 6)
         repo.restoreRoutineSetTargets(entry, exerciseId, listOf(d))
         assertEquals(RoutineSet(d.id, entry, 3, 6, 100.0, inheritPr = true, warmup = false), rows(entry)[3])
     }

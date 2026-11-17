@@ -4,6 +4,7 @@ import com.mooscles.data.AppData
 import com.mooscles.data.EditRules
 import com.mooscles.data.RoutineFolder
 import com.mooscles.data.RoutineTargetCheckpoint
+import com.mooscles.data.WorkoutSet
 import com.mooscles.data.WorkoutStatus
 
 data class LocalState(val data: AppData, val checkpoints: List<RoutineTargetCheckpoint>)
@@ -97,7 +98,10 @@ object ImportPlanner {
         }
 
         return ImportPlan(
-            entities = entities.copy(routineFolders = folders, routines = placedRoutines),
+            entities = entities.copy(
+                routineFolders = folders, routines = placedRoutines,
+                workoutSets = resolveSetOrigins(rows, entities, phone),
+            ),
             preferences = preferences,
             summary = ImportSummary(
                 workoutsAdded = entities.workouts.size,
@@ -109,6 +113,38 @@ object ImportPlanner {
                 nothingToAdd = nothingToAdd,
             ),
         )
+    }
+
+    /** A missing or conflicting origin must not stop the workout itself from being imported. */
+    private fun resolveSetOrigins(rows: BackupData, entities: BackupEntities, phone: AppData): List<WorkoutSet> {
+        if (entities.workoutSets.none { it.sourceRoutineSetId != null }) return entities.workoutSets
+
+        // Import keeps local routines whole and never rewrites their IDs. Check that a kept planned
+        // set still belongs to the entry in the file before allowing an imported workout to use it.
+        val fileSets = rows.routineSets.associateBy { it.id }
+        val fileItems = rows.routineExercises.associateBy { it.id }
+        val plannedSets = (phone.routineSets + entities.routineSets).associateBy { it.id }
+        val routineItems = (phone.routineExercises + entities.routineExercises).associateBy { it.id }
+        val exercises = (phone.exercises + entities.exercises).associateBy { it.id }
+        val workouts = entities.workouts.associateBy { it.id }
+        val workoutItems = entities.workoutExercises.associateBy { it.id }
+        val claims = entities.workoutSets.mapNotNull { set ->
+            set.sourceRoutineSetId?.let { workoutItems.getValue(set.workoutExerciseId).workoutId to it }
+        }.groupingBy { it }.eachCount()
+
+        return entities.workoutSets.map { set ->
+            val origin = set.sourceRoutineSetId ?: return@map set
+            val source = plannedSets[origin]
+            val plan = source?.let { routineItems[it.routineExerciseId] }
+            val filePlan = fileSets[origin]?.let { fileItems[it.routineExerciseId] }
+            val item = workoutItems.getValue(set.workoutExerciseId)
+            val workout = workouts.getValue(item.workoutId)
+            val matches = plan != null && filePlan != null && plan.id == filePlan.id &&
+                plan.routineId == filePlan.routineId && plan.routineId == workout.sourceRoutineId &&
+                plan.exerciseId == filePlan.exerciseId && plan.exerciseId == item.exerciseId &&
+                exercises[plan.exerciseId]?.convention == item.convention && claims[workout.id to origin] == 1
+            if (matches) set else set.copy(sourceRoutineSetId = null)
+        }
     }
 
     private fun validatePreferences(preferences: BackupPreferences) {

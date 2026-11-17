@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-17 — Planned-set swipe and records.** [1.5.7 / Build 29](releases/v1.5.7.md) adds swipe-to-remove with Undo in the Train routine editor and per-set **Follow the record** targets after workout completion. Room v7 adds nullable planned-set provenance, and backup imports accept older files. See the [plan](plans/2026-11-17-per-set-pr-targets.md) and [reused Android verification](../../VERIFICATION.md#release-157--build-29). Use an isolated Preview with synthetic data for device testing and the original debug signer for production packaging.
+
 **2026-11-15 — Weekly Sets by Muscle.** The [1.5.6 / Build 28 release](releases/v1.5.6.md) includes the Weekly History → Progress view and the Android-only project configuration. The [Weekly plan](plans/2026-11-15-weekly-muscle-sets.md) records functional verification and emulator results.
 
 **2026-11-06 — Android-only project.** The `codex/android-only` branch starts from published 1.5.4 / Build 26 (`30de9ff`). It retains Kotlin Multiplatform and Compose Multiplatform in `:shared`, `:designsystem`, and `:screens`, with Android as their sole target. The current CI runs Android host checks, lint, APK packaging, resource and schema checks, and the release-script matrix. Follow the current [build and test instructions](../../AGENTS.md#ambiente-e-comandos).

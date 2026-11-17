@@ -45,7 +45,10 @@ fun BackupData.Companion.from(data: AppData, checkpoints: List<RoutineTargetChec
         )
     },
     workoutSets = data.sets.map {
-        WorkoutSetRow(it.id, it.workoutExerciseId, it.position, it.reps, it.weightKg, it.completed, it.warmup, it.assistance)
+        WorkoutSetRow(
+            it.id, it.workoutExerciseId, it.position, it.reps, it.weightKg,
+            it.completed, it.warmup, it.assistance, it.sourceRoutineSetId,
+        )
     },
     routineTargetCheckpoints = checkpoints.map { CheckpointRow(it.exerciseId, it.convention.name, it.weightKg, it.reps) },
 )
@@ -80,7 +83,10 @@ fun BackupData.toEntities(): BackupEntities = BackupEntities(
         )
     },
     workoutSets = workoutSets.map {
-        WorkoutSet(it.id, it.workoutExerciseId, it.position, it.reps, it.weightKg, it.completed, it.warmup, it.assistance)
+        WorkoutSet(
+            it.id, it.workoutExerciseId, it.position, it.reps, it.weightKg,
+            it.completed, it.warmup, it.assistance, it.sourceRoutineSetId,
+        )
     },
     checkpoints = routineTargetCheckpoints.map {
         RoutineTargetCheckpoint(it.exerciseId, enumOf<LoadConvention>("convention", it.convention), it.weightKg, it.reps)

@@ -2,6 +2,7 @@ package com.mooscles.domain
 
 import com.mooscles.data.AppData
 import com.mooscles.data.LoadConvention
+import com.mooscles.data.RoutineSet
 import com.mooscles.data.WorkoutSet
 import com.mooscles.data.WorkoutStatus
 import kotlin.math.abs
@@ -31,9 +32,37 @@ object RoutineTargetRecords {
             convention != LoadConvention.ASSISTANCE &&
             (set.weightKg > 0.0 || convention == LoadConvention.BODYWEIGHT)
 
+    private fun best(candidates: List<WorkoutSet>): WorkoutSet? {
+        val highestLoad = candidates.maxOfOrNull { it.weightKg } ?: return null
+        // Keep the actual set's values together, including equivalent kg/lb round trips.
+        return candidates.filter { sameLoad(it.weightKg, highestLoad) }
+            .maxWithOrNull(compareBy<WorkoutSet> { it.reps }.thenBy { it.weightKg })
+    }
+
+    /** A match requires provenance from the workout start. Positions can change on either side. */
+    fun latestByPlannedSet(data: AppData, plannedSets: List<RoutineSet> = data.routineSets): Map<String, RoutineTargetRecord> {
+        val plansById = data.routineExercises.associateBy { it.id }
+        val exercisesById = data.exercises.associateBy { it.id }
+        val finished = data.workouts.filter { it.status == WorkoutStatus.FINISHED }.associateBy { it.id }
+        val entries = data.workoutExercises.associateBy { it.id }
+        val rows = plannedSets.associateBy { it.id }
+        val candidates = data.sets.filter { set ->
+            val row = rows[set.sourceRoutineSetId] ?: return@filter false
+            val plan = plansById[row.routineExerciseId] ?: return@filter false
+            val entry = entries[set.workoutExerciseId] ?: return@filter false
+            val workout = finished[entry.workoutId] ?: return@filter false
+            workout.sourceRoutineId == plan.routineId && entry.exerciseId == plan.exerciseId &&
+                entry.convention == exercisesById[plan.exerciseId]?.convention && eligible(set, entry.convention)
+        }.groupBy { requireNotNull(it.sourceRoutineSetId) }
+        return candidates.mapValues { (_, sets) ->
+            val set = requireNotNull(best(sets))
+            val entry = entries.getValue(set.workoutExerciseId)
+            RoutineTargetRecord(entry.exerciseId, entry.convention, set.weightKg.takeUnless { it == 0.0 }, set.reps)
+        }
+    }
+
     /**
-     * Existing history is included for the feature's first synchronization. Active and discarded
-     * workouts cannot establish saved targets; an orphaned snapshot is ignored as well.
+     * Exercise-wide records for legacy backup checkpoints. Planned targets use [latestByPlannedSet].
      */
     fun latest(data: AppData): List<RoutineTargetRecord> {
         val finishedIds = data.workouts.filter { it.status == WorkoutStatus.FINISHED }.map { it.id }.toSet()
@@ -42,10 +71,7 @@ object RoutineTargetRecords {
             .groupBy { Key(it.exerciseId, it.convention) }.mapNotNull { (key, exercises) ->
                 val candidates = exercises.flatMap { setsByExercise[it.id].orEmpty() }
                     .filter { eligible(it, key.convention) }
-                val highestLoad = candidates.maxOfOrNull { it.weightKg } ?: return@mapNotNull null
-                // Pick the repetitions and load together, including equivalent kg/lb round trips.
-                val best = candidates.filter { sameLoad(it.weightKg, highestLoad) }
-                    .maxWithOrNull(compareBy<WorkoutSet> { it.reps }.thenBy { it.weightKg })!!
+                val best = best(candidates) ?: return@mapNotNull null
                 RoutineTargetRecord(key.exerciseId, key.convention,
                     best.weightKg.takeUnless { it == 0.0 }, best.reps)
             }.sortedWith(compareBy<RoutineTargetRecord> { it.exerciseId }.thenBy { it.convention.name })

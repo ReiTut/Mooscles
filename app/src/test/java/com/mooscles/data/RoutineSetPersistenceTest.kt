@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
-import com.mooscles.domain.RoutineTargetRecords
 import com.mooscles.domain.WeightUnits
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -39,10 +38,10 @@ class RoutineSetPersistenceTest {
         return repo.addRoutineExercise(routineId, exerciseId)
     }
 
-    private suspend fun finish(exerciseId: String, vararg pairs: Pair<Double, Int>): String {
-        val id = repo.startEmpty(now = clock.also { clock += 1000 })
-        val entry = repo.addWorkoutExercise(id, exerciseId)
-        while (repo.snapshot().exerciseSets(entry).size < pairs.size) repo.addSet(entry)
+    private suspend fun finish(plannedEntryId: String, vararg pairs: Pair<Double, Int>): String {
+        val routine = repo.snapshot().routineExercises.single { it.id == plannedEntryId }.routineId
+        val id = repo.startRoutine(routine, now = clock.also { clock += 1000 })
+        val entry = repo.snapshot().workoutItems(id).single().id
         pairs.forEachIndexed { index, pair ->
             repo.updateSet(repo.snapshot().exerciseSets(entry)[index].copy(weightKg = pair.first,
                 reps = pair.second, completed = true))
@@ -51,20 +50,23 @@ class RoutineSetPersistenceTest {
         return id
     }
 
-    @Test fun twoIndependentDefaultRowsInheritCurrentSameSetRecordAndNeverBecomePerformance() = runBlocking {
+    @Test fun twoDefaultRowsStartBlankAndInheritOnlyTheirOwnPerformance() = runBlocking {
         val exercise = movement()
-        finish(exercise, 20.0 to 20, 22.0 to 6)
+        finish(plan(exercise), 20.0 to 20, 22.0 to 6)
         val entry = plan(exercise)
         val rows = repo.snapshot().plannedSets(entry)
         assertEquals(2, rows.size)
         assertEquals(listOf(0, 1), rows.map { it.position })
-        assertTrue(rows.all { it.inheritPr && it.targetWeightKg == 22.0 && it.targetReps == 6 })
+        assertTrue(rows.all { it.inheritPr && it.targetWeightKg == null && it.targetReps == 0 })
+        finish(entry, 18.0 to 12, 21.0 to 7)
         repo.updateRoutineSet(rows[0].id, 99, 500.0)
-        assertEquals(22.0, RoutineTargetRecords.latest(repo.snapshot()).single().weightKg!!, 0.0)
-        assertEquals(6, repo.snapshot().plannedSets(entry)[1].targetReps)
+        repo.inheritRoutineSet(rows[0].id)
+        assertEquals(listOf(18.0 to 12, 21.0 to 7), repo.snapshot().plannedSets(entry).map { it.targetWeightKg to it.targetReps })
         val added = repo.addRoutineSet(entry)
-        assertEquals(22.0, repo.snapshot().plannedSets(entry).first { it.id == added }.targetWeightKg!!, 0.0)
-        assertTrue(repo.snapshot().plannedSets(entry).first { it.id == added }.inheritPr)
+        val additional = repo.snapshot().plannedSets(entry).first { it.id == added }
+        assertNull(additional.targetWeightKg)
+        assertEquals(0, additional.targetReps)
+        assertTrue(additional.inheritPr)
     }
 
     @Test fun exampleRowsSaveIndependentlyDuplicateInOrderAndInitializeCorrespondingWorkoutSets() = runBlocking {
@@ -101,8 +103,8 @@ class RoutineSetPersistenceTest {
 
     @Test fun newWeightAndSameWeightRepRecordsUpdateOnlyInheritedRowsAfterFinalization() = runBlocking {
         val exercise = movement()
-        finish(exercise, 20.0 to 7)
         val entry = plan(exercise)
+        finish(entry, 20.0 to 7, 18.0 to 10)
         val rows = repo.snapshot().plannedSets(entry)
         repo.updateRoutineSet(rows[1].id, 10, 18.0)
         val routine = repo.snapshot().routineExercises.single { it.id == entry }.routineId
@@ -116,18 +118,18 @@ class RoutineSetPersistenceTest {
         assertEquals(before, repo.snapshot().exerciseSets(activeEntry.id))
         assertEquals(22.0 to 6, repo.snapshot().plannedSets(entry).first().let { it.targetWeightKg to it.targetReps })
         assertEquals(18.0 to 10, repo.snapshot().plannedSets(entry).last().let { it.targetWeightKg to it.targetReps })
-        finish(exercise, 22.0 to 8, 18.0 to 40)
+        finish(entry, 22.0 to 8, 18.0 to 40)
         assertEquals(22.0 to 8, repo.snapshot().plannedSets(entry).first().let { it.targetWeightKg to it.targetReps })
         assertEquals(18.0 to 10, repo.snapshot().plannedSets(entry).last().let { it.targetWeightKg to it.targetReps })
-        finish(exercise, 20.0 to 50)
+        finish(entry, 20.0 to 50)
         assertEquals(22.0 to 8, repo.snapshot().plannedSets(entry).first().let { it.targetWeightKg to it.targetReps })
     }
 
     @Test fun editingOnlyRepsOrOnlyWeightMakesExactlyThatRowCustomEvenWhenBlank() = runBlocking {
         val exercise = movement()
-        finish(exercise, 22.0 to 6)
         val entry = plan(exercise)
         repo.addRoutineSet(entry)
+        finish(entry, 22.0 to 6, 21.0 to 8, 19.0 to 10)
         val rows = repo.snapshot().plannedSets(entry)
         repo.updateRoutineSet(rows[0].id, 7, rows[0].targetWeightKg)
         repo.updateRoutineSet(rows[1].id, rows[1].targetReps, null)
@@ -135,14 +137,14 @@ class RoutineSetPersistenceTest {
         assertFalse(before[0].inheritPr)
         assertFalse(before[1].inheritPr)
         assertNull(before[1].targetWeightKg)
-        finish(exercise, 25.0 to 4)
+        finish(entry, 27.0 to 5, 23.0 to 7, 25.0 to 4)
         val after = repo.snapshot().plannedSets(entry)
         assertEquals(before.take(2), after.take(2))
         assertEquals(25.0 to 4, after[2].let { it.targetWeightKg to it.targetReps })
         repo.inheritRoutineSet(rows[1].id)
         val restored = repo.snapshot().plannedSets(entry)[1]
         assertTrue(restored.inheritPr)
-        assertEquals(25.0 to 4, restored.targetWeightKg to restored.targetReps)
+        assertEquals(23.0 to 7, restored.targetWeightKg to restored.targetReps)
     }
 
     @Test fun bodyweightInheritedRecordsKeepBlankLoadWhileExplicitBlankStaysCustom() = runBlocking {
@@ -150,7 +152,7 @@ class RoutineSetPersistenceTest {
         val entry = plan(exercise)
         val first = repo.snapshot().plannedSets(entry)[0]
         repo.updateRoutineSet(first.id, 7, null)
-        finish(exercise, 0.0 to 12)
+        finish(entry, 0.0 to 10, 0.0 to 12)
         val rows = repo.snapshot().plannedSets(entry)
         assertEquals(null to 7, rows[0].targetWeightKg to rows[0].targetReps)
         assertFalse(rows[0].inheritPr)
@@ -206,7 +208,7 @@ class RoutineSetPersistenceTest {
         val kg = WeightUnits.lbToKg(50.5)
         val row = repo.snapshot().plannedSets(first).first()
         repo.updateRoutineSet(row.id, 8, kg)
-        finish(dumbbell, WeightUnits.lbToKg(55.5) to 6)
+        finish(first, WeightUnits.lbToKg(55.5) to 6)
         assertEquals(kg, repo.snapshot().plannedSets(first).first().targetWeightKg!!, 0.0)
         assertTrue(repo.snapshot().plannedSets(second).all { it.targetWeightKg == null && it.targetReps == 0 })
         val routine = repo.snapshot().routineExercises.single { it.id == first }.routineId
@@ -216,29 +218,44 @@ class RoutineSetPersistenceTest {
 
     @Test fun perRowValuesInheritanceModesRestAndOrderSurviveDiskReopenAndNewRecords() = runBlocking {
         val filename = "routine-rows-${newId()}.db"
-        var disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
+        fun openDisk() = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
+        var disk = openDisk()
         try {
             repo = WorkoutRepository(disk)
             repo.initialize()
             val exercise = movement()
-            finish(exercise, 17.0 to 8)
             val entry = plan(exercise)
+            finish(entry, 17.0 to 8)
             repo.addRoutineSet(entry)
             val rows = repo.snapshot().plannedSets(entry)
             repo.updateRoutineSet(rows[1].id, 8, 17.0)
             repo.updateRoutineSet(rows[2].id, 7, null)
             repo.updateRoutineExerciseRest(entry, 145)
-            val before = repo.snapshot()
+            val before = repo.snapshot().plannedSets(entry)
+            val routine = repo.snapshot().routineExercises.single { it.id == entry }.routineId
+            val removed = before[1]
+            repo.removeRoutineSet(removed.id)
             disk.close()
-            disk = Room.databaseBuilder(context, WorkoutDatabase::class.java, filename).setDriver(AndroidSQLiteDriver()).build()
+            disk = openDisk()
             repo = WorkoutRepository(disk)
             repo.initialize()
-            assertEquals(before.plannedSets(entry), repo.snapshot().plannedSets(entry))
-            finish(exercise, 19.5 to 6)
+            assertEquals(listOf(before[0], before[2].copy(position = 1)), repo.snapshot().plannedSets(entry))
+            val withSetRemoved = repo.startRoutine(routine)
+            val activeEntry = repo.snapshot().workoutItems(withSetRemoved).single()
+            val activeSets = repo.snapshot().exerciseSets(activeEntry.id)
+            assertEquals(listOf(17.0 to 8, 0.0 to 7), activeSets.map { it.weightKg to it.reps })
+            repo.restoreRoutineSet(entry, removed.position, removed)
+            assertEquals(activeSets, repo.snapshot().exerciseSets(activeEntry.id))
+            repo.discardWorkout(withSetRemoved)
+            disk.close()
+            disk = openDisk()
+            repo = WorkoutRepository(disk)
+            repo.initialize()
+            assertEquals(before, repo.snapshot().plannedSets(entry))
+            finish(entry, 19.5 to 6)
             val after = repo.snapshot().plannedSets(entry)
             assertEquals(19.5 to 6, after[0].targetWeightKg to after[0].targetReps)
-            assertEquals(before.plannedSets(entry).drop(1), after.drop(1))
-            val routine = repo.snapshot().routineExercises.single { it.id == entry }.routineId
+            assertEquals(before.drop(1), after.drop(1))
             val workout = repo.startRoutine(routine)
             val workoutEntry = repo.snapshot().workoutItems(workout).single()
             assertEquals(145, workoutEntry.restSeconds)
@@ -257,35 +274,33 @@ class RoutineSetPersistenceTest {
         }
         assertEquals(saved, repo.snapshot().plannedSets(entry))
         val replacement = movement(LoadConvention.BODYWEIGHT)
-        finish(replacement, 0.0 to 12)
+        finish(plan(replacement), 0.0 to 12)
         repo.replaceRoutineExercise(entry, replacement)
         val replaced = repo.snapshot().plannedSets(entry)
         assertEquals(saved.map { it.id }, replaced.map { it.id })
         assertEquals(3, replaced.size)
-        assertTrue(replaced.all { it.inheritPr && it.targetWeightKg == null && it.targetReps == 12 })
+        assertTrue(replaced.all { it.inheritPr && it.targetWeightKg == null && it.targetReps == 0 })
     }
 
-    @Test fun genuineRecordBelowDeletedMaximumUpdatesExistingAndNewInheritedRows() = runBlocking {
+    @Test fun genuineRecordBelowDeletedMaximumUpdatesItsOwnRowOnly() = runBlocking {
         val exercise = movement()
         val entry = plan(exercise)
         val initial = repo.snapshot().plannedSets(entry)
         // The manual row comes first: a new row copies the last one (phase 4B), and only an inherited last row
         // makes the new one inherit.
         repo.updateRoutineSet(initial[0].id, 10, 17.0)
-        finish(exercise, 20.0 to 8)
-        val removed = finish(exercise, 30.0 to 5)
-        assertEquals(30.0, database.dao().targetCheckpoints().single().weightKg!!, 0.0)
+        finish(entry, 17.0 to 10, 20.0 to 8)
+        val removed = finish(entry, 17.0 to 10, 30.0 to 5)
         repo.deleteWorkout(removed)
         val added = repo.addRoutineSet(entry)
-        assertEquals(20.0 to 8, repo.snapshot().plannedSets(entry).single { it.id == added }.let { it.targetWeightKg to it.targetReps })
-        // The last observed checkpoint is still 30 kg; 22 kg is a valid new PR in surviving history.
-        val next = finish(exercise, 22.0 to 6)
+        assertEquals(null to 0, repo.snapshot().plannedSets(entry).single { it.id == added }.let { it.targetWeightKg to it.targetReps })
+        // 22 kg beats the surviving linked record of 20 kg for set 2.
+        val next = finish(entry, 17.0 to 10, 22.0 to 6)
         val rows = repo.snapshot().plannedSets(entry)
-        assertEquals(listOf(17.0 to 10, 22.0 to 6, 22.0 to 6), rows.map { it.targetWeightKg to it.targetReps })
+        assertEquals(listOf(17.0 to 10, 22.0 to 6, null to 0), rows.map { it.targetWeightKg to it.targetReps })
         assertEquals(listOf(false, true, true), rows.map { it.inheritPr })
-        assertEquals(22.0, database.dao().targetCheckpoints().single().weightKg!!, 0.0)
         val completed = repo.snapshot().exerciseSets(repo.snapshot().workoutItems(next).single().id)
-        finish(exercise, 18.0 to 50)
+        finish(entry, 17.0 to 10, 18.0 to 50)
         assertEquals(rows, repo.snapshot().plannedSets(entry))
         assertEquals(completed, repo.snapshot().exerciseSets(repo.snapshot().workoutItems(next).single().id))
     }
@@ -295,8 +310,8 @@ class RoutineSetPersistenceTest {
         val entry = plan(exercise)
         val custom = repo.snapshot().plannedSets(entry)[1]
         repo.updateRoutineSet(custom.id, 9, 17.5)
-        finish(exercise, 20.0 to 8)
-        val corrected = finish(exercise, 30.0 to 5)
+        finish(entry, 20.0 to 8)
+        val corrected = finish(entry, 30.0 to 5)
         val routine = repo.snapshot().routineExercises.single { it.id == entry }.routineId
         val active = repo.startRoutine(routine)
         val historyEntry = repo.snapshot().workoutItems(corrected).single()
@@ -312,29 +327,29 @@ class RoutineSetPersistenceTest {
         assertEquals(before.sets, after.sets)
         assertEquals(before.exerciseSets(before.workoutItems(active).single().id), after.exerciseSets(after.workoutItems(active).single().id))
         repo.discardWorkout(active)
-        finish(exercise, 22.0 to 6)
+        finish(entry, 22.0 to 6)
         assertEquals(22.0 to 6, repo.snapshot().plannedSets(entry)[0].let { it.targetWeightKg to it.targetReps })
     }
 
-    @Test fun removingAllEligibleHistoryClearsOnlyInheritedDefaultsAndPreservesActiveWorkout() = runBlocking {
+    @Test fun removingAllEligibleHistoryRetainsSavedTargetsAndPreservesActiveWorkout() = runBlocking {
         val exercise = movement()
         val entry = plan(exercise)
         val custom = repo.snapshot().plannedSets(entry)[1]
         repo.updateRoutineSet(custom.id, 7, null)
-        val finished = finish(exercise, 30.0 to 5)
+        val finished = finish(entry, 30.0 to 5)
         val routine = repo.snapshot().routineExercises.single { it.id == entry }.routineId
         val active = repo.startRoutine(routine)
         repo.deleteWorkout(finished)
         val before = repo.snapshot()
         repo.initialize()
         val after = repo.snapshot()
-        assertEquals(null to 0, after.plannedSets(entry)[0].let { it.targetWeightKg to it.targetReps })
+        assertEquals(30.0 to 5, after.plannedSets(entry)[0].let { it.targetWeightKg to it.targetReps })
         assertTrue(after.plannedSets(entry)[0].inheritPr)
         assertEquals(before.plannedSets(entry)[1], after.plannedSets(entry)[1])
         assertEquals(before.workoutItems(active), after.workoutItems(active))
         assertEquals(before.sets, after.sets)
         repo.discardWorkout(active)
-        finish(exercise, 22.0 to 6)
+        finish(entry, 22.0 to 6)
         assertEquals(22.0 to 6, repo.snapshot().plannedSets(entry)[0].let { it.targetWeightKg to it.targetReps })
         assertEquals(null to 7, repo.snapshot().plannedSets(entry)[1].let { it.targetWeightKg to it.targetReps })
     }

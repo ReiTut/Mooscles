@@ -114,6 +114,51 @@ class ImportPlannerTest {
     }
 
     @Test
+    fun workoutSetOriginSurvivesBackupForImportedAndKeptPlans() {
+        val linked = workoutSets.first().copy(sourceRoutineSetId = "rs2")
+        val data = sample.copy(sets = listOf(linked) + workoutSets.drop(1))
+        val file = BackupCodec.decode(BackupCodec.encode(fileWith(data)))
+        val kept = fresh.data.copy(
+            routines = listOf(push), routineExercises = listOf(pushBench),
+            routineSets = pushSets.reversed().mapIndexed { position, row -> row.copy(position = position) },
+        )
+
+        assertEquals(data.sets, ImportPlanner.plan(file, fresh).entities.workoutSets)
+        assertEquals(data.sets, ImportPlanner.plan(file, LocalState(kept, emptyList())).entities.workoutSets)
+    }
+
+    @Test
+    fun missingAndAmbiguousOriginsAreClearedWithoutLosingWorkoutSets() {
+        val linked = listOf(
+            workoutSets[0].copy(sourceRoutineSetId = "rs1"),
+            workoutSets[1].copy(sourceRoutineSetId = "rs1"),
+            workoutSets[0].copy(id = "ws4", position = 2, sourceRoutineSetId = "deleted"),
+        )
+        val plan = ImportPlanner.plan(fileWith(sample.copy(sets = linked)), fresh)
+
+        assertEquals(linked.map { it.copy(sourceRoutineSetId = null) }, plan.entities.workoutSets)
+    }
+
+    @Test
+    fun aKeptPlanWithAConflictingOriginCannotClaimAnImportedRecord() {
+        val linked = workoutSets.first().copy(sourceRoutineSetId = "rs1")
+        val file = fileWith(sample.copy(sets = listOf(linked)))
+        val kept = fresh.data.copy(routines = listOf(push), routineExercises = listOf(pushBench), routineSets = pushSets)
+        val otherEntry = pushBench.copy(id = "other-bench")
+        val otherOwner = kept.copy(
+            routineExercises = kept.routineExercises + otherEntry,
+            routineSets = pushSets.map { it.copy(routineExerciseId = otherEntry.id) },
+        )
+        val otherVariation = kept.copy(routineExercises = listOf(pushBench.copy(exerciseId = curl.id)))
+        val otherConvention = kept.copy(exercises = listOf(bench.copy(convention = LoadConvention.PER_HAND)))
+
+        for (conflictingPhone in listOf(otherOwner, otherVariation, otherConvention)) {
+            val plan = ImportPlanner.plan(file, LocalState(conflictingPhone, emptyList()))
+            assertEquals(linked.copy(sourceRoutineSetId = null), plan.entities.workoutSets.single())
+        }
+    }
+
+    @Test
     fun existingWorkoutSkipsWholeAggregateEvenWithExtraSets() {
         val localWorkout = AppData(
             exercises = listOf(bench), routineFolders = listOf(defaultFolder),

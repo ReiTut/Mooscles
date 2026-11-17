@@ -2,8 +2,11 @@ package com.mooscles.domain
 
 import com.mooscles.data.AppData
 import com.mooscles.data.Equipment
+import com.mooscles.data.Exercise
 import com.mooscles.data.LoadConvention
 import com.mooscles.data.MuscleGroup
+import com.mooscles.data.RoutineExercise
+import com.mooscles.data.RoutineSet
 import com.mooscles.data.Workout
 import com.mooscles.data.WorkoutExercise
 import com.mooscles.data.WorkoutSet
@@ -34,6 +37,29 @@ class RoutineTargetRecordsTest {
         val new = exercise("new", convention = convention)
         return AppData(workouts = listOf(workout("old"), workout("new")), workoutExercises = listOf(old, new),
             sets = listOf(set(old, previousKg, previousReps), set(new, newKg, newReps)))
+    }
+
+    @Test fun `linked history ranks each set independently without using row position or an ad hoc record`() {
+        val data = history(previousReps = 7, newReps = 6)
+        val old = data.workoutExercises.first()
+        val new = data.workoutExercises.last()
+        val first = RoutineSet("first", "plan", position = 1)
+        val second = RoutineSet("second", "plan", position = 0)
+        val records = RoutineTargetRecords.latestByPlannedSet(data.copy(
+            exercises = listOf(Exercise("bench", "Bench", MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)),
+            routineExercises = listOf(RoutineExercise("plan", "routine", "bench")),
+            routineSets = listOf(second, first),
+            workouts = data.workouts.map { it.copy(sourceRoutineId = "routine") },
+            sets = data.sets.map { it.copy(sourceRoutineSetId = first.id) } + listOf(
+                set(old, 17.0, 9).copy(position = 1, sourceRoutineSetId = second.id),
+                set(new, 16.0, 15).copy(position = 1, sourceRoutineSetId = second.id),
+                set(new, 80.0, 20),
+                set(new, 90.0, 10, warmup = true).copy(sourceRoutineSetId = second.id),
+            ),
+        ))
+
+        assertEquals(mapOf(first.id to (22.0 to 6), second.id to (17.0 to 9)),
+            records.mapValues { (_, record) -> record.weightKg to record.reps })
     }
 
     @Test fun `22 kg by 6 replaces 20 kg by 7 despite lower reps and volume`() {

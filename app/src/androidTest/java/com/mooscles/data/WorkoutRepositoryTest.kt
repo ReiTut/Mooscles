@@ -30,6 +30,35 @@ class WorkoutRepositoryTest {
 
     @After fun close() { database.close() }
 
+    @Test fun finishedRoutineUpdatesOnlyTheMatchingTargetInThePlanAndNextWorkout() = runBlocking {
+        val movement = repo.createCustomExercise("Bench test", MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)
+        val routine = repo.createRoutine("Per-set test")
+        val entry = repo.addRoutineExercise(routine, movement)
+        val planned = repo.snapshot().plannedSets(entry)
+
+        suspend fun log(first: Pair<Double, Int>, second: Pair<Double, Int>? = null): String {
+            val workout = repo.startRoutine(routine)
+            val sets = repo.workoutSets(workout).sortedBy { it.position }
+            assertEquals(planned.map { it.id }, sets.map { it.sourceRoutineSetId })
+            for ((set, performance) in sets.zip(listOf(first, second))) {
+                if (performance != null) repo.updateSet(set.copy(weightKg = performance.first, reps = performance.second, completed = true))
+            }
+            repo.finishWorkout(workout)
+            return workout
+        }
+
+        val original = log(20.0 to 7, 17.0 to 9)
+        val snapshot = repo.workoutSets(original)
+        log(22.0 to 6)
+
+        val saved = repo.snapshot().plannedSets(entry)
+        val expected = listOf(22.0 to 6, 17.0 to 9)
+        assertEquals(expected, saved.map { it.targetWeightKg to it.targetReps })
+        val next = repo.startRoutine(routine)
+        assertEquals(expected, repo.workoutSets(next).sortedBy { it.position }.map { it.weightKg to it.reps })
+        assertEquals(snapshot, repo.workoutSets(original))
+    }
+
     @Test fun catalogIsSubstantialUniqueAndSeedsIdempotently() = runBlocking {
         repo.initialize()
         val data = repo.snapshot()

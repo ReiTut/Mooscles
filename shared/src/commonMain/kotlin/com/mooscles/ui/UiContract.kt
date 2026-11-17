@@ -38,6 +38,8 @@ data class SetUi(
     val completed: Boolean = false, val warmup: Boolean = false, val assistance: Boolean = false,
     /** The record beaten by exactly this set, as the domain chose it; never a first record. */
     val record: SetRecordUi? = null,
+    /** Carried through the active workout's Undo so a restored set keeps its origin. */
+    val sourceRoutineSetId: String? = null,
 )
 /**
  * A record beaten by one set. [previousKg] is the history's best load (weight records only); [previousReps] the
