@@ -161,10 +161,12 @@ class AppViewModelRestoreHostTest {
     private fun seedWithRemovedMiddleSet(): Pair<String, WorkoutSet> = runBlocking(Dispatchers.IO) {
         val repo = app.repository
         repo.initialize()
-        val workoutId = repo.startEmpty()
         val exercise = repo.snapshot().exercises.filter { !it.custom }.minBy { it.id }
-        val entryId = repo.addWorkoutExercise(workoutId, exercise.id)
-        repo.addSet(entryId)
+        val routine = repo.createRoutine("Planned workout")
+        val plan = repo.addRoutineExercise(routine, exercise.id)
+        repo.addRoutineSet(plan)
+        val workoutId = repo.startRoutine(routine)
+        val entryId = repo.snapshot().workoutItems(workoutId).single().id
         val middle = repo.snapshot().exerciseSets(entryId)[1].copy(reps = 8, weightKg = 82.5, completed = true)
         repo.updateSet(middle)
         repo.removeSet(middle.id)
@@ -183,7 +185,7 @@ class AppViewModelRestoreHostTest {
     }
 
     private fun WorkoutSet.toUi() = SetUi(id = id, reps = reps, weightKg = weightKg, completed = completed,
-        warmup = warmup, assistance = assistance)
+        warmup = warmup, assistance = assistance, sourceRoutineSetId = sourceRoutineSetId)
 
     private fun newModel() = AppViewModel(app).also { models += it }
 

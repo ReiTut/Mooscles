@@ -220,6 +220,42 @@ class UiFeatureSmokeTest {
         assertTrue("Discard must leave Train as the actual root", compose.activity.isFinishing || compose.activity.isDestroyed)
     }
 
+    @Test fun trainMenuEditRemovesPlannedSetWithLeftSwipe() {
+        val exercise = ExerciseUi("smoke-exercise", "Swipe test bench press", "Chest", "Barbell")
+        val first = RoutineSetUi("smoke-swipe-first", reps = 5, weightKg = 20.0, inherited = false)
+        val second = RoutineSetUi("smoke-swipe-second", reps = 8, weightKg = 25.0, inherited = false)
+        val plan = PlannedExerciseUi("smoke-swipe-plan", exercise, setTargets = listOf(first, second))
+        val routine = RoutineUi("smoke-swipe-routine", "Swipe test routine", exercises = listOf(plan))
+        val state = mutableStateOf(UiState(loading = false, routines = listOf(routine), exercises = listOf(exercise)))
+        val removals = mutableListOf<String>()
+        val actions = actions { method, args ->
+            if (method == "removeRoutineSet") {
+                val setId = args.single() as String
+                removals += setId
+                val remaining = plan.setTargets.filterNot { it.id == setId }
+                val updatedPlan = plan.copy(sets = remaining.size, setTargets = remaining)
+                state.value = state.value.copy(routines = listOf(routine.copy(exercises = listOf(updatedPlan))))
+            }
+        }
+        edgeToEdgeTestActivity()
+        compose.setContent { MoosclesApp(state.value, actions) }
+
+        assertTrain()
+        val menuTag = "routine-${routine.id}-menu"
+        compose.onNodeWithTag("routines-list").performScrollToNode(hasTestTag(menuTag))
+        compose.onNodeWithTag(menuTag).performClick()
+        compose.onNodeWithTag("routine-menu-edit").performClick()
+        val firstTag = "routine-set-${first.id}"
+        compose.onNodeWithTag("routine-editor-list").performScrollToNode(hasTestTag(firstTag))
+        compose.onNodeWithTag(firstTag).performTouchInput {
+            swipeLeft(startX = width * 0.85f, endX = width * 0.12f)
+        }
+        compose.onNodeWithTag(firstTag).assertDoesNotExist()
+        compose.onNodeWithTag("routine-set-${second.id}").assertIsDisplayed()
+        compose.onNodeWithTag("toast-action").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(listOf(first.id), removals) }
+    }
+
     private fun edgeToEdgeTestActivity() = compose.runOnUiThread {
         compose.activity.enableEdgeToEdge()
         compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)

@@ -87,6 +87,8 @@ data class WorkoutExerciseRow(
 data class WorkoutSetRow(
     val id: String, val workoutExerciseId: String, val position: Int, val reps: Int,
     val weightKg: Double, val completed: Boolean, val warmup: Boolean, val assistance: Boolean,
+    /** Optional origin for per-set records. A missing origin cannot be reconstructed from position. */
+    val sourceRoutineSetId: String? = null,
 )
 
 @Serializable

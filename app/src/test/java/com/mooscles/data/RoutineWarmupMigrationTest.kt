@@ -58,7 +58,13 @@ class RoutineWarmupMigrationTest {
         }
     }
 
-    private suspend fun WorkoutDatabase.savedValues() = SchemaV5.savedQueries.mapValues { (_, sql) -> typedRows(sql) }
+    private suspend fun WorkoutDatabase.savedValues() = SchemaV5.savedQueries.mapValues { (table, sql) ->
+        // V7 adds provenance after the eight V5 columns. The v5 -> v7 check below asserts its default separately.
+        val originalColumns = if (table == "workout_sets") {
+            "SELECT id, workoutExerciseId, position, reps, weightKg, completed, warmup, assistance FROM workout_sets ORDER BY 1, 2"
+        } else sql
+        typedRows(originalColumns)
+    }
 
     @Test fun v5DatabaseMigratesWithEveryRowIntactAndWarmupZero() = runBlocking {
         val before = createVersionFive("v5.db")
@@ -66,12 +72,13 @@ class RoutineWarmupMigrationTest {
 
         val database = open("v5.db")
         val data = WorkoutRepository(database).data.first()
-        assertEquals(6, database.userVersion())
-        assertEquals(listOf(listOf<Any?>(exportedIdentityHash(6))),
+        assertEquals(7, database.userVersion())
+        assertEquals(listOf(listOf<Any?>(exportedIdentityHash(7))),
             database.typedRows("SELECT identity_hash FROM room_master_table WHERE id = 42"))
         assertEquals(before, database.savedValues())
         assertEquals(List(SchemaV5.seededRows.getValue("routine_sets")) { listOf<Any?>(0L) },
             database.typedRows("SELECT warmup FROM routine_sets"))
+        assertTrue(data.sets.isNotEmpty() && data.sets.all { it.sourceRoutineSetId == null })
         assertTrue(data.routineSets.isNotEmpty() && data.routineSets.none { it.warmup })
         assertEquals(SchemaV5.ACTIVE_WORKOUT_ID, data.activeWorkout?.id)
         assertEquals("v5-pull", data.activeWorkout?.sourceRoutineId)
@@ -81,7 +88,7 @@ class RoutineWarmupMigrationTest {
         // Reopening is a second real connection on the migrated file, not a cached read.
         database.close()
         val reopened = open("v5.db")
-        assertEquals(6, reopened.userVersion())
+        assertEquals(7, reopened.userVersion())
         assertEquals(before, reopened.savedValues())
         assertEquals(data, WorkoutRepository(reopened).data.first())
     }
@@ -96,8 +103,8 @@ class RoutineWarmupMigrationTest {
         createVersionFive("migrated.db")
         val migrated = open("migrated.db")
         val fresh = open("fresh.db")
-        assertEquals(6, migrated.userVersion())
-        assertEquals(6, fresh.userVersion())
+        assertEquals(7, migrated.userVersion())
+        assertEquals(7, fresh.userVersion())
 
         val master = "SELECT type, name, tbl_name, sql FROM sqlite_master ORDER BY type, name"
         assertEquals(fresh.typedRows(master), migrated.typedRows(master))
@@ -132,5 +139,34 @@ class RoutineWarmupMigrationTest {
         // A row written without the column (an older insert path) reads as a working set.
         reopened.useWriterConnection { it.execSQL("INSERT INTO routine_sets (id, routineExerciseId, position, targetReps, targetWeightKg, inheritPr) VALUES ('v5-raw', 'v5-full-press', 2, 3, NULL, 0)") }
         assertEquals(false, reopened.dao().routineSet("v5-raw")?.warmup)
+    }
+
+    @Test fun v6WorkoutSetsKeepTheirValuesWithUnknownOrigin() = runBlocking {
+        val file = context.getDatabasePath("v6.db")
+        file.parentFile!!.mkdirs()
+        val orderedSets = "SELECT * FROM workout_sets ORDER BY id"
+        val before = SQLiteDatabase.openOrCreateDatabase(file, null).use { raw ->
+            exportedSchemaStatements(6).forEach(raw::execSQL)
+            SchemaV5.seed.forEach { sql ->
+                // The v5 seed omits the v6 warmup column, which SQLite fills with its default.
+                raw.execSQL(sql.replace("INSERT INTO routine_sets VALUES", """
+                    INSERT INTO routine_sets (id, routineExerciseId, position, targetReps, targetWeightKg, inheritPr) VALUES
+                """.trimIndent()))
+            }
+            raw.execSQL("UPDATE routine_sets SET warmup = 1 WHERE id = 'v5-custom'")
+            raw.version = 6
+            raw.rawQuery(orderedSets, null).use { it.typedRows() }
+        }
+        assertEquals(4, before.size)
+
+        val database = open("v6.db")
+        assertEquals(7, database.userVersion())
+        assertEquals(before.map { it + listOf(null) }, database.typedRows(orderedSets))
+        assertEquals(true, database.dao().routineSet("v5-custom")?.warmup)
+
+        val linked = database.dao().set("v5-working")!!.copy(sourceRoutineSetId = "v5-row-first")
+        database.dao().updateSet(linked)
+        database.close()
+        assertEquals(linked, open("v6.db").dao().set(linked.id))
     }
 }

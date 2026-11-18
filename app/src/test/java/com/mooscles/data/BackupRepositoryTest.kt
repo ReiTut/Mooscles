@@ -264,29 +264,45 @@ class BackupRepositoryTest {
 
     @Test fun activeWorkoutInFileBecomesTheSession() = runBlocking {
         otherInstallData()
-        val open = other.startEmpty("Open on tablet", now = 6_000_000)
-        other.addWorkoutExercise(open, catalogExercise(other).id)
+        val routine = other.snapshot().routines.single().id
+        val open = other.startRoutine(routine, now = 6_000_000)
+        val workoutSets = other.snapshot().exerciseSets(other.snapshot().workoutItems(open).single().id)
+        val plannedSets = other.snapshot().plannedSets(other.snapshot().routineItems(routine).single().id)
+        assertEquals(plannedSets.map { it.id }, workoutSets.map { it.sourceRoutineSetId })
         assertNull(phone.activeWorkout())
 
         phone.importBackup(exportedFile(other))
 
         assertEquals(other.snapshot().workouts.single { it.id == open }, phone.activeWorkout())
         assertEquals(other.snapshot().workoutItems(open), phone.snapshot().workoutItems(open))
+        assertEquals(workoutSets, phone.snapshot().exerciseSets(phone.snapshot().workoutItems(open).single().id))
         // Starting a routine now resumes the imported session instead of opening a second one.
-        assertEquals(open, phone.startRoutine(phone.snapshot().routines.single().id))
+        assertEquals(open, phone.startRoutine(routine))
     }
 
-    @Test fun inheritedTargetsFollowImportedRecord() = runBlocking {
+    @Test fun inheritedTargetsFollowOnlyTheExactImportedPlannedSetRecord() = runBlocking {
         val bench = catalogExercise(phone).id
-        finishedWorkout(phone, bench, 60.0, 8, start = 1_000_000)
         val routine = phone.createRoutine("Push")
         val item = phone.addRoutineExercise(routine, bench)
         val (inherited, fixed) = phone.snapshot().plannedSets(item)
         phone.updateRoutineSet(fixed.id, 5, 70.0)
+
+        suspend fun train(repo: WorkoutRepository, start: Long, kg: Double, reps: Int): String {
+            val workout = repo.startRoutine(routine, now = start)
+            val entry = repo.snapshot().workoutItems(workout).single()
+            val logged = repo.snapshot().exerciseSets(entry.id).single { it.sourceRoutineSetId == inherited.id }
+            repo.updateSet(logged.copy(weightKg = kg, reps = reps, completed = true))
+            assertTrue(repo.finishWorkout(workout, start + 60_000))
+            return logged.id
+        }
+
+        train(phone, 1_000_000, 60.0, 8)
         assertEquals(60.0, phone.snapshot().routineSets.single { it.id == inherited.id }.targetWeightKg)
         val fixedBefore = phone.snapshot().routineSets.single { it.id == fixed.id }
-        // The other install lifted more on the same catalog exercise.
-        finishedWorkout(other, bench, 100.0, 3, start = 2_000_000)
+        other.importBackup(exportedFile(phone))
+        val improved = train(other, 2_000_000, 100.0, 3)
+        // A stronger ad hoc performance still belongs to the exercise's history, but has no planned set origin.
+        finishedWorkout(other, bench, 120.0, 4, start = 3_000_000)
 
         phone.importBackup(exportedFile(other))
 
@@ -296,9 +312,16 @@ class BackupRepositoryTest {
         assertEquals(100.0, followed.targetWeightKg)
         assertEquals(3, followed.targetReps)
         assertEquals(fixedBefore, after.routineSets.single { it.id == fixed.id })
+        assertEquals(inherited.id, after.sets.single { it.id == improved }.sourceRoutineSetId)
         val checkpoint = checkpoints(phoneDb).single { it.exerciseId == bench }
-        assertEquals(100.0, checkpoint.weightKg)
-        assertEquals(3, checkpoint.reps)
+        assertEquals(120.0, checkpoint.weightKg)
+        assertEquals(4, checkpoint.reps)
+
+        val next = phone.startRoutine(routine, now = 4_000_000)
+        val nextItem = phone.snapshot().workoutItems(next).single()
+        val nextSets = phone.snapshot().exerciseSets(nextItem.id)
+        assertEquals(listOf(inherited.id, fixed.id), nextSets.map { it.sourceRoutineSetId })
+        assertEquals(listOf(100.0 to 3, 70.0 to 5), nextSets.map { it.weightKg to it.reps })
     }
 
     @Test fun largeArchiveExportAndImportStayFast() = runBlocking {

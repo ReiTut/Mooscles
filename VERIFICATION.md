@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release 1.5.7 / Build 29
+
+Build 29 adds swipe-to-remove with Undo in the Train routine editor and independent **Follow the record** targets for each planned set. The additive Room v6 → v7 migration adds the nullable `workout_sets.sourceRoutineSetId` column. Older workout sets keep their saved values with a missing origin, so an unlinked result leaves existing targets in place. Backup format v1 accepts older files and validates optional planned-set origins during import. The release uses application ID `com.mooscles`, minimum API 26, and the original debug signing certificate. [Release notes](docs/superpowers/releases/v1.5.7.md) · [Implementation plan](docs/superpowers/plans/2026-11-17-per-set-pr-targets.md)
+
+Reused feature verification from November 17 includes **100 focused host checks** and **13 Android 15 emulator checks** for per-set targets, migration, backup, and workout completion. The earlier swipe implementation passed **13 focused host checks** and **50 Android 15 emulator checks** for navigation, removal, and Undo. These runs overlap, so the counts are individual results. The broader Windows run reproduced 19 known photo and rest-timer host failures. The final focused rerun passed.
+
+Release verification uses a separate Preview app with synthetic data for the two phone flows. The production debug APK, signing and metadata checks, and public updater discovery are verified separately during the release process.
+
 ## Release 1.5.6 / Build 28
 
 Weekly Sets by Muscle uses the existing saved History index. The feature run passed 34 History model tests, seven resource parity tests, all 20 History screen tests on an Android 15 emulator with synthetic workouts, lint, design tokens, and APK budgets. See the [Weekly verification](docs/superpowers/plans/2026-11-15-weekly-muscle-sets.md#verification) for the tested cases and screenshots.

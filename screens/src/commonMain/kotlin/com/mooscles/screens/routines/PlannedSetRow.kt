@@ -51,6 +51,7 @@ import com.mooscles.data.LoadConvention
 import com.mooscles.designsystem.components.MText
 import com.mooscles.designsystem.components.NumericField
 import com.mooscles.designsystem.components.NumericKind
+import com.mooscles.designsystem.components.setRowSwipe
 import com.mooscles.designsystem.icons.MIcon
 import com.mooscles.designsystem.icons.MIcons
 import com.mooscles.designsystem.interaction.mFocusRing
@@ -104,6 +105,7 @@ internal fun PlannedSetRow(
     editing: PlannedEditing,
     onWrite: (PlannedSave) -> Unit,
     onMenu: () -> Unit,
+    onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val editingThis = editing.isEditing(set.id)
@@ -241,6 +243,12 @@ internal fun PlannedSetRow(
     Column(
         modifier
             .testTag(RoutineEditorTags.set(set.id))
+            .setRowSwipe(
+                completeEnabled = false,
+                removeEnabled = entry.setTargets.size > 1,
+                onComplete = {},
+                onRemove = onRemove,
+            )
             .onGloballyPositioned { editing.rowAreas[set.id] = it }
             .focusGroup()
             .onSizeChanged { height = it.height }

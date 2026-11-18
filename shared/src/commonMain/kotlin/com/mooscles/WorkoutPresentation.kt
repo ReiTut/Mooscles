@@ -117,7 +117,8 @@ internal class WorkoutPresentation {
                 val old = oldEntries[e.id]
                 val oldSets = old?.sets?.associateBy { it.id }.orEmpty()
                 val sets = savedSets.map {
-                    val row = SetUi(it.id, it.reps, it.weightKg, it.completed, it.warmup, it.assistance, setRecords[it.id])
+                    val row = SetUi(it.id, it.reps, it.weightKg, it.completed, it.warmup, it.assistance,
+                        setRecords[it.id], it.sourceRoutineSetId)
                     oldSets[it.id]?.takeIf { previous -> previous == row } ?: row
                 }
                 val entry = WorkoutExerciseUi(e.id, snapshot(e), old?.sets?.takeIf { it == sets } ?: sets,

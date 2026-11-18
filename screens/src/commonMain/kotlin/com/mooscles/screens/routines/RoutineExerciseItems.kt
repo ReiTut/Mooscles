@@ -52,6 +52,7 @@ internal class RoutineExerciseCallbacks(
     val onWrite: (PlannedSave) -> Unit,
     /** The label of a set: its menu. */
     val onSetMenu: (entryId: String, setId: String) -> Unit,
+    val onRemoveSet: (PlannedExerciseUi, RoutineSetUi) -> Unit,
 )
 
 /** The lazy key of the planned set [setId]'s line, and of the footer of [entryId]: both outside the reorder keys, the entry ids. */
@@ -95,6 +96,7 @@ internal fun LazyListScope.routineExerciseItems(
                     editing = callbacks.editing,
                     onWrite = callbacks.onWrite,
                     onMenu = { callbacks.onSetMenu(entry.id, set.id) },
+                    onRemove = { callbacks.onRemoveSet(entry, set) },
                 )
             }
         }

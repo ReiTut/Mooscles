@@ -178,7 +178,7 @@ abstract class MoosclesViewModel(
     override fun replaceRoutineExercise(entryId: String, exerciseId: String) = act { repo.replaceRoutineExercise(entryId, exerciseId) }
     override fun removeRoutineExercise(entryId: String) = act { repo.removeRoutineExercise(entryId) }
     override fun addRoutineSet(entryId: String) = act { repo.addRoutineSet(entryId) }
-    override fun removeRoutineSet(setId: String) = act { repo.removeRoutineSet(setId) }
+    override fun removeRoutineSet(setId: String) = act(setId) { repo.removeRoutineSet(setId) }
     override fun updateRoutineSet(setId: String, reps: Int, weightKg: Double?) = act { repo.updateRoutineSet(setId, reps, weightKg) }
     override fun inheritRoutineSet(setId: String) = act { repo.inheritRoutineSet(setId) }
     override fun setRoutineSetWarmup(setId: String, warmup: Boolean) = act { repo.setRoutineSetWarmup(setId, warmup) }
@@ -249,7 +249,8 @@ abstract class MoosclesViewModel(
         services.trainingGate.withLock {
             services.updates.assertTrainingMayStart()
             repo.restoreSet(entryId, position, WorkoutSet(id = set.id, workoutExerciseId = entryId, position = position,
-                reps = set.reps, weightKg = set.weightKg, completed = set.completed, warmup = set.warmup, assistance = set.assistance))
+                reps = set.reps, weightKg = set.weightKg, completed = set.completed, warmup = set.warmup,
+                assistance = set.assistance, sourceRoutineSetId = set.sourceRoutineSetId))
         }
     }
     override fun updateSet(setId: String, reps: Int, weightKg: Double, completed: Boolean, warmup: Boolean, assistance: Boolean) = act(setId) {

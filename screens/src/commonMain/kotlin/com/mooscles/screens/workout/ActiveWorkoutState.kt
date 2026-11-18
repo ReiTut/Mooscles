@@ -387,7 +387,7 @@ class ActiveWorkoutScreenState(
          * keep: a cleared pair as "FIELD:setId" (the field name has no colon; an id may), the edit
          * target as [setId, field, keyboard, error], a draft as [field, setId, text] and its
          * awaited writes as [field, setId, values], the last removal as [entryId, position, number,
-         * setId, reps, weightKg, completed, warmup, assistance], the type sheet's set id, the open
+         * setId, reps, weightKg, completed, warmup, assistance, sourceRoutineSetId?], the type sheet's set id, the open
          * cards as [entryId, open], the entries toggled by hand, the sets checked here and the best
          * records announced as [category, weightKg, reps].
          * [optimistic] is left out on purpose: a write lost with the process must not come back as
@@ -406,7 +406,7 @@ class ActiveWorkoutScreenState(
                         arrayListOf<Any>(
                             it.entryId, it.position, it.number,
                             it.set.id, it.set.reps, it.set.weightKg, it.set.completed, it.set.warmup, it.set.assistance,
-                        )
+                        ).apply { it.set.sourceRoutineSetId?.let(::add) }
                     },
                     state.typeSheetFor,
                     ArrayList(state.expanded.map { (id, open) -> arrayListOf<Any>(id, open) }),
@@ -436,6 +436,7 @@ class ActiveWorkoutScreenState(
                         set = SetUi(
                             id = it[3] as String, reps = it[4] as Int, weightKg = it[5] as Double,
                             completed = it[6] as Boolean, warmup = it[7] as Boolean, assistance = it[8] as Boolean,
+                            sourceRoutineSetId = it.getOrNull(9) as? String,
                         ),
                         number = it[2] as Int,
                     )

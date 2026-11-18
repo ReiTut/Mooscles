@@ -371,7 +371,7 @@ class SetTypeAndRemovalTest {
     fun undoSurvivesRecreation() = runComposeUiTest {
         // Review Focus 1, with a row in edit holding a draft. No forced language: the restoration
         // tester loses the saved state when the language override rebuilds the tree.
-        val entry = entryOf(sets())
+        val entry = entryOf(sets().map { if (it.id == "s4") it.copy(sourceRoutineSetId = "planned-fourth") else it })
         val actions = Actions(entry, echo = false)
         val restoration = screenRestoration()
         val shown = showList(entry, actions, locale = null, restoration = restoration)
@@ -392,6 +392,7 @@ class SetTypeAndRemovalTest {
         onNodeWithText("Undo").performClick()
         waitForIdle()
         assertTrue(actions.calls.last().startsWith("restoreSet:e1,3,SetUi(id=s4"), actions.calls.toString())
+        assertTrue(actions.calls.last().contains("sourceRoutineSetId=planned-fourth"))
         assertEquals(1, actions.calls.count { it.startsWith("restoreSet:") }, actions.calls.toString())
         row("s4").assertExists()
     }

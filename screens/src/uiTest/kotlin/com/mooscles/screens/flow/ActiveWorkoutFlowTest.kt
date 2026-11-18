@@ -92,20 +92,19 @@ class ActiveWorkoutFlowTest {
     private class Seeded(val routineId: String, val pastWorkoutId: String)
 
     /**
-     * A finished workout a week ago with two sets of 85 kg × 6 on the bench (its record), then the
-     * routine "Push day": the bench with three sets, the first two taking that record as their
+     * A finished workout from the "Push day" bench plan a week ago with two sets of 85 kg × 6,
+     * then the rest of the routine: the bench with three sets, the first two taking their records as their
      * target (so they open pre-filled with 85 × 6) and the third with no target (so it opens empty,
      * to be filled by its suggestion), then the row and the overhead press.
      */
     private suspend fun seed(repository: WorkoutRepository): Seeded {
         repository.initialize()
         val past = currentTimeMillis() - WEEK_MS
-        val old = repository.startEmpty("Push", now = past)
-        repository.addWorkoutExercise(old, BENCH)
-        repository.workoutSets(old).forEach { repository.updateSet(it.copy(reps = 6, weightKg = 85.0, completed = true)) }
-        check(repository.finishWorkout(old, now = past + HOUR_MS))
         val routine = repository.createRoutine("Push day")
         val bench = repository.addRoutineExercise(routine, BENCH)
+        val old = repository.startRoutine(routine, now = past)
+        repository.workoutSets(old).forEach { repository.updateSet(it.copy(reps = 6, weightKg = 85.0, completed = true)) }
+        check(repository.finishWorkout(old, now = past + HOUR_MS))
         val third = repository.addRoutineSet(bench)
         repository.updateRoutineSet(third, reps = 0, weightKg = null)
         repository.addRoutineExercise(routine, ROW)
@@ -269,6 +268,12 @@ class ActiveWorkoutFlowTest {
             assertEquals(listOf(85.0, 87.5, 87.5), saved.filter { it.completed }.map { it.weightKg })
             assertEquals(2, harness.repository.snapshot().workouts.size)
             assertNotNull(harness.repository.workout(seeded.pastWorkoutId))
+            val targets = vm.contentUi.value.routines.single().exercises.first().setTargets
+            assertEquals(listOf(85.0 to 6, 87.5 to 6, null to 0), targets.map { it.weightKg to it.reps })
+            vm.startWorkout(seeded.routineId)
+            await("the next workout starts") { vm.contentUi.value.active != null }
+            assertEquals(listOf(85.0 to 6, 87.5 to 6, 0.0 to 0),
+                active(vm).exercises.first().sets.map { it.weightKg to it.reps })
         } finally {
             runOnUiThread { harness.close() }
         }

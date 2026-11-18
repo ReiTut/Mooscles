@@ -4,7 +4,9 @@ A native Android workout journal built with Kotlin, Jetpack Compose and Material
 
 ## Current release
 
-**1.5.6 / Build 28** adds Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks. See the [release notes](docs/superpowers/releases/v1.5.6.md) and [Android verification](VERIFICATION.md).
+**1.5.7 / Build 29** adds swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout. See the [release notes](docs/superpowers/releases/v1.5.7.md) and [Android verification](VERIFICATION.md).
+
+[Build 28](docs/superpowers/releases/v1.5.6.md) added Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks.
 
 The [previous Build 26 release](docs/superpowers/releases/v1.5.4.md) added the redesigned History calendar and filters, overall Progress charts and muscle distribution, saved-workout editing, and the shared-workout preview.
 
@@ -77,7 +79,11 @@ Not changed: the saved data (Room schema 5, no new preference), the update chann
 
 ## Routines
 
-The **Train** tab groups your routines in folders: create, rename and delete folders (a deleted folder's routines are kept), move routines between folders and reorder them. In the routine editor, drag an exercise by its handle to reorder it (TalkBack users get move actions on the same handle), plan each set with its reps and load or let it follow your record, and mark a set as a **warm-up**. Add several exercises at once from the multi-select picker. During a workout, every exercise card shows the routine's **target line**, for example "Target 3 sets · 6-8 reps · 93.7-137.8 lb". Your own exercises can have a **photo** from the gallery or the camera; it stays on the phone and is not part of backups. Routines need Room schema 6, which adds one column with an additive migration; existing routines keep their data.
+The **Train** tab groups your routines in folders: create, rename and delete folders (a deleted folder's routines are kept), move routines between folders and reorder them. In the routine editor, drag an exercise by its handle to reorder it (TalkBack users get move actions on the same handle), plan each set with its reps and load or let it follow your record, and mark a set as a **warm-up**. Add several exercises at once from the multi-select picker. During a workout, every exercise card shows the routine's **target line**, for example "Target 3 sets · 6-8 reps · 93.7-137.8 lb". Your own exercises can have a **photo** from the gallery or the camera; it stays on the phone and is not part of backups.
+
+In **Train → routine menu → Edit**, swipe a planned set left to remove it. Tap **Undo** to restore it to its original position.
+
+**Follow the record** uses the best qualifying performance for that planned set after you finish a workout. The app takes weight and reps from the same completed set. It compares weight first and uses reps to break a tie at the record weight. Manual targets and planned warm-ups keep their saved values. Room schema 7 records the exact link between the workout set and its planned set. Older workouts and sets added during a workout have no recorded link, so their results leave existing targets in place.
 
 ## Progress and Records
 
@@ -85,7 +91,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.6 full release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.6) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.6/Mooscles-v1.5.6-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.6/update.json)
+[v1.5.7 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.7) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7/Mooscles-v1.5.7-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
@@ -93,7 +99,7 @@ The APK uses the existing debug signing identity and application ID `com.mooscle
 
 ## Use
 
-Create routines in **Train** and add movements from the searchable muscle/equipment-filtered library. Each exercise has ordered, numbered **SET / KG (or LB) / REPS** rows with independent weight and repetition fields. Valid edits save automatically; **Add Set** adds a row, and each row's menu can remove it or select **Use PR defaults**. New exercises start with two sets. Reps are optional and start blank when no target is saved; starting a routine copies each corresponding saved row into an unfinished workout set. Previously saved set counts and values stay intact.
+Create routines in **Train** and add movements from the searchable muscle/equipment-filtered library. Each exercise has ordered, numbered **SET / KG (or LB) / REPS** rows with independent weight and repetition fields. Valid edits save automatically; **Add Set** adds a row, and each row's menu can remove it or select **Follow the record**. New exercises start with two sets. Reps are optional and start blank when no target is saved; starting a routine copies each corresponding saved row into an unfinished workout set. Previously saved set counts and values stay intact.
 
 Open an exercise's three-dot menu → **Edit Rest Timer** to set its rest duration for that exercise within that routine. The saved time appears near the exercise heading, such as **2:00 min rest**. The default and missing-value fallback are **2:00**, and the maximum is **5:00**. Explicit saved custom durations within that limit, including 1:30, are preserved. The same exercise can have different rest durations in different routines, and future workouts use the relevant routine's saved duration. You can also edit rest during a workout for subsequent rests; the timer's **−0:15 / +0:15** controls adjust rest already in progress. The default rest duration in Settings also saves automatically.
 
