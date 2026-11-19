@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **Shared workout PRs.** [1.5.8 / Build 30](releases/v1.5.8.md) corrects the Records list and PR total on share cards while retaining lighter-load reps records in workout history.
+
 > **Weekly Sets by Muscle.** [1.5.6 / Build 28](releases/v1.5.6.md) adds a Weekly view to History → Progress with calendar-week navigation and weighted working sets by muscle. See the [implementation and verification](plans/2026-11-15-weekly-muscle-sets.md).
 
 > **2026-11-06 — Android como único alvo.** O projeto mantém Kotlin Multiplatform e Compose Multiplatform em `:shared`, `:designsystem` e `:screens`. O build e o CI atuais validam apenas Android. As notas e os resultados datados das fases anteriores registram a configuração da época.

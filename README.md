@@ -16,7 +16,9 @@ Captured on an Android 15 emulator using sample workout data. Select an image to
 
 ## Current release
 
-**1.5.7 / Build 29** adds swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout. See the [release notes](docs/superpowers/releases/v1.5.7.md) and [Android verification](VERIFICATION.md).
+**1.5.8 / Build 30** fixes the Records list and PR total on shared workout cards. A reps record at a lighter load stays in workout history. The card uses the exercise's record load when deciding which reps records to include. See the [release notes](docs/superpowers/releases/v1.5.8.md) and [Android verification](VERIFICATION.md#release-158--build-30).
+
+[Build 29](docs/superpowers/releases/v1.5.7.md) added swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout.
 
 [Build 28](docs/superpowers/releases/v1.5.6.md) added Weekly Sets by Muscle in History → Progress. Select Weekly to see this week's totals or browse past weeks.
 
@@ -103,7 +105,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.7 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.7) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7/Mooscles-v1.5.7-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7/update.json)
+[v1.5.8 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.8) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.8/Mooscles-v1.5.8-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.8/update.json)
 
 The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
 
