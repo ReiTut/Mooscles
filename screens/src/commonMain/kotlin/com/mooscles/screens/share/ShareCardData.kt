@@ -123,7 +123,7 @@ data class ShareCardData(
     val dateText: String,
     val durationText: String,
     val setsText: String,
-    /** Distinct exercise variations credited in [records], including eligible first records. */
+    /** Distinct exercise variations with first or beaten records, from the domain summary. */
     val prCount: Int,
     /** Localized display of [prCount]; retain the numeric count for accessible preview descriptions. */
     val prsText: String,
@@ -169,14 +169,6 @@ object ShareCards {
         fun loadByReps(kg: Double, reps: Int) =
             if (kg > 0.0) MoosclesNumbers.setText(plain(kg), unit, reps, locale) else fillTemplate(texts.bodyweightSet, reps)
 
-        // A repetition record at a lighter external load still belongs in the per-load history.
-        // The share card credits reps at the exercise's record load, plus bodyweight and assistance records.
-        val shareReps = summary.exercises.associate { entry ->
-            val recordWeight = entry.recordWeightKg
-            entry.exercise.id to entry.repsPrs.filter { record ->
-                record.assistance || recordWeight == null || BestSets.sameLoad(record.weightKg, recordWeight)
-            }
-        }
         val rows = summary.exercises.filter { it.completedSets.isNotEmpty() }.map { entry ->
             val completed = entry.completedSets
             val assistanceConvention = entry.exercise.convention == LoadConvention.ASSISTANCE
@@ -189,19 +181,23 @@ object ShareCards {
                     NoBestSet.NO_WORKING_SET -> texts.noWorkingSet
                 }
             // Only the best set itself: brass beside "62,5 kg × 8" must mean that set is a record.
-            val bestIsRecord = best != null && (entry.pr?.setId == best.id || shareReps.getValue(entry.exercise.id).any {
-                it.setId == best.id
-            })
-            ShareCardRow(name(entry.exercise.exerciseId, entry.exercise.name), completed.size, bestText, bestIsRecord)
+            val bestIsWeightPr = best != null && entry.pr?.let { record ->
+                BestSets.sameLoad(best.weightKg, record.newWeightKg) && best.reps == record.reps
+            } == true
+            val bestIsRepsPr = best != null && entry.repsPrs.any { record ->
+                !best.warmup && BestSets.sameLoad(best.weightKg, record.weightKg) && best.reps == record.newReps &&
+                    (best.assistance || entry.exercise.convention == LoadConvention.ASSISTANCE) == record.assistance
+            }
+            ShareCardRow(name(entry.exercise.exerciseId, entry.exercise.name), completed.size, bestText, bestIsWeightPr || bestIsRepsPr)
         }
 
-        // One line per variation, in workout order: its weight record, else its first shareable reps record.
+        // One line per variation, in workout order: its weight record, else its first repetitions record.
         val seen = mutableSetOf<Pair<String, LoadConvention>>()
         val records = summary.exercises.mapNotNull { entry ->
             val key = entry.exercise.exerciseId to entry.exercise.convention
             if (key in seen) return@mapNotNull null
             val weightRecord = entry.pr
-            val repsRecord = shareReps.getValue(entry.exercise.id).firstOrNull()
+            val repsRecord = entry.repsPrs.firstOrNull()
             val row = when {
                 weightRecord != null ->
                     ShareRecordRow(name(weightRecord.exerciseId, weightRecord.exerciseName), loadByReps(weightRecord.newWeightKg, weightRecord.reps))
@@ -219,8 +215,8 @@ object ShareCards {
             dateText = dateRange(workout.startedAt, end, zone, texts),
             durationText = Durations.clock(summary.durationMillis / 1000),
             setsText = MoosclesNumbers.localize(summary.completedSetCount.toString(), locale),
-            prCount = records.size,
-            prsText = MoosclesNumbers.localize(records.size.toString(), locale),
+            prCount = summary.prExerciseCount,
+            prsText = MoosclesNumbers.localize(summary.prExerciseCount.toString(), locale),
             volumeText = weight(summary.volumeKg),
             records = records,
             rows = rows,

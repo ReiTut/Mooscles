@@ -366,8 +366,8 @@ jobs:
           # Weekly muscle sets: HistoryModelTest +5. 1336 + 5 = 1341.
           # Planned-set PR targets: RoutineTargetRecordsTest +1, RoutineTargetPersistenceTest +2,
           # RoutineWarmupMigrationTest +1, BackupCodecTest +2, ImportPlannerTest +3. 1341 + 9 = 1350.
-          # ShareCardDataTest: two exercise-level PR regressions added (+2).
-          MIN_HOST_TESTS: 1352
+          # Build 29 behavior restored: ShareCardDataTest removes the two Build 30-only expectations.
+          MIN_HOST_TESTS: 1350
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',

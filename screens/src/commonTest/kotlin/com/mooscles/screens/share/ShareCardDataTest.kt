@@ -11,7 +11,6 @@ import com.mooscles.data.WorkoutSet
 import com.mooscles.data.WorkoutStatus
 import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.domain.WeightUnits
-import com.mooscles.domain.WorkoutCalculations
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -233,55 +232,21 @@ class ShareCardDataTest {
         }
     }
 
-    @Test fun beatenRepetitionRecordAtALighterLoadIsKeptInHistoryButNotShared() {
+    /**
+     * A repetitions record on a lighter set (50 kg × 12) while the best set (60 kg × 8) is no
+     * record: the row is not marked, so its brass "60 kg × 8" never reads as a record; the record
+     * is in the card's records.
+     */
+    @Test fun aRecordOnAnotherSetDoesNotMarkTheBestSet() {
         val old = exercise(id = "old", workout = "old")
         val bench = exercise()
-        val source = AppData(workouts = listOf(workout("old", 0), workout()),
+        val result = card(AppData(workouts = listOf(workout("old", 0), workout()),
             workoutExercises = listOf(old, bench),
             sets = listOf(set(old, 60.0, 8), set(old, 50.0, 8, position = 1),
-                set(bench, 60.0, 7), set(bench, 50.0, 12, position = 1)))
-        val result = card(source)
-        assertEquals(12, WorkoutCalculations.repsPrsForWorkout(source, "selected").single().newReps)
-        assertEquals("60 kg × 7", result.rows.single().bestSet)
+                set(bench, 60.0, 8), set(bench, 50.0, 12, position = 1))))
+        assertEquals("60 kg × 8", result.rows.single().bestSet)
         assertFalse(result.rows.single().hasRecord)
-        assertTrue(result.records.isEmpty())
-        assertEquals(0, result.prCount)
-    }
-
-    @Test fun reportedLateralRaiseKeepsTheBestSetWithoutPromotingAFirstRecordAtALighterLoad() {
-        val raise = exercise(variation = "catalog_cable_lateral_raise", convention = LoadConvention.ONE_SIDE)
-            .copy(name = "One-arm cable lateral raise", equipment = Equipment.CABLE, muscle = MuscleGroup.SHOULDERS)
-        val old = raise.copy(id = "old-raise", workoutId = "old")
-        val other = exercise(id = "bench", position = 1)
-        val source = AppData(workouts = listOf(workout("old", 0), workout()),
-            workoutExercises = listOf(old, raise, other),
-            sets = listOf(set(old, 15.0, 5), set(raise, 5.0, 8), set(raise, 15.0, 3, position = 1),
-                set(other, 60.0, 8)))
-        val slot = WorkoutCalculations.repsPrsForWorkout(source, "selected").single { it.exerciseId == raise.exerciseId }
-        assertTrue(slot.firstRecord)
-        assertEquals(5.0, slot.weightKg)
-        assertEquals(8, slot.newReps)
-        val result = card(source)
-        assertEquals(ShareCardRow("One-arm cable lateral raise", 2, "15 kg × 3", false), result.rows.first())
-        assertEquals(listOf(ShareRecordRow("Saved bench", "60 kg × 8")), result.records)
-        assertEquals(1, result.prCount)
-        assertEquals("1", result.prsText)
-    }
-
-    @Test fun exerciseLevelRecordsUseTheHistoricTopLoadAndAreCountedOnce() {
-        val entry = exercise()
-        val prior = exercise(id = "prior", workout = "prior")
-        val later = exercise(id = "later", workout = "later")
-        val source = AppData(workouts = listOf(workout("later", 3000), workout(), workout("prior", 0)),
-            workoutExercises = listOf(later, entry, prior), sets = listOf(set(prior, 15.0, 5), set(later, 20.0, 10)))
-        for ((weight, reps) in listOf(15.0 to 6, 17.0 to 3)) {
-            val expected = "${weight.toInt()} kg × $reps"
-            val result = card(source.copy(sets = source.sets + listOf(set(entry, 5.0, 12), set(entry, weight, reps, position = 1))))
-            assertEquals(expected, result.rows.single().bestSet)
-            assertTrue(result.rows.single().hasRecord)
-            assertEquals(listOf(ShareRecordRow("Saved bench", expected)), result.records)
-            assertEquals(1, result.prCount)
-        }
+        assertEquals(listOf(ShareRecordRow("Saved bench", "50 kg × 12")), result.records)
     }
 
     @Test fun workoutNumberIsTheSelectedChronologicalOrdinalAndExcludesActiveWorkouts() {

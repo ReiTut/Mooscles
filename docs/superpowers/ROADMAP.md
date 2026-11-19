@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **Recovery release.** [1.5.7 / Build 31](releases/v1.5.7-build31.md) restores the original Build 29 behavior using a higher build number for the stable updater.
+
 > **Shared workout PRs.** [1.5.8 / Build 30](releases/v1.5.8.md) corrects the Records list and PR total on share cards while retaining lighter-load reps records in workout history.
 
 > **Weekly Sets by Muscle.** [1.5.6 / Build 28](releases/v1.5.6.md) adds a Weekly view to History → Progress with calendar-week navigation and weighted working sets by muscle. See the [implementation and verification](plans/2026-11-15-weekly-muscle-sets.md).
