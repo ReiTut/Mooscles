@@ -1,5 +1,11 @@
 # Verification — 2026-10-25
 
+## Recovery release 1.5.7 / Build 31
+
+The runtime source matches the original `v1.5.7` tag at `ce87bcebec0cbd90103ab87b858089af5428ed7e`. The four source and test files from the Build 30 share-card change were restored from that tag. The separate Build 30 Robolectric test setup fix and later repository documentation are retained. Build 31 uses the original package, signer, Room schema 7, and updater format. [Recovery notes](docs/superpowers/releases/v1.5.7-build31.md)
+
+The share-card tests cover the restored per-load PR rows, the per-workout count, and the best working set. Recovery verification covers three independent paths: exact-commit Android CI and packaging, installation over Build 30 with synthetic saved workouts, and discovery through the public stable channel.
+
 ## Release 1.5.8 / Build 30
 
 Feature verification passed **193 focused Android host tests** and **61 Android 15 emulator tests**. A synthetic workout with a prior **15 kg × 5** lateral raise record reproduced **5 kg × 8** in the card's Records list and a total of **5 PRs**. The corrected preview and actual PNG showed **4 PRs**, with **15 kg × 3** still listed as the workout's best set. A four-page export repeated the same PR total in every header. The emulator opened Android's share chooser and stopped there. Saved workout details still show per-load records.

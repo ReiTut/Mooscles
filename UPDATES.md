@@ -92,6 +92,8 @@ Replace the tag, last distributed version code, and notes filename for each late
 
 ## Recovery releases with a historical version name
 
+The **1.5.7 / Build 31** recovery restores Build 29 app behavior. Stable-channel updaters compare `update.json.versionCode`, so Build 30 can discover Build 31 even with the restored version name. The unique tag is `v1.5.7-build31`, and the versioned APK is `Mooscles-v1.5.7-build31-debug.apk`. [Recovery notes](docs/superpowers/releases/v1.5.7-build31.md)
+
 The updater shipped in v1.4.1 and v1.4.2 compares `update.json.versionCode` with the installed Android build number. It does not require increasing semantic version names or tags. A recovery of v1.4.1 functionality can therefore use **versionName 1.4.1 / versionCode 13** after distributed Build 12. Its unique tag is **v1.4.1-build13**; the original v1.4.1 tag is never overwritten. Settings displays the actual installed build number.
 
 Pass `-IncludeVersionCode` to `prepare-release.ps1` to include the actual code in the APK filename. This recovery's `build.ps1` already does so. The guarded publisher's `-UseBuildTag` uses the exact `v<versionName>-build<versionCode>` tag and the same filename convention:
