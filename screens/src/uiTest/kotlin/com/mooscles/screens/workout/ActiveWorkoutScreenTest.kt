@@ -45,9 +45,12 @@ import com.mooscles.designsystem.components.ExerciseCardSublineTag
 import com.mooscles.designsystem.components.ExerciseMenuTag
 import com.mooscles.designsystem.components.SetRowCheckTag
 import com.mooscles.designsystem.components.SetRowLoadTag
+import com.mooscles.designsystem.components.SetRowPreviousTag
+import com.mooscles.designsystem.components.SetRowRepsTag
 import com.mooscles.designsystem.components.TimerDockTag
 import com.mooscles.designsystem.components.TimerOpenTag
 import com.mooscles.designsystem.components.TimerTitleTag
+import com.mooscles.designsystem.components.setRowColumnTag
 import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.designsystem.interaction.HapticEvent
 import com.mooscles.designsystem.interaction.RecordingHaptics
@@ -60,6 +63,7 @@ import com.mooscles.screens.screenRestoration
 import com.mooscles.screens.withScreen
 import com.mooscles.ui.ExerciseUi
 import com.mooscles.ui.MoosclesActions
+import com.mooscles.ui.PreviousSetUi
 import com.mooscles.ui.RoutineTargetUi
 import com.mooscles.ui.TargetSetUi
 import com.mooscles.ui.SetUi
@@ -259,6 +263,30 @@ class ActiveWorkoutScreenTest {
     private fun ComposeUiTest.swipeLeft(id: String) {
         row(id).performTouchInput { swipe(start = Offset(width * 0.97f, centerY), end = Offset(width * 0.5f, centerY), durationMillis = 400) }
         waitForIdle()
+    }
+
+    @Test
+    fun previousValuesStayInAlignedColumnsAtTheReportedPhoneWidthAndFontScale() = runComposeUiTest {
+        val active = workout(listOf(2), listOf(0))
+        val entry = active.exercises.single().copy(
+            sets = listOf(SetUi("e1s1", reps = 10, weightKg = 100.0), SetUi("e1s2", reps = 9, weightKg = 50.25)),
+            previousSets = listOf(PreviousSetUi(110.0, 10, false, false), PreviousSetUi(100.0, 9, false, false)),
+        )
+        show(Fake(stateOf(active.copy(exercises = listOf(entry)))), locale = "en", size = DpSize(393.dp, 800.dp),
+            fontScale = 1.1f, density = 2.75f)
+        val columns = onNodeWithTag(setRowColumnTag(1), useUnmergedTree = true).assertIsDisplayed().getBoundsInRoot()
+        val cells = entry.sets.map { set ->
+            listOf(SetRowPreviousTag, SetRowLoadTag, SetRowRepsTag, SetRowCheckTag).map { tag ->
+                onNode(hasTestTag(tag) and hasAnyAncestor(hasTestTag(workoutSetRowTag(set.id))), useUnmergedTree = true)
+                    .assertIsDisplayed().getBoundsInRoot()
+            }
+        }
+        for (row in cells) {
+            assertEquals(columns.left, row[0].left)
+            assertTrue(row.all { it.top == row[0].top }, "Previous, weight, reps and check share one line: $row")
+            assertTrue(row.zipWithNext().all { (left, right) -> left.right <= right.left })
+        }
+        assertEquals(cells[0].map { it.left }, cells[1].map { it.left })
     }
 
     @Test

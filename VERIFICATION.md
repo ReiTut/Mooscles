@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release 1.5.9 / Build 32
+
+The feature checks used the same application code before the version bump. The layout and sharing changes passed 120 focused host tests and 79 Android 15 emulator tests. The target-prefill follow-up passed 259 focused host tests and 37 Android 15 emulator tests, including the prior layout and sharing regressions. These test selections overlap. Lint, design-token validation, and the APK budget check passed.
+
+An isolated Preview on a Redmi Note 12 with Android 15 verified aligned set rows, the compact timer, PR selection in the exported PNG, four-page sharing, and the Android share chooser. In a synthetic bodyweight squat workout, the next quick workout filled both 5 kg and 12 reps. After a new 5.25 kg × 8 PR was saved and the app reopened, the next quick workout used the new pair. A routine-based PR updated its matching set and kept the other set's unweighted target. The phone ran the Preview variant with its own test data.
+
+Release checks use Build 32, the original Android signing certificate, application ID `com.mooscles`, and Room schema 7. [Release notes](docs/superpowers/releases/v1.5.9.md)
+
 ## Recovery release 1.5.7 / Build 31
 
 The runtime source matches the original `v1.5.7` tag at `ce87bcebec0cbd90103ab87b858089af5428ed7e`. The four source and test files from the Build 30 share-card change were restored from that tag. The separate Build 30 Robolectric test setup fix and later repository documentation are retained. Build 31 uses the original package, signer, Room schema 7, and updater format. [Recovery notes](docs/superpowers/releases/v1.5.7-build31.md)

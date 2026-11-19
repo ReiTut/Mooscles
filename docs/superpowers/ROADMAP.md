@@ -1,5 +1,7 @@
 # Roadmap do Mooscles
 
+> **Workout fixes.** [1.5.9 / Build 32](releases/v1.5.9.md) preloads the exercise record in quick workouts, fixes set alignment and long timer labels, and credits the qualifying record on shared cards.
+
 > **Recovery release.** [1.5.7 / Build 31](releases/v1.5.7-build31.md) restores the original Build 29 behavior using a higher build number for the stable updater.
 
 > **Shared workout PRs.** [1.5.8 / Build 30](releases/v1.5.8.md) corrects the Records list and PR total on share cards while retaining lighter-load reps records in workout history.

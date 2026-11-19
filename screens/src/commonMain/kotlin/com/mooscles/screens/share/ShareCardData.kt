@@ -64,8 +64,7 @@ data class ShareRecordRow(val name: String, val detail: String)
 /**
  * One exercise of the workout: its completed sets and its best set ("82,5 kg × 8", "Warm-up only").
  * [hasRecord] says the best set shown is itself a record set, which the card draws in brass with
- * the record icon; a record on another set of the exercise (more reps at a lighter load) is only
- * in the card's records, so the brass never marks a set that is not a record.
+ * the record icon. Only the set credited in the card's records can receive this badge.
  */
 data class ShareCardRow(val name: String, val completedSets: Int, val bestSet: String, val hasRecord: Boolean)
 
@@ -123,7 +122,7 @@ data class ShareCardData(
     val dateText: String,
     val durationText: String,
     val setsText: String,
-    /** Distinct exercise variations with first or beaten records, from the domain summary. */
+    /** Distinct exercise variations credited in [records], including eligible first records. */
     val prCount: Int,
     /** Localized display of [prCount]; retain the numeric count for accessible preview descriptions. */
     val prsText: String,
@@ -136,6 +135,8 @@ data class ShareCardData(
 )
 
 object ShareCards {
+    private data class CreditedRecord(val setId: String, val row: ShareRecordRow)
+
     private val chronology = compareBy<Workout> { it.startedAt }
         .thenBy { it.endedAt ?: Long.MAX_VALUE }.thenBy { it.id }
 
@@ -169,6 +170,38 @@ object ShareCards {
         fun loadByReps(kg: Double, reps: Int) =
             if (kg > 0.0) MoosclesNumbers.setText(plain(kg), unit, reps, locale) else fillTemplate(texts.bodyweightSet, reps)
 
+        // Per-load records remain in history. A weighted exercise earns a card row only when it
+        // improves at its record load, or reaches a heavier load. The same selected set drives the badge.
+        val seen = mutableSetOf<Pair<String, LoadConvention>>()
+        val credited = summary.exercises.mapNotNull { entry ->
+            val key = entry.exercise.exerciseId to entry.exercise.convention
+            if (!seen.add(key)) return@mapNotNull null
+            val weightRecord = entry.pr
+            val recordWeight = entry.recordWeightKg
+            val repetitionRecord = entry.repsPrs.filter { record ->
+                when {
+                    entry.exercise.convention == LoadConvention.ASSISTANCE -> record.assistance
+                    record.assistance -> false
+                    recordWeight == null -> record.weightKg == 0.0
+                    else -> BestSets.sameLoad(record.weightKg, recordWeight)
+                }
+            }.maxByOrNull { it.newReps }
+            when {
+                weightRecord != null && (repetitionRecord == null || weightRecord.reps >= repetitionRecord.newReps) ->
+                    CreditedRecord(weightRecord.setId, ShareRecordRow(
+                        name(weightRecord.exerciseId, weightRecord.exerciseName),
+                        loadByReps(weightRecord.newWeightKg, weightRecord.reps),
+                    ))
+                repetitionRecord != null -> CreditedRecord(repetitionRecord.setId, ShareRecordRow(
+                    name(repetitionRecord.exerciseId, repetitionRecord.exerciseName),
+                    if (repetitionRecord.assistance) {
+                        fillTemplate(texts.assistedSet, weight(repetitionRecord.weightKg), repetitionRecord.newReps)
+                    } else loadByReps(repetitionRecord.weightKg, repetitionRecord.newReps),
+                ))
+                else -> null
+            }
+        }
+        val creditedSetIds = credited.map { it.setId }.toSet()
         val rows = summary.exercises.filter { it.completedSets.isNotEmpty() }.map { entry ->
             val completed = entry.completedSets
             val assistanceConvention = entry.exercise.convention == LoadConvention.ASSISTANCE
@@ -180,33 +213,8 @@ object ShareCards {
                     NoBestSet.ASSISTANCE_ONLY -> texts.assistanceOnly
                     NoBestSet.NO_WORKING_SET -> texts.noWorkingSet
                 }
-            // Only the best set itself: brass beside "62,5 kg × 8" must mean that set is a record.
-            val bestIsWeightPr = best != null && entry.pr?.let { record ->
-                BestSets.sameLoad(best.weightKg, record.newWeightKg) && best.reps == record.reps
-            } == true
-            val bestIsRepsPr = best != null && entry.repsPrs.any { record ->
-                !best.warmup && BestSets.sameLoad(best.weightKg, record.weightKg) && best.reps == record.newReps &&
-                    (best.assistance || entry.exercise.convention == LoadConvention.ASSISTANCE) == record.assistance
-            }
-            ShareCardRow(name(entry.exercise.exerciseId, entry.exercise.name), completed.size, bestText, bestIsWeightPr || bestIsRepsPr)
-        }
-
-        // One line per variation, in workout order: its weight record, else its first repetitions record.
-        val seen = mutableSetOf<Pair<String, LoadConvention>>()
-        val records = summary.exercises.mapNotNull { entry ->
-            val key = entry.exercise.exerciseId to entry.exercise.convention
-            if (key in seen) return@mapNotNull null
-            val weightRecord = entry.pr
-            val repsRecord = entry.repsPrs.firstOrNull()
-            val row = when {
-                weightRecord != null ->
-                    ShareRecordRow(name(weightRecord.exerciseId, weightRecord.exerciseName), loadByReps(weightRecord.newWeightKg, weightRecord.reps))
-                repsRecord != null -> ShareRecordRow(name(repsRecord.exerciseId, repsRecord.exerciseName),
-                    if (repsRecord.assistance) fillTemplate(texts.assistedSet, weight(repsRecord.weightKg), repsRecord.newReps)
-                    else loadByReps(repsRecord.weightKg, repsRecord.newReps))
-                else -> null
-            }
-            row?.also { seen += key }
+            ShareCardRow(name(entry.exercise.exerciseId, entry.exercise.name), completed.size, bestText,
+                best != null && best.id in creditedSetIds)
         }
 
         val finished = data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology)
@@ -215,10 +223,10 @@ object ShareCards {
             dateText = dateRange(workout.startedAt, end, zone, texts),
             durationText = Durations.clock(summary.durationMillis / 1000),
             setsText = MoosclesNumbers.localize(summary.completedSetCount.toString(), locale),
-            prCount = summary.prExerciseCount,
-            prsText = MoosclesNumbers.localize(summary.prExerciseCount.toString(), locale),
+            prCount = credited.size,
+            prsText = MoosclesNumbers.localize(credited.size.toString(), locale),
             volumeText = weight(summary.volumeKg),
-            records = records,
+            records = credited.map { it.row },
             rows = rows,
             workoutNumber = finished.indexOfFirst { it.id == workoutId } + 1,
             labels = texts.labels,

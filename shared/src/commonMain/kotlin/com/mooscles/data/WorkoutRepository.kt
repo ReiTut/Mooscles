@@ -603,23 +603,36 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
     }
 
     suspend fun addWorkoutExercise(workoutId: String, exerciseId: String, defaultRestSeconds: Int = RestDuration.DEFAULT_SECONDS): String = db.writeTransaction {
-        dataRequireNotNull(dao.workout(workoutId), DataError.WORKOUT_NOT_FOUND) { "Workout not found." }
+        val workout = dataRequireNotNull(dao.workout(workoutId), DataError.WORKOUT_NOT_FOUND) { "Workout not found." }
         EditRules.rest(defaultRestSeconds)
         val exercise = dataRequireNotNull(dao.exercise(exerciseId), DataError.EXERCISE_NOT_FOUND) { "Exercise not found." }
         val entry = snapshotExercise(exercise, workoutId, dao.workoutItems(workoutId).size, defaultRestSeconds)
         dao.insertWorkoutExercise(entry)
-        repeat(2) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = entry.id, position = position,
-            assistance = exercise.convention == LoadConvention.ASSISTANCE)) }
+        insertInitialWorkoutSets(entry, workout.status == WorkoutStatus.ACTIVE)
         entry.id
     }
 
     suspend fun replaceWorkoutExercise(id: String, exerciseId: String) = db.writeTransaction {
         val old = dataRequireNotNull(dao.workoutExercise(id), DataError.WORKOUT_EXERCISE_NOT_FOUND) { "Workout exercise not found." }
         val exercise = dataRequireNotNull(dao.exercise(exerciseId), DataError.EXERCISE_NOT_FOUND) { "Exercise not found." }
-        dao.updateWorkoutExercise(snapshotExercise(exercise, old.workoutId, old.position, old.restSeconds).copy(id = old.id))
+        val replacement = snapshotExercise(exercise, old.workoutId, old.position, old.restSeconds).copy(id = old.id)
+        val active = dao.workout(old.workoutId)?.status == WorkoutStatus.ACTIVE
+        dao.updateWorkoutExercise(replacement)
         dao.deleteExerciseSets(id)
-        repeat(2) { position -> dao.insertSet(WorkoutSet(workoutExerciseId = id, position = position,
-            assistance = exercise.convention == LoadConvention.ASSISTANCE)) }
+        insertInitialWorkoutSets(replacement, active)
+    }
+
+    /** New unplanned active sets start at one real PR. Saved-workout edits still start empty. */
+    private suspend fun insertInitialWorkoutSets(entry: WorkoutExercise, active: Boolean) {
+        val assistance = entry.convention == LoadConvention.ASSISTANCE
+        val record = if (active && !assistance) {
+            RoutineTargetRecords.bestForExercise(entry.exerciseId, entry.convention,
+                dao.completedSetsFromSavedWorkouts(entry.exerciseId, entry.convention))
+        } else null
+        dao.insertSets(List(2) { position ->
+            WorkoutSet(workoutExerciseId = entry.id, position = position,
+                reps = record?.reps ?: 0, weightKg = record?.weightKg ?: 0.0, assistance = assistance)
+        })
     }
 
     suspend fun updateWorkoutExercise(item: WorkoutExercise) = db.writeTransaction {

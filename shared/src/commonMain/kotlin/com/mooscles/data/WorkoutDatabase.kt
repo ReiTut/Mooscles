@@ -70,6 +70,14 @@ interface WorkoutDao {
     @Query("SELECT * FROM workout_sets WHERE workoutExerciseId = :id ORDER BY position") suspend fun exerciseSets(id: String): List<WorkoutSet>
     @Query("SELECT workout_sets.* FROM workout_sets INNER JOIN workout_exercises ON workout_sets.workoutExerciseId = workout_exercises.id WHERE workout_exercises.workoutId = :workoutId ORDER BY workout_exercises.position, workout_sets.position")
     suspend fun workoutSets(workoutId: String): List<WorkoutSet>
+    @Query("""
+        SELECT s.* FROM workout_sets s
+        JOIN workout_exercises e ON s.workoutExerciseId = e.id
+        JOIN workouts w ON e.workoutId = w.id
+        WHERE e.exerciseId = :exerciseId AND e.convention = :convention
+            AND w.status = 'FINISHED' AND s.completed = 1
+    """)
+    suspend fun completedSetsFromSavedWorkouts(exerciseId: String, convention: LoadConvention): List<WorkoutSet>
     @Query("SELECT * FROM workout_sets WHERE id = :id") suspend fun set(id: String): WorkoutSet?
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedExercises(items: List<Exercise>)
     @Insert suspend fun insertExercise(item: Exercise)

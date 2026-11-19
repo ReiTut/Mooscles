@@ -61,19 +61,19 @@ object RoutineTargetRecords {
         }
     }
 
-    /**
-     * Exercise-wide records for legacy backup checkpoints. Planned targets use [latestByPlannedSet].
-     */
+    /** The record for one exact exercise and load convention, using only sets from finished workouts. */
+    fun bestForExercise(exerciseId: String, convention: LoadConvention, finishedSets: List<WorkoutSet>): RoutineTargetRecord? {
+        val winner = best(finishedSets.filter { eligible(it, convention) }) ?: return null
+        return RoutineTargetRecord(exerciseId, convention, winner.weightKg.takeUnless { it == 0.0 }, winner.reps)
+    }
+
+    /** Exercise-wide records for legacy backup checkpoints. Planned targets use [latestByPlannedSet]. */
     fun latest(data: AppData): List<RoutineTargetRecord> {
         val finishedIds = data.workouts.filter { it.status == WorkoutStatus.FINISHED }.map { it.id }.toSet()
         val setsByExercise = data.sets.groupBy { it.workoutExerciseId }
         return data.workoutExercises.filter { it.workoutId in finishedIds }
             .groupBy { Key(it.exerciseId, it.convention) }.mapNotNull { (key, exercises) ->
-                val candidates = exercises.flatMap { setsByExercise[it.id].orEmpty() }
-                    .filter { eligible(it, key.convention) }
-                val best = best(candidates) ?: return@mapNotNull null
-                RoutineTargetRecord(key.exerciseId, key.convention,
-                    best.weightKg.takeUnless { it == 0.0 }, best.reps)
+                bestForExercise(key.exerciseId, key.convention, exercises.flatMap { setsByExercise[it.id].orEmpty() })
             }.sortedWith(compareBy<RoutineTargetRecord> { it.exerciseId }.thenBy { it.convention.name })
     }
 

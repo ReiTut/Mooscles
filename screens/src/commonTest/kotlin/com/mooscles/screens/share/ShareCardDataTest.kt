@@ -11,6 +11,7 @@ import com.mooscles.data.WorkoutSet
 import com.mooscles.data.WorkoutStatus
 import com.mooscles.designsystem.format.NumberLocale
 import com.mooscles.domain.WeightUnits
+import com.mooscles.domain.WorkoutCalculations
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -104,6 +105,8 @@ class ShareCardDataTest {
         val entry = exercise()
         val result = card(data(entry, set(entry, 22.0.nextUp(), 6), set(entry, 22.0, 9)))
         assertEquals("22\u00A0kg × 9", result.rows.single().bestSet)
+        assertTrue(result.rows.single().hasRecord)
+        assertEquals("22\u00A0kg × 9", result.records.single().detail)
     }
 
     @Test fun everyCompletedExerciseIsRetainedInSavedOrderWithLongNamesIntact() {
@@ -232,21 +235,45 @@ class ShareCardDataTest {
         }
     }
 
-    /**
-     * A repetitions record on a lighter set (50 kg × 12) while the best set (60 kg × 8) is no
-     * record: the row is not marked, so its brass "60 kg × 8" never reads as a record; the record
-     * is in the card's records.
-     */
-    @Test fun aRecordOnAnotherSetDoesNotMarkTheBestSet() {
+    @Test fun lighterRepetitionRecordsStayInHistoryWhenTheBestSetIsWeakerThanItsRecord() {
         val old = exercise(id = "old", workout = "old")
         val bench = exercise()
-        val result = card(AppData(workouts = listOf(workout("old", 0), workout()),
+        val source = AppData(workouts = listOf(workout("old", 0), workout()),
             workoutExercises = listOf(old, bench),
-            sets = listOf(set(old, 60.0, 8), set(old, 50.0, 8, position = 1),
-                set(bench, 60.0, 8), set(bench, 50.0, 12, position = 1))))
-        assertEquals("60 kg × 8", result.rows.single().bestSet)
+            sets = listOf(set(old, 15.0, 5), set(bench, 5.0, 8), set(bench, 15.0, 3, position = 1)))
+        val result = card(source)
+        assertEquals("15\u00A0kg × 3", result.rows.single().bestSet)
         assertFalse(result.rows.single().hasRecord)
-        assertEquals(listOf(ShareRecordRow("Saved bench", "50 kg × 12")), result.records)
+        assertTrue(result.records.isEmpty())
+        assertEquals(0, result.prCount)
+        assertEquals(5.0, WorkoutCalculations.repsPrsForWorkout(source, "selected").single().weightKg)
+    }
+
+    @Test fun topLoadRepetitionRecordWinsOverEarlierLighterAndAssistedSets() {
+        val old = exercise(id = "old", workout = "old")
+        val later = exercise(id = "later-entry", workout = "later")
+        val squat = exercise().copy(name = "Plate-loaded hack squat")
+        val source = AppData(workouts = listOf(workout("later", 2000), workout("old", 0), workout()),
+            workoutExercises = listOf(old, squat, later),
+            sets = listOf(set(old, 80.0, 5), set(squat, 40.0, 6), set(squat, 60.0, 8, position = 1, assistance = true),
+                set(squat, 80.0, 6, position = 2), set(later, 100.0, 8)))
+        val result = card(source)
+        assertEquals("80\u00A0kg × 6", result.rows.single().bestSet)
+        assertTrue(result.rows.single().hasRecord)
+        assertEquals(listOf(ShareRecordRow(squat.name, "80\u00A0kg × 6")), result.records)
+        assertEquals(1, result.prCount)
+    }
+
+    @Test fun aLighterSessionBestDoesNotBeatTheHistoricalRecordEvenWithMoreReps() {
+        val old = exercise(id = "old", workout = "old")
+        val squat = exercise()
+        val result = card(AppData(workouts = listOf(workout("old", 0), workout()),
+            workoutExercises = listOf(old, squat),
+            sets = listOf(set(old, 90.0, 4), set(squat, 40.0, 6), set(squat, 80.0, 6, position = 1))))
+        assertEquals("80\u00A0kg × 6", result.rows.single().bestSet)
+        assertFalse(result.rows.single().hasRecord)
+        assertTrue(result.records.isEmpty())
+        assertEquals(0, result.prCount)
     }
 
     @Test fun workoutNumberIsTheSelectedChronologicalOrdinalAndExcludesActiveWorkouts() {

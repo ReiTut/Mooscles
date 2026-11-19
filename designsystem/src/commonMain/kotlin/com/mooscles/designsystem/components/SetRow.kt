@@ -239,10 +239,10 @@ fun SetRow(
         content = {
             IndexCell(state.index, letter, onChangeType)
             PreviousCell(state, record, enteredRecord, onCopyPrevious)
-            Box(Modifier.testTag(SetRowLoadTag).sizeIn(minWidth = MTheme.sizes.numericFieldWidth, minHeight = MTheme.targets.workout), contentAlignment = Alignment.Center) {
+            Box(Modifier.testTag(SetRowLoadTag).sizeIn(minWidth = MTheme.targets.workout, minHeight = MTheme.targets.workout), contentAlignment = Alignment.Center) {
                 if (loadField != null) loadField() else NumberCell(state.load, state.loadSuggested, onEditLoad)
             }
-            Box(Modifier.testTag(SetRowRepsTag).sizeIn(minWidth = MTheme.sizes.numericFieldWidth, minHeight = MTheme.targets.workout), contentAlignment = Alignment.Center) {
+            Box(Modifier.testTag(SetRowRepsTag).sizeIn(minWidth = MTheme.targets.workout, minHeight = MTheme.targets.workout), contentAlignment = Alignment.Center) {
                 if (repsField != null) repsField() else NumberCell(state.reps.toString(), state.repsSuggested, onEditReps)
             }
             // Its own toggle node, outside the row's merged description: a screen reader reaches it

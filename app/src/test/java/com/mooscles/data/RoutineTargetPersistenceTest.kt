@@ -98,9 +98,112 @@ class RoutineTargetPersistenceTest {
         finish(plan, 0.0 to 10, 0.0 to 7)
         finish(plan, 0.0 to 12)
         assertEquals(listOf(null to 12, null to 7), targets(plan))
-        val next = workoutSets(start(plan))
+        val pending = start(plan)
+        val next = workoutSets(pending)
         assertEquals(listOf(12, 7), next.map { it.reps })
         assertTrue(next.all { it.weightKg == 0.0 && !it.completed })
+
+        repo.discardWorkout(pending)
+        finish(plan, 5.25 to 9)
+        assertEquals(listOf(5.25 to 9, null to 7), targets(plan))
+        assertEquals(listOf(5.25 to 9, 0.0 to 7), workoutSets(start(plan)).map { it.weightKg to it.reps })
+    }
+
+    @Test fun quickWorkoutPrefillsBothValuesFromTheWeightedBodyweightRecord() = runBlocking {
+        val exercise = movement(LoadConvention.BODYWEIGHT)
+        val initial = repo.startEmpty(now = 1_000)
+        repo.addWorkoutExercise(initial, exercise)
+        val original = workoutSets(initial)
+        complete(original[0], 5.0, 12)
+        complete(original[1], 0.0, 12)
+        repo.finishWorkout(initial, now = 2_000)
+
+        val improvement = repo.startEmpty(now = 3_000)
+        repo.addWorkoutExercise(improvement, exercise)
+        val next = workoutSets(improvement)
+        assertEquals(listOf(5.0 to 12, 5.0 to 12), next.map { it.weightKg to it.reps })
+        assertTrue(next.all { !it.completed && it.sourceRoutineSetId == null })
+        complete(next[0], 5.25, 8)
+        complete(next[1], 0.0, 20)
+        repo.finishWorkout(improvement, now = 4_000)
+
+        val lighter = repo.startEmpty(now = 5_000)
+        repo.addWorkoutExercise(lighter, exercise)
+        val lower = workoutSets(lighter)
+        assertEquals(listOf(5.25 to 8, 5.25 to 8), lower.map { it.weightKg to it.reps })
+        complete(lower[0], 5.0, 20)
+        repo.finishWorkout(lighter, now = 6_000)
+
+        val future = repo.startEmpty(now = 7_000)
+        repo.addWorkoutExercise(future, exercise)
+        assertEquals(listOf(5.25 to 8, 5.25 to 8), workoutSets(future).map { it.weightKg to it.reps })
+        complete(workoutSets(future).first(), 5.25, 9)
+        repo.finishWorkout(future, now = 8_000)
+        val sameWeight = repo.startEmpty(now = 9_000)
+        repo.addWorkoutExercise(sameWeight, exercise)
+        assertEquals(listOf(5.25 to 9, 5.25 to 9), workoutSets(sameWeight).map { it.weightKg to it.reps })
+        assertEquals(listOf(5.0 to 12, 0.0 to 12), workoutSets(initial).map { it.weightKg to it.reps })
+    }
+
+    @Test fun quickWorkoutTargetsUseOnlyEligibleSavedSetsForTheSameMovementAndLoadConvention() = runBlocking {
+        val exercise = movement()
+        val different = movement(LoadConvention.PER_HAND)
+        val old = repo.startEmpty()
+        repo.addWorkoutExercise(old, exercise)
+        complete(workoutSets(old).first(), 80.0, 4)
+        repo.finishWorkout(old)
+        repo.saveExercise(repo.exercise(exercise)!!.copy(convention = LoadConvention.PER_HAND))
+
+        val trained = repo.startEmpty()
+        val entry = repo.addWorkoutExercise(trained, exercise)
+        val rows = workoutSets(trained)
+        val weight = WeightUnits.lbToKg(42.75)
+        complete(rows[0], weight, 9)
+        repo.updateSet(rows[1].copy(weightKg = 90.0, reps = 12, completed = true, warmup = true))
+        val assisted = repo.workoutSet(repo.addSet(entry))!!
+        repo.updateSet(assisted.copy(weightKg = 100.0, reps = 12, completed = true, warmup = false, assistance = true))
+        val unfinished = repo.workoutSet(repo.addSet(entry))!!
+        repo.updateSet(unfinished.copy(weightKg = 110.0, reps = 12, completed = false, assistance = false))
+        val otherEntry = repo.addWorkoutExercise(trained, different)
+        complete(repo.snapshot().exerciseSets(otherEntry).first(), 120.0, 12)
+        repo.finishWorkout(trained)
+
+        val active = repo.startEmpty()
+        repo.addWorkoutExercise(active, exercise)
+        val first = workoutSets(active)
+        assertEquals(listOf(weight to 9, weight to 9), first.map { it.weightKg to it.reps })
+        complete(first[0], 150.0, 13)
+        val repeated = repo.addWorkoutExercise(active, exercise)
+        assertEquals(listOf(weight to 9, weight to 9),
+            repo.snapshot().exerciseSets(repeated).map { it.weightKg to it.reps })
+        assertEquals(150.0, repo.workoutSet(first[0].id)!!.weightKg, 0.0)
+        repo.discardWorkout(active)
+
+        val future = repo.startEmpty()
+        repo.addWorkoutExercise(future, exercise)
+        assertEquals(listOf(weight to 9, weight to 9), workoutSets(future).map { it.weightKg to it.reps })
+    }
+
+    @Test fun activeReplacementUsesBodyweightRepsAndSavedWorkoutEditsStillStartBlank() = runBlocking {
+        val bodyweight = movement(LoadConvention.BODYWEIGHT)
+        val first = repo.startEmpty()
+        repo.addWorkoutExercise(first, bodyweight)
+        assertTrue(workoutSets(first).all { it.weightKg == 0.0 && it.reps == 0 })
+        complete(workoutSets(first).first(), 0.0, 15)
+        repo.finishWorkout(first)
+
+        val active = repo.startEmpty()
+        val entry = repo.addWorkoutExercise(active, movement())
+        repo.replaceWorkoutExercise(entry, bodyweight)
+        val replacement = workoutSets(active)
+        assertEquals(listOf(0.0 to 15, 0.0 to 15), replacement.map { it.weightKg to it.reps })
+        assertTrue(replacement.none { it.completed })
+
+        val savedEntry = repo.addWorkoutExercise(first, bodyweight)
+        assertTrue(repo.snapshot().exerciseSets(savedEntry).all { it.weightKg == 0.0 && it.reps == 0 })
+        repo.replaceWorkoutExercise(savedEntry, bodyweight)
+        assertTrue(repo.snapshot().exerciseSets(savedEntry).all { it.weightKg == 0.0 && it.reps == 0 })
+        assertEquals(15, workoutSets(first).first().reps)
     }
 
     @Test fun warmupsUnfinishedAssistanceAndDiscardedWorkoutsCannotUpdatePlans() = runBlocking {

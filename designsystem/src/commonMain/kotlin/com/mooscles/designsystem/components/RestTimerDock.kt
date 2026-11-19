@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -266,7 +267,7 @@ internal fun Modifier.timerOpener(visual: RestTimerVisual, onOpen: (() -> Unit)?
 }
 
 /**
- * The rest timer docked above the bottom bar: a 48 dp ring, the name, the time (`num.dock`,
+ * The rest timer docked above the bottom bar: a 48 dp ring, the name (up to two lines), the time (`num.dock`,
  * in `text.secondary` and with a pause icon and a `text.tertiary` arc while paused,
  * tabular, one line, never cut), then -15, +15 and skip, each 56 dp. The buttons stack under the
  * time from a font scale of 1.5, or sooner when the measured width of the widest time plus the
@@ -361,7 +362,10 @@ fun RestTimerDock(
                         )
                     }
                     Column(Modifier.weight(1f)) {
-                        MText(status, MTheme.type.labelMd, color = colors.textSecondary)
+                        MText(
+                            status, MTheme.type.labelMd, color = colors.textSecondary,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        )
                         MText(
                             MoosclesNumbers.clock(visual.remainingSeconds),
                             timeStyle,
