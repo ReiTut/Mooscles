@@ -44,8 +44,6 @@ class UiFlowHostTest {
             resetApplicationFactory()
             val app = ApplicationProvider.getApplicationContext<MoosclesApplication>()
             app.deleteDatabase("mooscles.db")
-            // Other persistence tests intentionally change preferences; establish this flow's baseline.
-            runBlocking { app.preferences.autoRest(true); app.preferences.pounds(false); app.preferences.defaultRest(90) }
             shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         }
         override fun after() {
