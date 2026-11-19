@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-19 — Shared workout PRs.** [1.5.8 / Build 30](releases/v1.5.8.md) corrects the Records list and PR total on the share preview and exported workout images. Lighter-load reps records remain in saved workout history. [Feature verification](../../VERIFICATION.md#release-158--build-30) covers the lateral raise reproduction, multi-page export, and Android share chooser.
+
 **2026-11-17 — Planned-set swipe and records.** [1.5.7 / Build 29](releases/v1.5.7.md) adds swipe-to-remove with Undo in the Train routine editor and per-set **Follow the record** targets after workout completion. Room v7 adds nullable planned-set provenance, and backup imports accept older files. See the [plan](plans/2026-11-17-per-set-pr-targets.md) and [reused Android verification](../../VERIFICATION.md#release-157--build-29). Use an isolated Preview with synthetic data for device testing and the original debug signer for production packaging.
 
 **2026-11-15 — Weekly Sets by Muscle.** The [1.5.6 / Build 28 release](releases/v1.5.6.md) includes the Weekly History → Progress view and the Android-only project configuration. The [Weekly plan](plans/2026-11-15-weekly-muscle-sets.md) records functional verification and emulator results.

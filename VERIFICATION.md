@@ -1,5 +1,13 @@
 # Verification — 2026-10-25
 
+## Release 1.5.8 / Build 30
+
+Feature verification passed **193 focused Android host tests** and **61 Android 15 emulator tests**. A synthetic workout with a prior **15 kg × 5** lateral raise record reproduced **5 kg × 8** in the card's Records list and a total of **5 PRs**. The corrected preview and actual PNG showed **4 PRs**, with **15 kg × 3** still listed as the workout's best set. A four-page export repeated the same PR total in every header. The emulator opened Android's share chooser and stopped there. Saved workout details still show per-load records.
+
+The release increments the Android build number and keeps application ID `com.mooscles`, minimum API 26, Room schema 7, and the existing updater format. Release packaging uses the original signing certificate. The feature emulator run used synthetic data on the same application code before the version bump. GitHub Actions covers the release source, and public updater discovery is checked separately from installation. [Release notes](docs/superpowers/releases/v1.5.8.md)
+
+The first pull request host run timed out in `UiFlowHostTest` while setting preferences on Robolectric's paused main thread before the activity started. The test now uses its existing asynchronous preference setup after launch, with the same values and assertions. The focused host test passed locally after the adjustment.
+
 ## Release 1.5.7 / Build 29
 
 Build 29 adds swipe-to-remove with Undo in the Train routine editor and independent **Follow the record** targets for each planned set. The additive Room v6 → v7 migration adds the nullable `workout_sets.sourceRoutineSetId` column. Older workout sets keep their saved values with a missing origin, so an unlinked result leaves existing targets in place. Backup format v1 accepts older files and validates optional planned-set origins during import. The release uses application ID `com.mooscles`, minimum API 26, and the original debug signing certificate. [Release notes](docs/superpowers/releases/v1.5.7.md) · [Implementation plan](docs/superpowers/plans/2026-11-17-per-set-pr-targets.md)
