@@ -2,6 +2,18 @@
 
 A native Android workout journal built with Kotlin, Jetpack Compose and Material 3. Android 8.0 (API 26) or newer. Training data stays on the device and training works fully offline. App network requests only discover and download public GitHub updates. Optional sharing creates a workout image locally and opens the user's chosen destination; it never selects a recipient or sends automatically. No account, subscriptions or analytics.
 
+## Screenshots
+
+Captured on an Android 15 emulator using sample workout data. Select an image to view it at full size.
+
+| Train | Routine editor | Active workout | Exercise library |
+| --- | --- | --- | --- |
+| [<img src="docs/screenshots/train.png" alt="Train tab with three routines and a folder selector" width="180">](docs/screenshots/train.png) | [<img src="docs/screenshots/routine-editor.png" alt="Routine editor with planned weights, reps, and Follow the record sets" width="180">](docs/screenshots/routine-editor.png) | [<img src="docs/screenshots/active-workout.png" alt="Active workout with a completed set and the rest timer" width="180">](docs/screenshots/active-workout.png) | [<img src="docs/screenshots/library.png" alt="Exercise library with search, muscle filters, and recently used exercises" width="180">](docs/screenshots/library.png) |
+
+| Workout history | Weekly progress | Personal records | Share preview |
+| --- | --- | --- | --- |
+| [<img src="docs/screenshots/history.png" alt="Workout history calendar and a saved workout" width="180">](docs/screenshots/history.png) | [<img src="docs/screenshots/weekly-progress.png" alt="Weekly Progress showing week-to-date working sets by muscle" width="180">](docs/screenshots/weekly-progress.png) | [<img src="docs/screenshots/records.png" alt="Personal records timeline with weight and repetition records" width="180">](docs/screenshots/records.png) | [<img src="docs/screenshots/share-preview.png" alt="Workout share preview with duration, sets, PRs, volume, and best sets" width="180">](docs/screenshots/share-preview.png) |
+
 ## Current release
 
 **1.5.7 / Build 29** adds swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout. See the [release notes](docs/superpowers/releases/v1.5.7.md) and [Android verification](VERIFICATION.md).
