@@ -107,8 +107,6 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 [v1.5.8 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.8) · [Installable debug-signed APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.8/Mooscles-v1.5.8-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.8/update.json)
 
-The [previous v1.5.3-beta.1 / Build 24 prerelease](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.3-beta.1) remains available for reference. Build 25 supersedes it through the normal stable update channel.
-
 The APK uses the existing debug signing identity and application ID `com.mooscles` and requires Android 8.0 or newer. Distributed updaters select the highest compatible version code available on the selected update channel. Automatic downloads respect saved preferences, and Android may require installation approval.
 
 ## Use
