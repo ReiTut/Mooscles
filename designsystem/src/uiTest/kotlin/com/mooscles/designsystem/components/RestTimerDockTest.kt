@@ -58,6 +58,23 @@ class RestTimerDockTest {
         assertShownWhole(layout)
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun longExerciseNameKeepsTheDockCompactAndTheFullLabelInSemantics() = runComposeUiTest {
+        val label = "Rest · Chest-supported T-bar row machine"
+        withTheme(fontScale = 1.1f) {
+            Box(Modifier.width(360.dp)) { RestTimerDock(visual(99).copy(label = label), {}, {}, {}, onOpen = {}) }
+        }
+        val results = mutableListOf<TextLayoutResult>()
+        val status = onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode()
+        assertTrue(status.config[SemanticsActions.GetTextLayoutResult].action!!(results))
+        assertTrue(results.single().lineCount <= 2)
+        val time = onNodeWithTag(TimerTimeTag, useUnmergedTree = true).fetchSemanticsNode()
+        val timeLayouts = mutableListOf<TextLayoutResult>()
+        assertTrue(time.config[SemanticsActions.GetTextLayoutResult].action!!(timeLayouts))
+        assertShownWhole(timeLayouts.single())
+    }
+
     /**
      * The dock is one traversal group, like the compact timer and the workout bar, so a screen
      * reader reads its body and its buttons together, whichever row the buttons are on.

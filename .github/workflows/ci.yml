@@ -367,7 +367,9 @@ jobs:
           # Planned-set PR targets: RoutineTargetRecordsTest +1, RoutineTargetPersistenceTest +2,
           # RoutineWarmupMigrationTest +1, BackupCodecTest +2, ImportPlannerTest +3. 1341 + 9 = 1350.
           # Build 29 behavior restored: ShareCardDataTest removes the two Build 30-only expectations.
-          MIN_HOST_TESTS: 1350
+          # Shared workout PR selection: ShareCardDataTest +2. 1350 + 2 = 1352.
+          # Record defaults for unplanned sets: RoutineTargetPersistenceTest +3. 1352 + 3 = 1355.
+          MIN_HOST_TESTS: 1355
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',

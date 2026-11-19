@@ -68,7 +68,9 @@ data class ExerciseSummary(
     val completedSets: List<WorkoutSet>,
     val volumeKg: Double,
     val pr: WeightPr?,
-    val repsPrs: List<RepsPr> = emptyList()
+    val repsPrs: List<RepsPr> = emptyList(),
+    /** The exercise's heaviest qualifying load at the end of this workout, with lighter reps slots excluded. */
+    val recordWeightKg: Double? = null,
 )
 
 data class WorkoutSummary(
@@ -209,12 +211,14 @@ object WorkoutCalculations {
         prsForWorkout(SnapshotIndex(data), workoutId)
 
     private fun prsForWorkout(index: SnapshotIndex, workoutId: String): List<WeightPr> {
-        val data = index.data
-        val target = data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
-        val earlier = earlierWorkoutIds(data, target)
-        val baseline = mutableMapOf<Key, Double>()
-        data.workoutExercises.filter { it.workoutId in earlier }.forEach { addWeightBaseline(index, it, baseline) }
-        return weightPrs(index, workoutId, baseline)
+        val target = index.data.workouts.firstOrNull { it.id == workoutId } ?: return emptyList()
+        return weightPrs(index, workoutId, weightBaseline(index, earlierWorkoutIds(index.data, target)))
+    }
+
+    private fun weightBaseline(index: SnapshotIndex, earlier: Set<String>): Map<Key, Double> = buildMap {
+        index.data.workoutExercises.forEach { entry ->
+            if (entry.workoutId in earlier) addWeightBaseline(index, entry, this)
+        }
     }
 
     private fun addWeightBaseline(index: SnapshotIndex, exercise: WorkoutExercise, baseline: MutableMap<Key, Double>) {
@@ -312,13 +316,16 @@ object WorkoutCalculations {
     fun summary(data: AppData, workoutId: String, now: Long = currentTimeMillis()): WorkoutSummary? {
         val index = SnapshotIndex(data)
         val workout = data.workouts.firstOrNull { it.id == workoutId } ?: return null
-        val records = prsForWorkout(index, workoutId)
+        val baseline = weightBaseline(index, earlierWorkoutIds(data, workout))
+        val records = weightPrs(index, workoutId, baseline)
         val repetitions = repsPrsForWorkout(index, workoutId)
         val exercises = index.entries(workoutId).map { exercise ->
             val completed = index.sets(exercise.id).filter(::validCompleted)
+            val key = Key(exercise.exerciseId, exercise.convention)
+            val record = records.firstOrNull { it.exerciseId == key.exerciseId && it.convention == key.convention }
             ExerciseSummary(exercise, completed, completed.sumOf { volume(it, exercise.convention) },
-                records.firstOrNull { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention },
-                repetitions.filter { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention })
+                record, repetitions.filter { it.exerciseId == key.exerciseId && it.convention == key.convention },
+                record?.newWeightKg ?: baseline[key])
         }
         return WorkoutSummary(
             workout, exercises, exercises.count { it.completedSets.isNotEmpty() }, exercises.sumOf { it.completedSets.size },

@@ -119,9 +119,13 @@ internal fun WorkoutSetRow(
     onRemove: (SetUi, Int) -> Unit,
     modifier: Modifier = Modifier,
     onCells: ((SetRowCells) -> Unit)? = null,
+    compactFields: Boolean = false,
 ) {
     RecompositionProbe("row-${set.id}")
     val haptics = MTheme.haptics
+    // Most reps fit a workout-sized target. Reserve the wider field for exact decimal loads.
+    val repsWidth = if (compactFields) MTheme.targets.workout else MTheme.sizes.numericFieldWidth
+    val loadPadding = if (compactFields) MTheme.space.s1 else MTheme.space.s2
     // Read through derived states, so a change for another set does not recompose this row.
     val optimistic by remember(screen, set.id) { derivedStateOf { screen.optimistic[set.id] } }
     val doneNow by remember(screen, set) { derivedStateOf { screen.completedOf(set) } }
@@ -329,6 +333,7 @@ internal fun WorkoutSetRow(
                         imeAction = ImeAction.Next,
                         onImeAction = { repsFocus.requestFocus() },
                         focusRequester = loadFocus,
+                        horizontalPadding = loadPadding,
                     )
                 }
             },
@@ -349,6 +354,7 @@ internal fun WorkoutSetRow(
                         imeAction = ImeAction.Done,
                         onImeAction = closeKeyboard,
                         focusRequester = repsFocus,
+                        minimumWidth = repsWidth,
                     )
                 }
             },

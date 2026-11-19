@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-19 — Workout targets, layout, and sharing.** [1.5.9 / Build 32](releases/v1.5.9.md) preloads the qualifying exercise record in new quick-workout sets and keeps per-set routine history independent. It also fixes set-column alignment, long timer labels, and PR selection for shared workout images. [Android verification](../../VERIFICATION.md#release-159--build-32)
+
 **2026-11-19 — Build 29 behavior restored.** [1.5.7 / Build 31](releases/v1.5.7-build31.md) recovers the original Build 29 runtime source and keeps the later test harness adjustment. Use `v1.5.7-build31` for recovery packaging. The published Build 30 backup remains in `D:\Mooscles-Backups\v1.5.8-build30-20261119`. [Recovery verification](../../VERIFICATION.md#recovery-release-157--build-31)
 
 **2026-11-19 — Shared workout PRs.** [1.5.8 / Build 30](releases/v1.5.8.md) corrects the Records list and PR total on the share preview and exported workout images. Lighter-load reps records remain in saved workout history. [Feature verification](../../VERIFICATION.md#release-158--build-30) covers the lateral raise reproduction, multi-page export, and Android share chooser.

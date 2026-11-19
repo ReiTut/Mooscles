@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.padding
 import com.mooscles.designsystem.icons.MIcon
 import com.mooscles.designsystem.icons.MIcons
@@ -44,8 +45,8 @@ import org.jetbrains.compose.resources.stringResource
 const val NumericFieldBoxTag = "numeric-field-box"
 
 /**
- * A number entered during a workout: 72 x 48 dp (at least; it grows with the number and the
- * text size, never clipping it), `num.md`, a decimal or number keyboard by [kind]. The text area
+ * A number entered during a workout: [minimumWidth] x 48 dp (it grows with the number and the
+ * text size), `num.md`, a decimal or number keyboard by [kind]. The text area
  * is exactly as wide as the value (or [suggested]) plus the cursor, within the 72 dp: a bare
  * `BasicTextField` is at least ten "H" wide, which would stretch the box to ~150 dp. The target is
  * 56 dp tall. While empty it shows [suggested] in `text.secondary`. The label is
@@ -73,6 +74,8 @@ fun NumericField(
     imeAction: ImeAction = ImeAction.Done,
     onImeAction: () -> Unit = {},
     focusRequester: FocusRequester? = null,
+    minimumWidth: Dp = MTheme.sizes.numericFieldWidth,
+    horizontalPadding: Dp = MTheme.space.s2,
 ) {
     val colors = MTheme.colors
     val source = remember { MutableInteractionSource() }
@@ -81,7 +84,6 @@ fun NumericField(
     val errorPrefix = stringResource(Res.string.ds_error_prefix)
     val textColor = if (enabled) colors.textPrimary else colors.textDisabled
     val textStyle = MTheme.type.numMd.copy(color = textColor, textAlign = TextAlign.Center)
-    val padding = MTheme.space.s2
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
@@ -91,7 +93,7 @@ fun NumericField(
         val shown = width(value)
         maxOf(shown, suggested?.let(::width) ?: shown) + MTheme.sizes.textCursor
     }
-    val areaWidth = maxOf(MTheme.sizes.numericFieldWidth - padding * 2, textWidth)
+    val areaWidth = maxOf(minimumWidth - horizontalPadding * 2, textWidth)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         BasicTextField(
             value = value,
@@ -117,13 +119,13 @@ fun NumericField(
             decorationBox = { inner ->
                 // The outer box is the 56 dp target; the drawn box inside it is 48 dp tall.
                 Box(
-                    Modifier.sizeIn(minWidth = MTheme.sizes.numericFieldWidth, minHeight = MTheme.targets.workout),
+                    Modifier.sizeIn(minWidth = minimumWidth, minHeight = MTheme.targets.workout),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         Modifier
                             .testTag(NumericFieldBoxTag)
-                            .sizeIn(minWidth = MTheme.sizes.numericFieldWidth, minHeight = MTheme.sizes.numericFieldHeight)
+                            .sizeIn(minWidth = minimumWidth, minHeight = MTheme.sizes.numericFieldHeight)
                             .mFocusRing(shape, source, alwaysVisible = selected)
                             .background(if (enabled) colors.bgSurface else colors.bgInset, shape)
                             .border(
@@ -131,7 +133,7 @@ fun NumericField(
                                 if (hasError) colors.dangerText else colors.borderStrong,
                                 shape,
                             )
-                            .padding(horizontal = padding),
+                            .padding(horizontal = horizontalPadding),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (value.isEmpty() && suggested != null) {

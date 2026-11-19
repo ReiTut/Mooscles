@@ -154,6 +154,7 @@ internal fun LazyListScope.exerciseItems(
                 onChangeType = { callbacks.onChangeType(it, entry) },
                 onRemove = { snapshot, position -> callbacks.onRemoveSet(RemovedSet(entry.id, position, snapshot, position + 1)) },
                 onCells = if (i == 0) ({ cells -> screen.reportColumns(entry.id, cells) }) else null,
+                compactFields = true,
             )
         }
     }

@@ -16,7 +16,7 @@ Captured on an Android 15 emulator using sample workout data. Select an image to
 
 ## Current release
 
-**1.5.7 / Build 31** restores the app behavior from the original 1.5.7 release, including its shared workout Records list and PR count. Build 31 lets Android install the recovery over Build 30. See the [release notes](docs/superpowers/releases/v1.5.7-build31.md) and [Android verification](VERIFICATION.md#recovery-release-157--build-31).
+**1.5.9 / Build 32** fills new quick-workout sets with the qualifying PR's weight and reps, improves set alignment and the compact rest timer, and corrects which PRs appear on shared workout cards. See the [release notes](docs/superpowers/releases/v1.5.9.md) and [Android verification](VERIFICATION.md#release-159--build-32).
 
 [Build 29](docs/superpowers/releases/v1.5.7.md) added swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout.
 
@@ -105,7 +105,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.7 recovery release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.7-build31) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7-build31/Mooscles-v1.5.7-build31-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.7-build31/update.json)
+[v1.5.9 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.9) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.9/Mooscles-v1.5.9-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.9/update.json)
 
 The APK uses the existing debug signing identity and application ID `com.mooscles` and requires Android 8.0 or newer. Distributed updaters select the highest compatible version code available on the selected update channel. Automatic downloads respect saved preferences, and Android may require installation approval.
 
