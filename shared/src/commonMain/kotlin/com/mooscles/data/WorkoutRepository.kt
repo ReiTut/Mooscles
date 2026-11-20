@@ -11,7 +11,9 @@ import com.mooscles.backup.LocalState
 import com.mooscles.backup.from
 import com.mooscles.domain.RestDuration
 import com.mooscles.domain.RoutineTargetRecord
+import com.mooscles.domain.RoutineStartValues
 import com.mooscles.domain.RoutineTargetRecords
+import com.mooscles.domain.WorkoutCalculations
 import com.mooscles.domain.currentTimeMillis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -578,14 +580,18 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         if (legacySets.isNotEmpty()) dao.insertRoutineSets(legacySets)
         val entries = ArrayList<WorkoutExercise>(plans.size)
         val sets = ArrayList<WorkoutSet>(plannedSets.values.sumOf { it.size })
+        val past = previousSetsForRoutine(routineId, now)
         plans.forEach { plan ->
             val exercise = dataRequireNotNull(exercises[plan.exerciseId], DataError.EXERCISE_NOT_FOUND) { "Exercise not found." }
             val entry = snapshotExercise(exercise, workout.id, plan.position, (plan.restSeconds ?: RestDuration.DEFAULT_SECONDS).coerceAtMost(RestDuration.MAX_SECONDS))
             entries.add(entry)
-            plannedSets[plan.id].orEmpty().forEach { row ->
+            val rows = plannedSets[plan.id].orEmpty()
+            val previous = past[exercise.id].orEmpty()
+            val values = RoutineStartValues.forPlannedSets(rows, previous, exercise.convention)
+            rows.forEachIndexed { index, row ->
                 sets.add(WorkoutSet(workoutExerciseId = entry.id, position = row.position,
-                    reps = row.targetReps,
-                    weightKg = row.targetWeightKg ?: 0.0,
+                    reps = values[index].reps,
+                    weightKg = values[index].weightKg,
                     warmup = row.warmup,
                     assistance = exercise.convention == LoadConvention.ASSISTANCE,
                     sourceRoutineSetId = row.id))
@@ -608,7 +614,7 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         val exercise = dataRequireNotNull(dao.exercise(exerciseId), DataError.EXERCISE_NOT_FOUND) { "Exercise not found." }
         val entry = snapshotExercise(exercise, workoutId, dao.workoutItems(workoutId).size, defaultRestSeconds)
         dao.insertWorkoutExercise(entry)
-        insertInitialWorkoutSets(entry, workout.status == WorkoutStatus.ACTIVE)
+        insertInitialWorkoutSets(entry, workout)
         entry.id
     }
 
@@ -616,24 +622,57 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         val old = dataRequireNotNull(dao.workoutExercise(id), DataError.WORKOUT_EXERCISE_NOT_FOUND) { "Workout exercise not found." }
         val exercise = dataRequireNotNull(dao.exercise(exerciseId), DataError.EXERCISE_NOT_FOUND) { "Exercise not found." }
         val replacement = snapshotExercise(exercise, old.workoutId, old.position, old.restSeconds).copy(id = old.id)
-        val active = dao.workout(old.workoutId)?.status == WorkoutStatus.ACTIVE
+        val workout = dao.workout(old.workoutId)
         dao.updateWorkoutExercise(replacement)
         dao.deleteExerciseSets(id)
-        insertInitialWorkoutSets(replacement, active)
+        insertInitialWorkoutSets(replacement, workout)
     }
 
-    /** New unplanned active sets start at one real PR. Saved-workout edits still start empty. */
-    private suspend fun insertInitialWorkoutSets(entry: WorkoutExercise, active: Boolean) {
+    /**
+     * For each movement in the routine, in its current load convention: the sets the Previous column
+     * shows in a workout started at [before] (the newest earlier finished session with a valid completed
+     * set). Two reads for any routine size.
+     */
+    private suspend fun previousSetsForRoutine(routineId: String, before: Long): Map<String, List<WorkoutSet>> {
+        val entries = dao.savedEntriesForRoutine(routineId)
+        val setsByEntry = dao.completedSetsForRoutine(routineId).groupBy { it.workoutExerciseId }
+        return entries.groupBy { it.entry.exerciseId }.mapValues { (_, saved) -> newestValid(saved, setsByEntry, before) }
+    }
+
+    /**
+     * New unplanned active sets start from the Previous column: each copies the Previous working set it
+     * pairs with, and one without a Previous set starts at one real PR. Saved-workout edits still start empty.
+     */
+    private suspend fun insertInitialWorkoutSets(entry: WorkoutExercise, workout: Workout?) {
         val assistance = entry.convention == LoadConvention.ASSISTANCE
-        val record = if (active && !assistance) {
-            RoutineTargetRecords.bestForExercise(entry.exerciseId, entry.convention,
-                dao.completedSetsFromSavedWorkouts(entry.exerciseId, entry.convention))
+        val startedAt = workout?.takeIf { it.status == WorkoutStatus.ACTIVE }?.startedAt
+        val history = if (startedAt != null) dao.completedSetsFromSavedWorkouts(entry.exerciseId, entry.convention) else emptyList()
+        val previous = if (startedAt != null) previousSets(entry.exerciseId, entry.convention, history, startedAt) else emptyList()
+        val record = if (startedAt != null && !assistance) {
+            RoutineTargetRecords.bestForExercise(entry.exerciseId, entry.convention, history)
         } else null
         dao.insertSets(List(2) { position ->
+            val copied = RoutineStartValues.previousWorking(previous, assistance, position)
             WorkoutSet(workoutExerciseId = entry.id, position = position,
-                reps = record?.reps ?: 0, weightKg = record?.weightKg ?: 0.0, assistance = assistance)
+                reps = copied?.reps ?: record?.reps ?: 0, weightKg = copied?.weightKg ?: record?.weightKg ?: 0.0,
+                assistance = assistance)
         })
     }
+
+    /**
+     * The sets the Previous column shows for [exerciseId] in [convention] in a workout started at [before]:
+     * the newest earlier finished session with a valid completed set. [completed] is
+     * [WorkoutDao.completedSetsFromSavedWorkouts] for the same exercise and convention.
+     */
+    private suspend fun previousSets(exerciseId: String, convention: LoadConvention, completed: List<WorkoutSet>, before: Long): List<WorkoutSet> {
+        val setsByEntry = completed.groupBy { it.workoutExerciseId }
+        return newestValid(dao.savedEntriesForExercise(exerciseId, convention), setsByEntry, before)
+    }
+
+    private fun newestValid(saved: List<SavedWorkoutEntry>, setsByEntry: Map<String, List<WorkoutSet>>, before: Long): List<WorkoutSet> =
+        saved.asSequence().filter { it.workoutStartedAt < before }
+            .map { setsByEntry[it.entry.id].orEmpty().sortedBy(WorkoutSet::position).filter(WorkoutCalculations::validCompleted) }
+            .firstOrNull { it.isNotEmpty() }.orEmpty()
 
     suspend fun updateWorkoutExercise(item: WorkoutExercise) = db.writeTransaction {
         val existing = dataRequireNotNull(dao.workoutExercise(item.id), DataError.WORKOUT_EXERCISE_NOT_FOUND) { "Workout exercise not found." }
@@ -672,9 +711,19 @@ class WorkoutRepository(private val db: WorkoutDatabase) {
         val sets = dao.exerciseSets(workoutExerciseId)
         EditRules.workoutSetCount(sets.size + 1)
         val last = sets.lastOrNull()
+        val assistance = last?.assistance ?: (exercise.convention == LoadConvention.ASSISTANCE)
+        // In an active workout a new working set copies the Previous set it pairs with, like a routine set.
+        val workout = dao.workout(exercise.workoutId)
+        val copied = if (workout?.status == WorkoutStatus.ACTIVE) {
+            val previous = previousSets(exercise.exerciseId, exercise.convention,
+                dao.completedSetsFromSavedWorkouts(exercise.exerciseId, exercise.convention), workout.startedAt)
+            // A set whose assistance flag differs from its exercise (an old assisted row) keeps the old default.
+            if (assistance == (exercise.convention == LoadConvention.ASSISTANCE)) {
+                RoutineStartValues.previousWorking(previous, assistance, sets.count { !it.warmup })
+            } else null
+        } else null
         val item = WorkoutSet(workoutExerciseId = workoutExerciseId, position = sets.size,
-            weightKg = last?.weightKg ?: 0.0,
-            assistance = last?.assistance ?: (exercise.convention == LoadConvention.ASSISTANCE))
+            weightKg = copied?.weightKg ?: last?.weightKg ?: 0.0, reps = copied?.reps ?: 0, assistance = assistance)
         dao.insertSet(item)
         item.id
     }

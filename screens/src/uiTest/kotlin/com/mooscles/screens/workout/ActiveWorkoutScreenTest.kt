@@ -890,7 +890,8 @@ class ActiveWorkoutScreenTest {
         show(fake, timer = autoRest)
         val name = "Supino reto com barra"
         onNode(hasText(name) and hasAnyAncestor(hasTestTag(exerciseHeaderTag("e1"))), useUnmergedTree = true).assertExists()
-        onNode(hasText("Descanso · $name") and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
+        // The dock shows the name alone (its ring says it is a rest); the expanded title keeps "Descanso ·".
+        onNode(hasText(name) and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
         val shown = onAllNodesWithText(name, useUnmergedTree = true).fetchSemanticsNodes().size
 
         // The menu's title.
@@ -961,11 +962,11 @@ class ActiveWorkoutScreenTest {
         waitForIdle()
         // What the timer stores is the snapshot name, whatever the screen's language.
         assertEquals(listOf("startTimer:Barbell bench press,${workout.exercises.single().restSeconds},e1"), fake.calls)
-        onNode(hasText("Descanso · Supino reto com barra") and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
+        onNode(hasText("Supino reto com barra") and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
 
         locale.value = "en"
         waitForIdle()
-        onNode(hasText("Rest · Barbell bench press") and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
+        onNode(hasText("Barbell bench press") and hasAnyAncestor(hasTestTag(TimerDockTag)), useUnmergedTree = true).assertExists()
         onAllNodesWithText("Supino reto com barra", substring = true, useUnmergedTree = true).assertCountEquals(0)
         // The expanded timer names it by the entry too; with no set done yet, without "set 0 of 3".
         onNodeWithTag(TimerOpenTag).performClick()

@@ -382,4 +382,33 @@ class RestTimerDockTest {
         val expected = rest.width * MoosclesMotion().pressScale
         assertTrue(kotlin.math.abs(pressed.width - expected) < 2f, "pressed ${pressed.width}, at rest ${rest.width}, expected $expected")
     }
+
+    /**
+     * The name has its own line across the dock, above the ring and the time, so a long one is not
+     * squeezed beside the buttons: at 412 dp and font scale 1.0 a pt-BR catalog name fits on one line,
+     * and the ±15 s and skip buttons stay on the time's row, to its right.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun theNameHasItsOwnLineAcrossTheDock() = runComposeUiTest {
+        val name = "Abdominal ajoelhado na polia"
+        withTheme(fontScale = 1f) {
+            Box(Modifier.width(412.dp)) { RestTimerDock(visual(84).copy(label = name), {}, {}, {}, onOpen = {}) }
+        }
+        waitForIdle()
+        val label = onNodeWithText(name, useUnmergedTree = true).fetchSemanticsNode()
+        val results = mutableListOf<TextLayoutResult>()
+        assertTrue(label.config[SemanticsActions.GetTextLayoutResult].action!!(results))
+        assertEquals(1, results.single().lineCount)
+        assertTrue(!results.single().hasVisualOverflow, "the name is cut")
+        val time = onNodeWithTag(TimerTimeTag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val minus = onNodeWithTag(TimerMinusTag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val skip = onNodeWithTag(TimerSkipTag, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val nameBounds = label.boundsInRoot
+        assertTrue(nameBounds.bottom <= time.top, "name $nameBounds is not above the time $time")
+        // The name's line runs over the buttons' column: it is wider than the room left of them.
+        assertTrue(nameBounds.right > minus.left, "name $nameBounds stops before the buttons $minus")
+        assertTrue(minus.left >= time.right && skip.left > minus.left, "buttons $minus, $skip not right of the time $time")
+        assertTrue(time.center.y in minus.top..minus.bottom, "the time $time is not on the buttons' row $minus")
+    }
 }

@@ -277,8 +277,9 @@ class TapBudgetTest {
 
     @Test
     fun sameAsLastWeekWithoutTarget() = budget(targets = false) { vm, ids ->
-        // No target: the set opens empty, with last week's 80 kg × 8 as its suggestion.
-        assertEquals(0 to 0.0, set(vm, ids[0])!!.let { it.reps to it.weightKg })
+        // No routine target (an empty workout): the set opens pre-filled from its Previous set, last
+        // week's 80 kg × 8, and one tap on its check saves it unchanged.
+        assertEquals(8 to 80.0, set(vm, ids[0])!!.let { it.reps to it.weightKg })
         val taps = Taps(this)
         taps.tap(check(ids[0]))
         await("set 1 is saved done") { set(vm, ids[0])?.completed == true }

@@ -1,5 +1,7 @@
 # Handoff: como continuar o Mooscles
 
+**2026-11-19 — Start values from Previous and the rest dock.** [1.5.10 / Build 33](releases/v1.5.10.md) starts routine sets, new quick-workout sets and added sets with the KG and REPS of their Previous set (spec [2026-11-19-routine-start-values](specs/2026-11-19-routine-start-values-design.md)), and puts the rest dock's exercise name on its own line without "Rest ·" (spec [2026-11-19-rest-dock-label](specs/2026-11-19-rest-dock-label-design.md)). [Android verification](../../VERIFICATION.md#release-1510--build-33)
+
 **2026-11-19 — Workout targets, layout, and sharing.** [1.5.9 / Build 32](releases/v1.5.9.md) preloads the qualifying exercise record in new quick-workout sets and keeps per-set routine history independent. It also fixes set-column alignment, long timer labels, and PR selection for shared workout images. [Android verification](../../VERIFICATION.md#release-159--build-32)
 
 **2026-11-19 — Build 29 behavior restored.** [1.5.7 / Build 31](releases/v1.5.7-build31.md) recovers the original Build 29 runtime source and keeps the later test harness adjustment. Use `v1.5.7-build31` for recovery packaging. The published Build 30 backup remains in `D:\Mooscles-Backups\v1.5.8-build30-20261119`. [Recovery verification](../../VERIFICATION.md#recovery-release-157--build-31)

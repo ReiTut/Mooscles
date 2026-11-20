@@ -109,7 +109,7 @@ class RoutineTargetPersistenceTest {
         assertEquals(listOf(5.25 to 9, 0.0 to 7), workoutSets(start(plan)).map { it.weightKg to it.reps })
     }
 
-    @Test fun quickWorkoutPrefillsBothValuesFromTheWeightedBodyweightRecord() = runBlocking {
+    @Test fun quickWorkoutSetsCopyPreviousAndFallBackToTheWeightedBodyweightRecord() = runBlocking {
         val exercise = movement(LoadConvention.BODYWEIGHT)
         val initial = repo.startEmpty(now = 1_000)
         repo.addWorkoutExercise(initial, exercise)
@@ -121,7 +121,7 @@ class RoutineTargetPersistenceTest {
         val improvement = repo.startEmpty(now = 3_000)
         repo.addWorkoutExercise(improvement, exercise)
         val next = workoutSets(improvement)
-        assertEquals(listOf(5.0 to 12, 5.0 to 12), next.map { it.weightKg to it.reps })
+        assertEquals(listOf(5.0 to 12, 0.0 to 12), next.map { it.weightKg to it.reps })
         assertTrue(next.all { !it.completed && it.sourceRoutineSetId == null })
         complete(next[0], 5.25, 8)
         complete(next[1], 0.0, 20)
@@ -130,13 +130,14 @@ class RoutineTargetPersistenceTest {
         val lighter = repo.startEmpty(now = 5_000)
         repo.addWorkoutExercise(lighter, exercise)
         val lower = workoutSets(lighter)
-        assertEquals(listOf(5.25 to 8, 5.25 to 8), lower.map { it.weightKg to it.reps })
+        assertEquals(listOf(5.25 to 8, 0.0 to 20), lower.map { it.weightKg to it.reps })
         complete(lower[0], 5.0, 20)
         repo.finishWorkout(lighter, now = 6_000)
 
         val future = repo.startEmpty(now = 7_000)
+        // One Previous set (5 × 20): the second set has none and starts at the weighted record.
         repo.addWorkoutExercise(future, exercise)
-        assertEquals(listOf(5.25 to 8, 5.25 to 8), workoutSets(future).map { it.weightKg to it.reps })
+        assertEquals(listOf(5.0 to 20, 5.25 to 8), workoutSets(future).map { it.weightKg to it.reps })
         complete(workoutSets(future).first(), 5.25, 9)
         repo.finishWorkout(future, now = 8_000)
         val sameWeight = repo.startEmpty(now = 9_000)
@@ -429,5 +430,110 @@ class RoutineTargetPersistenceTest {
         assertEquals(listOf(null to 0, null to 0), targets(plan))
         finish(plan, 15.0 to 7)
         assertEquals(listOf(15.0 to 7, null to 0), targets(plan))
+    }
+
+    private suspend fun manualTargets(plan: RoutineExercise, vararg values: Pair<Double?, Int>) =
+        repo.snapshot().plannedSets(plan.id).forEachIndexed { index, row ->
+            values.getOrNull(index)?.let { (weight, reps) -> repo.updateRoutineSet(row.id, reps, weight) }
+        }
+
+    @Test fun manualRoutineSetsStartFromThePreviousSetsExactly() = runBlocking {
+        val exercise = movement()
+        val plan = plan(exercise)
+        manualTargets(plan, 100.0 to 10, 100.0 to 9)
+        // An older quick workout holds more reps at 100 kg; Previous is still copied as it was.
+        val quick = repo.startEmpty(now = clock.also { clock += 1000 })
+        repo.addWorkoutExercise(quick, exercise)
+        complete(workoutSets(quick).first(), 100.0, 11)
+        assertTrue(repo.finishWorkout(quick, now = clock))
+        finish(plan, 120.0 to 7, 100.0 to 9)
+        // Manual prescriptions are not rewritten by finishing; only the new workout's values change.
+        assertEquals(listOf(100.0 to 10, 100.0 to 9), targets(plan))
+
+        val abandoned = start(plan)
+        assertEquals(listOf(120.0 to 7, 100.0 to 9), workoutSets(abandoned).map { it.weightKg to it.reps })
+        workoutSets(abandoned).forEach { complete(it, 200.0, 20) }
+        repo.discardWorkout(abandoned)
+
+        val next = workoutSets(start(plan))
+        assertEquals(listOf(120.0 to 7, 100.0 to 9), next.map { it.weightKg to it.reps })
+        assertEquals(repo.snapshot().plannedSets(plan.id).map { it.id }, next.map { it.sourceRoutineSetId })
+        assertTrue(next.none { it.completed })
+        assertEquals(listOf(100.0 to 10, 100.0 to 9), targets(plan))
+    }
+
+    @Test fun setsWithoutPreviousKeepTargetsAndFollowTheRecordSetsCopyPrevious() = runBlocking {
+        val plan = plan(movement(), sets = 3)
+        val rows = repo.snapshot().plannedSets(plan.id)
+        repo.updateRoutineSet(rows[1].id, 5, 25.0)
+        repo.updateRoutineSet(rows[2].id, 6, 22.0)
+        finish(plan, 30.0 to 5, 27.5 to 6)
+        assertEquals(listOf(30.0 to 5, 25.0 to 5, 22.0 to 6), targets(plan))
+        val first = start(plan)
+        assertEquals(listOf(30.0 to 5, 27.5 to 6, 22.0 to 6), workoutSets(first).map { it.weightKg to it.reps })
+        repo.discardWorkout(first)
+
+        // A lighter session keeps the record as the Follow target, but the next start copies Previous.
+        finish(plan, 25.0 to 4)
+        assertEquals(listOf(30.0 to 5, 25.0 to 5, 22.0 to 6), targets(plan))
+        assertEquals(listOf(25.0 to 4, 25.0 to 5, 22.0 to 6), workoutSets(start(plan)).map { it.weightKg to it.reps })
+    }
+
+    @Test fun routinesWithoutAnyPreviousSessionStillStartAtTheirTargets() = runBlocking {
+        val plan = plan(movement())
+        manualTargets(plan, 60.0 to 8, null to 12)
+        val other = plan(movement())
+        finish(other, 90.0 to 5)
+        assertEquals(listOf(60.0 to 8, 0.0 to 12), workoutSets(start(plan)).map { it.weightKg to it.reps })
+    }
+
+    @Test fun emptyWorkoutSetsCopyThePreviousColumnIncludingAddedSets() = runBlocking {
+        // The reported cable crunch: record 50 × 10, Previous 50 × 10 and 45 × 15.
+        val exercise = movement()
+        suspend fun quick(start: Long, vararg done: Pair<Double, Int>) {
+            val workout = repo.startEmpty(now = start)
+            val entry = repo.addWorkoutExercise(workout, exercise)
+            while (repo.snapshot().exerciseSets(entry).size < done.size) repo.addSet(entry)
+            repo.snapshot().exerciseSets(entry).zip(done).forEach { (set, value) -> complete(set, value.first, value.second) }
+            assertTrue(repo.finishWorkout(workout, now = start + 500))
+        }
+        quick(1_000, 50.0 to 10, 35.0 to 20, 30.0 to 25)
+        quick(2_000, 50.0 to 10, 45.0 to 15)
+
+        val active = repo.startEmpty(now = 3_000)
+        val entry = repo.addWorkoutExercise(active, exercise)
+        assertEquals(listOf(50.0 to 10, 45.0 to 15), workoutSets(active).map { it.weightKg to it.reps })
+        // A third set has no Previous set: it keeps the old default (the last load, reps from the suggestion).
+        val third = repo.workoutSet(repo.addSet(entry))!!
+        assertEquals(45.0 to 0, third.weightKg to third.reps)
+        repo.discardWorkout(active)
+
+        quick(4_000, 52.5 to 8, 45.0 to 15, 40.0 to 18)
+        val next = repo.startEmpty(now = 5_000)
+        val nextEntry = repo.addWorkoutExercise(next, exercise)
+        val added = repo.workoutSet(repo.addSet(nextEntry))!!
+        assertEquals(listOf(52.5 to 8, 45.0 to 15, 40.0 to 18), workoutSets(next).map { it.weightKg to it.reps })
+        assertEquals(40.0 to 18, added.weightKg to added.reps)
+        assertTrue(workoutSets(next).none { it.completed })
+    }
+
+    @Test fun addedRoutineSetsCopyPreviousAndSavedWorkoutEditsKeepTheOldDefault() = runBlocking {
+        val plan = plan(movement())
+        val first = start(plan)
+        val entry = repo.snapshot().workoutItems(first).first().id
+        repo.addSet(entry)
+        workoutSets(first).zip(listOf(60.0 to 8, 55.0 to 10, 50.0 to 12)).forEach { (set, value) -> complete(set, value.first, value.second) }
+        assertTrue(repo.finishWorkout(first, now = clock))
+
+        val next = start(plan)
+        val nextEntry = repo.snapshot().workoutItems(next).first().id
+        val added = repo.workoutSet(repo.addSet(nextEntry))!!
+        assertEquals(listOf(60.0 to 8, 55.0 to 10, 50.0 to 12), workoutSets(next).map { it.weightKg to it.reps })
+        assertEquals(50.0 to 12, added.weightKg to added.reps)
+        repo.discardWorkout(next)
+
+        // Editing the saved workout adds a set the old way: the last load and no reps.
+        val edited = repo.workoutSet(repo.addSet(entry))!!
+        assertEquals(50.0 to 0, edited.weightKg to edited.reps)
     }
 }

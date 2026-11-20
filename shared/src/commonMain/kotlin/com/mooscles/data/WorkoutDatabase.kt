@@ -3,6 +3,7 @@ package com.mooscles.data
 import androidx.room.ConstructedBy
 import androidx.room.Dao
 import androidx.room.Database
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -35,6 +36,9 @@ class EnumConverters {
     @TypeConverter fun status(value: String) = WorkoutStatus.valueOf(value)
     @TypeConverter fun status(value: WorkoutStatus) = value.name
 }
+
+/** A query result, not a table: a saved workout entry with its workout's start time. */
+data class SavedWorkoutEntry(@Embedded val entry: WorkoutExercise, val workoutStartedAt: Long)
 
 @Dao
 interface WorkoutDao {
@@ -78,6 +82,39 @@ interface WorkoutDao {
             AND w.status = 'FINISHED' AND s.completed = 1
     """)
     suspend fun completedSetsFromSavedWorkouts(exerciseId: String, convention: LoadConvention): List<WorkoutSet>
+    /** Every finished session entry of [exerciseId] in [convention], newest first, for the Previous column. */
+    @Query("""
+        SELECT e.*, w.startedAt AS workoutStartedAt FROM workout_exercises e
+        JOIN workouts w ON e.workoutId = w.id
+        WHERE e.exerciseId = :exerciseId AND e.convention = :convention AND w.status = 'FINISHED'
+        ORDER BY w.startedAt DESC, e.position
+    """)
+    suspend fun savedEntriesForExercise(exerciseId: String, convention: LoadConvention): List<SavedWorkoutEntry>
+    /**
+     * Saved entries of the routine's movements in their current load convention, newest first, in the
+     * order the Previous column searches (`WorkoutCalculations.performanceHistories`). One read for any
+     * routine size.
+     */
+    @Query("""
+        SELECT e.*, w.startedAt AS workoutStartedAt FROM workout_exercises e
+        JOIN workouts w ON e.workoutId = w.id
+        JOIN exercises x ON x.id = e.exerciseId
+        WHERE e.exerciseId IN (SELECT exerciseId FROM routine_exercises WHERE routineId = :routineId)
+            AND e.convention = x.convention AND w.status = 'FINISHED'
+        ORDER BY w.startedAt DESC, e.position
+    """)
+    suspend fun savedEntriesForRoutine(routineId: String): List<SavedWorkoutEntry>
+    /** The completed sets of [savedEntriesForRoutine], in one read. */
+    @Query("""
+        SELECT s.* FROM workout_sets s
+        JOIN workout_exercises e ON s.workoutExerciseId = e.id
+        JOIN workouts w ON e.workoutId = w.id
+        JOIN exercises x ON x.id = e.exerciseId
+        WHERE e.exerciseId IN (SELECT exerciseId FROM routine_exercises WHERE routineId = :routineId)
+            AND e.convention = x.convention AND w.status = 'FINISHED' AND s.completed = 1
+        ORDER BY s.position
+    """)
+    suspend fun completedSetsForRoutine(routineId: String): List<WorkoutSet>
     @Query("SELECT * FROM workout_sets WHERE id = :id") suspend fun set(id: String): WorkoutSet?
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun seedExercises(items: List<Exercise>)
     @Insert suspend fun insertExercise(item: Exercise)

@@ -272,7 +272,8 @@ class ActiveWorkoutFlowTest {
             assertEquals(listOf(85.0 to 6, 87.5 to 6, null to 0), targets.map { it.weightKg to it.reps })
             vm.startWorkout(seeded.routineId)
             await("the next workout starts") { vm.contentUi.value.active != null }
-            assertEquals(listOf(85.0 to 6, 87.5 to 6, 0.0 to 0),
+            // Every set opens at its Previous set, the workout just finished (RoutineStartValues).
+            assertEquals(listOf(85.0 to 6, 87.5 to 6, 87.5 to 6),
                 active(vm).exercises.first().sets.map { it.weightKg to it.reps })
         } finally {
             runOnUiThread { harness.close() }
