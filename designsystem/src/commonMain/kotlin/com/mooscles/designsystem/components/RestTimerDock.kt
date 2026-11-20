@@ -3,6 +3,7 @@ package com.mooscles.designsystem.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -25,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
@@ -267,7 +270,8 @@ internal fun Modifier.timerOpener(visual: RestTimerVisual, onOpen: (() -> Unit)?
 }
 
 /**
- * The rest timer docked above the bottom bar: a 48 dp ring, the name (up to two lines), the time (`num.dock`,
+ * The rest timer docked above the bottom bar: the name on its own line across the dock (up to two
+ * lines), then a 48 dp ring and the time (`num.dock`,
  * in `text.secondary` and with a pause icon and a `text.tertiary` arc while paused,
  * tabular, one line, never cut), then -15, +15 and skip, each 56 dp. The buttons stack under the
  * time from a font scale of 1.5, or sooner when the measured width of the widest time plus the
@@ -276,7 +280,7 @@ internal fun Modifier.timerOpener(visual: RestTimerVisual, onOpen: (() -> Unit)?
  * `timing.timerDoneHold`). A hidden polite live region speaks the start, each adjustment and the
  * end, not every second. The component is presentational and owns no clock: the caller passes a new
  * [visual] each second, which recomposes the dock (the ring sweep is read while drawing).
- * With [onOpen], tapping the body (ring, name and time) opens the expanded timer; without [canAdd]
+ * With [onOpen], tapping the body (ring and time, one button) or the name opens the expanded timer; without [canAdd]
  * (the 5:00 ceiling) +15 s is disabled. The dock is one traversal group.
  */
 @Composable
@@ -341,31 +345,38 @@ fun RestTimerDock(
             Modifier.fillMaxWidth().background(colors.bgRaised, shape).padding(padding),
             verticalArrangement = Arrangement.spacedBy(padding),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(padding)) {
-                // The body, with the row's gap, so the inline width measured above still holds.
-                Row(
-                    Modifier.weight(1f).timerOpener(visual, onOpen),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(padding),
-                ) {
-                    RestTimerRing({ progress.value }, ring, MTheme.sizes.dockRingStroke, ticks = false, phase = visual.phase) {
-                        MIcon(
-                            when (visual.phase) {
-                                TimerPhase.Done -> MIcons.CircleCheck
-                                TimerPhase.Paused -> MIcons.Pause
-                                TimerPhase.Running -> MIcons.Timer
-                            },
-                            contentDescription = null,
-                            modifier = if (paused) Modifier.testTag(TimerPausedIconTag) else Modifier,
-                            size = MTheme.sizes.icon20,
-                            tint = if (done) colors.timerProgress else colors.textSecondary,
-                        )
-                    }
-                    Column(Modifier.weight(1f)) {
-                        MText(
-                            status, MTheme.type.labelMd, color = colors.textSecondary,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis,
-                        )
+            Column(verticalArrangement = Arrangement.spacedBy(MTheme.space.s1)) {
+                // The name on its own line across the whole dock, so a long one is not squeezed beside the
+                // buttons. A tap on it opens the expanded timer too; it adds no second button for a screen
+                // reader, which reads the name and then the body's "Open rest timer, …".
+                MText(
+                    status, MTheme.type.labelMd,
+                    modifier = Modifier.fillMaxWidth().then(
+                        if (onOpen == null) Modifier else Modifier.pointerInput(onOpen) { detectTapGestures { onOpen() } },
+                    ),
+                    color = colors.textSecondary,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(padding)) {
+                    // The body (ring and time), with the row's gap, so the inline width measured above still holds.
+                    Row(
+                        Modifier.weight(1f).heightIn(min = target).timerOpener(visual, onOpen),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(padding),
+                    ) {
+                        RestTimerRing({ progress.value }, ring, MTheme.sizes.dockRingStroke, ticks = false, phase = visual.phase) {
+                            MIcon(
+                                when (visual.phase) {
+                                    TimerPhase.Done -> MIcons.CircleCheck
+                                    TimerPhase.Paused -> MIcons.Pause
+                                    TimerPhase.Running -> MIcons.Timer
+                                },
+                                contentDescription = null,
+                                modifier = if (paused) Modifier.testTag(TimerPausedIconTag) else Modifier,
+                                size = MTheme.sizes.icon20,
+                                tint = if (done) colors.timerProgress else colors.textSecondary,
+                            )
+                        }
                         MText(
                             MoosclesNumbers.clock(visual.remainingSeconds),
                             timeStyle,
@@ -375,15 +386,15 @@ fun RestTimerDock(
                             maxLines = 1,
                         )
                     }
-                }
-                if (!stacked) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
-                        buttons(Modifier)
-                        MIconButton(
-                            MIcons.SkipForward, skipLabel, onSkip,
-                            modifier = Modifier.testTag(TimerSkipTag),
-                            size = skipSize,
-                        )
+                    if (!stacked) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(gap), verticalAlignment = Alignment.CenterVertically) {
+                            buttons(Modifier)
+                            MIconButton(
+                                MIcons.SkipForward, skipLabel, onSkip,
+                                modifier = Modifier.testTag(TimerSkipTag),
+                                size = skipSize,
+                            )
+                        }
                     }
                 }
             }

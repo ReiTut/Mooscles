@@ -321,7 +321,9 @@ class BackupRepositoryTest {
         val nextItem = phone.snapshot().workoutItems(next).single()
         val nextSets = phone.snapshot().exerciseSets(nextItem.id)
         assertEquals(listOf(inherited.id, fixed.id), nextSets.map { it.sourceRoutineSetId })
-        assertEquals(listOf(100.0 to 3, 70.0 to 5), nextSets.map { it.weightKg to it.reps })
+        // Both sets start from Previous, the newest session (the ad hoc 120 × 4); the fixed set has no
+        // second Previous set and keeps its target. The Follow target above stays 100 × 3.
+        assertEquals(listOf(120.0 to 4, 70.0 to 5), nextSets.map { it.weightKg to it.reps })
     }
 
     @Test fun largeArchiveExportAndImportStayFast() = runBlocking {

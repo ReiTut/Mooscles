@@ -213,7 +213,12 @@ class RoutineSetPersistenceTest {
         assertTrue(repo.snapshot().plannedSets(second).all { it.targetWeightKg == null && it.targetReps == 0 })
         val routine = repo.snapshot().routineExercises.single { it.id == first }.routineId
         val workout = repo.startRoutine(routine)
-        assertEquals(kg, repo.snapshot().exerciseSets(repo.snapshot().workoutItems(workout).single().id).first().weightKg, 0.0)
+        // The next workout starts from the Previous set, copied exactly once as kg.
+        assertEquals(WeightUnits.lbToKg(55.5), repo.snapshot().exerciseSets(repo.snapshot().workoutItems(workout).single().id).first().weightKg, 0.0)
+        repo.discardWorkout(workout)
+        val otherRoutine = repo.snapshot().routineExercises.single { it.id == second }.routineId
+        val other = repo.startRoutine(otherRoutine)
+        assertTrue(repo.snapshot().exerciseSets(repo.snapshot().workoutItems(other).single().id).all { it.weightKg == 0.0 && it.reps == 0 })
     }
 
     @Test fun perRowValuesInheritanceModesRestAndOrderSurviveDiskReopenAndNewRecords() = runBlocking {

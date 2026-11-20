@@ -16,7 +16,9 @@ Captured on an Android 15 emulator using sample workout data. Select an image to
 
 ## Current release
 
-**1.5.9 / Build 32** fills new quick-workout sets with the qualifying PR's weight and reps, improves set alignment and the compact rest timer, and corrects which PRs appear on shared workout cards. See the [release notes](docs/superpowers/releases/v1.5.9.md) and [Android verification](VERIFICATION.md#release-159--build-32).
+**1.5.10 / Build 33** starts every routine and quick-workout set with the weight and reps from its Previous column, and gives the rest timer's exercise name its own line. See the [release notes](docs/superpowers/releases/v1.5.10.md) and [Android verification](VERIFICATION.md#release-1510--build-33).
+
+[Build 32](docs/superpowers/releases/v1.5.9.md) filled new quick-workout sets with the qualifying PR, improved set alignment, and corrected which PRs appear on shared workout cards.
 
 [Build 29](docs/superpowers/releases/v1.5.7.md) added swipe-to-remove with Undo in the Train routine editor and lets each planned **Follow the record** set use its own qualifying record after you finish a workout.
 
@@ -105,7 +107,7 @@ Open any exercise's progress to see its load, estimated 1RM, volume, reps, added
 
 ## Download
 
-[v1.5.9 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.9) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.9/Mooscles-v1.5.9-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.9/update.json)
+[v1.5.10 release](https://github.com/ReiTut/Mooscles/releases/tag/v1.5.10) · [Installable debug APK](https://github.com/ReiTut/Mooscles/releases/download/v1.5.10/Mooscles-v1.5.10-debug.apk) · [Update metadata](https://github.com/ReiTut/Mooscles/releases/download/v1.5.10/update.json)
 
 The APK uses the existing debug signing identity and application ID `com.mooscles` and requires Android 8.0 or newer. Distributed updaters select the highest compatible version code available on the selected update channel. Automatic downloads respect saved preferences, and Android may require installation approval.
 

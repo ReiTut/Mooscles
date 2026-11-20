@@ -1,5 +1,15 @@
 # Verification — 2026-10-25
 
+## Release 1.5.10 / Build 33
+
+The Windows workstation ran 1,373 Android host tests across the four modules. The only failures were the 19 previously recorded ones: `ExercisePhotoStoreHostTest` at API 26 and the temp-file rename in `RestTimerExerciseOwnershipPersistenceTest`, which pass on Linux CI. Lint, the debug, Preview and androidTest builds, and design-token validation passed. GitHub CI on the pull request passed host tests, lint, the debug build, the APK budget and the four release-script jobs.
+
+All device tests passed on an Android 15 emulator: 429 design-system tests, 27 app tests (`WorkoutRepositoryTest`, `RestTimerPersistenceTest`) and the full 1,029-test screens suite. The screens suite ran in two parts after an interrupted Gradle daemon: 513 tests in 51 classes, then the remaining 40 classes with 516 tests. That suite includes `WorkoutAccessibilitySweepTest.restDocked`, which failed from v1.5.9 until the rest dock change, and `TapBudgetTest.sameAsLastWeekWithoutTarget`, which was updated to the prefilled set.
+
+On a Redmi Note 12 with Android 15, the device logic tests passed: 119 design-system tests and 324 screens tests. `ProgressIndexDeviceTimingTest` missed its 60 ms median build budget on the phone. It measured 325.7 ms on this release and 358.7 ms on v1.5.9 with the same test, so the gap predates this release. UI tests and `ShareCardTimingTest` did not run on the phone because MIUI blocks test packages from starting activities. The app device tests were not run on the phone because they replace and uninstall the installed `com.mooscles`.
+
+An isolated Preview with these changes was installed on the same phone for the owner's own checks. Before the empty-workout fix, the reported case (a cable crunch whose second set started at the 50 kg × 10 record instead of the Previous 45 kg × 15) was reproduced from that Preview's database. Its corrected start is covered by `RoutineTargetPersistenceTest.emptyWorkoutSetsCopyThePreviousColumnIncludingAddedSets`. After the fix, the owner tested the Preview on the phone and reported that it worked as intended: the new sets started with the expected weight and reps, and the cable crunch's second set started at the Previous 45 kg × 15. Release checks use Build 33, the original Android signing certificate, application ID `com.mooscles` and Room schema 7. [Release notes](docs/superpowers/releases/v1.5.10.md)
+
 ## Release 1.5.9 / Build 32
 
 The feature checks used the same application code before the version bump. The layout and sharing changes passed 120 focused host tests and 79 Android 15 emulator tests. The target-prefill follow-up passed 259 focused host tests and 37 Android 15 emulator tests, including the prior layout and sharing regressions. These test selections overlap. Lint, design-token validation, and the APK budget check passed.

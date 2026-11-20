@@ -99,7 +99,8 @@ class WorkoutLoadingDataTest {
         queries.clear()
         val workout = repo.startRoutine(large, now = 2000)
         val largeReads = loadingSelects()
-        assertEquals("Start uses five bulk reads for both routine sizes", 5, typicalReads.size)
+        // Five plan reads plus two for the Previous sets and same-load records (RoutineStartValues).
+        assertEquals("Start uses seven bulk reads for both routine sizes", 7, typicalReads.size)
         assertEquals(typicalReads.size, largeReads.size)
         assertFalse(largeReads.any { it == "SELECT * FROM exercises WHERE id = ?" })
         assertFalse(largeReads.any { it == "SELECT * FROM routine_sets WHERE routineExerciseId = ? ORDER BY position" })

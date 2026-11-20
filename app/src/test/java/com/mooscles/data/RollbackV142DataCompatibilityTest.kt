@@ -95,11 +95,19 @@ class RollbackV142DataCompatibilityTest {
         assertEquals("routine", actual.activeWorkout!!.sourceRoutineId)
         assertEquals(before.routineExercises, actual.routineExercises)
         assertEquals(before.routineSets, actual.routineSets)
+        // Start values come from the v1.4.2 history (RoutineStartValues): every row copies the working set it
+        // pairs with (Follow the record rows too), an assisted Previous set or a missing one
+        // leaves the target, and the warm-up never pairs with a working row.
+        val expected = mapOf(
+            "plan-repeat" to listOf(preciseKg to 6, 20.375 to 12, 0.0 to 0),
+            "plan-cable" to listOf(17.375 to 9, 12.625 to 15),
+            "plan-first" to listOf(preciseKg to 6, 20.375 to 12),
+            "plan-body" to listOf(0.0 to 11),
+        )
         entries.zip(plan).forEach { (entry, prescription) ->
-            val expected = fixture.plannedSets(prescription.id)
             val sets = actual.exerciseSets(entry.id)
-            assertEquals(expected.map { it.targetReps }, sets.map { it.reps })
-            assertEquals(expected.map { it.targetWeightKg ?: 0.0 }, sets.map { it.weightKg })
+            assertEquals(expected.getValue(prescription.id), sets.map { it.weightKg to it.reps })
+            assertEquals(fixture.plannedSets(prescription.id).map { it.id }, sets.map { it.sourceRoutineSetId })
             assertTrue(sets.none { it.completed || it.warmup || it.assistance })
         }
         assertEquals(fixture.workouts.filter { it.status == WorkoutStatus.FINISHED },

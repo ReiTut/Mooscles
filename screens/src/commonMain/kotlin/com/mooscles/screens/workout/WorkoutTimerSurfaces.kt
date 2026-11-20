@@ -146,12 +146,11 @@ internal fun WorkoutTimerLayer(
 
     // By the timer's exercise of this workout (pre-flight F1): on an automatic rest the view model
     // stores the entry's snapshot name, which does not follow the screen's language (plan decision
-    // 11), so the label shows the entry's name as the screen shows it.
+    // 11), so the label shows the entry's name as the screen shows it. The dock shows the name alone,
+    // with no "Rest ·": its ring and timer icon already say it is a rest, so the name gets the room, and a
+    // screen reader hears "Open rest timer" first. The expanded timer's title keeps "Rest ·".
     val timerEntry = remember(workout, current.workoutExerciseId) { timerEntryOf(workout, current) }
-    val label = stringResource(
-        Res.string.workout_timer_title_short,
-        timerEntry?.let { exerciseName(it.exercise) } ?: current.exerciseName,
-    )
+    val label = timerEntry?.let { exerciseName(it.exercise) } ?: current.exerciseName
     val visual = phase?.let {
         RestTimerVisual(if (it == TimerPhase.Done) 0 else current.remainingSeconds.coerceAtLeast(0), current.durationSeconds, it, label)
     }
