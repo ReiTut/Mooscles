@@ -1,5 +1,15 @@
 # Verification — 2026-10-25
 
+## Release 1.5.11 / Build 34
+
+The Windows workstation ran 1,370 Android host tests across the four modules (`:app` 578, `:shared` 325, `:designsystem` 126, `:screens` 341). The only failures were the 19 previously recorded Windows-only ones: `ExercisePhotoStoreHostTest` at API 26 and the temp-file rename in `RestTimerExerciseOwnershipPersistenceTest`. Lint, the debug and Preview builds, and design-token validation passed. Six host tests that covered the removed First-record split were retired, so `MIN_HOST_TESTS` went from 1,373 to 1,370.
+
+On an Android 15 emulator, the screens device tests in the packages these changes touch (records, progress, history, summary, workout detail, share, the progress flow and the tap budget) passed: 386 tests in 32 classes. The app device tests (`WorkoutRepositoryTest`, `RestTimerPersistenceTest`) passed: 27 tests. The design-system device suite was not rerun; its only change is a comment.
+
+On a Redmi Note 12 with Android 15, 320 of 321 screens logic tests passed. The failure is the same `ProgressIndexDeviceTimingTest` budget seen since v1.5.9 (356.4 ms median against 60 ms). UI tests did not run on the phone because MIUI blocks test packages from starting activities, and the app device tests were not run there because they replace and uninstall the installed `com.mooscles`.
+
+An isolated Preview with these changes was installed on the same phone. The owner's test workout, a first leg-extension session at 40 kg × 4, showed PRs 1 with a load record and no "First" label. Records are computed from saved sets, so Room schema 7, the backup format and the DataStore keys are unchanged. Release checks use Build 34, the original Android signing certificate and application ID `com.mooscles`. [Release notes](docs/superpowers/releases/v1.5.11.md)
+
 ## Release 1.5.10 / Build 33
 
 The Windows workstation ran 1,373 Android host tests across the four modules. The only failures were the 19 previously recorded ones: `ExercisePhotoStoreHostTest` at API 26 and the temp-file rename in `RestTimerExerciseOwnershipPersistenceTest`, which pass on Linux CI. Lint, the debug, Preview and androidTest builds, and design-token validation passed. GitHub CI on the pull request passed host tests, lint, the debug build, the APK budget and the four release-script jobs.
