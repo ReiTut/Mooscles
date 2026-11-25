@@ -80,9 +80,7 @@ class WorkoutCalculationsBatchTest {
     @Test fun batchMatchesPerWorkoutOnRandomHistories() {
         val random = Random(42)
         var beatenWeight = 0
-        var firstWeight = 0
         var beatenReps = 0
-        var firstReps = 0
         var repeatedStarts = 0
         var activeHistories = 0
         repeat(200) { history ->
@@ -98,19 +96,15 @@ class WorkoutCalculationsBatchTest {
                 val expectedReps = WorkoutCalculations.repsPrsForWorkout(data, workout.id)
                 assertEquals(expectedWeight, weight[workout.id], "history $history workout ${workout.id} weight")
                 assertEquals(expectedReps, reps[workout.id], "history $history workout ${workout.id} reps")
-                beatenWeight += expectedWeight.count { !it.firstRecord }
-                firstWeight += expectedWeight.count { it.firstRecord }
-                beatenReps += expectedReps.count { !it.firstRecord }
-                firstReps += expectedReps.count { it.firstRecord }
+                beatenWeight += expectedWeight.size
+                beatenReps += expectedReps.size
             }
             repeatedStarts += finished.size - finished.map { it.startedAt }.distinct().size
             if (data.workouts.any { it.status == WorkoutStatus.ACTIVE }) activeHistories++
         }
         // The generator must exercise the interesting paths, or the equality above proves nothing.
         assertTrue(beatenWeight > 50, "beaten weight records: $beatenWeight")
-        assertTrue(firstWeight > 50, "first weight records: $firstWeight")
         assertTrue(beatenReps > 50, "beaten reps records: $beatenReps")
-        assertTrue(firstReps > 50, "first reps records: $firstReps")
         assertTrue(repeatedStarts > 50, "repeated startedAt: $repeatedStarts")
         assertTrue(activeHistories > 10, "histories with an active workout: $activeHistories")
     }
@@ -179,6 +173,7 @@ class WorkoutCalculationsBatchTest {
         val chronology = compareBy<Workout> { it.startedAt }.thenBy { it.endedAt ?: Long.MAX_VALUE }.thenBy { it.id }
         val setsByEntry = data.sets.groupBy { it.workoutExerciseId }.mapValues { (_, rows) -> rows.sortedBy { it.position } }
         val result = mutableListOf<ExerciseRepsRecord>()
+        val beaten = mutableListOf<Boolean>()
         data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology).forEach { workout ->
             val best = mutableListOf<Pair<WorkoutExercise, WorkoutSet>>()
             fun assisted(c: Pair<WorkoutExercise, WorkoutSet>) = c.second.assistance || c.first.convention == LoadConvention.ASSISTANCE
@@ -190,6 +185,11 @@ class WorkoutCalculationsBatchTest {
                     if (index < 0) best += candidate else if (set.reps > best[index].second.reps) best[index] = candidate
                 }
             }
+            // Groups this workout starts, and their hardest load, when that first session is a reps record.
+            fun key(c: Pair<WorkoutExercise, WorkoutSet>) = Triple(c.first.exerciseId, c.first.convention, assisted(c))
+            val firstTop = best.groupBy(::key).filterKeys { k -> result.none { Triple(it.exerciseId, it.convention, it.assistance) == k } }
+                .mapValues { (k, sets) -> sets.map { it.second.weightKg }.let { if (k.third) it.min() else it.max() } }
+                .filter { (k, top) -> k.third || top == 0.0 }
             best.forEach { candidate ->
                 val (exercise, set) = candidate
                 val index = result.indexOfFirst { it.exerciseId == exercise.exerciseId && it.convention == exercise.convention &&
@@ -197,11 +197,22 @@ class WorkoutCalculationsBatchTest {
                 if (index < 0 || set.reps > result[index].reps) {
                     val record = ExerciseRepsRecord(exercise.exerciseId, exercise.name, exercise.convention, set.weightKg,
                         assisted(candidate), set.reps, workout.id, workout.endedAt ?: workout.startedAt)
-                    if (index < 0) result += record else result[index] = record
+                    if (index < 0) {
+                        result += record
+                        beaten += firstTop[key(candidate)]?.let { sameLoad(it, set.weightKg) } == true
+                    } else {
+                        result[index] = record
+                        beaten[index] = true
+                    }
                 }
             }
         }
-        return result.sortedWith(compareBy<ExerciseRepsRecord> { it.exerciseName }.thenBy { it.convention.name }
+        // Per exercise, convention and assistance mode: the slot at the hardest load, once it beat an earlier value.
+        val current = result.indices.groupBy { Triple(result[it].exerciseId, result[it].convention, result[it].assistance) }.values
+            .mapNotNull { slots ->
+                slots.maxBy { if (result[it].assistance) -result[it].weightKg else result[it].weightKg }.takeIf { beaten[it] }
+            }.map { result[it] }
+        return current.sortedWith(compareBy<ExerciseRepsRecord> { it.exerciseName }.thenBy { it.convention.name }
             .thenBy { it.assistance }.thenBy { it.weightKg })
     }
 
@@ -214,7 +225,8 @@ class WorkoutCalculationsBatchTest {
             assertEquals(expected, WorkoutCalculations.repsRecords(data), "history $history")
             records += expected.size
         }
-        assertTrue(records > 500, "reps records: $records")
+        // One current reps record per exercise and mode at most, once beaten (about 90 here).
+        assertTrue(records > 50, "reps records: $records")
     }
 
     /**
@@ -245,12 +257,23 @@ class WorkoutCalculationsBatchTest {
             it.status == WorkoutStatus.FINISHED && it.id != target.id && chronology.compare(it, target) < 0
         }.map { it.id }.toSet()
         val baseline = best(data.workoutExercises.filter { it.workoutId in earlier })
-        return best(data.workoutItems(workoutId)).mapNotNull { candidate ->
+        val current = best(data.workoutItems(workoutId))
+        // The hardest load of the candidate's exercise, convention and assistance mode, this workout included.
+        fun hardest(c: Pair<WorkoutExercise, WorkoutSet>) = (baseline + current).filter {
+            it.first.exerciseId == c.first.exerciseId && it.first.convention == c.first.convention && assisted(it) == assisted(c)
+        }.map { it.second.weightKg }.let { if (assisted(c)) it.min() else it.max() }
+        return current.mapNotNull { candidate ->
             val (exercise, set) = candidate
+            if (!sameLoad(set.weightKg, hardest(candidate))) return@mapNotNull null
             val previous = baseline.firstOrNull { comparable(it, candidate) }?.second?.reps
+            val groupSeen = baseline.any {
+                it.first.exerciseId == exercise.exerciseId && it.first.convention == exercise.convention && assisted(it) == assisted(candidate)
+            }
+            // A group's first session counts only when it gives no load record: assisted, or no added load.
+            if (previous == null && (groupSeen || !(assisted(candidate) || hardest(candidate) == 0.0))) return@mapNotNull null
             if (previous != null && set.reps <= previous) return@mapNotNull null
             RepsPr(exercise.exerciseId, exercise.name, exercise.convention, set.weightKg, assisted(candidate),
-                previous, set.reps, previous == null, set.id)
+                previous, set.reps, set.id)
         }
     }
 
@@ -259,7 +282,6 @@ class WorkoutCalculationsBatchTest {
         var compared = 0
         var activeTargets = 0
         var beaten = 0
-        var first = 0
         repeat(200) { history ->
             val data = randomHistory(random, exerciseCount = if (history % 2 == 0) null else 12)
             data.workouts.forEach { workout ->
@@ -267,8 +289,7 @@ class WorkoutCalculationsBatchTest {
                 val label = "history $history workout ${workout.id}"
                 assertEquals(expected, WorkoutCalculations.repsPrsForWorkout(data, workout.id), "$label reps")
                 val summary = WorkoutCalculations.summary(data, workout.id, now = 0L)!!
-                assertEquals(expected.filterNot { it.firstRecord }, summary.repsPrs, "$label summary beaten")
-                assertEquals(expected.filter { it.firstRecord }, summary.firstRepsRecords, "$label summary first")
+                assertEquals(expected, summary.repsPrs, "$label summary")
                 summary.exercises.forEach { exercise ->
                     assertEquals(expected.filter {
                         it.exerciseId == exercise.exercise.exerciseId && it.convention == exercise.exercise.convention
@@ -276,36 +297,39 @@ class WorkoutCalculationsBatchTest {
                 }
                 compared++
                 if (workout.status == WorkoutStatus.ACTIVE) activeTargets++
-                beaten += expected.count { !it.firstRecord }
-                first += expected.count { it.firstRecord }
+                beaten += expected.size
             }
         }
         // The generator must exercise the interesting paths, or the equality above proves nothing.
         assertTrue(compared > 1000, "compared workouts: $compared")
         assertTrue(activeTargets > 30, "active targets: $activeTargets")
-        assertTrue(beaten > 200, "beaten reps records: $beaten")
-        assertTrue(first > 200, "first reps records: $first")
+        // Only the heaviest load gives reps records (about 100 of these histories' records), so the floor is lower than before.
+        assertTrue(beaten > 50, "beaten reps records: $beaten")
     }
 
     @Test fun batchIgnoresActiveWorkoutsAsBaseline() {
+        val before = Workout("before", "Before", 50, 60, WorkoutStatus.FINISHED)
         val active = Workout("active", "Active", 100, null, WorkoutStatus.ACTIVE)
         val done = Workout("done", "Done", 200, 300, WorkoutStatus.FINISHED)
-        val activeEntry = WorkoutExercise("active-bench", active.id, "bench", "Bench",
-            MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)
-        val doneEntry = activeEntry.copy(id = "done-bench", workoutId = done.id)
-        val data = AppData(workouts = listOf(active, done), workoutExercises = listOf(activeEntry, doneEntry),
+        fun entry(workout: Workout, exercise: String, name: String) = WorkoutExercise("${workout.id}-$exercise", workout.id,
+            exercise, name, MuscleGroup.CHEST, Equipment.BARBELL, LoadConvention.TOTAL_LOAD)
+        val entries = listOf(before, active, done).flatMap { listOf(entry(it, "bench", "Bench"), entry(it, "row", "Row")) }
+        fun set(id: String, workout: Workout, exercise: String, kg: Double, reps: Int) =
+            WorkoutSet(id, "${workout.id}-$exercise", reps = reps, weightKg = kg, completed = true)
+        val data = AppData(workouts = listOf(before, active, done), workoutExercises = entries,
             sets = listOf(
-                // Same load with more reps: a leak into either baseline would hide the finished first records.
-                WorkoutSet("a", activeEntry.id, reps = 12, weightKg = 60.0, completed = true),
-                WorkoutSet("d", doneEntry.id, reps = 5, weightKg = 60.0, completed = true)))
+                set("b-bench", before, "bench", 60.0, 3), set("b-row", before, "row", 40.0, 5),
+                // Heavier and more reps: a leak into either baseline would hide the finished workout's records.
+                set("a-bench", active, "bench", 70.0, 1), set("a-row", active, "row", 40.0, 20),
+                set("d-bench", done, "bench", 65.0, 2), set("d-row", done, "row", 40.0, 8)))
 
         val weight = WorkoutCalculations.prsByWorkout(data)
         val reps = WorkoutCalculations.repsPrsByWorkout(data)
 
-        assertEquals(setOf("done"), weight.keys)
-        assertEquals(setOf("done"), reps.keys)
-        assertEquals(listOf(WeightPr("bench", "Bench", LoadConvention.TOTAL_LOAD, null, 60.0, 5, true, "d")), weight["done"])
-        assertEquals(listOf(RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 60.0, false, null, 5, true, "d")), reps["done"])
+        assertEquals(setOf("before", "done"), weight.keys)
+        assertEquals(setOf("before", "done"), reps.keys)
+        assertEquals(listOf(WeightPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 60.0, 65.0, 2, "d-bench")), weight["done"])
+        assertEquals(listOf(RepsPr("row", "Row", LoadConvention.TOTAL_LOAD, 40.0, false, 5, 8, "d-row")), reps["done"])
         assertEquals(WorkoutCalculations.prsForWorkout(data, "done"), weight["done"])
         assertEquals(WorkoutCalculations.repsPrsForWorkout(data, "done"), reps["done"])
     }

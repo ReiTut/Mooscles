@@ -131,7 +131,7 @@ class ProgressIndexDomainHostTest {
         val all = state.history.flatMap { it.records } + state.records
         fun assisted(key: SeriesKey) = key.convention == LoadConvention.ASSISTANCE.label
         fun recordsOf(kind: RecordKind, key: SeriesKey, workoutId: String) = all.filter {
-            it.kind == kind && !it.firstRecord && it.exercise.id == key.exerciseId &&
+            it.kind == kind && (it.previousKg != null || it.previousReps != null) && it.exercise.id == key.exerciseId &&
                 it.exercise.convention == key.convention && it.workoutId == workoutId &&
                 (kind == RecordKind.WEIGHT || it.assistance == assisted(key))
         }
@@ -148,7 +148,7 @@ class ProgressIndexDomainHostTest {
         }
         // The other way: every beaten record of a chart's group marks its session when its set is the plotted one,
         // and the only one that is not is the hand-made Assistance reps record at another load.
-        val beaten = all.filter { !it.firstRecord }.filter {
+        val beaten = all.filter { it.previousKg != null || it.previousReps != null }.filter {
             it.kind == RecordKind.WEIGHT || it.assistance == (it.exercise.convention == LoadConvention.ASSISTANCE.label)
         }.distinctBy { listOf(it.kind, it.exercise.id, it.exercise.convention, it.workoutId) }
         val unplotted = beaten.filter { record ->
@@ -169,7 +169,8 @@ class ProgressIndexDomainHostTest {
         val index = runBlocking { cache.get(state.history, state.records) }
         assertSame(index, cache.peek(state.history, state.records))
 
-        assertTrue(state.records.size > 48)
+        // About one current record per exercise of the large history (48 of them), once it has beaten something.
+        assertTrue("current records: ${state.records.size}", state.records.size > 40)
         assertEquals(state.records.size, index.currentRecords.size)
         val zone = TimeZone.of("America/Sao_Paulo")
         assertEquals(state.records.size, RecordTimelines.query(index, RecordsQuery(currentOnly = true, zone = zone)).total)
@@ -247,7 +248,8 @@ class ProgressIndexDomainHostTest {
             ASSISTED_DIP to listOf(set(30.0, 8), set(20.0, 7)),
         )
         workout("Hand C", 214,
-            PULL_UP to listOf(set(12.5, 5), set(0.0, 10)),
+            // 10 kg × 11 beats 10 kg × 5 at the heaviest load: the unassisted group's reps record, and the plotted set.
+            PULL_UP to listOf(set(10.0, 11)),
             ASSISTED_DIP to listOf(set(25.0, 9)),
         )
         workout(DIVERGENT, 216,

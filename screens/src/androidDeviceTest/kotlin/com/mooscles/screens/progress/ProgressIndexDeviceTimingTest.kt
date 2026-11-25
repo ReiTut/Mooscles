@@ -46,7 +46,7 @@ class ProgressIndexDeviceTimingTest {
                 today, zone, DayOfWeek.entries[n % DayOfWeek.entries.size])
         }
         val searches = List(QUERIES) { n ->
-            RecordsQuery(text = SEARCH.take(n % (SEARCH.length + 1)), currentOnly = n % 4 == 3, firstRecords = n % 2 == 1, zone = zone)
+            RecordsQuery(text = SEARCH.take(n % (SEARCH.length + 1)), currentOnly = n % 4 == 3, zone = zone)
         }
         val chartTimes = ArrayList<Double>()
         val recordTimes = ArrayList<Double>()

@@ -370,7 +370,9 @@ jobs:
           # Shared workout PR selection: ShareCardDataTest +2. 1350 + 2 = 1352.
           # Record defaults for unplanned sets: RoutineTargetPersistenceTest +3. 1352 + 3 = 1355.
           # Start values from Previous (routines and empty workouts): RoutineStartValuesTest +13, RoutineTargetPersistenceTest +5. 1355 + 18 = 1373.
-          MIN_HOST_TESTS: 1373
+          # Only beaten records, reps at the heaviest load: WorkoutCalculationsTest +3; first-record sections and chip retired:
+          # WorkoutDetailModelTest -3, RecordTimelinesTest -1, HistoryRecordsHostTest -2. 1373 + 3 - 6 = 1370.
+          MIN_HOST_TESTS: 1370
         run: |
           $files = @(
               'app/build/test-results/testDebugUnitTest',

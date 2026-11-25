@@ -61,13 +61,17 @@ class WorkoutCalculationIndexTest {
         val entry = WorkoutExercise(id = "instance", workoutId = workout.id, exerciseId = "bench",
             name = "Bench", muscle = MuscleGroup.CHEST, equipment = Equipment.BARBELL,
             convention = LoadConvention.TOTAL_LOAD)
-        val rows = mutableListOf(WorkoutSet(id = "set", workoutExerciseId = entry.id,
-            reps = 7, weightKg = 20.0, completed = true))
-        val data = AppData(workouts = listOf(workout), workoutExercises = listOf(entry), sets = rows)
+        // An earlier, lighter session for the saved one to beat: a first performance is never a record.
+        val earlier = Workout(id = "earlier", name = "Earlier", startedAt = 500, endedAt = 600, status = WorkoutStatus.FINISHED)
+        val earlierEntry = entry.copy(id = "earlier-instance", workoutId = earlier.id)
+        val rows = mutableListOf(
+            WorkoutSet(id = "baseline", workoutExerciseId = earlierEntry.id, reps = 10, weightKg = 10.0, completed = true),
+            WorkoutSet(id = "set", workoutExerciseId = entry.id, reps = 7, weightKg = 20.0, completed = true))
+        val data = AppData(workouts = listOf(earlier, workout), workoutExercises = listOf(earlierEntry, entry), sets = rows)
         assertEquals(20.0, WorkoutCalculations.records(data).single().weightKg, 0.0)
-        rows[0] = rows[0].copy(weightKg = 22.0, reps = 6)
+        rows[1] = rows[1].copy(weightKg = 22.0, reps = 6)
         assertEquals(22.0, WorkoutCalculations.records(data).single().weightKg, 0.0)
-        assertEquals(6, WorkoutCalculations.performanceHistory(data, entry.exerciseId).single().sets.single().reps)
+        assertEquals(6, WorkoutCalculations.performanceHistory(data, entry.exerciseId).first().sets.single().reps)
         rows.clear()
         assertTrue(WorkoutCalculations.records(data).isEmpty())
         assertTrue(WorkoutCalculations.performanceHistory(data, entry.exerciseId).isEmpty())

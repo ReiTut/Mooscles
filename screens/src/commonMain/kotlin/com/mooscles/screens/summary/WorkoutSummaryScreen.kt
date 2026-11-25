@@ -66,7 +66,6 @@ import com.mooscles.screens.resources.summary_details
 import com.mooscles.screens.resources.summary_done
 import com.mooscles.screens.resources.summary_duration
 import com.mooscles.screens.resources.summary_exercises
-import com.mooscles.screens.resources.summary_first_records
 import com.mooscles.screens.resources.summary_pr_count
 import com.mooscles.screens.resources.summary_prs
 import com.mooscles.screens.resources.summary_record_line
@@ -96,8 +95,6 @@ const val SummaryStatsTag = "summary-stats"
 /** The "Records" section (records beaten); absent without one. */
 const val SummaryRecordsTag = "summary-records"
 
-/** The "First records" section; absent without one. */
-const val SummaryFirstRecordsTag = "summary-first-records"
 
 /** The numbers of the summary, in reading order. */
 enum class SummaryStat { DURATION, SETS, PRS, VOLUME, EXERCISES }
@@ -117,8 +114,8 @@ private const val ONE_COLUMN_FONT_SCALE = 1.5f
 /**
  * The end of a finished [workout] (spec D19): "Workout complete", its name and date range; the
  * duration, completed sets, PR exercises, volume (`WorkoutUi.volumeKg`) and exercises, sets and exercises
- * counted over the valid completed sets ([SummaryStats.completedSets]) as the share card does; the records beaten,
- * then the first records (each section only when it has one); how many workouts were finished in
+ * counted over the valid completed sets ([SummaryStats.completedSets]) as the share card does; the records beaten
+ * (only when it has one); how many workouts were finished in
  * the last 28 calendar days of [zone] ([ScreenDates.finishedInLast28Days] over [history], this
  * workout counted once even when [history] does not hold it yet); each exercise with valid completed
  * sets and its best set ([SummaryStats.bestSet], the share card's rule); and the actions Done,
@@ -178,13 +175,8 @@ fun WorkoutSummaryScreen(
             oneColumn = oneColumn,
         )
 
-        val beaten = workout.records.filterNot { it.firstRecord }
-        val first = workout.records.filter { it.firstRecord }
-        if (beaten.isNotEmpty()) {
-            RecordSection(stringResource(Res.string.summary_records), beaten, soft = false, pounds, locale, Modifier.testTag(SummaryRecordsTag))
-        }
-        if (first.isNotEmpty()) {
-            RecordSection(stringResource(Res.string.summary_first_records), first, soft = true, pounds, locale, Modifier.testTag(SummaryFirstRecordsTag))
+        if (workout.records.isNotEmpty()) {
+            RecordSection(stringResource(Res.string.summary_records), workout.records, pounds, locale, Modifier.testTag(SummaryRecordsTag))
         }
 
         val others = history.filterNot { it.id == workout.id }
@@ -311,12 +303,11 @@ private fun StatCell(stat: SummaryStat, label: String, value: String, numberStyl
     }
 }
 
-/** A titled list of records, one line each with the badge ([soft] for first records). */
+/** A titled list of records, one line each with the badge. */
 @Composable
 private fun RecordSection(
     title: String,
     records: List<RecordUi>,
-    soft: Boolean,
     pounds: Boolean,
     locale: NumberLocale,
     modifier: Modifier,
@@ -330,7 +321,7 @@ private fun RecordSection(
                 horizontalArrangement = Arrangement.spacedBy(space.s2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PrBadge(soft = soft)
+                PrBadge()
                 MText(
                     stringResource(Res.string.summary_record_line, exerciseName(record.exercise), recordDetail(record, pounds, locale)),
                     MTheme.type.bodyMd,
@@ -343,7 +334,7 @@ private fun RecordSection(
 
 /**
  * "87,5 kg × 6 · antes 85 kg" for a weight record beaten, "80 kg × 8 · antes 80 kg × 6" for a
- * repetitions record beaten, "82,5 kg × 8" for a first record.
+ * repetitions record beaten.
  */
 @Composable
 private fun recordDetail(record: RecordUi, pounds: Boolean, locale: NumberLocale): String {

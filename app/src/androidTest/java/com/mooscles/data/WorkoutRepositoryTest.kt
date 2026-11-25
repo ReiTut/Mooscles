@@ -144,7 +144,8 @@ class WorkoutRepositoryTest {
         repo.updateSet(original.copy(weightKg = 110.0))
         assertTrue(WorkoutCalculations.summary(repo.snapshot(), second.first)!!.prs.isEmpty())
         repo.deleteWorkout(first.first)
-        assertEquals(1, WorkoutCalculations.summary(repo.snapshot(), second.first)!!.firstRecords.size)
+        // The remaining workout is now the first session: a record with nothing it beat.
+        assertNull(WorkoutCalculations.summary(repo.snapshot(), second.first)!!.prs.single().previousWeightKg)
         assertFalse(repo.snapshot().sets.any { it.id == first.second })
     }
 

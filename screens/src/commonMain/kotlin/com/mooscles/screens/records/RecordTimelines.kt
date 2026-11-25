@@ -10,12 +10,11 @@ import kotlinx.datetime.TimeZone
 
 /**
  * What the Records tab asks of the timeline (spec D11). [text] is trimmed (only spaces is no search); [currentOnly]
- * lists the current records and ignores [firstRecords]; [zone] decides which month a record belongs to.
+ * lists the current records; [zone] decides which month a record belongs to.
  */
 data class RecordsQuery(
     val text: String = "",
     val currentOnly: Boolean = false,
-    val firstRecords: Boolean = false,
     val zone: TimeZone,
 ) : ProgressQuery<RecordsTimeline> {
     override fun compute(index: ProgressIndex): RecordsTimeline = RecordTimelines.query(index, this)
@@ -39,14 +38,11 @@ object RecordTimelines {
         val matches = if (text.isEmpty()) null else index.searchRecords(text)
         fun found(event: RecordEvent) = matches == null || event.record.exercise.id in matches
 
-        // One pass over the events in the index's order. A search also lists the current records of what it found,
-        // first records included, so those events pass even without the chip.
+        // One pass over the events in the index's order: every event is a record, shown without a chip.
         val chosen: List<RecordEvent> = if (query.currentOnly) {
             index.currentRecords.filter(::found)
         } else {
-            val inOrder = index.events.filter {
-                found(it) && (query.firstRecords || !it.record.firstRecord || (matches != null && it.current))
-            }
+            val inOrder = index.events.filter(::found)
             // A current record the events lack (its fallback) joins at its place by the index's own order.
             val extras = if (matches == null) emptyList() else {
                 val seen = HashSet<RecordEvent>(inOrder)

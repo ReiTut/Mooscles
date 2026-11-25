@@ -36,7 +36,7 @@ data class RoutineTargetUi(val working: List<TargetSetUi>, val warmups: Int)
 data class SetUi(
     val id: String, val reps: Int = 0, val weightKg: Double = 0.0,
     val completed: Boolean = false, val warmup: Boolean = false, val assistance: Boolean = false,
-    /** The record beaten by exactly this set, as the domain chose it; never a first record. */
+    /** The record beaten by exactly this set, as the domain chose it. */
     val record: SetRecordUi? = null,
     /** Carried through the active workout's Undo so a restored set keeps its origin. */
     val sourceRoutineSetId: String? = null,
@@ -51,7 +51,7 @@ data class PreviousSetUi(val weightKg: Double, val reps: Int, val warmup: Boolea
 data class WorkoutExerciseUi(
     val id: String, val exercise: ExerciseUi, val sets: List<SetUi> = emptyList(),
     val restSeconds: Int = RestDuration.DEFAULT_SECONDS, val previous: String? = null,
-    val provisionalRecordKg: Double? = null, val firstRecord: Boolean = false,
+    val provisionalRecordKg: Double? = null,
     val records: List<RecordUi> = emptyList(),
     /** The completed sets of the latest earlier session of this exercise and convention, in set order. */
     val previousSets: List<PreviousSetUi> = emptyList(),
@@ -70,7 +70,6 @@ data class RecordUi(
     val previousKg: Double? = null, val workoutId: String = "", val date: Long = 0,
     val kind: RecordKind = RecordKind.WEIGHT, val previousReps: Int? = null, val assistance: Boolean = false,
 ) {
-    val firstRecord get() = if (kind == RecordKind.WEIGHT) previousKg == null else previousReps == null
     val label get() = if (kind == RecordKind.WEIGHT) "Weight PR" else "Reps PR"
 }
 data class WorkoutUi(
@@ -78,10 +77,8 @@ data class WorkoutUi(
     val exercises: List<WorkoutExerciseUi> = emptyList(), val records: List<RecordUi> = emptyList(),
     val sourceRoutineId: String? = null,
 ) {
-    /** First records and records beaten both qualify; multiple badges still count once. */
+    /** Records (an exercise's first session, then records beaten); multiple badges still count once. */
     val prExerciseCount get() = records.map { it.exercise.id to it.exercise.convention }.distinct().size
-    val beatenPrExerciseCount get() = records.filterNot { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
-    val firstRecordExerciseCount get() = records.filter { it.firstRecord }.map { it.exercise.id to it.exercise.convention }.distinct().size
     val completedSets get() = exercises.sumOf { e -> e.sets.count { it.completed } }
     val completedExercises get() = exercises.count { e -> e.sets.any { it.completed } }
     val volumeKg get() = exercises.filter { it.exercise.convention != "Assistance" }.sumOf { e -> e.sets.filter { it.completed && !it.assistance }.sumOf { it.weightKg * it.reps } }

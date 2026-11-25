@@ -161,7 +161,7 @@ internal suspend fun seedBenchProgress(repository: WorkoutRepository, squat: Boo
         }
         val entry = repository.addWorkoutExercise(workout, BENCH_PRESS)
         val sets = repository.workoutSets(workout).filter { it.workoutExerciseId == entry }.sortedBy { it.position }
-        // The last workout: the heavier set, then more reps at the previous load.
+        // The last workout: the heavier set (a load record), then more reps at the previous load (no record: lighter).
         val values = if (i == loads.lastIndex) listOf(85.0 to 5, 80.0 to 8) else listOf(kg to 5, kg to 5)
         sets.zip(values).forEach { (set, value) -> repository.updateSet(set.copy(weightKg = value.first, reps = value.second, completed = true)) }
         check(repository.finishWorkout(workout, now = start + HOUR_MS))

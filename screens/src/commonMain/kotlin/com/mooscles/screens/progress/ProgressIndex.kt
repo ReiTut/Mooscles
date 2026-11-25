@@ -29,8 +29,8 @@ data class SetValue(val value: Double, val weightKg: Double, val reps: Int)
  * estimate of those working sets with up to 10 reps (D5), null on Added weight and Assistance. [reps] is the most
  * reps in one repetition set of the convention's group (unassisted, or assisted on Assistance); on a tie, the first
  * that is a beaten reps record, otherwise the first. [volumeKg] is the domain's volume, warm-ups included.
- * [weightRecord] and [repsRecord] say whether the set behind [load] and [reps] is itself a beaten record (never a
- * first record) of the record lists, at the same load (unit noise aside) and the same reps: a record set at
+ * [weightRecord] and [repsRecord] say whether the set behind [load] and [reps] is itself a beaten record of the
+ * record lists, at the same load (unit noise aside) and the same reps: a record set at
  * another load in the session leaves the point unmarked, so a mark never sits on a value the history contradicts.
  * [sets] are the completed sets of the session's entries, in workout order.
  */
@@ -66,7 +66,7 @@ class ProgressIndex private constructor(
     private val series: Map<SeriesKey, List<SessionPoint>>,
     private val conventions: Map<String, List<String>>,
     private val snapshots: Map<String, ExerciseUi>,
-    /** Every `WorkoutUi.records` of the history, first records included: newest first, workout order, weight before reps, heaviest first. */
+    /** Every `WorkoutUi.records` of the history (records beaten): newest first, workout order, weight before reps, heaviest first. */
     val events: List<RecordEvent>,
     /** The records of `UiState.records`, in the order of [events], as their history events (see [build]). */
     val currentRecords: List<RecordEvent>,
@@ -99,10 +99,10 @@ class ProgressIndex private constructor(
         /**
          * Builds the index from `UiState.history` ([history], finished workouts) and `UiState.records` ([records]).
          *
-         * `UiState.records` entries carry no previous value, so their own `firstRecord` is always true. A current
-         * record is therefore shown as its history event, the `WorkoutUi.records` entry of the same workout with the
-         * same exercise, convention, kind, assistance and load, which has the previous value; the record itself is
-         * the fallback only when its workout has no such event. A current record whose workout is not in [history]
+         * `UiState.records` entries carry no previous value. A current record is therefore shown as its history
+         * event, the `WorkoutUi.records` entry of the same workout with the same exercise, convention, kind,
+         * assistance and load, which has the previous value; the record itself is the fallback only when its
+         * workout has no such event. A current record whose workout is not in [history]
          * (the two lists out of step) is dropped, like an event of a deleted workout, and is not searchable.
          */
         fun build(history: List<WorkoutUi>, records: List<RecordUi>): ProgressIndex {
@@ -131,7 +131,7 @@ class ProgressIndex private constructor(
             }.distinct().sortedWith(eventOrder)
 
             val beaten = (events.asSequence() + currentRecords.asSequence()).map(RecordEvent::record)
-                .filterNot(RecordUi::firstRecord).groupBy(::markOf)
+                .filter { it.previousKg != null || it.previousReps != null }.groupBy(::markOf)
             val series = Series(history, beaten)
             return ProgressIndex(HistoryIndex.build(history), series.points, series.conventions(), series.snapshots, events, currentRecords,
                 searchIndex(events, currentRecords), eventOrder, history, records)

@@ -249,7 +249,8 @@ class RoomPersistenceTest {
         repo.deleteWorkout(first.first)
         val afterDelete = repo.snapshot()
         assertFalse(afterDelete.sets.any { it.id == first.second })
-        assertEquals(1, WorkoutCalculations.summary(afterDelete, next.first)!!.firstRecords.size)
+        // The remaining workout is now the first session: its record has nothing it beat.
+        assertNull(WorkoutCalculations.summary(afterDelete, next.first)!!.prs.single().previousWeightKg)
         assertEquals(105.0, WorkoutCalculations.records(afterDelete).single().weightKg, 0.0)
     }
 
@@ -383,8 +384,9 @@ class RoomPersistenceTest {
             saved.finishWorkout(workout, now = 2000)
             val summary = WorkoutCalculations.summary(saved.snapshot(), workout)!!
             assertEquals(0.0, summary.volumeKg, 0.0)
-            assertEquals(1, summary.firstRepsRecords.size)
-            assertTrue(summary.firstRecords.isEmpty())
+            // The only bodyweight workout is its first session: a reps record, with no load to record.
+            assertNull(summary.repsPrs.single().previousReps)
+            assertEquals(1, summary.prExerciseCount)
         } finally { disk.close(); context.deleteDatabase(filename) }
     }
 }

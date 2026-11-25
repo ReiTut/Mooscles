@@ -77,9 +77,9 @@ class WorkoutSummaryScreenTest {
 
     private val weightRecord = RecordUi(bench, 87.5, 6, previousKg = 85.0)
     private val repsRecord = RecordUi(squat, 80.0, 8, kind = RecordKind.REPS, previousReps = 6)
-    private val firstRecord = RecordUi(row, 82.5, 8)
+    private val rowRecord = RecordUi(row, 82.5, 8, previousKg = 80.0)
 
-    private fun workout(records: List<RecordUi> = listOf(weightRecord, repsRecord, firstRecord)) = WorkoutUi(
+    private fun workout(records: List<RecordUi> = listOf(weightRecord, repsRecord, rowRecord)) = WorkoutUi(
         id = "w1", name = "Treino A", startedAt = start, endedAt = end,
         exercises = listOf(
             WorkoutExerciseUi("e1", bench, listOf(done("b1", 80.0, 8), done("b2", 87.5, 6))),
@@ -177,21 +177,10 @@ class WorkoutSummaryScreenTest {
         onNode(hasText("Recordes") and records).shown()
         onNode(hasText("Supino reto · 87,5\u00A0kg\u00A0×\u00A06 · antes 85\u00A0kg") and records).shown()
         onNode(hasText("Agachamento · 80\u00A0kg\u00A0×\u00A08 · antes 80\u00A0kg\u00A0×\u00A06") and records).shown()
-        assertEquals(2, onAllNodes(hasTestTag(PrBadgeTag) and records, useUnmergedTree = true).fetchSemanticsNodes().size)
-    }
-
-    @Test
-    fun firstRecordsSection() = runComposeUiTest {
-        summary(workout(records = listOf(firstRecord)))
-        onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("1"))
-            .assertContentDescriptionEquals("1 exercício com recorde pessoal")
-        val first = hasAnyAncestor(hasTestTag(SummaryFirstRecordsTag))
-        onNode(hasText("Primeiros registros") and first).shown()
-        onNode(hasText("Remada curvada · 82,5\u00A0kg\u00A0×\u00A08") and first).shown()
-        assertEquals(1, onAllNodes(hasTestTag(PrBadgeTag) and first, useUnmergedTree = true).fetchSemanticsNodes().size)
-        // Only first records: no "Records" heading with nothing beaten under it.
-        assertEquals(0, onAllNodes(hasTestTag(SummaryRecordsTag)).fetchSemanticsNodes().size)
-        assertEquals(0, onAllNodes(hasText("Recordes")).fetchSemanticsNodes().size)
+        onNode(hasText("Remada curvada · 82,5\u00A0kg\u00A0×\u00A08 · antes 80\u00A0kg") and records).shown()
+        assertEquals(3, onAllNodes(hasTestTag(PrBadgeTag) and records, useUnmergedTree = true).fetchSemanticsNodes().size)
+        // Records beaten are the only kind: there is no "first records" section.
+        assertEquals(0, onAllNodes(hasText("Primeiros registros")).fetchSemanticsNodes().size)
     }
 
     @Test
@@ -200,7 +189,6 @@ class WorkoutSummaryScreenTest {
         onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("0"))
             .assertContentDescriptionEquals("0 exercícios com recordes pessoais")
         assertEquals(0, onAllNodes(hasTestTag(SummaryRecordsTag)).fetchSemanticsNodes().size)
-        assertEquals(0, onAllNodes(hasTestTag(SummaryFirstRecordsTag)).fetchSemanticsNodes().size)
         assertEquals(0, onAllNodes(hasTestTag(PrBadgeTag), useUnmergedTree = true).fetchSemanticsNodes().size)
         assertEquals(0, onAllNodes(hasText("Recordes")).fetchSemanticsNodes().size)
         assertEquals(0, onAllNodes(hasText("Primeiros registros")).fetchSemanticsNodes().size)
@@ -296,8 +284,8 @@ class WorkoutSummaryScreenTest {
 
     @Test
     fun prStatisticCountsVariationsOnceInEnglish() = runComposeUiTest {
-        val records = listOf(weightRecord, weightRecord.copy(kind = RecordKind.REPS), firstRecord) +
-            (1..9).map { firstRecord.copy(exercise = exercise("variant-$it", "Variation $it")) }
+        val records = listOf(weightRecord, weightRecord.copy(kind = RecordKind.REPS), rowRecord) +
+            (1..9).map { rowRecord.copy(exercise = exercise("variant-$it", "Variation $it")) }
         summary(workout(records = records), locale = "en", size = DpSize(320.dp, 640.dp))
         onNodeWithTag(summaryStatTag(SummaryStat.PRS)).assert(hasText("11"))
             .assert(hasText("PRs")).assertContentDescriptionEquals("11 exercises with personal records")

@@ -20,10 +20,10 @@ data class WeightPr(
     val exerciseId: String,
     val exerciseName: String,
     val convention: LoadConvention,
+    /** The heaviest load before this workout; null on the exercise's first session, which is a record too. */
     val previousWeightKg: Double?,
     val newWeightKg: Double,
     val reps: Int,
-    val firstRecord: Boolean,
     /** The set holding [newWeightKg]: the heaviest, ties broken by more reps, then the first in workout order. */
     val setId: String
 )
@@ -35,9 +35,12 @@ data class RepsPr(
     /** External load, or the assistance setting when [assistance] is true. */
     val weightKg: Double,
     val assistance: Boolean,
+    /**
+     * The most reps before this workout at this load, which is the exercise's heaviest; null on the first session of an
+     * exercise that has no load record to give (no added load, or assisted sets).
+     */
     val previousReps: Int?,
     val newReps: Int,
-    val firstRecord: Boolean,
     /** The set holding [newReps]: the first in workout order with that many reps at this load. */
     val setId: String
 )
@@ -79,25 +82,14 @@ data class WorkoutSummary(
     val completedExerciseCount: Int,
     val completedSetCount: Int,
     val volumeKg: Double,
-    /** Records beaten; initial positive records are deliberately separate. */
+    /** Records: an exercise's first session, then only records that beat an earlier value. */
     val prs: List<WeightPr>,
-    val firstRecords: List<WeightPr>,
     val durationMillis: Long,
     val repsPrs: List<RepsPr> = emptyList(),
-    val firstRepsRecords: List<RepsPr> = emptyList()
 ) {
-    /** Count each exercise/convention once across first records and records beaten, of either type. */
+    /** Count each exercise/convention once across records of either type. */
     val prExerciseCount: Int get() = (prs.map { it.exerciseId to it.convention } +
-        repsPrs.map { it.exerciseId to it.convention } +
-        firstRecords.map { it.exerciseId to it.convention } +
-        firstRepsRecords.map { it.exerciseId to it.convention }).distinct().size
-
-    /** Records beaten exclude initial records, while still counting an exercise only once. */
-    val beatenPrExerciseCount: Int get() = (prs.map { it.exerciseId to it.convention } +
         repsPrs.map { it.exerciseId to it.convention }).distinct().size
-
-    val firstRecordExerciseCount: Int get() = (firstRecords.map { it.exerciseId to it.convention } +
-        firstRepsRecords.map { it.exerciseId to it.convention }).distinct().size
 }
 
 /** Records of every finished workout, keyed by workout id; a workout without records maps to an empty list. */
@@ -233,13 +225,17 @@ object WorkoutCalculations {
         index.entries(workoutId).groupBy { Key(it.exerciseId, it.convention) }.mapNotNull { (key, entries) ->
             val candidates = entries.flatMap { entry -> index.sets(entry.id).filter { workingSet(it, entry.convention) } }
             val best = candidates.maxWithOrNull(compareBy<WorkoutSet> { it.weightKg }.thenBy { it.reps }) ?: return@mapNotNull null
+            // The exercise's first session is a record; afterwards only a heavier load is.
             val previous = baseline[key]
             if (previous != null && !heavier(best.weightKg, previous)) return@mapNotNull null
-            WeightPr(key.exerciseId, entries.first().name, key.convention, previous, best.weightKg, best.reps, previous == null,
-                best.id)
+            WeightPr(key.exerciseId, entries.first().name, key.convention, previous, best.weightKg, best.reps, best.id)
         }
 
-    /** Repetition records are independent for each variation, assistance mode, and external load. */
+    /**
+     * Repetition records, for each variation and assistance mode, only at the hardest load done so far: the heaviest,
+     * or the least assistance. They beat an earlier value at that load, except on the group's first session when it
+     * has no load record to give ([firstSessionCounts]).
+     */
     fun repsPrsForWorkout(data: AppData, workoutId: String): List<RepsPr> =
         repsPrsForWorkout(SnapshotIndex(data), workoutId)
 
@@ -249,16 +245,34 @@ object WorkoutCalculations {
         val earlier = earlierWorkoutIds(data, target)
         val baseline = mutableMapOf<RepsGroup, MutableList<RepsCandidate>>()
         foldRepetitions(index, data.workoutExercises.filter { it.workoutId in earlier }, baseline)
-        return repsPrs(index, workoutId) { candidate -> previousReps(baseline, candidate) }
+        return repsPrs(index, workoutId, baseline)
     }
 
-    private fun repsPrs(index: SnapshotIndex, workoutId: String, previousReps: (RepsCandidate) -> Int?): List<RepsPr> =
-        bestRepetitionSets(index, index.entries(workoutId)).mapNotNull { candidate ->
-            val previous = previousReps(candidate)
+    private fun repsPrs(index: SnapshotIndex, workoutId: String, baseline: Map<RepsGroup, List<RepsCandidate>>): List<RepsPr> {
+        val best = bestRepetitionSets(index, index.entries(workoutId))
+        val hardest = best.groupBy { it.group }.mapValues { (group, current) -> hardestLoad(group, baseline[group].orEmpty() + current) }
+        return best.mapNotNull { candidate ->
+            val top = hardest.getValue(candidate.group)
+            if (!sameLoad(candidate.set.weightKg, top)) return@mapNotNull null
+            val previous = previousReps(baseline, candidate)
+            if (previous == null && !(baseline[candidate.group].isNullOrEmpty() && firstSessionCounts(candidate.group, top))) {
+                return@mapNotNull null
+            }
             if (previous != null && candidate.set.reps <= previous) return@mapNotNull null
             RepsPr(candidate.exercise.exerciseId, candidate.exercise.name, candidate.exercise.convention,
-                candidate.set.weightKg, candidate.assistance, previous, candidate.set.reps, previous == null, candidate.set.id)
+                candidate.set.weightKg, candidate.assistance, previous, candidate.set.reps, candidate.set.id)
         }
+    }
+
+    /** The heaviest load of [group], or for assisted sets the least assistance, among [candidates]. */
+    private fun hardestLoad(group: RepsGroup, candidates: List<RepsCandidate>): Double =
+        candidates.map { it.set.weightKg }.let { if (group.assistance) it.min() else it.max() }
+
+    /**
+     * Whether a group's first session is a reps record: only when it gives no load record, so each exercise's first
+     * session counts once. Assisted sets never give one, and neither does a hardest load of 0 (no added load).
+     */
+    private fun firstSessionCounts(group: RepsGroup, hardest: Double): Boolean = group.assistance || hardest == 0.0
 
     /** Shared by both record passes, so [historyRecords] indexes the snapshot once. */
     private class HistoryPass(data: AppData) {
@@ -307,7 +321,7 @@ object WorkoutCalculations {
         val baseline = mutableMapOf<RepsGroup, MutableList<RepsCandidate>>()
         val result = LinkedHashMap<String, List<RepsPr>>()
         pass.finished.forEach { workout ->
-            result[workout.id] = repsPrs(pass.index, workout.id) { candidate -> previousReps(baseline, candidate) }
+            result[workout.id] = repsPrs(pass.index, workout.id, baseline)
             foldRepetitions(pass.index, pass.storedEntries[workout.id].orEmpty(), baseline)
         }
         return result
@@ -329,9 +343,8 @@ object WorkoutCalculations {
         }
         return WorkoutSummary(
             workout, exercises, exercises.count { it.completedSets.isNotEmpty() }, exercises.sumOf { it.completedSets.size },
-            exercises.sumOf { it.volumeKg }, records.filterNot { it.firstRecord }, records.filter { it.firstRecord },
-            ((workout.endedAt ?: now) - workout.startedAt).coerceAtLeast(0L),
-            repetitions.filterNot { it.firstRecord }, repetitions.filter { it.firstRecord }
+            exercises.sumOf { it.volumeKg }, records,
+            ((workout.endedAt ?: now) - workout.startedAt).coerceAtLeast(0L), repetitions,
         )
     }
 
@@ -358,11 +371,17 @@ object WorkoutCalculations {
     fun repsRecords(data: AppData): List<ExerciseRepsRecord> {
         val snapshot = SnapshotIndex(data)
         val result = mutableListOf<ExerciseRepsRecord>()
+        // Whether each slot is a record: it beat an earlier value at its load, or it was the hardest set of its group's
+        // first session when that session gives no load record (as [repsPrs] decides).
+        val counted = mutableListOf<Boolean>()
         // Only a record of the same exercise, convention and assistance mode can match, so each group keeps its
         // own slots in [result], in insertion order: the first matching slot is the one a scan of [result] finds.
         val slots = mutableMapOf<RepsGroup, MutableList<Int>>()
         data.workouts.filter { it.status == WorkoutStatus.FINISHED }.sortedWith(chronology).forEach { workout ->
-            bestRepetitionSets(snapshot, snapshot.entries(workout.id)).forEach { candidate ->
+            val best = bestRepetitionSets(snapshot, snapshot.entries(workout.id))
+            val firsts = best.groupBy { it.group }.filterKeys { slots[it].isNullOrEmpty() }
+                .mapValues { (group, sets) -> hardestLoad(group, sets) }.filter { (group, top) -> firstSessionCounts(group, top) }
+            best.forEach { candidate ->
                 val group = slots.getOrPut(candidate.group) { mutableListOf() }
                 val index = group.firstOrNull { sameLoad(result[it].weightKg, candidate.set.weightKg) } ?: -1
                 if (index < 0 || candidate.set.reps > result[index].reps) {
@@ -372,11 +391,19 @@ object WorkoutCalculations {
                     if (index < 0) {
                         group += result.size
                         result += record
-                    } else result[index] = record
+                        counted += firsts[candidate.group]?.let { sameLoad(it, candidate.set.weightKg) } == true
+                    } else {
+                        result[index] = record
+                        counted[index] = true
+                    }
                 }
             }
         }
-        return result.sortedWith(compareBy<ExerciseRepsRecord> { it.exerciseName }.thenBy { it.convention.name }
+        // Each group's current reps record is the one at its hardest load, when that slot is a record.
+        return slots.values.mapNotNull { group ->
+            val hardest = group.maxBy { if (result[it].assistance) -result[it].weightKg else result[it].weightKg }
+            result[hardest].takeIf { counted[hardest] }
+        }.sortedWith(compareBy<ExerciseRepsRecord> { it.exerciseName }.thenBy { it.convention.name }
             .thenBy { it.assistance }.thenBy { it.weightKg })
     }
 

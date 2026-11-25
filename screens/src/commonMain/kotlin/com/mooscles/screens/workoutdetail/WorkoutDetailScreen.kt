@@ -109,7 +109,6 @@ object WorkoutDetailTags {
     const val SETS = "workout-set-count"
     const val PRS = "workout-pr-exercise-count"
     const val RECORDS = "detail-records"
-    const val FIRST = "detail-first-records"
     fun exercise(id: String) = "detail-exercise-$id"
     fun rest(id: String) = "detail-rest-$id"
     fun progress(id: String) = "detail-progress-$id"
@@ -239,7 +238,6 @@ fun WorkoutDetailRoute(
                 else -> {
                     val listState = rememberLazyListState()
                     val stats = remember(workout) { DetailStats.from(workout) }
-                    val records = remember(workout.records) { DetailRecordSections.from(workout) }
                     LazyColumn(
                         Modifier.fillMaxSize().testTag(WorkoutDetailTags.LIST).imePadding().endsSetEditingOnOutsideTap(sets),
                         state = listState,
@@ -258,11 +256,8 @@ fun WorkoutDetailRoute(
                                 DetailStatistics(workout, stats, ui.preferences.pounds)
                             }
                         }
-                        if (records.beaten.isNotEmpty()) item("records", "detail-records") {
-                            DetailRecords(stringResource(Res.string.summary_records), records.beaten, false, ui.preferences.pounds, WorkoutDetailTags.RECORDS)
-                        }
-                        if (records.first.isNotEmpty()) item("first", "detail-records") {
-                            DetailRecords(stringResource(Res.string.summary_first_records), records.first, true, ui.preferences.pounds, WorkoutDetailTags.FIRST)
+                        if (workout.records.isNotEmpty()) item("records", "detail-records") {
+                            DetailRecords(stringResource(Res.string.summary_records), workout.records, ui.preferences.pounds, WorkoutDetailTags.RECORDS)
                         }
                         workout.exercises.forEach { entry ->
                             item("entry:${entry.id}", "detail-exercise-header") {
@@ -494,7 +489,7 @@ private fun DetailSetReading(set: SetUi, number: Int, pounds: Boolean) {
 }
 
 @Composable
-private fun DetailRecords(title: String, records: List<RecordUi>, first: Boolean, pounds: Boolean, tag: String) {
+private fun DetailRecords(title: String, records: List<RecordUi>, pounds: Boolean, tag: String) {
     Column(Modifier.detailWidth().testTag(tag).padding(bottom = MTheme.space.s4), verticalArrangement = Arrangement.spacedBy(MTheme.space.s3)) {
         MText(title, MTheme.type.titleSm, Modifier.semantics { heading() })
         records.forEach { record ->
@@ -514,7 +509,7 @@ private fun DetailRecords(title: String, records: List<RecordUi>, first: Boolean
             }
             Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(MTheme.space.s2),
                 verticalAlignment = Alignment.CenterVertically) {
-                PrBadge(soft = first)
+                PrBadge()
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(MTheme.space.s1)) {
                     MText(stringResource(if (record.kind == RecordKind.WEIGHT) Res.string.detail_weight_pr else Res.string.detail_reps_pr),
                         MTheme.type.labelMd, color = MTheme.colors.textSecondary)

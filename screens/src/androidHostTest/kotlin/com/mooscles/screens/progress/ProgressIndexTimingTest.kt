@@ -43,7 +43,7 @@ class ProgressIndexTimingTest {
         val charts = queries.map { query -> timed { ExerciseCharts.query(index, query) } }
         val typed = "supino"
         val searches = List(RECORD_QUERIES) { n ->
-            RecordsQuery(text = typed.take(1 + n % typed.length), currentOnly = n % 4 == 3, firstRecords = n % 2 == 1, zone = zone)
+            RecordsQuery(text = typed.take(1 + n % typed.length), currentOnly = n % 4 == 3, zone = zone)
         }
         val timelines = searches.map { query -> timed { RecordTimelines.query(index, query) } }
 

@@ -274,7 +274,7 @@ private fun recordSetText(kind: RecordKind, weightKg: Double, reps: Int, pounds:
 
 /**
  * A record's line: "87,5 kg × 6 · antes 85 kg" for a load record, "80 kg × 8 · antes 6 repetições" for a reps record,
- * and just the set for a first record (no previous value). An [assistance] reps record writes its set as assistance
+ * and just the set without a previous value (a current record shown on its own). An [assistance] reps record writes its set as assistance
  * ("30 kg de assistência × 8 · antes 6 repetições").
  */
 @Composable
@@ -309,7 +309,7 @@ private fun spokenSet(kind: RecordKind, weightKg: Double, reps: Int, pounds: Boo
 
 /**
  * A record row read aloud, without the visual dot: "Supino, Carga: 87,5 quilos por 6, antes 85 quilos, 28 de outubro,
- * Atual". [current] adds "Atual"; [first] adds "Primeiro registro"; an [assistance] reps record reads its set as
+ * Atual". [current] adds "Atual"; an [assistance] reps record reads its set as
  * "30 quilos de assistência por 8". The kind follows the record's [convention] ([recordKindLabel]).
  */
 @Composable
@@ -325,7 +325,6 @@ fun recordSpoken(
     zone: TimeZone,
     today: LocalDate,
     current: Boolean,
-    first: Boolean,
     assistance: Boolean = false,
     convention: String = "",
 ): String {
@@ -338,7 +337,6 @@ fun recordSpoken(
     if (was != null) detail = stringResource(Res.string.records_spoken_join, detail, was)
     var text = stringResource(Res.string.records_spoken, exerciseName, recordKindLabel(kind, convention), detail, spokenDate(epochMillis, zone, today))
     if (current) text = stringResource(Res.string.records_spoken_join, text, stringResource(Res.string.records_current))
-    if (first) text = stringResource(Res.string.records_spoken_join, text, stringResource(Res.string.records_first_badge))
     return text
 }
 

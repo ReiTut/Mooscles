@@ -44,7 +44,7 @@ import kotlin.time.Duration.Companion.minutes
  *
  * Two runs cover Portuguese in light mode at 1.0 and English in dark mode at [LINEAR_TWO_X_FONT_SCALE].
  * Each run seeds, through the repository, six finished bench press workouts with the load
- * going up and, in the newest, a reps record, the back squat in the last two ([seedBenchProgress]), then: the timeline
+ * going up (the newest also holds more reps at a lighter load, no record), the back squat in the last two ([seedBenchProgress]), then: the timeline
  * opens with the squat's record on top; the search ("supino" or "bench") puts the bench's current load record on top,
  * with "Current"; a tap on it opens the progress on the load, the chart drawn with the record mark (one image node with
  * its summary); "Estimated 1RM" swaps the chart, without the mark; "View data" lists one row per session; and the menu's
@@ -87,15 +87,14 @@ class ProgressFlowTest {
             waitForIdle()
             await("the saved data loads") { !vm.contentUi.value.loading && vm.contentUi.value.history.size == seed.benchWorkouts.size }
 
-            // The records the repository found in the newest workout: the squat's and the bench's load records, and the
-            // bench's reps record (8 at 80 kg, beating 5), all beaten ones and all current.
+            // The records the repository found in the newest workout: the squat's and the bench's load records, both beaten
+            // and current. Its 80 kg × 8 is lighter than the new 85 kg, so it is no reps record (only the heaviest load counts).
             val newest = vm.contentUi.value.history.single { it.id == seed.benchWorkouts.last() }
             val squatLoad = newest.records.single { it.exercise.id == BACK_SQUAT && it.kind == RecordKind.WEIGHT }
             val benchLoad = newest.records.single { it.exercise.id == BENCH_PRESS && it.kind == RecordKind.WEIGHT }
-            val benchReps = newest.records.single { it.exercise.id == BENCH_PRESS && it.kind == RecordKind.REPS && it.weightKg == 80.0 }
             assertEquals(105.0 to 100.0, squatLoad.weightKg to squatLoad.previousKg)
             assertEquals(85.0 to 80.0, benchLoad.weightKg to benchLoad.previousKg)
-            assertEquals(8 to 5, benchReps.reps to benchReps.previousReps)
+            assertTrue(newest.records.none { it.kind == RecordKind.REPS }, "no reps record below the heaviest load")
             val squatRow = recordRowTag(squatLoad)
             val benchRow = recordRowTag(benchLoad)
 

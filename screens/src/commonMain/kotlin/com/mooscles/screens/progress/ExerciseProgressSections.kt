@@ -219,12 +219,12 @@ private fun RecordRow(event: RecordEvent, exerciseName: String, pounds: Boolean,
         WorkingSets.convention(record.exercise.convention) == LoadConvention.ASSISTANCE
     val set = recordWasText(
         record.kind, record.weightKg, record.reps,
-        record.previousKg.takeIf { !record.firstRecord }, record.previousReps.takeIf { !record.firstRecord }, pounds, assistanceWording,
+        record.previousKg, record.previousReps, pounds, assistanceWording,
     )
     val text = stringResource(Res.string.progress_highlight, set, shortDateAged(record.date, calendar.zone, calendar.today))
     var spoken = recordSpoken(
         exerciseName, record.kind, record.weightKg, record.reps, record.previousKg, record.previousReps, pounds,
-        record.date, calendar.zone, calendar.today, current = false, first = false, assistance = assistanceWording,
+        record.date, calendar.zone, calendar.today, current = false, assistance = assistanceWording,
         convention = record.exercise.convention,
     )
     if (record.kind == RecordKind.REPS && record.assistance && WorkingSets.convention(record.exercise.convention) != LoadConvention.ASSISTANCE) {

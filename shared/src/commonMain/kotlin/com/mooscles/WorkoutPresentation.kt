@@ -43,15 +43,16 @@ internal class WorkoutPresentation {
         private val NO_PREVIOUS = PreviousSession(null, emptyList(), null)
 
         /**
-         * Each record beaten (never a first record) keyed by the set the domain chose for it. A set holding both
-         * records shows the weight one (plan decision 5). Set ids are unique, so the set's own entry is the one with
-         * the record's exercise and convention.
+         * Each record beaten keyed by the set the domain chose for it; an exercise's first session (no previous value) is
+         * a record but marks no set (D18), so a first workout is not a toast on every exercise. A set holding both records
+         * shows the weight one (plan decision 5). Set ids are unique, so the set's own entry is the one with the record's
+         * exercise and convention.
          */
         internal fun setRecords(weight: List<WeightPr>, reps: List<RepsPr>): Map<String, SetRecordUi> {
-            if (weight.all { it.firstRecord } && reps.all { it.firstRecord }) return emptyMap()
+            if (weight.all { it.previousWeightKg == null } && reps.all { it.previousReps == null }) return emptyMap()
             val result = HashMap<String, SetRecordUi>()
-            reps.forEach { if (!it.firstRecord) result[it.setId] = SetRecordUi(RecordKind.REPS, previousReps = it.previousReps) }
-            weight.forEach { if (!it.firstRecord) result[it.setId] = SetRecordUi(RecordKind.WEIGHT, previousKg = it.previousWeightKg) }
+            reps.forEach { if (it.previousReps != null) result[it.setId] = SetRecordUi(RecordKind.REPS, previousReps = it.previousReps) }
+            weight.forEach { if (it.previousWeightKg != null) result[it.setId] = SetRecordUi(RecordKind.WEIGHT, previousKg = it.previousWeightKg) }
             return result
         }
     }
@@ -122,7 +123,7 @@ internal class WorkoutPresentation {
                     oldSets[it.id]?.takeIf { previous -> previous == row } ?: row
                 }
                 val entry = WorkoutExerciseUi(e.id, snapshot(e), old?.sets?.takeIf { it == sets } ?: sets,
-                    e.restSeconds, previous.text, pr?.newWeightKg, pr?.firstRecord ?: false,
+                    e.restSeconds, previous.text, pr?.newWeightKg,
                     records.filter { record ->
                         record.exercise.id == e.exerciseId && record.exercise.convention == e.convention.label &&
                             savedSets.any { set ->

@@ -46,6 +46,17 @@ class ShareCardDataTest {
     private fun data(entry: WorkoutExercise, vararg sets: WorkoutSet) =
         AppData(workouts = listOf(workout()), workoutExercises = listOf(entry), sets = sets.toList())
 
+    /**
+     * This history with an earlier finished workout ("base") holding one set of each [earlier] entry's exercise and
+     * convention at that load and reps, for the selected workout to beat: a first performance is never a record.
+     */
+    private fun AppData.beating(vararg earlier: Triple<WorkoutExercise, Double, Int>): AppData {
+        val base = workout("base", 0)
+        val entries = earlier.mapIndexed { index, (entry, _, _) -> entry.copy(id = "base-$index", workoutId = base.id) }
+        return copy(workouts = workouts + base, workoutExercises = workoutExercises + entries,
+            sets = sets + earlier.mapIndexed { index, (_, kg, reps) -> set(entries[index], kg, reps) })
+    }
+
     private fun card(data: AppData, workoutId: String = "selected", pounds: Boolean = false,
                      locale: NumberLocale = NumberLocale.EN, zone: TimeZone = utc,
                      texts: ShareCardTexts = EnglishTexts) =
@@ -56,7 +67,7 @@ class ShareCardDataTest {
 
     @Test fun bestLoadedSetKeepsTheActualHighestWeightAndRepsTogether() {
         val entry = exercise()
-        val result = card(data(entry, set(entry, 20.0, 20), set(entry, 22.0, 6), set(entry, 22.0, 8)))
+        val result = card(data(entry, set(entry, 20.0, 20), set(entry, 22.0, 6), set(entry, 22.0, 8)).beating(Triple(entry, 20.0, 5)))
         assertEquals("22\u00A0kg × 8", result.rows.single().bestSet)
         assertEquals(3, result.rows.single().completedSets)
         assertEquals("708\u00A0kg", result.volumeText)
@@ -79,7 +90,7 @@ class ShareCardDataTest {
     @Test fun bodyweightChoosesHighestCompletedEligibleRepsAndPreservesZeroLoad() {
         val entry = exercise(convention = LoadConvention.BODYWEIGHT)
         val result = card(data(entry, set(entry, 0.0, 8), set(entry, 0.0, 12),
-            set(entry, 0.0, 30, warmup = true), set(entry, 0.0, 40, completed = false)))
+            set(entry, 0.0, 30, warmup = true), set(entry, 0.0, 40, completed = false)).beating(Triple(entry, 0.0, 10)))
         assertEquals("Bodyweight × 12", result.rows.single().bestSet)
         assertEquals("0\u00A0kg", result.volumeText)
         assertTrue(result.rows.single().hasRecord)
@@ -95,7 +106,8 @@ class ShareCardDataTest {
 
     @Test fun poundsConvertWeightAndVolumeOnceWithoutMultiplyingPerHandLoads() {
         val entry = exercise(convention = LoadConvention.PER_HAND)
-        val result = card(data(entry, set(entry, WeightUnits.lbToKg(22.0), 6)), pounds = true)
+        val result = card(data(entry, set(entry, WeightUnits.lbToKg(22.0), 6)).beating(Triple(entry, WeightUnits.lbToKg(20.0), 6)),
+            pounds = true)
         assertEquals("22\u00A0lb × 6", result.rows.single().bestSet)
         assertEquals("132\u00A0lb", result.volumeText)
         assertEquals(listOf(ShareRecordRow("Saved bench", "22\u00A0lb × 6")), result.records)
@@ -103,7 +115,7 @@ class ShareCardDataTest {
 
     @Test fun binaryUnitRoundTripNoiseDoesNotDefeatTheHigherRepetitionTieBreak() {
         val entry = exercise()
-        val result = card(data(entry, set(entry, 22.0.nextUp(), 6), set(entry, 22.0, 9)))
+        val result = card(data(entry, set(entry, 22.0.nextUp(), 6), set(entry, 22.0, 9)).beating(Triple(entry, 22.0, 7)))
         assertEquals("22\u00A0kg × 9", result.rows.single().bestSet)
         assertTrue(result.rows.single().hasRecord)
         assertEquals("22\u00A0kg × 9", result.records.single().detail)
@@ -137,15 +149,16 @@ class ShareCardDataTest {
         assertEquals(listOf("Só aquecimento", "Só assistência", "Sem série de trabalho"), portuguese.rows.map { it.bestSet })
     }
 
-    @Test fun firstAndBeatenWeightAndBodyweightRepetitionRecordsCountEachVariationOnce() {
+    @Test fun weightAndBodyweightRepetitionRecordsCountEachVariationOnce() {
         val bench = exercise()
         val duplicate = exercise(id = "duplicate", position = 2)
         val pullup = exercise(id = "pullup", variation = "pullup", position = 1, convention = LoadConvention.BODYWEIGHT)
         val result = card(AppData(workouts = listOf(workout()), workoutExercises = listOf(bench, pullup, duplicate),
-            sets = listOf(set(bench, 22.0, 6), set(duplicate, 22.0, 8), set(pullup, 0.0, 12))))
+            sets = listOf(set(bench, 22.0, 6), set(duplicate, 22.0, 8), set(pullup, 0.0, 12)))
+            .beating(Triple(bench, 20.0, 8), Triple(pullup, 0.0, 10)))
         assertEquals(2, result.records.size)
         assertEquals(2, result.prCount)
-        assertEquals("2", result.prsText, "First records, either kind, count each variation once")
+        assertEquals("2", result.prsText, "Records of either kind count each variation once")
         assertEquals(listOf(false, true, true), result.rows.map { it.hasRecord })
         assertEquals(listOf(ShareRecordRow("Saved bench", "22\u00A0kg × 8"), ShareRecordRow("Saved pullup", "Bodyweight × 12")),
             result.records)
@@ -155,7 +168,7 @@ class ShareCardDataTest {
         val losing = exercise(id = "losing", position = 0)
         val winning = exercise(id = "winning", position = 1)
         val result = card(AppData(workouts = listOf(workout()), workoutExercises = listOf(losing, winning),
-            sets = listOf(set(losing, 22.0, 6), set(winning, 22.0, 8))))
+            sets = listOf(set(losing, 22.0, 6), set(winning, 22.0, 8))).beating(Triple(losing, 20.0, 5)))
         assertEquals(listOf(false, true), result.rows.map { it.hasRecord })
         assertEquals(1, result.records.size)
         assertEquals(1, result.prCount)
@@ -166,7 +179,7 @@ class ShareCardDataTest {
         val warmup = exercise(id = "warmup", position = 0)
         val winning = exercise(id = "winning", position = 1)
         val result = card(AppData(workouts = listOf(workout()), workoutExercises = listOf(warmup, winning),
-            sets = listOf(set(warmup, 22.0, 8, warmup = true), set(winning, 22.0, 8))))
+            sets = listOf(set(warmup, 22.0, 8, warmup = true), set(winning, 22.0, 8))).beating(Triple(winning, 20.0, 5)))
         assertEquals(listOf(false, true), result.rows.map { it.hasRecord })
         assertEquals(1, result.records.size)
     }
@@ -175,7 +188,7 @@ class ShareCardDataTest {
         val losing = exercise(id = "losing", position = 0, convention = LoadConvention.BODYWEIGHT)
         val winning = exercise(id = "winning", position = 1, convention = LoadConvention.BODYWEIGHT)
         val result = card(AppData(workouts = listOf(workout()), workoutExercises = listOf(losing, winning),
-            sets = listOf(set(losing, 0.0, 8), set(winning, 0.0, 12))))
+            sets = listOf(set(losing, 0.0, 8), set(winning, 0.0, 12))).beating(Triple(losing, 0.0, 6)))
         assertEquals(listOf(false, true), result.rows.map { it.hasRecord })
         assertEquals(1, result.records.size)
     }
@@ -215,6 +228,7 @@ class ShareCardDataTest {
         val cable = exercise(id = "cable", variation = "cable-bench", position = 2)
         val source = AppData(workouts = listOf(workout()), workoutExercises = listOf(total, perHand, cable),
             sets = listOf(set(total, 20.0, 8), set(perHand, 20.0, 8), set(cable, 20.0, 8)))
+            .beating(Triple(total, 18.0, 8), Triple(perHand, 18.0, 8), Triple(cable, 18.0, 8))
         for ((locale, texts) in listOf(NumberLocale.EN to EnglishTexts, NumberLocale.PT_BR to PortugueseTexts)) {
             val result = card(source, locale = locale, texts = texts)
             assertEquals(3, result.prCount)
@@ -226,6 +240,7 @@ class ShareCardDataTest {
         val entries = List(11) { exercise(id = "entry-$it", variation = "variation-$it", position = it) }
         val source = AppData(workouts = listOf(workout()), workoutExercises = entries,
             sets = entries.map { set(it, 22.0, 8) } + set(entries.first(), 22.0, 7, position = 1))
+            .beating(*entries.map { Triple(it, 20.0, 8) }.toTypedArray())
         for ((locale, texts) in listOf(NumberLocale.EN to EnglishTexts, NumberLocale.PT_BR to PortugueseTexts)) {
             val result = card(source, locale = locale, texts = texts)
             assertEquals("12", result.setsText)
@@ -235,7 +250,7 @@ class ShareCardDataTest {
         }
     }
 
-    @Test fun lighterRepetitionRecordsStayInHistoryWhenTheBestSetIsWeakerThanItsRecord() {
+    @Test fun lighterRepetitionsAreNoRecordAnywhere() {
         val old = exercise(id = "old", workout = "old")
         val bench = exercise()
         val source = AppData(workouts = listOf(workout("old", 0), workout()),
@@ -246,7 +261,7 @@ class ShareCardDataTest {
         assertFalse(result.rows.single().hasRecord)
         assertTrue(result.records.isEmpty())
         assertEquals(0, result.prCount)
-        assertEquals(5.0, WorkoutCalculations.repsPrsForWorkout(source, "selected").single().weightKg)
+        assertTrue(WorkoutCalculations.repsPrsForWorkout(source, "selected").isEmpty())
     }
 
     @Test fun topLoadRepetitionRecordWinsOverEarlierLighterAndAssistedSets() {
@@ -347,7 +362,7 @@ class ShareCardDataTest {
 
     @Test fun assistedRepetitionRecordNamesTheAssistance() {
         val entry = exercise(convention = LoadConvention.ASSISTANCE)
-        val result = card(data(entry, set(entry, 20.0, 8)))
+        val result = card(data(entry, set(entry, 20.0, 8)).beating(Triple(entry, 20.0, 6)))
         assertEquals("Assistance only", result.rows.single().bestSet)
         assertEquals(listOf(ShareRecordRow("Saved bench", "20\u00A0kg assistance × 8")), result.records)
     }
@@ -372,7 +387,7 @@ class ShareCardDataTest {
             exercises = listOf(Exercise("custom_row", "Saved custom_row", MuscleGroup.BACK, Equipment.CABLE, custom = true)),
             workoutExercises = listOf(bench, typed),
             sets = listOf(set(bench, 80.0, 5), set(typed, 40.0, 10)),
-        )
+        ).beating(Triple(bench, 75.0, 5), Triple(typed, 35.0, 10))
         val english = card(source)
         assertEquals(listOf("Barbell bench press", "Saved custom_row"), english.rows.map { it.name })
         assertEquals(listOf("Barbell bench press", "Saved custom_row"), english.records.map { it.name })

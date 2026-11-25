@@ -212,7 +212,6 @@ class WorkoutPresentationTest {
     @Test fun historyRecordsUnchangedByBatch() {
         val random = Random(2026)
         var beaten = 0
-        var first = 0
         var reps = 0
         repeat(20) { round ->
             val data = generatedHistory(random)
@@ -235,17 +234,14 @@ class WorkoutPresentationTest {
                 workout.exercises.forEach { entry ->
                     val pr = weightPrs.firstOrNull { it.exerciseId == entry.exercise.id && it.convention.label == entry.exercise.convention }
                     assertEquals(pr?.newWeightKg, entry.provisionalRecordKg, "round $round entry ${entry.id}")
-                    assertEquals(pr?.firstRecord ?: false, entry.firstRecord, "round $round entry ${entry.id}")
                     val own = workout.records.filter { it.exercise.id == entry.exercise.id && it.exercise.convention == entry.exercise.convention }
                     assertTrue(own.containsAll(entry.records), "round $round entry ${entry.id}")
                 }
-                beaten += workout.records.count { !it.firstRecord }
-                first += workout.records.count { it.firstRecord }
+                beaten += workout.records.size
                 reps += workout.records.count { it.kind == RecordKind.REPS }
             }
         }
         assertTrue(beaten > 20, "beaten records: $beaten")
-        assertTrue(first > 20, "first records: $first")
         assertTrue(reps > 20, "reps records: $reps")
     }
 
@@ -285,7 +281,7 @@ class WorkoutPresentationTest {
             currentSet.copy(id = "unfinished", weightKg = 100.0, completed = false)))
         val scenarios = listOf(
             Triple("other workout records do not count", noPr, 0),
-            Triple("first weight and repetition records count once", first, 1),
+            Triple("a first session counts once", first, 1),
             Triple("weight and repetition records count once", data, 1),
             Triple("repeated entries and multiple repetition records count once", repeated, 1),
             Triple("same exercise with different conventions counts separately", conventions, 2),
@@ -324,10 +320,8 @@ class WorkoutPresentationTest {
         assertEquals(120.0, record.weightKg, 0.0)
         assertEquals(3, record.reps)
         assertEquals(110.0, record.previousKg!!, 0.0)
-        assertFalse(record.firstRecord)
         assertEquals("active", record.workoutId)
         assertEquals(120.0, active.exercises.single().provisionalRecordKg!!, 0.0)
-        assertFalse(active.exercises.single().firstRecord)
         assertEquals(listOf(record), active.exercises.single().records.filter { it.kind == RecordKind.WEIGHT })
         // The active session must not leak into the history's baseline.
         val latest = ui.history.single { it.id == "latest" }.records.single { it.kind == RecordKind.WEIGHT }
@@ -452,11 +446,11 @@ class WorkoutPresentationTest {
         assertEquals(listOf("t1" to SetRecordUi(RecordKind.REPS, previousReps = 6)), present(data).marks())
     }
 
-    @Test fun firstRecordMarksNothing() {
+    @Test fun aFirstSessionIsARecordButMarksNoSet() {
         val ui = present(recordData(emptyList(), listOf(Row("t1", 85.0, 6), Row("t2", 87.5, 6))))
-        // The first records exist (the summary lists them); only the per-set mark is withheld (D18).
-        assertTrue(ui.active!!.records.isNotEmpty())
-        assertTrue(ui.active!!.records.all { it.firstRecord })
+        // The first session's load record counts (summary, history, share), with nothing it beat; no set is marked (D18).
+        assertEquals(listOf(87.5), ui.active!!.records.map { it.weightKg })
+        assertNull(ui.active!!.records.single().previousKg)
         assertEquals(emptyList(), ui.marks())
     }
 
@@ -508,8 +502,9 @@ class WorkoutPresentationTest {
             val data = generatedHistory(random)
             val ui = WorkoutPresentation().present(data, PreferencesUi())
             (ui.history + listOfNotNull(ui.active)).forEach { workout ->
-                val weight = WorkoutCalculations.prsForWorkout(data, workout.id).filterNot { it.firstRecord }
-                val reps = WorkoutCalculations.repsPrsForWorkout(data, workout.id).filterNot { it.firstRecord }
+                // A first session's records (no previous value) mark no set.
+                val weight = WorkoutCalculations.prsForWorkout(data, workout.id).filter { it.previousWeightKg != null }
+                val reps = WorkoutCalculations.repsPrsForWorkout(data, workout.id).filter { it.previousReps != null }
                 val expected = LinkedHashMap<String, SetRecordUi>()
                 reps.forEach { expected[it.setId] = SetRecordUi(RecordKind.REPS, previousReps = it.previousReps) }
                 weight.forEach { expected[it.setId] = SetRecordUi(RecordKind.WEIGHT, previousKg = it.previousWeightKg) }
@@ -525,11 +520,12 @@ class WorkoutPresentationTest {
      * same load to beat on reps), so the precedence is pinned on the merge itself.
      */
     @Test fun aSetHoldingBothRecordsShowsTheWeightOne() {
-        val weight = WeightPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 80.0, 85.0, 8, false, "s1")
-        val reps = listOf(RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 85.0, false, 6, 8, false, "s1"),
-            RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 60.0, false, 10, 12, false, "s2"),
-            RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 50.0, false, null, 12, true, "s3"))
-        val first = weight.copy(previousWeightKg = null, firstRecord = true, setId = "s4")
+        val weight = WeightPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 80.0, 85.0, 8, "s1")
+        val reps = listOf(RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 85.0, false, 6, 8, "s1"),
+            RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 60.0, false, 10, 12, "s2"),
+            RepsPr("bench", "Bench", LoadConvention.TOTAL_LOAD, 50.0, false, null, 12, "s3"))
+        // A first session's records (no previous value) mark no set.
+        val first = weight.copy(previousWeightKg = null, setId = "s4")
         assertEquals(mapOf("s1" to SetRecordUi(RecordKind.WEIGHT, previousKg = 80.0), "s2" to SetRecordUi(RecordKind.REPS, previousReps = 10)),
             WorkoutPresentation.setRecords(listOf(weight, first), reps))
     }

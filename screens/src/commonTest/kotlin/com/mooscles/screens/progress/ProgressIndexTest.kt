@@ -203,7 +203,7 @@ class ProgressIndexTest {
         fun beaten(kind: RecordKind, key: SeriesKey, point: SessionPoint): Boolean {
             val plotted = (if (kind == RecordKind.WEIGHT) point.load else point.reps) ?: return false
             return all.any {
-                it.kind == kind && !it.firstRecord && it.exercise.id == key.exerciseId &&
+                it.kind == kind && (it.previousKg != null || it.previousReps != null) && it.exercise.id == key.exerciseId &&
                     it.exercise.convention == key.convention && it.workoutId == point.workoutId &&
                     (kind == RecordKind.WEIGHT || it.assistance == group(key.convention)) &&
                     it.weightKg == plotted.weightKg && it.reps == plotted.reps
@@ -224,7 +224,7 @@ class ProgressIndexTest {
         }
         // Here every beaten record of a chart's group is its session's plotted set, so each marks it: count them
         // the other way around. The record tests below cover a record set that is not the plotted one.
-        val beatenRecords = all.filter { !it.firstRecord }.filter {
+        val beatenRecords = all.filter { it.previousKg != null || it.previousReps != null }.filter {
             it.kind == RecordKind.WEIGHT || it.assistance == group(it.exercise.convention)
         }.map { Triple(it.kind, it.exercise.id, it.workoutId) }.distinct()
         assertEquals(beatenRecords.size, marks)
@@ -316,7 +316,7 @@ class ProgressIndexTest {
     }
 
     @Test
-    fun firstRecordIsNeverAMark() {
+    fun aRecordWithoutAPreviousValueIsNeverAMark() {
         val plain = workout("w", DAY, entry(bench, set(100.0, 5)))
         val records = listOf(weightRecord(bench, 100.0, 5, null, plain), repsRecord(bench, 100.0, 5, null, plain))
         val index = index(plain.copy(records = records), records = records.map(::currentOf))
@@ -467,7 +467,7 @@ class ProgressIndexTest {
     }
 
     @Test
-    fun currentRecordShowsItsPreviousValueAndIsNotFirst() {
+    fun currentRecordShowsItsPreviousValue() {
         val workout = workout("w", 3 * DAY, entry(bench, set(105.0, 3), set(100.0, 6)))
         val weight = weightRecord(bench, 105.0, 3, 100.0, workout)
         val reps = repsRecord(bench, 100.0, 6, 5, workout)
@@ -476,7 +476,6 @@ class ProgressIndexTest {
         assertEquals(listOf(weight, reps), index.currentRecords.map { it.record }, "the history's record, in event order")
         assertEquals(100.0, index.currentRecords[0].record.previousKg)
         assertEquals(5, index.currentRecords[1].record.previousReps)
-        assertTrue(index.currentRecords.none { it.record.firstRecord })
         assertTrue(index.currentRecords.all { it.current })
         assertSame(index.events[0], index.currentRecords[0], "a current event is one event")
         assertSame(index.events[1], index.currentRecords[1])
