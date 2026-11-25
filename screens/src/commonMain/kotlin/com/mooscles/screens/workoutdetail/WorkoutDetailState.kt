@@ -8,7 +8,6 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.mooscles.screens.summary.SummaryStats
-import com.mooscles.ui.RecordUi
 import com.mooscles.ui.WorkoutUi
 
 /** Saveable mode of a saved workout. Android's host uses [editing] for its system Back handler. */
@@ -39,14 +38,5 @@ internal data class DetailStats(val sets: Int, val exercises: Int, val prs: Int,
             return DetailStats(completed.sumOf { it.size }, completed.count { it.isNotEmpty() },
                 workout.prExerciseCount, workout.volumeKg)
         }
-    }
-}
-
-/** Keep first records visibly separate while the headline PR total includes them (Build 25). */
-internal data class DetailRecordSections(val beaten: List<RecordUi>, val first: List<RecordUi>) {
-    companion object {
-        fun from(workout: WorkoutUi) = DetailRecordSections(
-            workout.records.filterNot(RecordUi::firstRecord), workout.records.filter(RecordUi::firstRecord),
-        )
     }
 }

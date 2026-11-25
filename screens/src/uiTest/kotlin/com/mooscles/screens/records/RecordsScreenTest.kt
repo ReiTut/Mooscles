@@ -40,7 +40,6 @@ import com.mooscles.designsystem.i18n.LocalAppLocale
 import com.mooscles.screens.LINEAR_TWO_X_FONT_SCALE
 import com.mooscles.screens.RecordingActions
 import com.mooscles.screens.ScreenRestoration
-import com.mooscles.screens.assertNumbersWhole
 import com.mooscles.screens.assertShownWhole
 import com.mooscles.screens.isPlaced
 import com.mooscles.screens.library.TALL
@@ -112,11 +111,8 @@ class RecordsScreenTest {
     private val squat = catalog("barbell_back_squat_high_bar")
 
     // The history's records (WorkoutUi.records), with what they beat.
-    private val benchFirstW = RecordUi(bench, 80.0, 6, workoutId = "w1", date = end(2026, 8, 5))
-    private val benchFirstR = RecordUi(bench, 80.0, 6, workoutId = "w1", date = end(2026, 8, 5), kind = RecordKind.REPS)
-    private val pushFirst = RecordUi(pushUp, 0.0, 10, workoutId = "w5", date = end(2026, 9, 1), kind = RecordKind.REPS)
     private val benchW85 = RecordUi(bench, 85.0, 5, previousKg = 80.0, workoutId = "w2", date = end(2026, 9, 12))
-    private val squatFirst = RecordUi(squat, 100.0, 5, workoutId = "w6", date = end(2026, 10, 10))
+    private val squatW = RecordUi(squat, 100.0, 5, previousKg = 95.0, workoutId = "w6", date = end(2026, 10, 10))
     private val pushR12 = RecordUi(pushUp, 0.0, 12, previousReps = 10, workoutId = "w4", date = end(2026, 10, 20), kind = RecordKind.REPS)
     private val benchW875 = RecordUi(bench, 87.5, 6, previousKg = 85.0, workoutId = "w3", date = end(2026, 10, 28))
     private val benchR8 = RecordUi(bench, 80.0, 8, previousReps = 6, workoutId = "w3", date = end(2026, 10, 28), kind = RecordKind.REPS)
@@ -134,10 +130,10 @@ class RecordsScreenTest {
     private val history = listOf(
         workout("w3", at(2026, 10, 28), bench to listOf(87.5 to 6, 80.0 to 8), records = listOf(benchW875, benchR8)),
         workout("w4", at(2026, 10, 20), pushUp to listOf(0.0 to 12), records = listOf(pushR12)),
-        workout("w6", at(2026, 10, 10), squat to listOf(100.0 to 5), records = listOf(squatFirst)),
+        workout("w6", at(2026, 10, 10), squat to listOf(100.0 to 5), records = listOf(squatW)),
         workout("w2", at(2026, 9, 12), bench to listOf(85.0 to 5), records = listOf(benchW85)),
-        workout("w5", at(2026, 9, 1), pushUp to listOf(0.0 to 10), records = listOf(pushFirst)),
-        workout("w1", at(2026, 8, 5), bench to listOf(80.0 to 6), records = listOf(benchFirstW, benchFirstR)),
+        workout("w5", at(2026, 9, 1), pushUp to listOf(0.0 to 10), records = emptyList()),
+        workout("w1", at(2026, 8, 5), bench to listOf(80.0 to 6), records = emptyList()),
     )
 
     /** `UiState.records`: the records that still hold, as the presentation gives them (no previous value). */
@@ -145,7 +141,7 @@ class RecordsScreenTest {
         benchW875.copy(previousKg = null),
         benchR8.copy(previousReps = null),
         pushR12.copy(previousReps = null),
-        squatFirst,
+        squatW.copy(previousKg = null),
     )
 
     private fun stateOf(history: List<WorkoutUi> = this.history, records: List<RecordUi> = current, pounds: Boolean = false) =
@@ -256,16 +252,16 @@ class RecordsScreenTest {
         onNodeWithTag(rowTag(record)).fetchSemanticsNode().config[SemanticsProperties.ContentDescription].joinToString("")
 
     @Test
-    fun timelineGroupsByMonthNewestFirstWithBeatenRecordsOnly() = runComposeUiTest {
+    fun timelineGroupsByMonthNewestFirst() = runComposeUiTest {
         show(tall = true)
         waitForRows()
-        assertEquals(listOf("outubro de 2026 · 3 recordes", "setembro de 2026 · 1 recorde"), headers())
-        // Newest first; in one workout, load before reps (the index's order). No first record without the chip.
-        assertEquals(listOf(benchW875, benchR8, pushR12, benchW85).map(::rowTag), rows())
+        assertEquals(listOf("outubro de 2026 · 4 recordes", "setembro de 2026 · 1 recorde"), headers())
+        // Newest first; in one workout, load before reps (the index's order). The first workouts (w1, w5) have no record.
+        assertEquals(listOf(benchW875, benchR8, pushR12, squatW, benchW85).map(::rowTag), rows())
         onNodeWithTag(RecordsTags.month(2026, 10)).assertExists()
         onNodeWithTag(RecordsTags.month(2026, 9)).assertExists()
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOff()
-        onNodeWithTag(RecordsTags.FIRST).assertIsOff()
+        assertEquals(0, onAllNodes(hasText("Primeiros registros"), useUnmergedTree = true).fetchSemanticsNodes().size)
         // The headers sit above their rows.
         val october = onNodeWithTag(RecordsTags.month(2026, 10)).fetchSemanticsNode().boundsInRoot
         val september = onNodeWithTag(RecordsTags.month(2026, 9)).fetchSemanticsNode().boundsInRoot
@@ -289,7 +285,6 @@ class RecordsScreenTest {
         part(benchW875, RecordsTags.ROW_DATE).assertTextEquals("28 out")
         part(benchW875, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
         assertEquals(1, partCount(benchW875, RecordsTags.BADGE))
-        assertEquals(0, partCount(benchW875, RecordsTags.BADGE_FIRST))
         // One node: the row is the only clickable, and nothing inside it is a node of its own for a screen reader.
         val clickables = onAllNodes(hasClickAction() and (hasTestTag(rowTag(benchW875)) or hasAnyAncestor(hasTestTag(rowTag(benchW875)))), useUnmergedTree = true)
         assertEquals(1, clickables.fetchSemanticsNodes().size)
@@ -347,84 +342,38 @@ class RecordsScreenTest {
     }
 
     @Test
-    fun onlyFirstRecordsOffersTheChip() = runComposeUiTest {
-        // A new person: two workouts, every record a first one, which the timeline hides without the chip.
+    fun workoutsWithoutRecordsShowTheEmptyState() = runComposeUiTest {
+        // Two workouts whose sets set no record (as with only warm-ups): the empty state, and no "first records" anywhere.
         val firsts = history.filter { it.id == "w5" || it.id == "w1" }
-        show(mutableStateOf(stateOf(history = firsts, records = listOf(pushFirst, benchFirstW, benchFirstR))), tall = true)
-        waitForTag(RecordsTags.ONLY_FIRST)
-        onNode(hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Nenhum recorde batido ainda"), useUnmergedTree = true).assertExists()
-        onNode(
-            hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Seus primeiros registros ficam em “Primeiros registros”."),
-            useUnmergedTree = true,
-        ).assertExists()
-        assertGone(RecordsTags.EMPTY)
+        show(mutableStateOf(stateOf(history = firsts, records = emptyList())), tall = true)
+        waitForTag(RecordsTags.EMPTY)
+        onNode(hasAnyAncestor(hasTestTag(RecordsTags.EMPTY)) and hasText("Seus recordes aparecem aqui"), useUnmergedTree = true).assertExists()
         assertGone(RecordsTags.NONE_FOUND)
-        onNode(hasClickAction() and hasAnyAncestor(hasTestTag(RecordsTags.ONLY_FIRST)) and hasText("Ver primeiros registros")).performClick()
-        waitUntil(timeoutMillis = 5_000) { rows().size == 3 }
-        onNodeWithTag(RecordsTags.FIRST).assertIsOn()
-        assertEquals(listOf(pushFirst, benchFirstW, benchFirstR).map(::rowTag), rows())
-        // A search that finds nothing is still "nothing found", not this state.
-        onNodeWithTag(RecordsTags.FIRST).performClick()
-        search("remada curvada")
-        waitForTag(RecordsTags.NONE_FOUND)
-        assertGone(RecordsTags.ONLY_FIRST)
+        assertEquals(0, onAllNodes(hasText("Primeiros registros"), useUnmergedTree = true).fetchSemanticsNodes().size)
+        assertEquals(0, onAllNodes(rowMatcher).fetchSemanticsNodes().size)
     }
 
     @Test
-    fun firstRecordsChipAddsThemWithTheSoftBadge() = runComposeUiTest {
+    fun currentOnlyListsEveryCurrentRecord() = runComposeUiTest {
         show(tall = true)
         waitForRows()
-        onNodeWithTag(RecordsTags.FIRST).performClick()
-        waitUntil(timeoutMillis = 5_000) { rows().size == 8 }
-        onNodeWithTag(RecordsTags.FIRST).assertIsOn()
-        assertEquals(
-            listOf(benchW875, benchR8, pushR12, squatFirst, benchW85, pushFirst, benchFirstW, benchFirstR).map(::rowTag),
-            rows(),
-        )
-        assertEquals(listOf("outubro de 2026 · 4 recordes", "setembro de 2026 · 2 recordes", "agosto de 2026 · 2 recordes"), headers())
-        for (first in listOf(squatFirst, pushFirst, benchFirstW, benchFirstR)) {
-            assertEquals(1, partCount(first, RecordsTags.BADGE_FIRST), rowTag(first))
-            assertEquals(0, partCount(first, RecordsTags.BADGE), rowTag(first))
-            assertTrue(spoken(first).endsWith("Primeiro registro"), spoken(first))
-            // Told apart in words, not by the fill alone.
-            part(first, RecordsTags.BADGE_FIRST).assertTextEquals("Primeiro")
-        }
-        part(benchW875, RecordsTags.BADGE).assertTextEquals("PR")
-        part(benchW85, RecordsTags.BADGE).assertTextEquals("PR")
-        // A first record has no previous value: just the set.
-        part(benchFirstW, RecordsTags.ROW_VALUE).assertTextEquals("80 kg × 6".nb())
-        part(squatFirst, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
-        assertEquals(1, partCount(benchW875, RecordsTags.BADGE))
-
-        onNodeWithTag(RecordsTags.FIRST).performClick()
-        waitUntil(timeoutMillis = 5_000) { rows().size == 4 }
-    }
-
-    @Test
-    fun currentOnlyListsEveryCurrentRecordAndIgnoresTheOtherChip() = runComposeUiTest {
-        show(tall = true)
-        waitForRows()
-        onNodeWithTag(RecordsTags.FIRST).performClick()
-        waitUntil(timeoutMillis = 5_000) { rows().size == 8 }
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
         waitUntil(timeoutMillis = 5_000) { rows().size == 4 }
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOn()
-        // The other chip keeps its choice but has no say while "Só atuais" is on.
-        onNodeWithTag(RecordsTags.FIRST).assertIsOn().assertIsNotEnabled()
-        assertEquals(listOf(benchW875, benchR8, pushR12, squatFirst).map(::rowTag), rows())
+        assertEquals(listOf(benchW875, benchR8, pushR12, squatW).map(::rowTag), rows())
         assertEquals(listOf("outubro de 2026 · 4 recordes"), headers())
-        for (record in listOf(benchW875, benchR8, pushR12, squatFirst)) {
+        for (record in listOf(benchW875, benchR8, pushR12, squatW)) {
             part(record, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
+            assertEquals(1, partCount(record, RecordsTags.BADGE), rowTag(record))
         }
-        // A current record is shown as its history event, with what it beat (P1); one never beaten is a first record.
+        // A current record is shown as its history event, with what it beat (P1).
         part(benchW875, RecordsTags.ROW_VALUE).assertTextEquals("87,5 kg × 6 · antes 85 kg".nb())
         part(pushR12, RecordsTags.ROW_VALUE).assertTextEquals("Peso corporal × 12 · antes 10 repetições")
-        assertEquals(1, partCount(benchW875, RecordsTags.BADGE))
-        assertEquals(1, partCount(squatFirst, RecordsTags.BADGE_FIRST))
+        part(squatW, RecordsTags.ROW_VALUE).assertTextEquals("100 kg × 5 · antes 95 kg".nb())
 
-        // Off, the timeline comes back with the first records the other chip still asks for.
+        // Off, the whole timeline comes back.
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
-        waitUntil(timeoutMillis = 5_000) { rows().size == 8 }
+        waitUntil(timeoutMillis = 5_000) { rows().size == 5 }
     }
 
     @Test
@@ -436,14 +385,14 @@ class RecordsScreenTest {
         assertEquals(listOf(benchW875, benchR8, benchW85).map(::rowTag), rows())
         part(benchW875, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
 
-        // A current first record of what the search finds shows without the chip, on top.
+        // A search in Portuguese finds the catalog's pt-BR name.
         val squatName = ExerciseNames.display(squat.id, squat.name, custom = false, portuguese = true)
         assertTrue(squatName.startsWith("Agachamento"), squatName)
         search("agachamento")
-        waitUntil(timeoutMillis = 5_000) { rows() == listOf(rowTag(squatFirst)) }
-        part(squatFirst, RecordsTags.ROW_NAME).assertTextEquals(squatName)
-        part(squatFirst, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
-        assertEquals(1, partCount(squatFirst, RecordsTags.BADGE_FIRST))
+        waitUntil(timeoutMillis = 5_000) { rows() == listOf(rowTag(squatW)) }
+        part(squatW, RecordsTags.ROW_NAME).assertTextEquals(squatName)
+        part(squatW, RecordsTags.ROW_CURRENT).assertTextEquals("Atual")
+        assertEquals(1, partCount(squatW, RecordsTags.BADGE))
 
         // "Só atuais" with a search is the intersection.
         search("supino")
@@ -453,7 +402,7 @@ class RecordsScreenTest {
         // Only spaces is no search.
         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
         search("   ")
-        waitUntil(timeoutMillis = 5_000) { rows().size == 4 }
+        waitUntil(timeoutMillis = 5_000) { rows().size == 5 }
     }
 
     @Test
@@ -469,11 +418,11 @@ class RecordsScreenTest {
     }
 
     @Test
-    fun emptyHistoryShowsTheFirstRecordEmptyState() = runComposeUiTest {
+    fun emptyHistoryShowsTheRecordsEmptyState() = runComposeUiTest {
         show(mutableStateOf(stateOf(history = emptyList(), records = emptyList())))
         waitForTag(RecordsTags.EMPTY)
         onNode(hasTestTag(RecordsTags.EMPTY)).assertIsDisplayed()
-        onNode(hasAnyAncestor(hasTestTag(RecordsTags.EMPTY)) and hasText("Seu primeiro recorde aparece aqui"), useUnmergedTree = true).assertExists()
+        onNode(hasAnyAncestor(hasTestTag(RecordsTags.EMPTY)) and hasText("Seus recordes aparecem aqui"), useUnmergedTree = true).assertExists()
         onNode(
             hasAnyAncestor(hasTestTag(RecordsTags.EMPTY)) and hasText("Conclua séries de trabalho para registrar recordes de carga e de repetições."),
             useUnmergedTree = true,
@@ -525,7 +474,6 @@ class RecordsScreenTest {
             waitForTag(RecordsTags.NONE_FOUND)
             assertGone(RecordsTags.SKELETON)
             assertGone(RecordsTags.EMPTY)
-            assertGone(RecordsTags.ONLY_FIRST)
             search("supino")
             waitForTag(RecordsTags.NONE_FOUND)
             assertGone(RecordsTags.SKELETON)
@@ -618,38 +566,42 @@ class RecordsScreenTest {
      * Final review of phase 5A (FR-I1): a chip whose result adds a newer month shows that month on top. The list goes to
      * the top once the new result is shown, not before: scrolled while the previous result is still there, the new one
      * keeps the previous first row in place, which leaves the newer month above the screen. The queries wait for a gate
-     * here, so the previous result is surely still shown when the chip is tapped.
+     * here, so the previous result is surely still shown when the chip is tapped. Since the "First records" chip left
+     * (2026-11-25), the choice that adds rows is turning "Só atuais" off.
      */
     @Test
-    fun aChipThatAddsANewerMonthShowsItOnTop() = runComposeUiTest {
+    fun aChoiceThatAddsANewerMonthShowsItOnTop() = runComposeUiTest {
         val many = (1..30).map { i ->
             val month = 1 + (30 - i) % 12
             val year = 2024 + (30 - i) / 12
             val record = RecordUi(bench, 80.0 + i, 5, previousKg = 79.0 + i, workoutId = "m$i", date = end(year, month, 3))
             workout("m$i", at(year, month, 3), bench to listOf(80.0 + i to 5), records = listOf(record))
         }.sortedByDescending { it.startedAt }
-        // A first record in October, newer than every beaten one (the newest in June): hidden without the chip.
-        val squatFirst = RecordUi(squat, 100.0, 5, workoutId = "sq", date = end(2026, 10, 10))
-        val history = listOf(workout("sq", at(2026, 10, 10), squat to listOf(100.0 to 5), records = listOf(squatFirst))) + many
+        // A record in October, newer than every other (the newest in June), that no longer holds: hidden by "Só atuais".
+        val squatW = RecordUi(squat, 100.0, 5, previousKg = 95.0, workoutId = "sq", date = end(2026, 10, 10))
+        val history = listOf(workout("sq", at(2026, 10, 10), squat to listOf(100.0 to 5), records = listOf(squatW))) + many
+        val current = many.map { it.records.single().copy(previousKg = null) }
         val gate = GatedContext()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         try {
-            show(mutableStateOf(stateOf(history = history, records = emptyList())), cache = ProgressIndexCache(scope, gate))
+            show(mutableStateOf(stateOf(history = history, records = current)), cache = ProgressIndexCache(scope, gate))
             waitForRows()
+            onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
+            waitUntil(timeoutMillis = 5_000) { rows().firstOrNull() == rowTag(many.first().records.single()) }
             assertEquals("junho de 2026 · 1 recorde", headers().first())
             assertAtTop(2026, 6)
             onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
             waitForIdle()
 
             gate.hold = CompletableDeferred()
-            onNodeWithTag(RecordsTags.FIRST).performClick()
+            onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
             waitForIdle()
             gate.hold?.complete(Unit)
-            waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(rowTag(squatFirst)).fetchSemanticsNodes().isNotEmpty() }
+            waitUntil(timeoutMillis = 5_000) { onAllNodesWithTag(rowTag(squatW)).fetchSemanticsNodes().isNotEmpty() }
             waitForIdle()
             // On screen, inside the list: a header placed above it (in the list's top padding) is not shown.
             onNodeWithTag(RecordsTags.month(2026, 10)).assertIsDisplayed()
-            onNodeWithTag(rowTag(squatFirst)).assertIsDisplayed()
+            onNodeWithTag(rowTag(squatW)).assertIsDisplayed()
             assertAtTop(2026, 10)
         } finally {
             gate.hold?.complete(Unit)
@@ -738,9 +690,9 @@ class RecordsScreenTest {
         onNode(hasText("Como contamos recordes") and inSheet, useUnmergedTree = true).assertExists()
         val rules = listOf(
             "Carga: a série de trabalho mais pesada.",
-            "Repetições: mais repetições na mesma carga, inclusive peso corporal.",
+            "Repetições: mais repetições do que nunca na sua carga mais pesada, inclusive peso corporal.",
             "Aquecimento e séries incompletas não contam.",
-            "Séries assistidas têm recordes à parte.",
+            "Séries assistidas têm recordes à parte; a menor assistência conta como a mais pesada.",
         )
         // The sheet scrolls (a long text at 2x in a short window).
         onNodeWithTag(RecordsTags.RULES_SHEET).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
@@ -787,7 +739,6 @@ class RecordsScreenTest {
         show(mutableStateOf(stateOf(history = many, records = emptyList())), restoration = restoration, locale = null)
         waitForRows()
         search("supino")
-        onNodeWithTag(RecordsTags.FIRST).performClick()
         waitForIdle()
         onNodeWithTag(RecordsScreenTag).performScrollToIndex(20)
         waitForIdle()
@@ -798,7 +749,6 @@ class RecordsScreenTest {
         waitForRows()
         waitForIdle()
         assertEquals("supino", onNode(hasSetTextAction()).fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
-        onNodeWithTag(RecordsTags.FIRST).assertIsOn()
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOff()
         assertEquals(top, rows().first())
         // This is a restored scrolled position, not the start: retain the actual row offset, not just its identity.
@@ -823,7 +773,6 @@ class RecordsScreenTest {
         waitForTag(RecordsTags.RULES_SHEET)
         waitForTag(RecordsTags.NONE_FOUND)
         onNodeWithTag(RecordsTags.CURRENT_ONLY).assertIsOn()
-        onNodeWithTag(RecordsTags.FIRST).assertIsOn().assertIsNotEnabled()
     }
 
     @Test
@@ -833,20 +782,19 @@ class RecordsScreenTest {
                 runComposeUiTest {
                     show(fontScale = scale, size = DpSize(320.dp, 800.dp))
                     waitForRows()
-                    // With "Só atuais", a first record's value is a number alone ("100 kg × 5").
+                    // With "Só atuais", the current records, with what they beat.
                     if (onlyCurrent) {
                         onNodeWithTag(RecordsTags.CURRENT_ONLY).performClick()
                         waitUntil(timeoutMillis = 5_000) { rows().size >= 2 }
                     }
                     val listTag = RecordsScreenTag
-                    for (record in if (onlyCurrent) listOf(benchW875, squatFirst) else listOf(benchW875, benchR8)) {
+                    for (record in if (onlyCurrent) listOf(benchW875, squatW) else listOf(benchW875, benchR8)) {
                         onNodeWithTag(listTag).performScrollToNode(hasTestTag(rowTag(record)))
                         waitForIdle()
                         assertShownWhole(partLayout(record, RecordsTags.ROW_KIND), "kind at $scale")
                         assertShownWhole(partLayout(record, RecordsTags.ROW_CURRENT), "current at $scale")
                         assertShownWhole(partLayout(record, RecordsTags.ROW_DATE), "date at $scale")
                     }
-                    if (onlyCurrent) assertNumbersWhole(atLeast = 1)
                 }
                 LocalAppLocale.restore()
             }

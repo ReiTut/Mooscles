@@ -38,59 +38,46 @@ class RecordTimelinesTest {
     private class Base(val index: ProgressIndex, val w1: WorkoutUi, val w2: WorkoutUi, val w3: WorkoutUi)
 
     /**
-     * Three workouts. w1 (Aug): first records of bench (weight, reps) and of the custom row. w2 (Sep): bench weight
-     * beaten, pull-up first reps. w3 (Oct): bench weight and reps beaten. Current: bench weight (w3), bench reps (w3),
-     * the custom row (w1, a first record never beaten) and the pull-up (w2, a first record).
+     * Three workouts. w1 (Aug): the first performances, which are no records. w2 (Sep): bench weight, custom row weight and
+     * pull-up reps beaten. w3 (Oct): bench weight and reps beaten. Current: bench weight (w3), bench reps (w3), the
+     * custom row (w2) and the pull-up (w2).
      */
     private fun base(): Base {
-        val w1 = endingAt("w1", "2026-08-10T10:00:00Z") {
-            listOf(weightRecord(bench, 100.0, 5, null, it), repsRecord(bench, 100.0, 5, null, it),
-                weightRecord(customRow, 50.0, 10, null, it))
-        }
+        val w1 = endingAt("w1", "2026-08-10T10:00:00Z") { emptyList() }
         val w2 = endingAt("w2", "2026-09-12T10:00:00Z") {
-            listOf(weightRecord(bench, 105.0, 3, 100.0, it), repsRecord(pullUp, 0.0, 8, null, it))
+            listOf(weightRecord(bench, 105.0, 3, 100.0, it), weightRecord(customRow, 55.0, 10, 50.0, it),
+                repsRecord(pullUp, 0.0, 8, 6, it))
         }
         val w3 = endingAt("w3", "2026-10-15T10:00:00Z") {
             listOf(weightRecord(bench, 110.0, 2, 105.0, it), repsRecord(bench, 90.0, 8, 5, it))
         }
-        val current = listOf(w3.records[0], w3.records[1], w1.records[2], w2.records[1]).map(::currentOf)
+        val current = listOf(w3.records[0], w3.records[1], w2.records[1], w2.records[2]).map(::currentOf)
         return Base(ProgressIndex.build(listOf(w3, w2, w1), current), w1, w2, w3)
     }
 
     private fun RecordsTimeline.events(): List<RecordEvent> = months.flatMap { it.items }
     private fun RecordsTimeline.ids(): List<String> = events().map { it.record.workoutId + it.record.kind.name.take(1) }
     private fun query(
-        index: ProgressIndex, text: String = "", currentOnly: Boolean = false, firstRecords: Boolean = false,
-        zone: TimeZone = utc,
-    ) = RecordTimelines.query(index, RecordsQuery(text, currentOnly, firstRecords, zone))
+        index: ProgressIndex, text: String = "", currentOnly: Boolean = false, zone: TimeZone = utc,
+    ) = RecordTimelines.query(index, RecordsQuery(text, currentOnly, zone))
 
     @Test
-    fun beatenOnlyByDefaultNewestFirst() {
+    fun everyRecordNewestFirst() {
         val timeline = query(base().index)
 
-        assertEquals(listOf("w3W", "w3R", "w2W"), timeline.ids())
-        assertEquals(3, timeline.total)
-        assertEquals(listOf(Month.OCTOBER to 2, Month.SEPTEMBER to 1), timeline.months.map { it.month to it.items.size })
+        assertEquals(listOf("w3W", "w3R", "w2W", "w2W", "w2R"), timeline.ids())
+        assertEquals(5, timeline.total)
+        assertEquals(listOf(Month.OCTOBER to 2, Month.SEPTEMBER to 3), timeline.months.map { it.month to it.items.size })
         assertTrue(timeline.months.all { it.year == 2026 })
     }
 
     @Test
-    fun firstRecordsOnlyWithTheChip() {
-        val timeline = query(base().index, firstRecords = true)
-
-        assertEquals(listOf("w3W", "w3R", "w2W", "w2R", "w1W", "w1R", "w1W"), timeline.ids())
-        assertEquals(7, timeline.total)
-        assertEquals(listOf(2, 2, 3), timeline.months.map { it.items.size })
-    }
-
-    @Test
-    fun currentOnlyIsUiStateRecordsIncludingFirsts() {
+    fun currentOnlyIsUiStateRecords() {
         val b = base()
-        val timeline = query(b.index, currentOnly = true, firstRecords = true)
+        val timeline = query(b.index, currentOnly = true)
 
-        assertEquals(listOf("w3W", "w3R", "w2R", "w1W"), timeline.ids())
+        assertEquals(listOf("w3W", "w3R", "w2W", "w2R"), timeline.ids())
         assertTrue(timeline.events().all { it.current })
-        assertEquals(timeline.ids(), query(b.index, currentOnly = true).ids(), "firstRecords is ignored")
         // The beaten ones keep their previous value from the history.
         assertEquals(105.0, timeline.events().first().record.previousKg)
     }
@@ -103,16 +90,15 @@ class RecordTimelinesTest {
 
         assertEquals(listOf("w3W", "w3R", "w2W"), pt.ids())
         assertEquals(pt.ids(), en.ids())
-        // A first record that is current shows up in a search of its exercise even without the chip.
         val row = query(b.index, text = "cable row")
-        assertEquals(listOf("w1W"), row.ids())
+        assertEquals(listOf("w2W"), row.ids())
         assertTrue(row.events().single().current)
         assertTrue(query(b.index, text = "nothing like this").months.isEmpty())
     }
 
     @Test
     fun aCurrentEventAppearsOnce() {
-        val timeline = query(base().index, text = "bench", firstRecords = true)
+        val timeline = query(base().index, text = "bench")
 
         assertEquals(timeline.total, timeline.events().map(RecordTimelines::key).toSet().size)
         assertEquals(1, timeline.events().count { it.record.workoutId == "w3" && it.record.kind.name == "WEIGHT" })
@@ -168,29 +154,29 @@ class RecordTimelinesTest {
             }
             return listOf(assisted, loads)
         }
-        val timeline = query(ProgressIndex.build(history(), emptyList()), firstRecords = true)
+        val timeline = query(ProgressIndex.build(history(), emptyList()))
 
         val keys = timeline.events().map(RecordTimelines::key)
         assertEquals(5, keys.size)
         assertEquals(keys.size, keys.toSet().size)
         // A rebuilt index from copied inputs gives the same keys, in the same order.
         val rebuilt = ProgressIndex.build(history().map { it.copy() }, emptyList())
-        assertEquals(keys, query(rebuilt, firstRecords = true).events().map(RecordTimelines::key))
+        assertEquals(keys, query(rebuilt).events().map(RecordTimelines::key))
     }
 
     @Test
     fun searchKeepsTheIndexOrderInsideAWorkout() {
         val w = endingAt("o", "2026-10-15T10:00:00Z") {
-            listOf(weightRecord(bench, 110.0, 2, 105.0, it), repsRecord(bench, 85.0, 4, null, it),
+            listOf(weightRecord(bench, 110.0, 2, 105.0, it), repsRecord(bench, 85.0, 4, 3, it),
                 repsRecord(bench, 80.0, 6, 5, it))
         }
-        // The weight record and the 85 kg first reps record are current; the 80 kg one is only beaten.
+        // The weight record and the 85 kg reps record are current; the 80 kg one is only beaten.
         val index = ProgressIndex.build(listOf(w), listOf(w.records[0], w.records[1]).map(::currentOf))
 
-        val chip = query(index, firstRecords = true).events().map { it.record.weightKg }
-        assertEquals(listOf(110.0, 85.0, 80.0), chip)
-        assertEquals(chip, query(index, text = "bench").events().map { it.record.weightKg })
-        assertEquals(chip, query(index, text = "supino").events().map { it.record.weightKg })
+        val all = query(index).events().map { it.record.weightKg }
+        assertEquals(listOf(110.0, 85.0, 80.0), all)
+        assertEquals(all, query(index, text = "bench").events().map { it.record.weightKg })
+        assertEquals(all, query(index, text = "supino").events().map { it.record.weightKg })
     }
 
     @Test
@@ -210,7 +196,7 @@ class RecordTimelinesTest {
         val b = base()
 
         assertEquals(listOf("w3W", "w3R"), query(b.index, text = "bench", currentOnly = true).ids())
-        assertEquals(listOf("w1W"), query(b.index, text = "cable row", currentOnly = true).ids())
+        assertEquals(listOf("w2W"), query(b.index, text = "cable row", currentOnly = true).ids())
     }
 
     @Test
@@ -218,7 +204,7 @@ class RecordTimelinesTest {
         val b = base()
         val without = ProgressIndex.build(listOf(b.w2, b.w1), b.index.currentRecords.map { it.record })
 
-        assertFalse(query(without, firstRecords = true).events().any { it.record.workoutId == "w3" })
+        assertFalse(query(without).events().any { it.record.workoutId == "w3" })
         assertFalse(query(without, currentOnly = true).events().any { it.record.workoutId == "w3" })
         assertFalse(query(without, text = "bench").events().any { it.record.workoutId == "w3" })
     }

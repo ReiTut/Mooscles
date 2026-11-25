@@ -215,11 +215,11 @@ class RecordReactionTest {
     }
 
     @Test
-    fun firstRecordDoesNothing() = runComposeUiTest {
-        // An exercise without history: the presentation sends no record (D18), only firstRecord.
+    fun aSetWithNothingToBeatDoesNothing() = runComposeUiTest {
+        // An exercise without history: the presentation sends no record, so nothing is celebrated.
         val haptics = RecordingHaptics()
         val first = workout(listOf(SetUi("s1", reps = 6, weightKg = 87.5), SetUi("s2", reps = 6, weightKg = 87.5)))
-        val fake = Fake(stateOf(first.copy(exercises = first.exercises.map { it.copy(firstRecord = true) })))
+        val fake = Fake(stateOf(first))
         show(fake, haptics)
         check("s1")
         mainClock.advanceTimeBy(1_000)

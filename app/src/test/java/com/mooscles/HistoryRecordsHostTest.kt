@@ -43,7 +43,6 @@ class HistoryRecordsHostTest {
         val pullupReps = RecordUi(pullup, 0.0, 12, kind = RecordKind.REPS, previousReps = 8)
         val workout = workout(listOf(benchWeight, pullupReps))
         assertEquals(2, workout.prExerciseCount)
-        assertEquals(0, workout.firstRecordExerciseCount)
         showDetail(workout)
 
         assertDisplayedPrExerciseCount(2)
@@ -52,7 +51,7 @@ class HistoryRecordsHostTest {
         compose.onNode(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.RECORDS))).performScrollTo().assertIsDisplayed()
         assertMilestoneText("Pull-up · Bodyweight\u00a0×\u00a012 · before Bodyweight\u00a0×\u00a08")
         assertMilestoneText("Reps PR")
-        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertDoesNotExist()
+        compose.onNodeWithText("First records").assertDoesNotExist()
     }
 
     @Test fun exerciseWithBothRecordTypesDisplaysBothAndCountsOnce() {
@@ -71,65 +70,17 @@ class HistoryRecordsHostTest {
         assertMilestoneText("Bench press · 100\u00a0kg\u00a0×\u00a011 · before 100\u00a0kg\u00a0×\u00a010")
     }
 
-    @Test fun firstRecordsHaveTheirOwnLabelsAndDoNotIncreaseTheBeatenExerciseCount() {
-        val workout = workout(listOf(
-            RecordUi(bench, 105.0, 3, previousKg = 100.0),
-            RecordUi(pullup, 10.0, 5),
-            RecordUi(pullup, 10.0, 5, kind = RecordKind.REPS),
-        ))
-        assertEquals(2, workout.prExerciseCount)
-        assertEquals(1, workout.beatenPrExerciseCount)
-        assertEquals(1, workout.firstRecordExerciseCount)
-        showDetail(workout)
-        assertDisplayedPrExerciseCount(2)
-        scrollToRecords()
-
-        compose.onNode(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.RECORDS))).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.FIRST))
-        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertIsDisplayed()
-        compose.onNodeWithText("First records").assertIsDisplayed()
-        compose.onAllNodes(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
-        compose.onAllNodes(hasText("Reps PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
-        compose.onAllNodes(hasText("Pull-up · 10\u00a0kg\u00a0×\u00a05") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
-    }
-
-    @Test fun firstBenchWeightAndRepsRecordsAndFirstBodyweightPullupRecordCountTwoExercises() {
-        val barbellBench = bench.copy(name = "Barbell bench press")
-        val wideGripPullup = pullup.copy(name = "Wide-grip pull-up")
-        val workout = workout(listOf(
-            RecordUi(barbellBench, 20.0, 10),
-            RecordUi(barbellBench, 20.0, 10, kind = RecordKind.REPS),
-            RecordUi(wideGripPullup, 0.0, 10, kind = RecordKind.REPS),
-        ))
-        assertEquals(2, workout.prExerciseCount)
-        assertEquals(0, workout.beatenPrExerciseCount)
-        assertEquals(2, workout.firstRecordExerciseCount)
-        showDetail(workout)
-
-        assertDisplayedPrExerciseCount(2)
-        compose.onNodeWithTag(WorkoutDetailTags.LIST).performScrollToNode(hasTestTag(WorkoutDetailTags.FIRST))
-        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertIsDisplayed()
-        compose.onNodeWithTag(WorkoutDetailTags.RECORDS).assertDoesNotExist()
-        compose.onAllNodes(hasText("Weight PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(1)
-        compose.onAllNodes(hasText("Reps PR") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
-        compose.onAllNodes(hasText("Barbell bench press · 20\u00a0kg\u00a0×\u00a010") and hasAnyAncestor(hasTestTag(WorkoutDetailTags.FIRST))).assertCountEquals(2)
-        assertMilestoneText("Wide-grip pull-up · Bodyweight\u00a0×\u00a010")
-    }
-
     @Test fun workoutWithoutRecordsDisplaysZeroExercisesWithPrs() {
         val workout = workout(emptyList())
         assertEquals(0, workout.prExerciseCount)
-        assertEquals(0, workout.beatenPrExerciseCount)
-        assertEquals(0, workout.firstRecordExerciseCount)
         showDetail(workout)
 
         assertDisplayedPrExerciseCount(0)
-        compose.onNodeWithTag(WorkoutDetailTags.FIRST).assertDoesNotExist()
         compose.onNodeWithTag(WorkoutDetailTags.RECORDS).assertDoesNotExist()
     }
 
     @Test fun narrowLargeFontKeepsPrsAfterSetsWithoutDuplicatingTheStatistic() {
-        val records = (1..11).map { RecordUi(bench.copy(id = "variation-$it"), 22.0, 8) }
+        val records = (1..11).map { RecordUi(bench.copy(id = "variation-$it"), 22.0, 8, previousKg = 20.0) }
         showDetail(workout(records), fontScale = 2f, width = 320)
         compose.onNodeWithTag("workout-pr-exercise-count").performScrollTo().assertIsDisplayed()
             .assert(hasText("11")).assertContentDescriptionEquals("11 exercises with personal records")

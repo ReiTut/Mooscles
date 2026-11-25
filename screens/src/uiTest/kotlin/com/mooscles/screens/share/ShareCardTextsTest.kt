@@ -30,10 +30,13 @@ class ShareCardTextsTest {
     private val source = run {
         val pullup = WorkoutExercise("e", "w", "pullup", "Barra fixa", MuscleGroup.BACK, Equipment.BODYWEIGHT,
             LoadConvention.BODYWEIGHT, 0)
+        // An earlier session of 10 reps, which the card's 12 beat: its one PR.
+        val earlier = pullup.copy(id = "e0", workoutId = "w0")
         AppData(
-            workouts = listOf(Workout("w", "Costas", at(18, 2), at(18, 44), WorkoutStatus.FINISHED)),
-            workoutExercises = listOf(pullup),
-            sets = listOf(WorkoutSet("s", "e", 0, 12, 0.0, true, false, false)),
+            workouts = listOf(Workout("w0", "Costas", at(8, 0), at(9, 0), WorkoutStatus.FINISHED),
+                Workout("w", "Costas", at(18, 2), at(18, 44), WorkoutStatus.FINISHED)),
+            workoutExercises = listOf(earlier, pullup),
+            sets = listOf(WorkoutSet("s0", "e0", 0, 10, 0.0, true, false, false), WorkoutSet("s", "e", 0, 12, 0.0, true, false, false)),
         )
     }
 

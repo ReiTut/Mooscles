@@ -12,7 +12,6 @@
     <string name="summary_volume">Volume</string>
     <string name="summary_exercises">Exercícios</string>
     <string name="summary_records">Recordes</string>
-    <string name="summary_first_records">Primeiros registros</string>
     <!-- "Supino reto · 87,5 kg × 6 · antes 85 kg". -->
     <string name="summary_record_line">%1$s · %2$s</string>
     <string name="summary_weight_record">%1$s&#160;×&#160;%2$d · antes %3$s</string>

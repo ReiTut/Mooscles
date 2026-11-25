@@ -104,7 +104,7 @@ object RecordAnnouncer {
      * it can be celebrated. It is announced when it carries a record that strictly beats the best
      * of its category in [announced]. So a record already there when the screen opened (a resumed
      * workout), one inherited when another set is unchecked or removed, one kept while a done set is
-     * corrected or typed into, and a first record (no `SetUi.record`, D18) say nothing; a later set
+     * corrected or typed into, and a set with nothing earlier to beat (no `SetUi.record`) say nothing; a later set
      * beating the record again says it once more, with the new value. [nameOf] gives each event's
      * [RecordEvent.exerciseName]: the screen passes the name it shows ([com.mooscles.screens.format.exerciseName]).
      */

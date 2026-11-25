@@ -66,10 +66,10 @@ class AppViewModelRecordsHostTest {
             val model = newModel()
             awaitUi(model) { !it.loading && it.history.any { workout -> workout.id == workoutId } }
             val saved = model.ui.value.history.single { it.id == workoutId }
+            // Each exercise's first session is one record: the bench's load and the unloaded pull-up's reps.
             assertEquals(2, saved.prExerciseCount)
-            assertEquals(0, saved.beatenPrExerciseCount)
-            assertEquals(3, saved.records.size)
-            assertTrue(saved.records.all { it.firstRecord })
+            assertEquals(listOf(RecordKind.WEIGHT, RecordKind.REPS), saved.records.map { it.kind })
+            assertTrue(saved.records.all { it.previousKg == null && it.previousReps == null })
             assertEquals(5, saved.completedSets)
             assertEquals(560.0, saved.volumeKg, 0.0)
             model.viewModelScope.cancel()
@@ -109,14 +109,14 @@ class AppViewModelRecordsHostTest {
         awaitUi(model) { !it.loading && it.history.any { workout -> workout.id == seeded.workout && workout.prExerciseCount == 2 } }
         val summary = model.ui.value.history.first { it.id == seeded.workout }
         assertEquals(2, summary.prExerciseCount)
-        val beaten = summary.records.filterNot { it.firstRecord }
+        val beaten = summary.records
         assertEquals(2, beaten.size)
         assertEquals(100.0, beaten.single { it.kind == RecordKind.WEIGHT }.previousKg!!, 0.0)
         assertEquals(105.0, beaten.single { it.kind == RecordKind.WEIGHT }.weightKg, 0.0)
         assertEquals(8, beaten.single { it.kind == RecordKind.REPS }.previousReps)
         assertEquals(12, beaten.single { it.kind == RecordKind.REPS }.reps)
         assertTrue(summary.exercises.first { it.id == seeded.benchEntry }.records.any { it.kind == RecordKind.WEIGHT })
-        assertTrue(summary.exercises.first { it.id == seeded.pullupEntry }.records.any { it.kind == RecordKind.REPS && !it.firstRecord })
+        assertTrue(summary.exercises.first { it.id == seeded.pullupEntry }.records.any { it.kind == RecordKind.REPS })
         assertTrue(summary.exercises.first { it.id == seeded.incompleteEntry }.records.isEmpty())
         assertEquals(315.0, summary.volumeKg, 0.0)
 
@@ -126,18 +126,18 @@ class AppViewModelRecordsHostTest {
             repo.updateSet(data.sets.first { it.id == seeded.oldBenchSet }.copy(weightKg = 110.0))
             repo.updateSet(data.sets.first { it.id == seeded.oldPullupSet }.copy(reps = 15))
         }
-        awaitUi(model) { it.history.firstOrNull { workout -> workout.id == seeded.workout }?.beatenPrExerciseCount == 0 }
+        awaitUi(model) { it.history.firstOrNull { workout -> workout.id == seeded.workout }?.prExerciseCount == 0 }
         val corrected = model.ui.value.history.first { it.id == seeded.workout }
-        assertTrue(corrected.records.none { !it.firstRecord })
-        assertEquals(1, corrected.prExerciseCount) // The initial reps record at 105 kg still qualifies.
+        // 105 kg is now lighter than the corrected 110 kg, so it is no reps record either.
+        assertTrue(corrected.records.isEmpty())
+        assertEquals(0, corrected.prExerciseCount)
 
         // A fresh presentation instance reads the persisted correction rather than cached badges.
         model.viewModelScope.cancel()
         val restored = newModel()
         awaitUi(restored) { !it.loading && it.history.any { workout -> workout.id == seeded.workout } }
         val reopened = restored.ui.value.history.first { it.id == seeded.workout }
-        assertEquals(0, reopened.beatenPrExerciseCount)
-        assertEquals(1, reopened.prExerciseCount)
+        assertEquals(0, reopened.prExerciseCount)
         assertTrue(reopened.exercises.first { it.id == seeded.incompleteEntry }.records.isEmpty())
     }
 

@@ -69,7 +69,7 @@ class WorkoutDetailScreenTest {
     private val bench = ExerciseUi("bench", "Bench press", "Chest", "Barbell", "Total load", custom = true)
     private val row = ExerciseUi("row", "Row", "Back", "Dumbbell", "Per hand", custom = true)
     private val pullup = ExerciseUi("pullup", "Pull-up", "Back", "Bodyweight", "Added weight", custom = true)
-    private val record = RecordUi(bench, 22.0, 6)
+    private val record = RecordUi(bench, 22.0, 6, previousKg = 20.0)
     private fun workout() = WorkoutUi("saved", "Upper A", 1_730_224_920_000, 1_730_227_440_000,
         listOf(
             WorkoutExerciseUi("e1", bench, listOf(SetUi("s1", 6, 22.0, true), SetUi("s2", 0)), restSeconds = 120),
@@ -144,12 +144,12 @@ class WorkoutDetailScreenTest {
         runOnIdle { assertTrue(action.action()) }; waitForIdle()
     }
 
-    @Test fun readOnlyHeaderIncludesFirstRecordsBesideSetsAndSeparateSection() = runComposeUiTest {
+    @Test fun readOnlyHeaderCountsTheRecordBesideSetsAndShowsItsSection() = runComposeUiTest {
         show()
         onNodeWithTag(WorkoutDetailTags.PRS).assertContentDescriptionEquals("1 exercise with a personal record")
-        scrollTo(WorkoutDetailTags.FIRST)
-        onNodeWithTag(WorkoutDetailTags.FIRST).assertIsDisplayed()
-        onNodeWithTag(WorkoutDetailTags.RECORDS).assertDoesNotExist()
+        scrollTo(WorkoutDetailTags.RECORDS)
+        onNodeWithTag(WorkoutDetailTags.RECORDS).assertIsDisplayed()
+        onNodeWithText("First records").assertDoesNotExist()
     }
 
     @Test fun editRequiresConfirmationAndDoneLeavesTheMode() = runComposeUiTest {

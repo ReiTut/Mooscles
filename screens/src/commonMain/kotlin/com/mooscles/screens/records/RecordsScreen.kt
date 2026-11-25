@@ -72,11 +72,7 @@ import com.mooscles.screens.resources.Res
 import com.mooscles.screens.resources.records_current_only
 import com.mooscles.screens.resources.records_empty_body
 import com.mooscles.screens.resources.records_empty_title
-import com.mooscles.screens.resources.records_first
 import com.mooscles.screens.resources.records_none_found
-import com.mooscles.screens.resources.records_only_first_action
-import com.mooscles.screens.resources.records_only_first_body
-import com.mooscles.screens.resources.records_only_first_title
 import com.mooscles.screens.resources.records_rules
 import com.mooscles.screens.resources.records_search
 import com.mooscles.screens.resources.records_settings
@@ -100,9 +96,7 @@ internal object RecordsTags {
     /** The search field's box, around the field: the node with the text action is the field inside it. */
     const val SEARCH = "records-search"
     const val CURRENT_ONLY = "records-current-only"
-    const val FIRST = "records-first"
     const val EMPTY = "records-empty"
-    const val ONLY_FIRST = "records-only-first"
     const val NONE_FOUND = "records-none-found"
     const val SKELETON = "records-skeleton-row"
 
@@ -113,7 +107,6 @@ internal object RecordsTags {
     const val ROW_DATE = "records-row-date"
     const val ROW_CURRENT = "records-row-current"
     const val BADGE = "records-row-badge"
-    const val BADGE_FIRST = "records-row-badge-first"
 
     /** Every row's tag starts with this, and nothing else's does. */
     const val ROW_PREFIX = "record-"
@@ -134,21 +127,19 @@ internal object RecordsTags {
 /**
  * The Records tab (spec "Recordes (aba)" and D11): "Records" with the Settings shortcut ([onOpenSettings]) and "How we
  * count records" (`Info`), which opens [RecordRulesSheet]; the search ("Search exercise", both languages) and the chips
- * "Current only" and "First records" fixed under the top bar; and the timeline, by local month newest first under a
+ * "Current only" fixed under the top bar; and the timeline, by local month newest first under a
  * sticky header ("October 2026 · 5 records"), one [RecordRow] per record.
  *
- * Without a chip the timeline is the records that beat something; "First records" adds the first ones, and "Current
- * only" lists just the records that still hold (first ones included) and leaves the other chip without a say. A search
- * keeps the records of the exercises it finds, and adds their current records even when they are first ones, so the
- * current record is on top without a chip; with "Current only" it is the intersection. A row opens [onOpenProgress] on
+ * The timeline is the records (an exercise's first session, then records beaten), and "Current only" lists just
+ * the records that still hold. A search keeps the records of the exercises it finds; with "Current only" it is the
+ * intersection. A row opens [onOpenProgress] on
  * the record's metric ([ProgressMetric.LOAD] or [ProgressMetric.REPS]); its accessibility action "Open workout" opens
  * [onOpenWorkout].
  *
  * The timeline comes from the progress cache ([rememberProgressIndex], [rememberProgressQuery] with a [RecordsQuery]),
  * never computed in composition, in the zone and "today" of [rememberProgressCalendar] (the clock is the spoken
  * dates' year), read again at midnight. While [UiState.loading], the index or the query is on its way, the list is a
- * skeleton; with no record at all, an empty state; with only first records and nothing asked for, an empty state whose
- * button turns "First records" on; otherwise, with none that fits, "No records found". A failed build or query shows
+ * skeleton; with no record at all, an empty state; otherwise, with none that fits, "No records found". A failed build or query shows
  * "No records found" too, never a skeleton that would wait for good. The search, the chips, the open
  * sheet and the scroll are kept with `rememberSaveable`; a new search or chip starts the list from the top once its own
  * result is shown (a newer month it adds is above the old first row). Errors of
@@ -179,7 +170,6 @@ internal fun RecordsScreen(
 ) {
     var search by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     var currentOnly by rememberSaveable { mutableStateOf(false) }
-    var firstRecords by rememberSaveable { mutableStateOf(false) }
     var rulesOpen by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val host = remember { MToastHostState() }
@@ -189,7 +179,7 @@ internal fun RecordsScreen(
 
     val text = search.text.trim()
     val index = rememberProgressIndex(state.history, state.records, state.loading)
-    val timeline = rememberProgressQuery(index, RecordsQuery(text, currentOnly, firstRecords, calendar.zone))
+    val timeline = rememberProgressQuery(index, RecordsQuery(text, currentOnly, calendar.zone))
 
     // The callbacks are read when a row is tapped, so a host's new lambdas never recompose the rows.
     val openProgress by rememberUpdatedState(onOpenProgress)
@@ -270,12 +260,7 @@ internal fun RecordsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            RecordsChips(
-                currentOnly = currentOnly,
-                firstRecords = firstRecords,
-                onCurrentOnly = { currentOnly = !currentOnly },
-                onFirstRecords = { firstRecords = !firstRecords },
-            )
+            RecordsChips(currentOnly = currentOnly, onCurrentOnly = { currentOnly = !currentOnly })
             val shown = timeline.valueOrNull
             val content = Modifier.weight(1f).fillMaxWidth()
             // A loading index passes through the query as loading, a failed one as failed.
@@ -287,8 +272,6 @@ internal fun RecordsScreen(
                     // A failure: nothing to show, said neutrally (the person may have many records).
                     shown == null -> EmptyKind.NONE_FOUND
                     built != null && built.events.isEmpty() && built.currentRecords.isEmpty() -> EmptyKind.NO_RECORDS
-                    // Records, all first ones, hidden by D11 with nothing asked for: say where they are.
-                    text.isEmpty() && !currentOnly && !firstRecords -> EmptyKind.ONLY_FIRST
                     else -> EmptyKind.NONE_FOUND
                 }
                 RecordsList(
@@ -298,7 +281,6 @@ internal fun RecordsScreen(
                     calendar = calendar,
                     listState = listState,
                     actions = actionsOf,
-                    onShowFirstRecords = { firstRecords = true },
                     modifier = content,
                 )
             }
@@ -325,14 +307,14 @@ private class ShownChoice(var query: RecordsQuery? = null)
 internal class RowActions(val open: (RecordEvent) -> Unit, val openWorkout: (RecordEvent) -> Unit)
 
 /**
- * What the list says when it has no row: no record at all; only first records, which the timeline hides without the
- * chip; or nothing that fits the search or the chips (also after a failure).
+ * What the list says when it has no row: no record at all, or nothing that fits the search or the chip (also after a
+ * failure).
  */
-private enum class EmptyKind { NO_RECORDS, ONLY_FIRST, NONE_FOUND }
+private enum class EmptyKind { NO_RECORDS, NONE_FOUND }
 
-/** "Current only" and "First records", filters ([MChipKind.Filter], checkboxes) on one scrolling line. */
+/** "Current only", a filter ([MChipKind.Filter], a checkbox) on its own scrolling line. */
 @Composable
-private fun RecordsChips(currentOnly: Boolean, firstRecords: Boolean, onCurrentOnly: () -> Unit, onFirstRecords: () -> Unit) {
+private fun RecordsChips(currentOnly: Boolean, onCurrentOnly: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -347,15 +329,6 @@ private fun RecordsChips(currentOnly: Boolean, firstRecords: Boolean, onCurrentO
             onClick = onCurrentOnly,
             modifier = Modifier.testTag(RecordsTags.CURRENT_ONLY),
             kind = MChipKind.Filter,
-        )
-        // "Current only" lists every current record, first ones included: this chip keeps its choice, without a say.
-        MChip(
-            label = stringResource(Res.string.records_first),
-            selected = firstRecords,
-            onClick = onFirstRecords,
-            modifier = Modifier.testTag(RecordsTags.FIRST),
-            kind = MChipKind.Filter,
-            enabled = !currentOnly,
         )
     }
 }
@@ -381,7 +354,6 @@ private fun RecordsList(
     calendar: ProgressCalendar,
     listState: LazyListState,
     actions: RowActions,
-    onShowFirstRecords: () -> Unit,
     modifier: Modifier,
 ) {
     val portuguese = catalogInPortuguese()
@@ -395,7 +367,6 @@ private fun RecordsList(
             item(key = "empty") {
                 when (empty) {
                     EmptyKind.NO_RECORDS -> NoRecords()
-                    EmptyKind.ONLY_FIRST -> OnlyFirstRecords(onShowFirstRecords)
                     EmptyKind.NONE_FOUND -> NoneFound()
                 }
             }
@@ -428,7 +399,7 @@ private fun MonthHeader(year: Int, month: Month, count: Int) {
     )
 }
 
-/** No record at all: the first one shows up here, once working sets are completed. */
+/** No record at all: the first ones show up once working sets are completed. */
 @Composable
 private fun NoRecords() {
     EmptyState(
@@ -436,18 +407,6 @@ private fun NoRecords() {
         title = stringResource(Res.string.records_empty_title),
         body = stringResource(Res.string.records_empty_body),
         modifier = Modifier.testTag(RecordsTags.EMPTY),
-    )
-}
-
-/** Every record is a first record, hidden without the chip: a button turns "First records" on. */
-@Composable
-private fun OnlyFirstRecords(onShowFirstRecords: () -> Unit) {
-    EmptyState(
-        icon = MIcons.PlateRecord,
-        title = stringResource(Res.string.records_only_first_title),
-        body = stringResource(Res.string.records_only_first_body),
-        modifier = Modifier.testTag(RecordsTags.ONLY_FIRST),
-        primaryAction = stringResource(Res.string.records_only_first_action) to onShowFirstRecords,
     )
 }
 

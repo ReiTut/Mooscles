@@ -30,9 +30,8 @@ class HistoryWorkout internal constructor(
     val workout: WorkoutUi,
     val completedSets: Int,
     val volumeKg: Double,
+    /** Exercises with a record beaten in this workout. */
     val prCount: Int,
-    val beatenPrCount: Int,
-    val firstPrCount: Int,
     val previewExercises: List<ExerciseUi>,
     internal val searchText: String,
     internal val exerciseIds: Set<String>,
@@ -99,8 +98,7 @@ class HistoryIndex private constructor(val items: List<HistoryWorkout>) {
                         }
                     }
                 }
-                HistoryWorkout(workout, completedSets, volume, workout.prExerciseCount, workout.beatenPrExerciseCount,
-                    workout.firstRecordExerciseCount, previews.toList(), names.toString(),
+                HistoryWorkout(workout, completedSets, volume, workout.prExerciseCount, previews.toList(), names.toString(),
                     workout.exercises.map { it.exercise.id }.toSet(), sessionExercises.values.toList(), muscles.toMap(), fullBody)
             })
         }
@@ -138,7 +136,7 @@ data class HistoryQuery(
             val routineMatches = (routineIds.isEmpty() && !otherRoutines) || source in routineIds ||
                 (otherRoutines && (source == null || source !in existingRoutineIds))
             routineMatches && words.all(item.searchText::contains) &&
-                (exerciseId == null || exerciseId in item.exerciseIds) && (!beatenOnly || item.beatenPrCount > 0) &&
+                (exerciseId == null || exerciseId in item.exerciseIds) && (!beatenOnly || item.prCount > 0) &&
                 (day == null || ScreenDates.localDate(item.workout.startedAt, zone) == day)
         }
         val months = selected.groupBy { monthStart(ScreenDates.localDate(it.workout.startedAt, zone)) }

@@ -41,7 +41,7 @@ const val PrBadgeTag = "pr-badge"
  * It is read as "personal record". [soft] uses the quiet `pr.subtle` fill instead of `pr.solid`.
  * With [animateIn] it appears with the `PersonalRecord` key moment (a spring, or a fade with reduced motion).
  * [label] and [spoken] replace "PR" and "personal record" for a badge that means something else in words, such as
- * the records timeline's first record ("First"), so two badges never differ by their fill alone.
+ * a count ("2 PRs"), so two badges never differ by their fill alone.
  */
 @Composable
 fun PrBadge(

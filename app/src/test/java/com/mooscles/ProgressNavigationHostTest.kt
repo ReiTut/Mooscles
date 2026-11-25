@@ -128,11 +128,8 @@ class ProgressNavigationHostTest {
     @Test fun recordsToProgressAndBackKeepsSearchChipsAndScroll() {
         show()
         openRecords()
-        // "First records" adds the first session's record to the 29 beaten ones.
-        compose.onNodeWithTag("records-first").performClick()
         compose.waitForIdle()
         val (top, topBounds) = scrollAndOpenAndReturn()
-        compose.onNodeWithTag("records-first").assertIsOn()
         assertEquals(top, topVisibleRow())
         assertEquals(topBounds, compose.onNodeWithTag(top).fetchSemanticsNode().boundsInRoot)
 
@@ -146,7 +143,6 @@ class ProgressNavigationHostTest {
         compose.onNode(hasSetTextAction()).assertIsFocused()
         val (searchedTop, searchedBounds) = scrollAndOpenAndReturn()
         assertEquals(incline.name, compose.onNode(hasSetTextAction()).fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
-        compose.onNodeWithTag("records-first").assertIsOn()
         compose.onNodeWithTag("records-current-only").assertIsOff()
         assertEquals(searchedTop, topVisibleRow())
         assertEquals(searchedBounds, compose.onNodeWithTag(searchedTop).fetchSemanticsNode().boundsInRoot)

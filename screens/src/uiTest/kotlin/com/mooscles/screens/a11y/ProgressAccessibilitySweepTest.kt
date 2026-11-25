@@ -272,11 +272,11 @@ class ProgressAccessibilitySweepTest {
     }
 
     /**
-     * A record row's badge: its word ("PR", "Primeiro") is set by the row as the badge's semantics text, for the row's
+     * A record row's badge: its word ("PR") is set by the row as the badge's semantics text, for the row's
      * merged node, over `PrBadge`, which clears its own drawn label from the semantics. No layout stands behind that
      * text, so [assertButtonTextsWhole] leaves it out and [assertBadgesInsideTheirRows] checks the drawn badge.
      */
-    private val recordBadge = hasTestTag(RecordsTags.BADGE) or hasTestTag(RecordsTags.BADGE_FIRST)
+    private val recordBadge = hasTestTag(RecordsTags.BADGE)
 
     /**
      * Every placed badge has a size and lies whole inside its row (the row's first line wraps rather than cut it),
@@ -610,7 +610,7 @@ class ProgressAccessibilitySweepTest {
             when {
                 tag == RecordsTags.SETTINGS || tag == RecordsTags.RULES -> "top"
                 tag == RecordsTags.SEARCH -> "search"
-                tag == RecordsTags.CURRENT_ONLY || tag == RecordsTags.FIRST -> "chips"
+                tag == RecordsTags.CURRENT_ONLY -> "chips"
                 tag.startsWith(RecordsTags.MONTH_PREFIX) -> "month"
                 tag.startsWith(RecordsTags.ROW_PREFIX) -> "rows"
                 else -> null

@@ -92,18 +92,18 @@ class HistoryScreenTest {
     private val bench = catalog("barbell_bench_flat")
     private val row = catalog("cable_row_wide_overhand")
     private fun workout(id: String, day: Int, exercise: ExerciseUi = bench, routine: String? = "upper",
-        first: Boolean = false, month: Int = 11): WorkoutUi {
+        withRecord: Boolean = true, month: Int = 11): WorkoutUi {
         val start = LocalDateTime(2026, month, day, 10, 0).toInstant(zone).toEpochMilliseconds()
-        val record = RecordUi(exercise, 22.0, 6, previousKg = if (first) null else 20.0,
-            workoutId = id, date = start + 3_600_000)
+        // Without a record: a first performance, which beats nothing.
+        val record = RecordUi(exercise, 22.0, 6, previousKg = 20.0, workoutId = id, date = start + 3_600_000)
         val name = "Workout $id" + when (id) { "upper-a" -> " Alpha"; "upper-b" -> " Bravo"; else -> "" }
         return WorkoutUi(id, name, start, start + 3_600_000,
             listOf(WorkoutExerciseUi("entry-$id", exercise, listOf(SetUi("set-$id", 6, 22.0, true)))),
-            listOf(record), routine)
+            if (withRecord) listOf(record) else emptyList(), routine)
     }
     private fun state(): MutableState<UiState> = mutableStateOf(UiState(loading = false,
         exercises = listOf(bench, row), routines = listOf(RoutineUi("upper", "Upper split"), RoutineUi("lower", "Lower split")),
-        history = listOf(workout("upper-b", 4), workout("lower", 4, row, "lower", first = true),
+        history = listOf(workout("upper-b", 4), workout("lower", 4, row, "lower", withRecord = false),
             workout("upper-a", 3), workout("other", 15, row, "deleted", month = 10)),
         active = WorkoutUi("active", "Unchanged active", now,
             exercises = listOf(WorkoutExerciseUi("active-entry", bench, listOf(SetUi("draft", 7, 22.123456789))))),
@@ -259,10 +259,10 @@ class HistoryScreenTest {
         assertTrue(calls.actions.calls.isEmpty())
     }
 
-    @Test fun beatenRecordFilterExcludesFirstOnlyWorkoutButCardStatisticIncludesIt() = runComposeUiTest {
+    @Test fun prFilterExcludesAWorkoutWithoutRecords() = runComposeUiTest {
         show(); awaitTag(calendarDayTag(3)); historyScroll("history-workout-lower")
         val description = onNodeWithTag("history-workout-lower").fetchSemanticsNode().config[SemanticsProperties.ContentDescription].joinToString()
-        assertTrue(description.contains("1 PR"), description)
+        assertFalse(description.contains("1 PR"), description)
         historyScroll("history-filter-pr"); onNodeWithTag("history-filter-pr").performClick(); count("3 workouts")
         assertFalse(exists("history-workout-lower"))
     }

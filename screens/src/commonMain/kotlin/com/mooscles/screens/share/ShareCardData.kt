@@ -122,7 +122,7 @@ data class ShareCardData(
     val dateText: String,
     val durationText: String,
     val setsText: String,
-    /** Distinct exercise variations credited in [records], including eligible first records. */
+    /** Distinct exercise variations credited in [records]. */
     val prCount: Int,
     /** Localized display of [prCount]; retain the numeric count for accessible preview descriptions. */
     val prsText: String,

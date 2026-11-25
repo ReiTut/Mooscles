@@ -283,7 +283,7 @@ private fun HistoryWorkoutCardContent(item: HistoryWorkout, stats: String, large
         MText(stats, MTheme.type.numSm)
         val names = item.previewExercises.map { exerciseName(it) }
         MText(names.joinToString(" · "), MTheme.type.caption, color = MTheme.colors.textSecondary)
-        if (item.beatenPrCount > 0) PrBadge(label = pluralCount(Res.plurals.history_pr_count, item.beatenPrCount),
-            spoken = pluralCount(Res.plurals.history_pr_count, item.beatenPrCount))
+        if (item.prCount > 0) PrBadge(label = pluralCount(Res.plurals.history_pr_count, item.prCount),
+            spoken = pluralCount(Res.plurals.history_pr_count, item.prCount))
     }
 }

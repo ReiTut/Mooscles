@@ -303,7 +303,7 @@ class ProgressTextsTest {
                 recordWasText(RecordKind.WEIGHT, 87.5, 6, previousKg = null, previousReps = null, pounds = false),
                 recordSpoken(
                     "Supino", RecordKind.WEIGHT, 87.5, 6, previousKg = 85.0, previousReps = null, pounds = false,
-                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = true, first = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = true,
                 ),
                 sessionSpoken(at(2026, 10, 28), "Treino A", "A 40 × 10, 80 × 8", utc, today),
             )
@@ -339,23 +339,23 @@ class ProgressTextsTest {
             listOf(
                 recordSpoken(
                     "Barra", RecordKind.WEIGHT, 1.0, 5, previousKg = null, previousReps = null, pounds = false,
-                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, convention = "Added weight",
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, convention = "Added weight",
                 ),
                 recordSpoken(
                     "Barra", RecordKind.WEIGHT, 2.0, 5, previousKg = null, previousReps = null, pounds = false,
-                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, convention = "Added weight",
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, convention = "Added weight",
                 ),
                 recordKindLabel(RecordKind.WEIGHT, "Added weight"),
                 recordKindLabel(RecordKind.WEIGHT, "Total load"),
                 recordKindLabel(RecordKind.REPS, "Added weight"),
                 recordSpoken(
                     "Barra", RecordKind.REPS, 0.0, 12, previousKg = null, previousReps = 11, pounds = false,
-                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false,
                 ),
                 recordWasText(RecordKind.REPS, 0.0, 8, previousKg = null, previousReps = 6, pounds = false, assistance = true),
                 recordSpoken(
                     "Barra", RecordKind.REPS, 0.0, 8, previousKg = null, previousReps = 6, pounds = false,
-                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, first = false, assistance = true,
+                    epochMillis = at(2026, 10, 28), zone = utc, today = today, current = false, assistance = true,
                 ),
             )
         }

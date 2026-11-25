@@ -145,13 +145,13 @@ class HistoryModelTest {
             .workouts.map { it.id }.toSet())
     }
 
-    @Test fun beatenFilterExcludesFirstRecordsWithoutChangingInclusivePrTotals() {
-        val first = workout("first").let { it.copy(records = listOf(RecordUi(bench, 20.0, 8))) }
+    @Test fun prFilterKeepsOnlyWorkoutsWithARecordBeaten() {
+        val plain = workout("plain")
         val beaten = workout("beaten").let { it.copy(records = listOf(RecordUi(bench, 22.0, 6, previousKg = 20.0))) }
-        val index = index(first, beaten)
+        val index = index(plain, beaten)
         assertEquals(listOf("beaten"), query(index, beaten = true).workouts.map { it.id })
-        assertEquals(1, index.historyData.items.first { it.workout.id == "first" }.prCount)
-        assertEquals(0, index.historyData.items.first { it.workout.id == "first" }.beatenPrCount)
+        assertEquals(0, index.historyData.items.first { it.workout.id == "plain" }.prCount)
+        assertEquals(1, index.historyData.items.first { it.workout.id == "beaten" }.prCount)
     }
 
     @Test fun monthGroupingAndTieOrderAreDeterministic() {
